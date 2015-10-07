@@ -282,7 +282,7 @@ sub initSocketServer
 		on_tick => sub {
 			checkConnection();
 			my $ac = $#active_connections;
-			print ("ACTIVE CONNECTIONS: $ac \n");
+			#print ("ACTIVE CONNECTIONS: $ac \n");
 			if (checkEvents())
 			{
 				Info ("Sending $evt_str to all websocket clients\n");
