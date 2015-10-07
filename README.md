@@ -15,7 +15,7 @@ You can implement your own receiver to get real time event notification and do w
 No. I developed it for zmNinja, but you can use it with your own consumer.
 
 ### Where can I get it?
-* Grab the script here [here](https://github.com/pliablepixels/zmhacks/blob/master/zmeventnotification.pl) - its a perl file.
+* Grab the script from this repository - its a perl file.
 * Place it along with other ZM scripts (see below)
 
 ###How do I install it?
