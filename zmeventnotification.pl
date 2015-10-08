@@ -51,14 +51,14 @@ use JSON;
 # These are the elements you can edit to suit your installation
 #
 # ==========================================================================
+use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';	 # Change these to your certs/keys
+use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
+use constant EVENT_NOTIFICATION_PORT=>9000; 			# port for Websockets connection
+
 
 use constant SLEEP_DELAY=>5; 			# duration in seconds after which we will check for new events
 use constant MONITOR_RELOAD_INTERVAL => 300;
-use constant EVENT_NOTIFICATION_PORT=>9000; 	# port for Websockets connection
 use constant WEBSOCKET_AUTH_DELAY=>20; 		# max seconds by which authentication must be done
-use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';	 #needed for WSS to work
-use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
-
 # ==========================================================================
 #
 # Don't change anything below here
@@ -100,6 +100,10 @@ initSocketServer();
 Info( "Event Notification daemon exiting\n" );
 exit();
 
+# This function uses shared memory polling to check if 
+# ZM reported any new events. If it does find events
+# then the details are packaged into the events array
+# so they can be JSONified and sent out
 sub checkEvents()
 {
 
@@ -145,6 +149,8 @@ sub checkEvents()
 	return ($eventFound);
 }
 
+# Refreshes list of monitors from DB
+# 
 sub loadMonitors
 {
     Debug( "Loading monitors\n" );
@@ -184,6 +190,9 @@ sub loadMonitors
     %monitors = %new_monitors;
 }
 
+# This function compares the password provided over websockets
+# to the password stored in the ZM MYSQL DB
+
 sub validateZM
 {
 	my ($u,$p) = @_;
@@ -207,6 +216,11 @@ sub validateZM
 
 }
 
+# This runs at each tick to purge connections
+# that are inactive or have had an error
+# This also closes any connection that has not provided
+# credentials in the time configured after opening a socket
+
 sub checkConnection
 {
 	foreach (@active_connections)
@@ -221,6 +235,7 @@ sub checkConnection
 				$_->{pending} = '-1';
 				my $str = encode_json({status=>'Fail', reason => 'NOAUTH'});
 				eval {$_->{conn}->send_utf8($str);};
+				$_->{pending} = '-1' if $@;
 				$_->{conn}->disconnect();
 			}
 		}
@@ -229,12 +244,17 @@ sub checkConnection
 	@active_connections = grep { $_->{pending} != '-1' } @active_connections;
 }
 
+# This function  is called whenever we receive a message from a client
+
 sub checkMessage
 {
 	my ($conn, $msg) = @_;	
 	my $json_string = decode_json($msg);
 	my $uname = $json_string->{'data'}->{'user'};
 	my $pwd = $json_string->{'data'}->{'password'};
+	
+	# As of now, I'm only expecting username/password, so don't handle anything else
+	# in future, this could change
 	return if ($uname eq "" || $pwd eq "");
 	foreach (@active_connections)
 	{
@@ -244,23 +264,31 @@ sub checkMessage
 		{
 			if (!validateZM($uname,$pwd))
 			{
+				# bad username or password, so reject and mark for deletion
 				my $str = encode_json({status=>'Fail', reason => 'BADAUTH'});
 				eval {$_->{conn}->send_utf8($str);};
+				$_->{pending} = '-1' if $@;
 				Info("Bad authentication provided by ".$_->{conn}->ip());
 			 	$_->{pending}='-1';
 			}
 			else
 			{
 
+
+				# all good, connection auth was valid
 			 	$_->{pending}='0';
 				my $str = encode_json({status=>'Success', reason => ''});
 				eval {$_->{conn}->send_utf8($str);};
+				$_->{pending} = '-1' if $@;
 				Info("Correct authentication provided by ".$_->{conn}->ip());
 				
 			}
 		}
 	}
 }
+
+# This is really the main module
+# It opens a WSS socket and keeps listening
 sub initSocketServer
 {
 	checkEvents();
@@ -281,7 +309,7 @@ sub initSocketServer
 		tick_period => SLEEP_DELAY,
 		on_tick => sub {
 			checkConnection();
-			my $ac = $#active_connections;
+			my $ac = $#active_connections+1;
 			#print ("ACTIVE CONNECTIONS: $ac \n");
 			if (checkEvents())
 			{
@@ -293,6 +321,7 @@ sub initSocketServer
 						if ($_->{pending} == '0')
 						{
 							eval {$_->{conn}->send_utf8($str);};
+							$_->{pending} = '-1' if $@;
 						}
 						
 					}
@@ -306,7 +335,6 @@ sub initSocketServer
 			$conn->on(
 				utf8 => sub {
 					my ($conn, $msg) = @_;
-					Info ("got a message from ".$conn->ip()." saying: ".$msg);
 					checkMessage($conn, $msg);
 				},
 				handshake => sub {
@@ -314,7 +342,20 @@ sub initSocketServer
 					Info ("Websockets: New Connection Handshake requested from ".$conn->ip()." state=pending auth");
 					my $connect_time = time();
 					push @active_connections, {conn => $conn, pending => '1', time=>$connect_time};
-					
+				},
+				disconnect => sub
+				{
+					my ($conn, $code, $reason) = @_;
+					Info ("Websocket remotely disconnected from ".$conn->ip());
+					foreach (@active_connections)
+					{
+						if (($_->{conn}->ip() eq $conn->ip())  &&
+                    				    ($_->{conn}->port() eq $conn->port()))
+						{
+							$_->{pending}='-1';
+						}
+
+					}
 				},
 			);
 
