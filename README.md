@@ -26,8 +26,11 @@ and restarted if it crashes)
 
 #####How do I run it as a daemon so it starts automatically along with ZoneMinder?
 
+(Note if you have compiled from source using cmake, the paths may be ``/usr/loca/bin`` not ``/usr/bin``)
+
+* Copy ``zmeventnotification.pl`` to ``/usr/bin``
 * Edit ``/usr/bin/zmdc.pl`` and in the array ``@daemons`` (starting line 80) add ``'zmeventnotification.pl'`` like [this](https://gist.github.com/pliablepixels/18bb68438410d5e4b644)
-* Edit /usr/bin/zmpkg.pl and around line 260, right after the comment that says ``#this is now started unconditionally`` and right before the line that says ``runCommand( "zmdc.pl start zmfilter.pl" );`` start zmeventnotification.pl by adding ``runCommand( "zmdc.pl start zmeventnotification.pl" );`` like  [this](https://gist.github.com/pliablepixels/0977a77fa100842e25f2)
+* Edit ``/usr/bin/zmpkg.pl`` and around line 260, right after the comment that says ``#this is now started unconditionally`` and right before the line that says ``runCommand( "zmdc.pl start zmfilter.pl" );`` start zmeventnotification.pl by adding ``runCommand( "zmdc.pl start zmeventnotification.pl" );`` like  [this](https://gist.github.com/pliablepixels/0977a77fa100842e25f2)
 
 You can/should run it manually at first to check if it works 
 
