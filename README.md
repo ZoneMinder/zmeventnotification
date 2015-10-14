@@ -26,6 +26,9 @@ and restarted if it crashes)
 
 #####How do I run it as a daemon so it starts automatically along with ZoneMinder?
 
+**WARNING: Do NOT do this before you run it manually as I've mentioned above to test. Make sure it works, all packages are present etc. before you 
+add it as  a daemon as if you don't and it crashes you won't know why**
+
 (Note if you have compiled from source using cmake, the paths may be ``/usr/local/bin`` not ``/usr/bin``)
 
 * Copy ``zmeventnotification.pl`` to ``/usr/bin``
@@ -57,6 +60,12 @@ Next up install WebSockets
 sudo apt-get install libyaml-perl
 sudo apt-get install make
 perl -MCPAN -e "install Net::WebSocket::Server"
+```
+
+Finally, you need JSON.pm installed. It's there on some systems and not on others
+In ubuntu, do this to install JSON:
+```
+apt-get install libjson-perl
 ```
 
 You **also need to make sure you generate SSL certificates otherwise the script won't run**
