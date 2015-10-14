@@ -91,7 +91,6 @@ my $dbh = zmDbConnect();
 my %monitors;
 my $monitor_reload_time = 0;
 my $wss;
-my $evt_str="";
 my @events=();
 my @active_connections=();
 
@@ -108,7 +107,6 @@ sub checkEvents()
 {
 
 	my $eventFound = 0;
-	$evt_str="";
 	if ( (time() - $monitor_reload_time) > MONITOR_RELOAD_INTERVAL )
     	{
 		Debug ("Reloading Monitors...\n");
@@ -136,7 +134,6 @@ sub checkEvents()
 				Info( "New event $last_event reported for ".$monitor->{Name}."\n");
 				$monitor->{LastState} = $state;
 				$monitor->{LastEvent} = $last_event;
-				$evt_str = $evt_str.$monitor->{Name}.":".$monitor->{Id}.":".$last_event.",";
 				my $name = $monitor->{Name};
 				my $mid = $monitor->{Id};
 				my $eid = $last_event;
@@ -311,9 +308,10 @@ sub initSocketServer
 			checkConnection();
 			my $ac = $#active_connections+1;
 			#print ("ACTIVE CONNECTIONS: $ac \n");
+			#if (1)
 			if (checkEvents())
 			{
-				Info ("Sending $evt_str to all websocket clients\n");
+				Info ("Broadcasting new events to all websocket clients\n");
 					my ($serv) = @_;
 					my $str = encode_json({status=>'Success', events => \@events});
 					foreach (@active_connections)
