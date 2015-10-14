@@ -45,6 +45,17 @@ The following perl packages need to be added
 Installing these dependencies is as simple as:
 ```
 perl -MCPAN -e "install Crypt::MySQL"
+```
+
+If you face issues installing Crypt::MySQL try this instead: (Thanks to aaronl)
+```
+sudo apt-get install libcrypt-mysql-perl
+```
+
+Next up install WebSockets
+```
+sudo apt-get install libyaml-perl
+sudo apt-get install make
 perl -MCPAN -e "install Net::WebSocket::Server"
 ```
 
