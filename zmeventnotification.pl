@@ -45,6 +45,8 @@ use Net::WebSocket::Server;
 use IO::Socket::SSL;
 use Crypt::MySQL qw(password password41);
 use JSON;
+# if use JSON complains, try uncommenting the line below and commenting the line above
+#use JSON::XS;
 
 # ==========================================================================
 #
