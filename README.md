@@ -20,9 +20,19 @@ No. I developed it for zmNinja, but you can use it with your own consumer.
 
 ###How do I install it?
 
-* Grab the server (its a simple perl file) and place it in the same place other ZMscripts are stored (example /usr/bin)
+* Grab the server (its a simple perl file) and place it in the same place other ZM scripts are stored (example ``/usr/bin``)
 * Either run it manually like ``sudo /usr/bin/zmeventnotification.pl`` or add it as a daemon to ``/usr/bin/zmdc.pl`` (the advantage of the latter is that it gets automatically started when ZM starts
 and restarted if it crashes)
+
+#####How do I run it as a daemon so it starts automatically along with ZoneMinder?
+
+(Note if you have compiled from source using cmake, the paths may be ``/usr/local/bin`` not ``/usr/bin``)
+
+* Copy ``zmeventnotification.pl`` to ``/usr/bin``
+* Edit ``/usr/bin/zmdc.pl`` and in the array ``@daemons`` (starting line 80) add ``'zmeventnotification.pl'`` like [this](https://gist.github.com/pliablepixels/18bb68438410d5e4b644)
+* Edit ``/usr/bin/zmpkg.pl`` and around line 260, right after the comment that says ``#this is now started unconditionally`` and right before the line that says ``runCommand( "zmdc.pl start zmfilter.pl" );`` start zmeventnotification.pl by adding ``runCommand( "zmdc.pl start zmeventnotification.pl" );`` like  [this](https://gist.github.com/pliablepixels/0977a77fa100842e25f2)
+* Make sure you restart ZM. Rebooting the server is better - sometimes zmdc hangs around and you'll be wondering why your new daemon hasn't started
+* To check if its running do a ``zmdc.pl status zmeventnotification.pl``
 
 You can/should run it manually at first to check if it works 
 
@@ -35,6 +45,17 @@ The following perl packages need to be added
 Installing these dependencies is as simple as:
 ```
 perl -MCPAN -e "install Crypt::MySQL"
+```
+
+If you face issues installing Crypt::MySQL try this instead: (Thanks to aaronl)
+```
+sudo apt-get install libcrypt-mysql-perl
+```
+
+Next up install WebSockets
+```
+sudo apt-get install libyaml-perl
+sudo apt-get install make
 perl -MCPAN -e "install Net::WebSocket::Server"
 ```
 
