@@ -38,29 +38,68 @@
 #perl -MCPAN -e "install Crypt::MySQL"
 #perl -MCPAN -e "install Net::WebSocket::Server"
 
+use Data::Dumper;
 
 use strict;
 use bytes;
-use Net::WebSocket::Server;
-use IO::Socket::SSL;
-use Crypt::MySQL qw(password password41);
-use JSON;
-# if use JSON complains, try uncommenting the line below and commenting the line above
-#use JSON::XS;
-
 # ==========================================================================
 #
 # These are the elements you can edit to suit your installation
 #
 # ==========================================================================
+my $useAPNS = 1;				# set this to 1 if you have an APNS SSL certificate/key pair
+						# the only way to have this is if you have an apple developer
+						# account
+my $isSandbox = 1;
+
 use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';	 # Change these to your certs/keys
 use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
-use constant EVENT_NOTIFICATION_PORT=>9000; 			# port for Websockets connection
+
+use constant APNS_CERT_FILE=>'/etc/private/apns-dev-cert.pem';
+use constant APNS_KEY_FILE=>'/etc/private/apns-dev-key.pem';
+
+use constant EVENT_NOTIFICATION_PORT=>9900; 			# port for Websockets connection
 
 
 use constant SLEEP_DELAY=>5; 			# duration in seconds after which we will check for new events
 use constant MONITOR_RELOAD_INTERVAL => 300;
-use constant WEBSOCKET_AUTH_DELAY=>20; 		# max seconds by which authentication must be done
+use constant WEBSOCKET_AUTH_DELAY => 20; 		# max seconds by which authentication must be done
+use constant APNS_FEEDBACK_CHECK_INTERVAL => 5;
+
+
+use constant PENDING_WEBSOCKET => '1';
+use constant INVALID_WEBSOCKET => '-1';
+use constant INVALID_APNS => '-2';
+use constant VALID_WEBSOCKET => '0';
+
+if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");exit (-1);}
+if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL  missing");exit (-1);}
+if (!try_use ("Crypt::MySQL qw(password password41)")) {Fatal ("Crypt::MySQL  missing");exit (-1);}
+if (!try_use ("JSON")) 
+{ 
+	if (!try_use ("JSON::XS")) 
+	{ Fatal ("JSON or JSON::XS  missing");exit (-1);}
+} 
+
+# These modules are needed only if APNS is enabled
+if ($useAPNS)
+{
+	if (!try_use ("Net::APNS::Persistent") || !try_use ("Net::APNS::Feedback"))
+	{
+		Warning ("Net::APNS::Feedback and/or Net::APNS::Persistent not present. Disabling APNS support");
+		$useAPNS = 0;
+
+	}
+	else
+	{
+		Info ("APNS support loaded");
+	}
+}
+else
+{
+		Info ("APNS support disabled");
+}
+
 # ==========================================================================
 #
 # Don't change anything below here
@@ -84,6 +123,17 @@ sub Usage
 	exit( -1 );
 }
 
+# Try to load a perl module
+# and if it is not available 
+# generate a log 
+
+sub try_use 
+{
+  my $module = shift;
+  eval("use $module");
+  return($@ ? 0:1);
+}
+
 logInit();
 logSetSignal();
 
@@ -92,9 +142,11 @@ Info( "Event Notification daemon  starting\n" );
 my $dbh = zmDbConnect();
 my %monitors;
 my $monitor_reload_time = 0;
+my $apns_feedback_time = 0;
 my $wss;
 my @events=();
 my @active_connections=();
+my $alarm_header="";
 
 
 initSocketServer();
@@ -107,11 +159,18 @@ exit();
 # so they can be JSONified and sent out
 sub checkEvents()
 {
+	
+        my $len = scalar @active_connections;
+ 	print ("Total connections: ".$len."\n");
+	foreach (@active_connections)
+	{
+		print " IP:".$_->{conn}->ip().":".$_->{conn}->port()."Token:".$_->{token}."\n";
+	}
 
 	my $eventFound = 0;
 	if ( (time() - $monitor_reload_time) > MONITOR_RELOAD_INTERVAL )
     	{
-		Debug ("Reloading Monitors...\n");
+		Info ("Reloading Monitors...\n");
 		foreach my $monitor (values(%monitors))
 		{
 			zmMemInvalidate( $monitor );
@@ -119,7 +178,9 @@ sub checkEvents()
 		loadMonitors();
 	}
 
+
 	@events = ();
+	$alarm_header = "";
 	foreach my $monitor ( values(%monitors) )
 	{ 
 		my ( $state, $last_event )
@@ -140,11 +201,14 @@ sub checkEvents()
 				my $mid = $monitor->{Id};
 				my $eid = $last_event;
 				push @events, {Name => $name, MonitorId => $mid, EventId => $last_event};
+				$alarm_header = "Alarms: " if (!$alarm_header);
+				$alarm_header = $alarm_header . $name .",";
 				$eventFound = 1;
 			}
 			
 		}
 	}
+	chop($alarm_header) if ($alarm_header);
 	return ($eventFound);
 }
 
@@ -152,7 +216,7 @@ sub checkEvents()
 # 
 sub loadMonitors
 {
-    Debug( "Loading monitors\n" );
+    Info( "Loading monitors\n" );
     $monitor_reload_time = time();
 
     my %new_monitors = ();
@@ -215,6 +279,86 @@ sub validateZM
 
 }
 
+
+# This function is called when an alarm
+# needs to be transmitted over APNS
+sub sendOverAPNS
+{
+  if (!$useAPNS)
+  {
+	Info ("Rejecting APNS request as daemon has APNS disabled");
+	return;
+  }
+
+  my ($obj, $header, $str) = @_;
+  my (%hash) = %{$str}; 
+      
+    my $apns = Net::APNS::Persistent->new({
+    sandbox => $isSandbox,
+    cert    => APNS_CERT_FILE,
+    key     => APNS_KEY_FILE
+  });
+
+   $obj->{badge}++;
+   $apns->queue_notification(
+	    $obj->{token},
+	    {
+	      aps => {
+		  alert => $header,
+		  sound => 'default',
+		  badge => $obj->{badge},
+	      },
+	      alarm_details => \%hash
+	    });
+
+  $apns->send_queue;
+  $apns->disconnect;
+
+}
+
+
+
+# This function polls APNS Feedback
+# to see if any entries need to be removed
+sub apnsFeedbackCheck
+{
+
+	if ((time() - $apns_feedback_time) > APNS_FEEDBACK_CHECK_INTERVAL)
+	{
+		if (!$useAPNS)
+		{
+			Info ("Rejecting APNS Feedback request as daemon has APNS disabled");
+			return;
+		}
+
+		Info ("Checking APNS Feedback\n");
+		$apns_feedback_time = time();
+		my $apnsfb = Net::APNS::Feedback->new({
+		sandbox => $isSandbox,
+		cert    => APNS_CERT_FILE,
+		key     => APNS_KEY_FILE
+	  	});
+	  	my @feedback = $apnsfb->retrieve_feedback;
+
+
+		foreach (@feedback[0]->[0])
+		{
+			my $delete_token = $_->{token};
+			if ($delete_token != "")
+			{
+				foreach(@active_connections)
+				{
+					if ($_->{token} eq $delete_token)
+					{
+						$_->{pending} = INVALID_APNS;
+						Info ("Marking entry as invalid apns token: ". $delete_token."\n");
+					}
+				}
+			}
+		}
+	}
+}
+
 # This runs at each tick to purge connections
 # that are inactive or have had an error
 # This also closes any connection that has not provided
@@ -225,22 +369,27 @@ sub checkConnection
 	foreach (@active_connections)
 	{
 		my $curtime = time();
-		if ($_->{pending} == '1')
+		if ($_->{pending} == PENDING_WEBSOCKET)
 		{
 			if ($curtime - $_->{time} > WEBSOCKET_AUTH_DELAY)
 			{
+			# What happens if auth is not provided but device token is registered?
+			# It may still be a bogus token, so don't risk keeping connection stored
 				my $conn = $_->{conn};
 				Info ("Rejecting ".$conn->ip()." - authentication timeout");
-				$_->{pending} = '-1';
+				$_->{pending} = INVALID_WEBSOCKET;
 				my $str = encode_json({status=>'Fail', reason => 'NOAUTH'});
 				eval {$_->{conn}->send_utf8($str);};
-				$_->{pending} = '-1' if $@;
 				$_->{conn}->disconnect();
 			}
 		}
 
 	}
-	@active_connections = grep { $_->{pending} != '-1' } @active_connections;
+	@active_connections = grep { $_->{pending} != INVALID_WEBSOCKET } @active_connections;
+	if ($useAPNS)
+	{
+		@active_connections = grep { $_->{pending} != INVALID_APNS } @active_connections;
+	}
 }
 
 # This function  is called whenever we receive a message from a client
@@ -249,38 +398,110 @@ sub checkMessage
 {
 	my ($conn, $msg) = @_;	
 	my $json_string = decode_json($msg);
-	my $uname = $json_string->{'data'}->{'user'};
-	my $pwd = $json_string->{'data'}->{'password'};
-	
-	# As of now, I'm only expecting username/password, so don't handle anything else
-	# in future, this could change
-	return if ($uname eq "" || $pwd eq "");
-	foreach (@active_connections)
+
+	# This event type is when a command related to push notification is received
+	if (($json_string->{'event'} eq "push") && !$useAPNS)
 	{
-		if (($_->{conn}->ip() eq $conn->ip())  &&
-	            ($_->{conn}->port() eq $conn->port())  &&
-		    ($_->{pending}='1'))
+		my $str = encode_json({status=>'Fail', reason => 'APNSDISABLED'});
+		eval {$conn->send_utf8($str);};
+		return;
+	}
+	if (($json_string->{'event'} eq "push") && $useAPNS)
+	{
+		if ($json_string->{'data'}->{'type'} eq "badge")
 		{
-			if (!validateZM($uname,$pwd))
+			foreach (@active_connections)
 			{
-				# bad username or password, so reject and mark for deletion
-				my $str = encode_json({status=>'Fail', reason => 'BADAUTH'});
-				eval {$_->{conn}->send_utf8($str);};
-				$_->{pending} = '-1' if $@;
-				Info("Bad authentication provided by ".$_->{conn}->ip());
-			 	$_->{pending}='-1';
+				if (($_->{conn}->ip() eq $conn->ip())  &&
+				    ($_->{conn}->port() eq $conn->port()))  
+				{
+
+					print "Badge match, setting to 0\n";
+					$_->{badge} = $json_string->{'data'}->{'badge'};
+				}
 			}
-			else
+		}
+		# This sub type is when a device token is registered
+		if ($json_string->{'data'}->{'type'} eq "token")
+		{
+			
+			my $repeatToken=0;
+			foreach (@active_connections)
 			{
+				if (($_->{token} eq $json_string->{'data'}->{'token'}) && 
+				    (($_->{conn}->ip() ne $conn->ip()) || ($_->{conn}->port() ne $conn->port())))
+				{
+					$_->{pending} = INVALID_APNS;
+					Info ("Duplicate token found, marking for deletion");
+
+				}
+				elsif (($_->{conn}->ip() eq $conn->ip())  &&
+				    ($_->{conn}->port() eq $conn->port()))  
+				{
+					$_->{token} = $json_string->{'data'}->{'token'};
+					Info ("Device token ".$_->{token}." stored for APNS");
+					$repeatToken=1; # if 1, remove any other occurrences
 
 
-				# all good, connection auth was valid
-			 	$_->{pending}='0';
-				my $str = encode_json({status=>'Success', reason => ''});
-				eval {$_->{conn}->send_utf8($str);};
-				$_->{pending} = '-1' if $@;
-				Info("Correct authentication provided by ".$_->{conn}->ip());
+				}
+			}
+
+			# Now make sure there are no token duplicates
+			my ($ac) = scalar @active_connections;
+			my %filter;
+			print "OLD LEN: $ac\n";
 				
+			$ac = scalar @active_connections;	
+			print "NEW LEN: $ac\n";
+		}
+		# this sub type is when a push enable/disable or other control commands are sent
+		if ($json_string->{'type'} eq "control")
+		{
+			foreach (@active_connections)
+			{
+				if (($_->{conn}->ip() eq $conn->ip())  &&
+				    ($_->{conn}->port() eq $conn->port()))  
+				{
+
+				# No control protocols defined for now
+				}
+			}		
+		}
+	}
+
+	# This event type is when a command related to authorization is sent
+	if ($json_string->{'event'} eq "auth")
+	{
+		my $uname = $json_string->{'data'}->{'user'};
+		my $pwd = $json_string->{'data'}->{'password'};
+	
+		return if ($uname eq "" || $pwd eq "");
+		foreach (@active_connections)
+		{
+			if (($_->{conn}->ip() eq $conn->ip())  &&
+			    ($_->{conn}->port() eq $conn->port())  &&
+			    ($_->{pending}==PENDING_WEBSOCKET))
+			{
+				if (!validateZM($uname,$pwd))
+				{
+					# bad username or password, so reject and mark for deletion
+					my $str = encode_json({status=>'Fail', reason => 'BADAUTH'});
+					eval {$_->{conn}->send_utf8($str);};
+					Info("Bad authentication provided by ".$_->{conn}->ip());
+					$_->{pending}=INVALID_WEBSOCKET;
+				}
+				else
+				{
+
+
+					# all good, connection auth was valid
+					$_->{pending}=VALID_WEBSOCKET;
+					$_->{token}='';
+					my $str = encode_json({status=>'Success', reason => ''});
+					eval {$_->{conn}->send_utf8($str);};
+					Info("Correct authentication provided by ".$_->{conn}->ip());
+					
+				}
 			}
 		}
 	}
@@ -308,21 +529,36 @@ sub initSocketServer
 		tick_period => SLEEP_DELAY,
 		on_tick => sub {
 			checkConnection();
-			my $ac = $#active_connections+1;
-			#print ("ACTIVE CONNECTIONS: $ac \n");
-			#if (1)
+			apnsFeedbackCheck();
+			my $ac = scalar @active_connections;
 			if (checkEvents())
 			{
-				Info ("Broadcasting new events to all websocket clients\n");
+				Info ("Broadcasting new events to all $ac websocket clients\n");
 					my ($serv) = @_;
 					my $str = encode_json({status=>'Success', events => \@events});
+					my %hash_str = (status=>'Success', events => \@events);
+					my $i = 0;
 					foreach (@active_connections)
 					{
-						if ($_->{pending} == '0')
+						$i++;
+						# if there is APNS send it over APNS
+						if ($_->{token} ne "")
 						{
-							eval {$_->{conn}->send_utf8($str);};
-							$_->{pending} = '-1' if $@;
+							sendOverAPNS($_,$alarm_header, \%hash_str) ;
 						}
+						# if there is a websocket send it over websockets
+						elsif ($_->{pending} == VALID_WEBSOCKET)
+						{
+							Info ($_->{conn}->ip()."-sending over websockets\n");
+							eval {$_->{conn}->send_utf8($str);};
+							if ($@)
+							{
+						
+								$_->{pending} = INVALID_WEBSOCKET;
+							}
+						}
+						
+
 						
 					}
 
@@ -331,7 +567,8 @@ sub initSocketServer
 		},
 		on_connect => sub {
 			my ($serv, $conn) = @_;
-			Info ("got a websocket connection from ".$conn->ip()."\n");
+			my ($len) = scalar @active_connections;
+			Info ("got a websocket connection from ".$conn->ip()." (". $len.") active connections");
 			$conn->on(
 				utf8 => sub {
 					my ($conn, $msg) = @_;
@@ -339,9 +576,12 @@ sub initSocketServer
 				},
 				handshake => sub {
 					my ($conn, $handshake) = @_;
-					Info ("Websockets: New Connection Handshake requested from ".$conn->ip()." state=pending auth");
+					Info ("Websockets: New Connection Handshake requested from ".$conn->ip().":".$conn->port()." state=pending auth");
 					my $connect_time = time();
-					push @active_connections, {conn => $conn, pending => '1', time=>$connect_time};
+					push @active_connections, {conn => $conn, 
+								   pending => PENDING_WEBSOCKET, 
+								   time=>$connect_time, 
+								   badge => 0};
 				},
 				disconnect => sub
 				{
@@ -352,7 +592,18 @@ sub initSocketServer
 						if (($_->{conn}->ip() eq $conn->ip())  &&
                     				    ($_->{conn}->port() eq $conn->port()))
 						{
-							$_->{pending}='-1';
+							# mark this for deletion only if device token
+							# not present
+							if ( $_->{token} eq '')
+							{
+								$_->{pending}=INVALID_WEBSOCKET; 
+								Info( "Marking ".$conn->ip()." for deletion as websocket closed remotely\n");
+							}
+							else
+							{
+								
+								Info( "NOT Marking ".$conn->ip()." for deletion as token ".$_->{token}." active\n");
+							}
 						}
 
 					}
