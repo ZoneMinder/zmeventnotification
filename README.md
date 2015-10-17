@@ -123,7 +123,7 @@ It's a lightweight single threaded process. I really don't see a need for launch
 
 ###Advanced
 
-** Does it work in background mode?
+** Does it work in background mode?**
 
 Yes for Android, because Android allows background sockets to be open.
 
