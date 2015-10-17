@@ -403,6 +403,7 @@ sub checkMessage
 {
 	my ($conn, $msg) = @_;	
 	my $json_string = decode_json($msg);
+	#print "Message:$msg\n";
 
 	# This event type is when a command related to push notification is received
 	if (($json_string->{'event'} eq "push") && !$useAPNS)
@@ -435,7 +436,8 @@ sub checkMessage
 			{
 				if ($_->{token} eq $json_string->{'data'}->{'token'}) 
 				{
-					if ( (!exists $_->{conn}) || ($_->{conn}->ip() ne $conn->ip() && $_->{conn}->port() ne $conn->port()))
+					if ( (!exists $_->{conn}) || ($_->{conn}->ip() ne $conn->ip() 
+						&& $_->{conn}->port() ne $conn->port()))
 					{
 						$_->{pending} = INVALID_APNS;
 						Info ("Duplicate token found, marking for deletion");
@@ -446,8 +448,9 @@ sub checkMessage
 				    ($_->{conn}->port() eq $conn->port()))  
 				{
 					$_->{token} = $json_string->{'data'}->{'token'};
+					$_->{monlist} = "-1";
 					Info ("Device token ".$_->{token}." stored for APNS");
-					saveTokens($_->{token});
+					saveTokens($_->{token}, $_->{monlist});
 					$repeatToken=1; # if 1, remove any other occurrences
 
 
@@ -467,6 +470,7 @@ sub checkMessage
 		{
 			foreach (@active_connections)
 			{
+				#print ("Not here\n");
 				if ((exists $_->{conn}) && ($_->{conn}->ip() eq $conn->ip())  &&
 				    ($_->{conn}->port() eq $conn->port()))  
 				{
@@ -476,6 +480,26 @@ sub checkMessage
 			}		
 		}
 	}
+	if (($json_string->{'event'} eq "control") )
+	{
+		if  ($json_string->{'data'}->{'type'} eq "filter")
+		{
+			my $monlist = $json_string->{'data'}->{'monlist'};
+			foreach (@active_connections)
+			{
+				if ((exists $_->{conn}) && ($_->{conn}->ip() eq $conn->ip())  &&
+				    ($_->{conn}->port() eq $conn->port()))  
+				{
+
+					$_->{monlist} = $monlist;
+					saveTokens($_->{token}, $_->{monlist});	
+				}
+			}}	
+		
+
+	}
+
+
 
 	# This event type is when a command related to authorization is sent
 	if ($json_string->{'event'} eq "auth")
@@ -530,15 +554,16 @@ sub loadTokens
 
 	foreach(@uniquetokens)
 	{
-		my $row = $_;
-		next if ($row eq "");
-		print $fh "$row\n";
+		next if ($_ eq "");
+		print $fh "$_\n";
+		my ($token, $monlist)  = split (":",$_);
 		#print "load: PUSHING $row\n";
 		push @active_connections, {
-					   token => $row,
+					   token => $token,
 					   pending => VALID_WEBSOCKET,
 					   time=>time(),
-					   badge => 0
+					   badge => 0,
+					   monlist => $monlist,
 					  };
 		
 	}
@@ -547,7 +572,7 @@ sub loadTokens
 
 sub deleteToken
 {
-	my $token = shift;
+	my $dtoken = shift;
 	return if (!$useAPNS);
 	return if ( ! -f APNS_TOKEN_FILE);
 	
@@ -560,15 +585,16 @@ sub deleteToken
 
 	foreach(@uniquetokens)
 	{
-		my $row = $_;
-		next if ($row eq "" || $row eq $token);
-		print $fh "$row\n";
+		my ($token, $monlist)  = split (":",$_);
+		next if ($_ eq "" || $token eq $dtoken);
+		print $fh "$_\n";
 		#print "delete: $row\n";
 		push @active_connections, {
-					   token => $row,
+					   token => $token,
 					   pending => VALID_WEBSOCKET,
 					   time=>time(),
-					   badge => 0
+					   badge => 0,
+					   monlist => $monlist,
 					  };
 		
 	}
@@ -577,18 +603,59 @@ sub deleteToken
 
 sub saveTokens
 {
-	my $token = shift;
-	open (my $fh, '>>', APNS_TOKEN_FILE);
-	print $fh "$token\n";
+	my $stoken = shift;
+	my $smonlist = shift;
+	return if ($stoken eq "");
+	open (my $fh, '<', APNS_TOKEN_FILE);
+	chomp( my @lines = <$fh>);
+	close ($fh);
+	my @uniquetokens = uniq(@lines);
+	my $found = 0;
+	open (my $fh, '>', APNS_TOKEN_FILE);
+	foreach (@uniquetokens)
+	{
+		next if ($_ eq "");
+		my ($token, $monlist)  = split (":",$_);
+		if ($token eq $stoken)
+		{
+			$smonlist = $monlist if ($smonlist eq "-1");
+			print $fh "$stoken:$smonlist\n";
+			$found = 1;
+		}
+		else
+		{
+			print $fh "$token:$monlist\n";
+		}
+
+	}
+
+	$smonlist = "" if ($smonlist eq "-1");
+	print $fh "$stoken:$smonlist\n" if (!$found);
 	close ($fh);
 	#print "Saved Token $token to file\n";
 	
 }
 
-sub uniq {
-    my %seen;
-    grep !$seen{$_}++, @_;
+sub uniq 
+{
+	my %seen;
+   	my @array = reverse @_;
+	my @farray=();
+	foreach (@array)
+	{
+		my ($token,$monlist) = split (":",$_);
+		if (! $seen{$token}++ )
+		{
+			push @farray, "$token:$monlist";
+		}
+		 
+		
+	}
+	return @farray;
+	
+	
 }
+
 
 
 # This is really the main module
@@ -619,11 +686,24 @@ sub initSocketServer
 			{
 				Info ("Broadcasting new events to all $ac websocket clients\n");
 					my ($serv) = @_;
-					my $str = encode_json({status=>'Success', events => \@events});
-					my %hash_str = (status=>'Success', events => \@events);
 					my $i = 0;
 					foreach (@active_connections)
 					{
+						#push @events, {Name => $name, MonitorId => $mid, EventId => $last_event};
+						my $monlist = $_->{monlist};
+						my @localevents = ();
+						foreach (@events)
+						{
+							if ($monlist eq "" || index($monlist, $_->{MonitorId} ) != -1)
+							{
+								push (@localevents, $_);
+							}
+
+						}
+						#print "DUMPING " .Dumper(@localevents);
+						next if (scalar @localevents == 0);
+						my $str = encode_json({status=>'Success', events => \@localevents});
+						my %hash_str = (status=>'Success', events => \@localevents);
 						$i++;
 						# if there is APNS send it over APNS
 						if ($_->{token} ne "")
@@ -668,6 +748,7 @@ sub initSocketServer
 					push @active_connections, {conn => $conn, 
 								   pending => PENDING_WEBSOCKET, 
 								   time=>$connect_time, 
+								   monlist => "",
 								   badge => 0};
 				},
 				disconnect => sub
