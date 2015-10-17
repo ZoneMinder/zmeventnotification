@@ -121,6 +121,15 @@ Sample payload of 2 events being reported:
 ###How scalable is it?
 It's a lightweight single threaded process. I really don't see a need for launching a zillion threads or a process per monitor etc for what it does. I'd argue its simplicity is its scalability. Plus I don't expect more than a handful of consumers to connect to it. I really don't see why it won't be able to scale to for what is does. But if you are facing scalability issues, let me know. There is [Mojolicious](http://mojolicio.us/) I can use to make it more scalable if I am proven wrong about scalability.
 
+###Advanced
+
+** Does it work in background mode?
+
+Yes for Android, because Android allows background sockets to be open.
+
+For iOS, only certain types of sockets can be open and zmNinja does not meet the definition of those apple defined types.
+But, I have an [experimental](https://github.com/pliablepixels/zmeventserver/tree/experimental) branch that works fully with APNS. You need to generate your own SSL APNS certs. That can't be avoided unless I host my own server. 
+
 ###Brickbats
 
 **Why not just supply the username and password in the URL as a resource? It's over TLS**
