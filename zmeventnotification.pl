@@ -57,8 +57,9 @@ use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 
 use constant APNS_CERT_FILE=>'/etc/private/apns-dev-cert.pem';
 use constant APNS_KEY_FILE=>'/etc/private/apns-dev-key.pem';
+use constant APNS_TOKEN_FILE=>'/etc/private/tokens.txt';
 
-use constant EVENT_NOTIFICATION_PORT=>9900; 			# port for Websockets connection
+use constant EVENT_NOTIFICATION_PORT=>9000; 			# port for Websockets connection
 
 
 use constant SLEEP_DELAY=>5; 			# duration in seconds after which we will check for new events
@@ -148,7 +149,7 @@ my @events=();
 my @active_connections=();
 my $alarm_header="";
 
-
+loadTokens();
 initSocketServer();
 Info( "Event Notification daemon exiting\n" );
 exit();
@@ -161,10 +162,10 @@ sub checkEvents()
 {
 	
         my $len = scalar @active_connections;
- 	print ("Total connections: ".$len."\n");
+ 	Info ("Total connections: ".$len."\n");
 	foreach (@active_connections)
 	{
-		print " IP:".$_->{conn}->ip().":".$_->{conn}->port()."Token:".$_->{token}."\n";
+		#print " IP:".$_->{conn}->ip().":".$_->{conn}->port()."Token:".$_->{token}."\n";
 	}
 
 	my $eventFound = 0;
@@ -346,6 +347,7 @@ sub apnsFeedbackCheck
 			my $delete_token = $_->{token};
 			if ($delete_token != "")
 			{
+				deleteToken($delete_token);
 				foreach(@active_connections)
 				{
 					if ($_->{token} eq $delete_token)
@@ -375,12 +377,15 @@ sub checkConnection
 			{
 			# What happens if auth is not provided but device token is registered?
 			# It may still be a bogus token, so don't risk keeping connection stored
-				my $conn = $_->{conn};
-				Info ("Rejecting ".$conn->ip()." - authentication timeout");
-				$_->{pending} = INVALID_WEBSOCKET;
-				my $str = encode_json({status=>'Fail', reason => 'NOAUTH'});
-				eval {$_->{conn}->send_utf8($str);};
-				$_->{conn}->disconnect();
+				if (exists $_->{conn})
+				{
+					my $conn = $_->{conn};
+					Info ("Rejecting ".$conn->ip()." - authentication timeout");
+					$_->{pending} = INVALID_WEBSOCKET;
+					my $str = encode_json({status=>'Fail', reason => 'NOAUTH'});
+					eval {$_->{conn}->send_utf8($str);};
+					$_->{conn}->disconnect();
+				}
 			}
 		}
 
@@ -412,11 +417,11 @@ sub checkMessage
 		{
 			foreach (@active_connections)
 			{
-				if (($_->{conn}->ip() eq $conn->ip())  &&
+				if ((exists $_->{conn}) && ($_->{conn}->ip() eq $conn->ip())  &&
 				    ($_->{conn}->port() eq $conn->port()))  
 				{
 
-					print "Badge match, setting to 0\n";
+					#print "Badge match, setting to 0\n";
 					$_->{badge} = $json_string->{'data'}->{'badge'};
 				}
 			}
@@ -428,18 +433,21 @@ sub checkMessage
 			my $repeatToken=0;
 			foreach (@active_connections)
 			{
-				if (($_->{token} eq $json_string->{'data'}->{'token'}) && 
-				    (($_->{conn}->ip() ne $conn->ip()) || ($_->{conn}->port() ne $conn->port())))
+				if ($_->{token} eq $json_string->{'data'}->{'token'}) 
 				{
-					$_->{pending} = INVALID_APNS;
-					Info ("Duplicate token found, marking for deletion");
+					if ( (!exists $_->{conn}) || ($_->{conn}->ip() ne $conn->ip() && $_->{conn}->port() ne $conn->port()))
+					{
+						$_->{pending} = INVALID_APNS;
+						Info ("Duplicate token found, marking for deletion");
 
+					}
 				}
-				elsif (($_->{conn}->ip() eq $conn->ip())  &&
+				elsif ( (exists $_->{conn}) && ($_->{conn}->ip() eq $conn->ip())  &&
 				    ($_->{conn}->port() eq $conn->port()))  
 				{
 					$_->{token} = $json_string->{'data'}->{'token'};
 					Info ("Device token ".$_->{token}." stored for APNS");
+					saveTokens($_->{token});
 					$repeatToken=1; # if 1, remove any other occurrences
 
 
@@ -449,17 +457,17 @@ sub checkMessage
 			# Now make sure there are no token duplicates
 			my ($ac) = scalar @active_connections;
 			my %filter;
-			print "OLD LEN: $ac\n";
+			#print "OLD LEN: $ac\n";
 				
 			$ac = scalar @active_connections;	
-			print "NEW LEN: $ac\n";
+			#print "NEW LEN: $ac\n";
 		}
 		# this sub type is when a push enable/disable or other control commands are sent
 		if ($json_string->{'type'} eq "control")
 		{
 			foreach (@active_connections)
 			{
-				if (($_->{conn}->ip() eq $conn->ip())  &&
+				if ((exists $_->{conn}) && ($_->{conn}->ip() eq $conn->ip())  &&
 				    ($_->{conn}->port() eq $conn->port()))  
 				{
 
@@ -478,7 +486,8 @@ sub checkMessage
 		return if ($uname eq "" || $pwd eq "");
 		foreach (@active_connections)
 		{
-			if (($_->{conn}->ip() eq $conn->ip())  &&
+			if ( (exists $_->{conn}) &&
+			    ($_->{conn}->ip() eq $conn->ip())  &&
 			    ($_->{conn}->port() eq $conn->port())  &&
 			    ($_->{pending}==PENDING_WEBSOCKET))
 			{
@@ -506,6 +515,81 @@ sub checkMessage
 		}
 	}
 }
+
+sub loadTokens
+{
+	return if (!$useAPNS);
+	return if ( ! -f APNS_TOKEN_FILE);
+	
+	open (my $fh, '<', APNS_TOKEN_FILE);
+	chomp( my @lines = <$fh>);
+	close ($fh);
+	my @uniquetokens = uniq(@lines);
+
+	open ($fh, '>', APNS_TOKEN_FILE);
+
+	foreach(@uniquetokens)
+	{
+		my $row = $_;
+		next if ($row eq "");
+		print $fh "$row\n";
+		#print "load: PUSHING $row\n";
+		push @active_connections, {
+					   token => $row,
+					   pending => VALID_WEBSOCKET,
+					   time=>time(),
+					   badge => 0
+					  };
+		
+	}
+	close ($fh);
+}
+
+sub deleteToken
+{
+	my $token = shift;
+	return if (!$useAPNS);
+	return if ( ! -f APNS_TOKEN_FILE);
+	
+	open (my $fh, '<', APNS_TOKEN_FILE);
+	chomp( my @lines = <$fh>);
+	close ($fh);
+	my @uniquetokens = uniq(@lines);
+
+	open ($fh, '>', APNS_TOKEN_FILE);
+
+	foreach(@uniquetokens)
+	{
+		my $row = $_;
+		next if ($row eq "" || $row eq $token);
+		print $fh "$row\n";
+		#print "delete: $row\n";
+		push @active_connections, {
+					   token => $row,
+					   pending => VALID_WEBSOCKET,
+					   time=>time(),
+					   badge => 0
+					  };
+		
+	}
+	close ($fh);
+}
+
+sub saveTokens
+{
+	my $token = shift;
+	open (my $fh, '>>', APNS_TOKEN_FILE);
+	print $fh "$token\n";
+	close ($fh);
+	#print "Saved Token $token to file\n";
+	
+}
+
+sub uniq {
+    my %seen;
+    grep !$seen{$_}++, @_;
+}
+
 
 # This is really the main module
 # It opens a WSS socket and keeps listening
@@ -549,12 +633,15 @@ sub initSocketServer
 						# if there is a websocket send it over websockets
 						elsif ($_->{pending} == VALID_WEBSOCKET)
 						{
-							Info ($_->{conn}->ip()."-sending over websockets\n");
-							eval {$_->{conn}->send_utf8($str);};
-							if ($@)
+							if (exists $_->{conn})
 							{
-						
-								$_->{pending} = INVALID_WEBSOCKET;
+								Info ($_->{conn}->ip()."-sending over websockets\n");
+								eval {$_->{conn}->send_utf8($str);};
+								if ($@)
+								{
+							
+									$_->{pending} = INVALID_WEBSOCKET;
+								}
 							}
 						}
 						
@@ -589,7 +676,7 @@ sub initSocketServer
 					Info ("Websocket remotely disconnected from ".$conn->ip());
 					foreach (@active_connections)
 					{
-						if (($_->{conn}->ip() eq $conn->ip())  &&
+						if ((exists $_->{conn}) && ($_->{conn}->ip() eq $conn->ip())  &&
                     				    ($_->{conn}->port() eq $conn->port()))
 						{
 							# mark this for deletion only if device token
