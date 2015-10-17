@@ -6,7 +6,7 @@
 #
 # ZoneMinder Realtime Notification System
 #
-# A very light weight event notification daemon
+# A  light weight event notification daemon
 # Uses shared memory to detect new events (polls SHM)
 # Also opens a websocket connection at a configurable port
 # so events can be reported
@@ -39,6 +39,7 @@
 #perl -MCPAN -e "install Net::WebSocket::Server"
 
 use Data::Dumper;
+use File::Basename;
 
 use strict;
 use bytes;
@@ -47,25 +48,31 @@ use bytes;
 # These are the elements you can edit to suit your installation
 #
 # ==========================================================================
+use constant EVENT_NOTIFICATION_PORT=>9000; 				# port for Websockets connection
+use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';		# Change these to your certs/keys
+use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
+use constant SLEEP_DELAY=>5; 						# duration in seconds after which we will check for new events
+use constant MONITOR_RELOAD_INTERVAL => 300;
+use constant WEBSOCKET_AUTH_DELAY => 20; 				# max seconds by which authentication must be done
+
+
 my $useAPNS = 1;				# set this to 1 if you have an APNS SSL certificate/key pair
 						# the only way to have this is if you have an apple developer
 						# account
-my $isSandbox = 1;
 
-use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';	 # Change these to your certs/keys
-use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
+#----------- Start: If you have disabled APNS, ignore this --
+
+my $isSandbox = 1;				# 1 or 0 depending on your APNS certificate
+
 
 use constant APNS_CERT_FILE=>'/etc/private/apns-dev-cert.pem';
 use constant APNS_KEY_FILE=>'/etc/private/apns-dev-key.pem';
 use constant APNS_TOKEN_FILE=>'/etc/private/tokens.txt';
-
-use constant EVENT_NOTIFICATION_PORT=>9000; 			# port for Websockets connection
-
-
-use constant SLEEP_DELAY=>5; 			# duration in seconds after which we will check for new events
-use constant MONITOR_RELOAD_INTERVAL => 300;
-use constant WEBSOCKET_AUTH_DELAY => 20; 		# max seconds by which authentication must be done
 use constant APNS_FEEDBACK_CHECK_INTERVAL => 5;
+
+#----------- End: If you have disabled APNS, ignore this --
+
+
 
 
 use constant PENDING_WEBSOCKET => '1';
@@ -76,6 +83,7 @@ use constant VALID_WEBSOCKET => '0';
 if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");exit (-1);}
 if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL  missing");exit (-1);}
 if (!try_use ("Crypt::MySQL qw(password password41)")) {Fatal ("Crypt::MySQL  missing");exit (-1);}
+
 if (!try_use ("JSON")) 
 { 
 	if (!try_use ("JSON::XS")) 
@@ -124,17 +132,6 @@ sub Usage
 	exit( -1 );
 }
 
-# Try to load a perl module
-# and if it is not available 
-# generate a log 
-
-sub try_use 
-{
-  my $module = shift;
-  eval("use $module");
-  return($@ ? 0:1);
-}
-
 logInit();
 logSetSignal();
 
@@ -149,10 +146,35 @@ my @events=();
 my @active_connections=();
 my $alarm_header="";
 
+# MAIN
+
+if ($useAPNS)
+{
+	my $dir = dirname(APNS_TOKEN_FILE);
+	if ( ! -d $dir)
+	{
+
+		Info ("Creating $dir to store APNS tokens");
+		mkdir $dir;
+	}
+}
+
 loadTokens();
 initSocketServer();
 Info( "Event Notification daemon exiting\n" );
 exit();
+
+# Try to load a perl module
+# and if it is not available 
+# generate a log 
+
+sub try_use 
+{
+  my $module = shift;
+  eval("use $module");
+  return($@ ? 0:1);
+}
+
 
 # This function uses shared memory polling to check if 
 # ZM reported any new events. If it does find events
@@ -161,8 +183,6 @@ exit();
 sub checkEvents()
 {
 	
-        my $len = scalar @active_connections;
- 	Info ("Total connections: ".$len."\n");
 	foreach (@active_connections)
 	{
 		#print " IP:".$_->{conn}->ip().":".$_->{conn}->port()."Token:".$_->{token}."\n";
@@ -171,6 +191,9 @@ sub checkEvents()
 	my $eventFound = 0;
 	if ( (time() - $monitor_reload_time) > MONITOR_RELOAD_INTERVAL )
     	{
+		my $len = scalar @active_connections;
+		Info ("Total event client connections: ".$len."\n");
+
 		Info ("Reloading Monitors...\n");
 		foreach my $monitor (values(%monitors))
 		{
@@ -431,7 +454,6 @@ sub checkMessage
 		if ($json_string->{'data'}->{'type'} eq "token")
 		{
 			
-			my $repeatToken=0;
 			foreach (@active_connections)
 			{
 				if ($_->{token} eq $json_string->{'data'}->{'token'}) 
@@ -450,36 +472,18 @@ sub checkMessage
 					$_->{token} = $json_string->{'data'}->{'token'};
 					$_->{monlist} = "-1";
 					Info ("Device token ".$_->{token}." stored for APNS");
-					saveTokens($_->{token}, $_->{monlist});
-					$repeatToken=1; # if 1, remove any other occurrences
+					#print ("savetokens/token ".$_->{token}." ".$_->{monlist}."\n");
+					my $emonlist = saveTokens($_->{token}, $_->{monlist});
+					$_->{monlist} = $emonlist;
 
 
 				}
 			}
 
-			# Now make sure there are no token duplicates
-			my ($ac) = scalar @active_connections;
-			my %filter;
-			#print "OLD LEN: $ac\n";
 				
-			$ac = scalar @active_connections;	
-			#print "NEW LEN: $ac\n";
 		}
-		# this sub type is when a push enable/disable or other control commands are sent
-		if ($json_string->{'type'} eq "control")
-		{
-			foreach (@active_connections)
-			{
-				#print ("Not here\n");
-				if ((exists $_->{conn}) && ($_->{conn}->ip() eq $conn->ip())  &&
-				    ($_->{conn}->port() eq $conn->port()))  
-				{
-
-				# No control protocols defined for now
-				}
-			}		
-		}
-	}
+		
+	} # event = push
 	if (($json_string->{'event'} eq "control") )
 	{
 		if  ($json_string->{'data'}->{'type'} eq "filter")
@@ -492,12 +496,13 @@ sub checkMessage
 				{
 
 					$_->{monlist} = $monlist;
+					#print ("savetokens/control ".$_->{token}." ".$_->{monlist}."\n");
 					saveTokens($_->{token}, $_->{monlist});	
 				}
 			}}	
 		
 
-	}
+	} # event = control
 
 
 
@@ -537,8 +542,16 @@ sub checkMessage
 				}
 			}
 		}
-	}
+	} # event = auth
 }
+
+# This loads APNS tokens stored in a conf file
+# This ensures even if the daemon dies and 
+# restarts APNS tokens are maintained
+# I also maintain monitor filter list
+# so that APNS notifications will only be pushed
+# for the monitors that are configured against
+# that token 
 
 sub loadTokens
 {
@@ -551,7 +564,8 @@ sub loadTokens
 	my @uniquetokens = uniq(@lines);
 
 	open ($fh, '>', APNS_TOKEN_FILE);
-
+	# This makes sure we rewrite the file with
+	# unique tokens
 	foreach(@uniquetokens)
 	{
 		next if ($_ eq "");
@@ -570,6 +584,9 @@ sub loadTokens
 	close ($fh);
 }
 
+# This is called if the APNS feedback channel
+# reports an invalid token. We also remove it from
+# our token file
 sub deleteToken
 {
 	my $dtoken = shift;
@@ -601,6 +618,14 @@ sub deleteToken
 	close ($fh);
 }
 
+# When a client sends a token id,
+# I store it in the file
+# It can be sent multiple times, with or without
+# monitor list, so I retain the old monitor
+# list if its not supplied. In the case of zmNinja
+# tokens are sent without monitor list when the registration
+# id is received from apple, so we handle that situation
+
 sub saveTokens
 {
 	my $stoken = shift;
@@ -630,20 +655,25 @@ sub saveTokens
 	}
 
 	$smonlist = "" if ($smonlist eq "-1");
+	
 	print $fh "$stoken:$smonlist\n" if (!$found);
 	close ($fh);
 	#print "Saved Token $token to file\n";
+	return $smonlist;
 	
 }
 
+# This keeps the latest of any duplicate tokens
+# we need to ignore monitor list when we do this
 sub uniq 
 {
 	my %seen;
-   	my @array = reverse @_;
+   	my @array = reverse @_; # we want the latest
 	my @farray=();
 	foreach (@array)
 	{
 		my ($token,$monlist) = split (":",$_);
+		# not interested in monlist
 		if (! $seen{$token}++ )
 		{
 			push @farray, "$token:$monlist";
@@ -656,7 +686,27 @@ sub uniq
 	
 }
 
+# Checks if the monitor for which
+# an alarm occurred is part of the monitor list
+# for that connection
+sub isInList
+{
+	my $monlist = shift;
+	my $mid = shift;
 
+	my @mids = split (',',$monlist);
+	my $found = 0;
+	foreach (@mids)
+	{
+		if ($mid eq $_)
+		{
+			$found = 1;
+			last;
+		}
+	}
+	return $found;
+	
+}
 
 # This is really the main module
 # It opens a WSS socket and keeps listening
@@ -680,7 +730,7 @@ sub initSocketServer
 		tick_period => SLEEP_DELAY,
 		on_tick => sub {
 			checkConnection();
-			apnsFeedbackCheck();
+			apnsFeedbackCheck() if ($useAPNS);
 			my $ac = scalar @active_connections;
 			if (checkEvents())
 			{
@@ -689,23 +739,31 @@ sub initSocketServer
 					my $i = 0;
 					foreach (@active_connections)
 					{
-						#push @events, {Name => $name, MonitorId => $mid, EventId => $last_event};
+						# Let's see if this connection is interested in this alarm
 						my $monlist = $_->{monlist};
+
+						# we need to create a per connection array which will be
+						# a subset of main events with the ones that are not in its
+						# monlist left out
 						my @localevents = ();
 						foreach (@events)
 						{
-							if ($monlist eq "" || index($monlist, $_->{MonitorId} ) != -1)
+							if ($monlist eq "" || isInList($monlist, $_->{MonitorId} ) )
 							{
 								push (@localevents, $_);
 							}
 
 						}
 						#print "DUMPING " .Dumper(@localevents);
+						# if this array is empty that means none of the alarms 
+						# were generated from a monitor it is interested in
 						next if (scalar @localevents == 0);
+
 						my $str = encode_json({status=>'Success', events => \@localevents});
 						my %hash_str = (status=>'Success', events => \@localevents);
 						$i++;
 						# if there is APNS send it over APNS
+						# if not, send it over Websockets 
 						if ($_->{token} ne "")
 						{
 							sendOverAPNS($_,$alarm_header, \%hash_str) ;
@@ -732,6 +790,7 @@ sub initSocketServer
 
 			}
 		},
+		# called when a new connection comes in
 		on_connect => sub {
 			my ($serv, $conn) = @_;
 			my ($len) = scalar @active_connections;
