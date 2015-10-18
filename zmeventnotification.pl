@@ -67,7 +67,7 @@ my $isSandbox = 1;				# 1 or 0 depending on your APNS certificate
 
 use constant APNS_CERT_FILE=>'/etc/private/apns-dev-cert.pem';
 use constant APNS_KEY_FILE=>'/etc/private/apns-dev-key.pem';
-use constant APNS_TOKEN_FILE=>'/etc/private/tokens.txt';
+use constant APNS_TOKEN_FILE=>'/etc/private/tokens.txt'; # MAKE SURE THIS DIRECTORY HAS WWW-DATA PERMISSIONS
 use constant APNS_FEEDBACK_CHECK_INTERVAL => 5;
 
 #----------- End: If you have disabled APNS, ignore this --
@@ -472,7 +472,7 @@ sub checkMessage
 					$_->{token} = $json_string->{'data'}->{'token'};
 					$_->{monlist} = "-1";
 					Info ("Device token ".$_->{token}." stored for APNS");
-					#print ("savetokens/token ".$_->{token}." ".$_->{monlist}."\n");
+					Info ("savetokens/token ".$_->{token}." ".$_->{monlist}."\n");
 					my $emonlist = saveTokens($_->{token}, $_->{monlist});
 					$_->{monlist} = $emonlist;
 
@@ -496,7 +496,7 @@ sub checkMessage
 				{
 
 					$_->{monlist} = $monlist;
-					#print ("savetokens/control ".$_->{token}." ".$_->{monlist}."\n");
+					Info ("savetokens/control ".$_->{token}." ".$_->{monlist}."\n");
 					saveTokens($_->{token}, $_->{monlist});	
 				}
 			}}	
@@ -556,7 +556,13 @@ sub checkMessage
 sub loadTokens
 {
 	return if (!$useAPNS);
-	return if ( ! -f APNS_TOKEN_FILE);
+	if ( ! -f APNS_TOKEN_FILE)
+	{
+		open (my $foh, '>', APNS_TOKEN_FILE);
+		Info ("Creating ".APNS_TOKEN_FILE);
+		print $foh "";
+		close ($foh);
+	}
 	
 	open (my $fh, '<', APNS_TOKEN_FILE);
 	chomp( my @lines = <$fh>);
@@ -631,12 +637,12 @@ sub saveTokens
 	my $stoken = shift;
 	my $smonlist = shift;
 	return if ($stoken eq "");
-	open (my $fh, '<', APNS_TOKEN_FILE);
+	open (my $fh, '<', APNS_TOKEN_FILE) || Fatal ("Cannot open for read".APNS_TOKEN_FILE);
 	chomp( my @lines = <$fh>);
 	close ($fh);
 	my @uniquetokens = uniq(@lines);
 	my $found = 0;
-	open (my $fh, '>', APNS_TOKEN_FILE);
+	open (my $fh, '>', APNS_TOKEN_FILE) || Fatal ("Cannot open for write ".APNS_TOKEN_FILE);
 	foreach (@uniquetokens)
 	{
 		next if ($_ eq "");
