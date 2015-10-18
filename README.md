@@ -78,6 +78,10 @@ use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';
 use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 ```
 ###How do I talk to it?
+*  ``{"JSON":"everywhere"}``
+* Your client sends messages (authentication) over JSON
+* The server sends auth success/failure over JSON back at you
+* New events are reported as JSON objects as well
 * By default the notification server runs on port 9000 (unless you change it)
 * You need to open a secure web socket connection to that port from your client/consumer
 * You then need to provide your authentication credentials (ZoneMinder username/password) within 20 seconds of opening the connection
@@ -88,14 +92,6 @@ use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
  1. push (from client to server, used for APNS iOS notifications as of now)
  1. alarm (from server to client)
 
-
-###Messaging format
-
-``{"JSON":"everywhere"}``
- 
-* Your client sends messages (authentication) over JSON
-* The server sends auth success/failure over JSON back at you
-* New events are reported as JSON objects as well
 
 #### Authentication messages
 
