@@ -62,11 +62,12 @@ sudo apt-get install make
 perl -MCPAN -e "install Net::WebSocket::Server"
 ```
 
-Finally, you need JSON.pm installed. It's there on some systems and not on others
+Then, you need JSON.pm installed. It's there on some systems and not on others
 In ubuntu, do this to install JSON:
 ```
 apt-get install libjson-perl
 ```
+
 
 You **also need to make sure you generate SSL certificates otherwise the script won't run**
 If you are using SSL for ZoneMinder, simply point this script to the certificates.
@@ -78,24 +79,35 @@ use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';
 use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 ```
 ###How do I talk to it?
+*  ``{"JSON":"everywhere"}``
+* Your client sends messages (authentication) over JSON
+* The server sends auth success/failure over JSON back at you
+* New events are reported as JSON objects as well
 * By default the notification server runs on port 9000 (unless you change it)
 * You need to open a secure web socket connection to that port from your client/consumer
 * You then need to provide your authentication credentials (ZoneMinder username/password) within 20 seconds of opening the connection
 * If you provide an incorrect authentication or no authentication, the server will close your connection
+* As of today, there are 3 categories of message types your client (zmNinja or your own) can exchange with the server (event notification server)
+ 1. auth (from client to server)
+ 1. control (from client to server)
+ 1. push (from client to server, used for APNS iOS notifications as of now)
+ 1. alarm (from server to client)
 
-###Messaging format
 
-``{"JSON":"everywhere"}``
- 
-* Your client sends messages (authentication) over JSON
-* The server sends auth success/failure over JSON back at you
-* New events are reported as JSON objects as well
+#### 1. Authentication messages
 
 To connect with the server you need to send the following JSON object (replace username/password)
 Note this is encrypted
+
+Authentication messages can be sent multiple times. It is necessary that you send the first one
+within 20 seconds of opening a connection or the server will terminate your connection.
+
+**Client --> Server:**
 ```
 {"event":"auth","data":{"user":"<username>","password":"<password>"}}
 ```
+
+**Server --> Client:**
 The server will send back the following responses 
 
 Authentication successful:
@@ -113,10 +125,79 @@ No authentication received in time limit:
 ```
 {"status":"Fail","reason":"NOAUTH"}
 ```
+
+#### 2. Control messages
+Control messages manage the nature of notifications received/sent. As of today, Clients send control messages to the Server.
+In future this may be bi-directional
+
+##### 2.1 Control message to restrict monitor IDs for events
+A client can send a control message to restrict which monitor IDs it is interested in. When received, the server will only
+send it alarms for those specific monitor IDs
+
+**Client-->Server:**
+```
+{"event":"control","data":{"type":"filter","monlist":"1,2,4,5,6"}}
+```
+In this example, a client has requested to be notified of events only from monitor IDs 1,2,4,5 and 6
+
+There is no response for this request.
+
+
+##### 2.2 Control message to get Event Server version
+A client can send a control message to request Event Server version
+
+**Client-->Server:**
+```
+{"event":"control","data":{"type":"version"}}
+```
+
+**Server-->Client:**
+```
+{"version":"0.2","status":"Success","reason":""}
+```
+
+### 3. Alarm notifications
+Alarms are events sent from the Server to the Client
+
 Sample payload of 2 events being reported:
 ```
-{"events":[{"EventId":"5060","Name":"Garage","MonitorId":"1"},{"EventId":"5061","MonitorId":"5","Name":"Unfinished"}],"status":"Success"}
+{"event":"alarm", "status":"Success", "events":[{"EventId":"5060","Name":"Garage","MonitorId":"1"},{"EventId":"5061","MonitorId":"5","Name":"Unfinished"}]}
 ```
+
+
+### 4. Push Notifications (only for iOS for now)
+To make APNS work, please make sure you read the section on enabling APNS for the event server.
+
+#### 4.1 Registering APNS token with the server
+**Client-->Server:**
+```
+{"event":"push","data":{"type":"token","platform":"ios","token":"<device tokenid here>"}}
+```
+In this example, a client sends its token ID to the server. 
+
+**Server-->Client:**
+If its successful, there is no response. However, if APNS is disabled it will send back
+```
+{status=>'Fail', reason => 'APNSDISABLED'}
+```
+
+
+####APNS Howto
+
+APNS will only work if you are able to do the following:
+* You have IOS Developer account and are able to generate APNS certificates. Since I am not hosting my own server, this is the only way. 
+* You will also need to compile zmNinja from source using your certificates. Both certicates and app IDs need to match
+
+If you need to support iOS APNS:
+```
+sudo perl -MCPAN -e "install Net::APNS::Persistent"
+```
+Next up, you need to make the following changes to the Event Server script:
+* make sure ``$useAPNS`` is set to 1 (around line 62)
+* make sure ``APNS_CERT_FILE`` and ``APNS_KEY_FILE`` point to the downloaded certs
+* make sure ``APNS_TOKEN_FILE`` points to an area that has ``www-data`` write permissions. The server will create the file if its not there. Its important to have ``www-data`` write permission as otherwise it will fail when run as a daemon
+* Restart the Event Server
+
 
 ###How scalable is it?
 It's a lightweight single threaded process. I really don't see a need for launching a zillion threads or a process per monitor etc for what it does. I'd argue its simplicity is its scalability. Plus I don't expect more than a handful of consumers to connect to it. I really don't see why it won't be able to scale to for what is does. But if you are facing scalability issues, let me know. There is [Mojolicious](http://mojolicio.us/) I can use to make it more scalable if I am proven wrong about scalability.
