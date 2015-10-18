@@ -83,11 +83,10 @@ use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 * You then need to provide your authentication credentials (ZoneMinder username/password) within 20 seconds of opening the connection
 * If you provide an incorrect authentication or no authentication, the server will close your connection
 * As of today, there are 3 categories of message types your client (zmNinja or your own) can exchange with the server (event notification server)
- * auth (from client to server)
- * control (from client to server)
- * push (from client to server)
- * alarm (from server to client)
-
+ 1. auth (from client to server)
+ 1. control (from client to server)
+ 1. push (from client to server, used for APNS iOS notifications as of now)
+ 1. alarm (from server to client)
 
 
 ###Messaging format
