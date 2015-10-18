@@ -35,8 +35,11 @@
 # ==========================================================================
 
 
-#perl -MCPAN -e "install Crypt::MySQL"
-#perl -MCPAN -e "install Net::WebSocket::Server"
+#sudo perl -MCPAN -e "install Crypt::MySQL"
+#sudo perl -MCPAN -e "install Net::WebSocket::Server"
+
+#For iOS APNS:
+#sudo perl -MCPAN -e "install Net::APNS::Persistent"
 
 use Data::Dumper;
 use File::Basename;
@@ -56,7 +59,7 @@ use constant MONITOR_RELOAD_INTERVAL => 300;
 use constant WEBSOCKET_AUTH_DELAY => 20; 				# max seconds by which authentication must be done
 
 
-my $useAPNS = 1;				# set this to 1 if you have an APNS SSL certificate/key pair
+my $useAPNS = 0;				# set this to 1 if you have an APNS SSL certificate/key pair
 						# the only way to have this is if you have an apple developer
 						# account
 
@@ -68,13 +71,11 @@ my $isSandbox = 1;				# 1 or 0 depending on your APNS certificate
 use constant APNS_CERT_FILE=>'/etc/private/apns-dev-cert.pem';
 use constant APNS_KEY_FILE=>'/etc/private/apns-dev-key.pem';
 use constant APNS_TOKEN_FILE=>'/etc/private/tokens.txt'; # MAKE SURE THIS DIRECTORY HAS WWW-DATA PERMISSIONS
-use constant APNS_FEEDBACK_CHECK_INTERVAL => 5;
+use constant APNS_FEEDBACK_CHECK_INTERVAL => 3600;
 
 #----------- End: If you have disabled APNS, ignore this --
 
-
-
-
+use constant APP_VERSION=>'0.2';
 use constant PENDING_WEBSOCKET => '1';
 use constant INVALID_WEBSOCKET => '-1';
 use constant INVALID_APNS => '-2';
@@ -183,10 +184,10 @@ sub try_use
 sub checkEvents()
 {
 	
-	foreach (@active_connections)
-	{
+	#foreach (@active_connections)
+	#{
 		#print " IP:".$_->{conn}->ip().":".$_->{conn}->port()."Token:".$_->{token}."\n";
-	}
+	#}
 
 	my $eventFound = 0;
 	if ( (time() - $monitor_reload_time) > MONITOR_RELOAD_INTERVAL )
@@ -425,6 +426,7 @@ sub checkConnection
 sub checkMessage
 {
 	my ($conn, $msg) = @_;	
+	
 	my $json_string = decode_json($msg);
 	#print "Message:$msg\n";
 
@@ -435,7 +437,7 @@ sub checkMessage
 		eval {$conn->send_utf8($str);};
 		return;
 	}
-	if (($json_string->{'event'} eq "push") && $useAPNS)
+	elsif (($json_string->{'event'} eq "push") && $useAPNS)
 	{
 		if ($json_string->{'data'}->{'type'} eq "badge")
 		{
@@ -484,7 +486,7 @@ sub checkMessage
 		}
 		
 	} # event = push
-	if (($json_string->{'event'} eq "control") )
+	elsif (($json_string->{'event'} eq "control") )
 	{
 		if  ($json_string->{'data'}->{'type'} eq "filter")
 		{
@@ -499,15 +501,28 @@ sub checkMessage
 					Info ("savetokens/control ".$_->{token}." ".$_->{monlist}."\n");
 					saveTokens($_->{token}, $_->{monlist});	
 				}
-			}}	
-		
+			}
+		}	
+		if  ($json_string->{'data'}->{'type'} eq "version")
+		{
+			foreach (@active_connections)
+			{
+				if ((exists $_->{conn}) && ($_->{conn}->ip() eq $conn->ip())  &&
+				    ($_->{conn}->port() eq $conn->port()))  
+				{
+					my $str = encode_json({status=>'Success', reason => '', version => APP_VERSION});
+					eval {$_->{conn}->send_utf8($str);};
+
+				}
+			}
+		}
 
 	} # event = control
 
 
 
 	# This event type is when a command related to authorization is sent
-	if ($json_string->{'event'} eq "auth")
+	elsif ($json_string->{'event'} eq "auth")
 	{
 		my $uname = $json_string->{'data'}->{'user'};
 		my $pwd = $json_string->{'data'}->{'password'};
@@ -535,7 +550,7 @@ sub checkMessage
 					# all good, connection auth was valid
 					$_->{pending}=VALID_WEBSOCKET;
 					$_->{token}='';
-					my $str = encode_json({status=>'Success', reason => ''});
+					my $str = encode_json({status=>'Success', reason => '', version => APP_VERSION});
 					eval {$_->{conn}->send_utf8($str);};
 					Info("Correct authentication provided by ".$_->{conn}->ip());
 					
@@ -543,6 +558,11 @@ sub checkMessage
 			}
 		}
 	} # event = auth
+	else
+	{
+					my $str = encode_json({status=>'Fail', reason => 'NOTSUPPORTED'});
+					eval {$_->{conn}->send_utf8($str);};
+	}
 }
 
 # This loads APNS tokens stored in a conf file
@@ -765,8 +785,8 @@ sub initSocketServer
 						# were generated from a monitor it is interested in
 						next if (scalar @localevents == 0);
 
-						my $str = encode_json({status=>'Success', events => \@localevents});
-						my %hash_str = (status=>'Success', events => \@localevents);
+						my $str = encode_json({event => 'alarm', status=>'Success', events => \@localevents});
+						my %hash_str = (event => 'alarm', status=>'Success', events => \@localevents);
 						$i++;
 						# if there is APNS send it over APNS
 						# if not, send it over Websockets 
