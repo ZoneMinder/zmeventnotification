@@ -94,15 +94,15 @@ use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 To connect with the server you need to send the following JSON object (replace username/password)
 Note this is encrypted
 ```
-{user:username,
- password:password}
+{"event":"auth","data":{"user":"<username>","password":"<password>"}}
 ```
 The server will send back the following responses 
 
 Authentication successful:
 ```
-{"status":"Success","reason":""}
+{"version":"0.2","status":"Success","reason":""}
 ```
+Note that it also sends its version number for convenience
 
 Incorrect credentials:
 ```
