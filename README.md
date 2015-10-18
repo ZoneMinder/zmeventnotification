@@ -155,13 +155,34 @@ A client can send a control message to request Event Server version
 {"version":"0.2","status":"Success","reason":""}
 ```
 
-### 3 Alarm notifications
+### 3. Alarm notifications
 Alarms are events sent from the Server to the Client
 
 Sample payload of 2 events being reported:
 ```
 {"event":"alarm", "status":"Success", "events":[{"EventId":"5060","Name":"Garage","MonitorId":"1"},{"EventId":"5061","MonitorId":"5","Name":"Unfinished"}]}
 ```
+
+
+### 4. Push Notifications (only for iOS for now)
+Given that Android supports background sockets while iOS kills sockets after you switch to background (unless the socket type belong to specific categories), I added APNS support for iOS. I haven't added GCM (Android) as of now because websockets works quite well in background mode. I will eventually add it
+
+To make APNS work, please make sure you read the section on enabling APNS for the event server.
+
+#### 4.1 Registering APNS token with the server
+**Client-->Server:**
+```
+{"event":"push","data":{"type":"token","platform":"ios","token":"<device tokenid here>"}}
+```
+In this example, a client sends its token ID to the server. 
+
+**Server-->Client:**
+If its successful, there is no response. However, if APNS is disabled it will send back
+```
+{status=>'Fail', reason => 'APNSDISABLED'}
+```
+
+
 
 ###How scalable is it?
 It's a lightweight single threaded process. I really don't see a need for launching a zillion threads or a process per monitor etc for what it does. I'd argue its simplicity is its scalability. Plus I don't expect more than a handful of consumers to connect to it. I really don't see why it won't be able to scale to for what is does. But if you are facing scalability issues, let me know. There is [Mojolicious](http://mojolicio.us/) I can use to make it more scalable if I am proven wrong about scalability.
