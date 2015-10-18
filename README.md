@@ -98,11 +98,20 @@ use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 * The server sends auth success/failure over JSON back at you
 * New events are reported as JSON objects as well
 
+#### Authentication messages
+
 To connect with the server you need to send the following JSON object (replace username/password)
 Note this is encrypted
+
+Authentication messages can be sent multiple times. It is necessary that you send the first one
+within 20 seconds of opening a connection or the server will terminate your connection.
+
+**Client --> Server:**
 ```
 {"event":"auth","data":{"user":"<username>","password":"<password>"}}
 ```
+
+**Server --> Client:**
 The server will send back the following responses 
 
 Authentication successful:
@@ -120,9 +129,43 @@ No authentication received in time limit:
 ```
 {"status":"Fail","reason":"NOAUTH"}
 ```
+
+#### Control messages
+Control messages manage the nature of notifications received/sent. As of today, Clients send control messages to the Server.
+In future this may be bi-directional
+
+#####Control message to restrict monitor IDs for events
+A client can send a control message to restrict which monitor IDs it is interested in. When received, the server will only
+send it alarms for those specific monitor IDs
+
+**Client-->Server:**
+```
+{"event":"control","data":{"type":"filter","monlist":"1,2,4,5,6"}}
+```
+In this example, a client has requested to be notified of events only from monitor IDs 1,2,4,5 and 6
+
+There is no response for this request.
+
+
+#####Control message to get Event Server version
+A client can send a control message to request Event Server version
+
+**Client-->Server:**
+```
+{"event":"control","data":{"type":"version"}}
+```
+
+**Server-->Client:**
+```
+{"version":"0.2","status":"Success","reason":""}
+```
+
+###Alarm notifications
+Alarms are events sent from the Server to the Client
+
 Sample payload of 2 events being reported:
 ```
-{"events":[{"EventId":"5060","Name":"Garage","MonitorId":"1"},{"EventId":"5061","MonitorId":"5","Name":"Unfinished"}],"status":"Success"}
+{"event":"alarm", "status":"Success", "events":[{"EventId":"5060","Name":"Garage","MonitorId":"1"},{"EventId":"5061","MonitorId":"5","Name":"Unfinished"}]}
 ```
 
 ###How scalable is it?
