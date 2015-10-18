@@ -62,11 +62,12 @@ sudo apt-get install make
 perl -MCPAN -e "install Net::WebSocket::Server"
 ```
 
-Finally, you need JSON.pm installed. It's there on some systems and not on others
+Then, you need JSON.pm installed. It's there on some systems and not on others
 In ubuntu, do this to install JSON:
 ```
 apt-get install libjson-perl
 ```
+
 
 You **also need to make sure you generate SSL certificates otherwise the script won't run**
 If you are using SSL for ZoneMinder, simply point this script to the certificates.
@@ -165,8 +166,6 @@ Sample payload of 2 events being reported:
 
 
 ### 4. Push Notifications (only for iOS for now)
-Given that Android supports background sockets while iOS kills sockets after you switch to background (unless the socket type belong to specific categories), I added APNS support for iOS. I haven't added GCM (Android) as of now because websockets works quite well in background mode. I will eventually add it
-
 To make APNS work, please make sure you read the section on enabling APNS for the event server.
 
 #### 4.1 Registering APNS token with the server
@@ -182,6 +181,22 @@ If its successful, there is no response. However, if APNS is disabled it will se
 {status=>'Fail', reason => 'APNSDISABLED'}
 ```
 
+
+####APNS Howto
+
+APNS will only work if you are able to do the following:
+* You have IOS Developer account and are able to generate APNS certificates. Since I am not hosting my own server, this is the only way. 
+* You will also need to compile zmNinja from source using your certificates. Both certicates and app IDs need to match
+
+If you need to support iOS APNS:
+```
+sudo perl -MCPAN -e "install Net::APNS::Persistent"
+```
+Next up, you need to make the following changes to the Event Server script:
+* make sure ``$useAPNS`` is set to 1 (around line 62)
+* make sure ``APNS_CERT_FILE`` and ``APNS_KEY_FILE`` point to the downloaded certs
+* make sure ``APNS_TOKEN_FILE`` points to an area that has ``www-data`` write permissions. The server will create the file if its not there. Its important to have ``www-data`` write permission as otherwise it will fail when run as a daemon
+* Restart the Event Server
 
 
 ###How scalable is it?
