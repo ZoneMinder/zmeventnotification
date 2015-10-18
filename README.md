@@ -93,7 +93,7 @@ use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
  1. alarm (from server to client)
 
 
-#### Authentication messages
+#### 1. Authentication messages
 
 To connect with the server you need to send the following JSON object (replace username/password)
 Note this is encrypted
@@ -125,11 +125,11 @@ No authentication received in time limit:
 {"status":"Fail","reason":"NOAUTH"}
 ```
 
-#### Control messages
+#### 2. Control messages
 Control messages manage the nature of notifications received/sent. As of today, Clients send control messages to the Server.
 In future this may be bi-directional
 
-#####Control message to restrict monitor IDs for events
+##### 2.1 Control message to restrict monitor IDs for events
 A client can send a control message to restrict which monitor IDs it is interested in. When received, the server will only
 send it alarms for those specific monitor IDs
 
@@ -142,7 +142,7 @@ In this example, a client has requested to be notified of events only from monit
 There is no response for this request.
 
 
-#####Control message to get Event Server version
+##### 2.2 Control message to get Event Server version
 A client can send a control message to request Event Server version
 
 **Client-->Server:**
@@ -155,7 +155,7 @@ A client can send a control message to request Event Server version
 {"version":"0.2","status":"Success","reason":""}
 ```
 
-###Alarm notifications
+### 3 Alarm notifications
 Alarms are events sent from the Server to the Client
 
 Sample payload of 2 events being reported:
