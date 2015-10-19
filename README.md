@@ -108,22 +108,22 @@ within 20 seconds of opening a connection or the server will terminate your conn
 ```
 
 **Server --> Client:**
-The server will send back the following responses 
+The server will send back one of the following responses 
 
 Authentication successful:
 ```
-{"version":"0.2","status":"Success","reason":""}
+{"event":"auth", "type":"", "version":"0.2","status":"Success","reason":""}
 ```
 Note that it also sends its version number for convenience
 
 Incorrect credentials:
 ```
-{"status":"Fail","reason":"BADAUTH"}
+{"event":"auth", "type":"", "status":"Fail","reason":"BADAUTH"}
 ```
 
 No authentication received in time limit:
 ```
-{"status":"Fail","reason":"NOAUTH"}
+{"event":"auth","type":"", "status":"Fail","reason":"NOAUTH"}
 ```
 
 #### 2. Control messages
@@ -153,15 +153,16 @@ A client can send a control message to request Event Server version
 
 **Server-->Client:**
 ```
-{"version":"0.2","status":"Success","reason":""}
+{"event":"control", "type:":"version", "version":"0.2","status":"Success","reason":""}
 ```
 
 ### 3. Alarm notifications
 Alarms are events sent from the Server to the Client
 
+**Server-->Client:**
 Sample payload of 2 events being reported:
 ```
-{"event":"alarm", "status":"Success", "events":[{"EventId":"5060","Name":"Garage","MonitorId":"1"},{"EventId":"5061","MonitorId":"5","Name":"Unfinished"}]}
+{"event":"alarm", "type":"", "status":"Success", "events":[{"EventId":"5060","Name":"Garage","MonitorId":"1"},{"EventId":"5061","MonitorId":"5","Name":"Unfinished"}]}
 ```
 
 
@@ -178,8 +179,22 @@ In this example, a client sends its token ID to the server.
 **Server-->Client:**
 If its successful, there is no response. However, if APNS is disabled it will send back
 ```
-{status=>'Fail', reason => 'APNSDISABLED'}
+{"event":"push", "type":"", "status":"Fail", "reason": "APNSDISABLED"}
 ```
+
+#### 4.1 Badge reset
+In push notifications, the server owns the responsibility for badge count (unlike local notifications).
+So a client can request the server to reset its badge count so the next push notification 
+starts from the value provided. 
+
+**Client-->Server:**
+```
+{"event":"push", "data":{"type":"badge", "badge":"0"}}
+```
+
+In this example, the client requests the server to reset the badge count to 0. Note that you 
+can use any other number. The next time the server sends a push via APNS, it will use this 
+value. 0 makes the badge go away.
 
 
 ####APNS Howto
