@@ -664,6 +664,7 @@ sub deleteToken
 
 sub saveTokens
 {
+	return if (!$useAPNS);
 	my $stoken = shift;
 	my $smonlist = shift;
 	return if ($stoken eq "");
