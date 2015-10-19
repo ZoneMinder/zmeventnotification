@@ -406,7 +406,7 @@ sub checkConnection
 					my $conn = $_->{conn};
 					Info ("Rejecting ".$conn->ip()." - authentication timeout");
 					$_->{pending} = INVALID_WEBSOCKET;
-					my $str = encode_json({status=>'Fail', reason => 'NOAUTH'});
+					my $str = encode_json({event => 'auth', type=>'',status=>'Fail', reason => 'NOAUTH'});
 					eval {$_->{conn}->send_utf8($str);};
 					$_->{conn}->disconnect();
 				}
@@ -427,13 +427,23 @@ sub checkMessage
 {
 	my ($conn, $msg) = @_;	
 	
-	my $json_string = decode_json($msg);
+	my $json_string;
+	eval {$json_string = decode_json($msg);};
+	if ($@)
+	{
+		
+		my $str = encode_json({event=> 'malformed', type=>'', status=>'Fail', reason=>'BADJSON'});
+		eval {$conn->send_utf8($str);};
+		return;
+	}
+
+	
 	#print "Message:$msg\n";
 
 	# This event type is when a command related to push notification is received
 	if (($json_string->{'event'} eq "push") && !$useAPNS)
 	{
-		my $str = encode_json({status=>'Fail', reason => 'APNSDISABLED'});
+		my $str = encode_json({event=>'push', type=>'',status=>'Fail', reason => 'APNSDISABLED'});
 		eval {$conn->send_utf8($str);};
 		return;
 	}
@@ -510,7 +520,7 @@ sub checkMessage
 				if ((exists $_->{conn}) && ($_->{conn}->ip() eq $conn->ip())  &&
 				    ($_->{conn}->port() eq $conn->port()))  
 				{
-					my $str = encode_json({status=>'Success', reason => '', version => APP_VERSION});
+					my $str = encode_json({event=>'control',type=>'version', status=>'Success', reason => '', version => APP_VERSION});
 					eval {$_->{conn}->send_utf8($str);};
 
 				}
@@ -538,7 +548,7 @@ sub checkMessage
 				if (!validateZM($uname,$pwd))
 				{
 					# bad username or password, so reject and mark for deletion
-					my $str = encode_json({status=>'Fail', reason => 'BADAUTH'});
+					my $str = encode_json({event=>'auth', type=>'', status=>'Fail', reason => 'BADAUTH'});
 					eval {$_->{conn}->send_utf8($str);};
 					Info("Bad authentication provided by ".$_->{conn}->ip());
 					$_->{pending}=INVALID_WEBSOCKET;
@@ -550,7 +560,7 @@ sub checkMessage
 					# all good, connection auth was valid
 					$_->{pending}=VALID_WEBSOCKET;
 					$_->{token}='';
-					my $str = encode_json({status=>'Success', reason => '', version => APP_VERSION});
+					my $str = encode_json({event=>'auth', type=>'', status=>'Success', reason => '', version => APP_VERSION});
 					eval {$_->{conn}->send_utf8($str);};
 					Info("Correct authentication provided by ".$_->{conn}->ip());
 					
@@ -560,7 +570,7 @@ sub checkMessage
 	} # event = auth
 	else
 	{
-					my $str = encode_json({status=>'Fail', reason => 'NOTSUPPORTED'});
+					my $str = encode_json({event=>$json_string->{'event'},type=>'', status=>'Fail', reason => 'NOTSUPPORTED'});
 					eval {$_->{conn}->send_utf8($str);};
 	}
 }
@@ -785,7 +795,7 @@ sub initSocketServer
 						# were generated from a monitor it is interested in
 						next if (scalar @localevents == 0);
 
-						my $str = encode_json({event => 'alarm', status=>'Success', events => \@localevents});
+						my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => \@localevents});
 						my %hash_str = (event => 'alarm', status=>'Success', events => \@localevents);
 						$i++;
 						# if there is APNS send it over APNS
