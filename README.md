@@ -4,7 +4,7 @@ A WSS (Secure Web Sockets) based event notification server that broadcasts new e
 ### What can you do with it?
 Well, [zmNinja](https://github.com/pliablepixels/zmNinja) uses it to display real time notifications of events.
 Watch a video [HERE](https://www.youtube.com/watch?v=HhLKrDrj7rs)
-You can implement your own receiver to get real time event notification and do whatever your hear desires 
+You can implement your own receiver to get real time event notification and do whatever your heart desires 
 
 ### Why do we need it?
 * The only way ZoneMinder sends out event notifications via event filters - this is too slow
