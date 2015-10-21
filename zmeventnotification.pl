@@ -38,10 +38,12 @@
 #sudo perl -MCPAN -e "install Crypt::MySQL"
 #sudo perl -MCPAN -e "install Net::WebSocket::Server"
 
+#For pushProxy
+#sudo perl -MCPAN -e "install LWP::Protocol::https"
+
 #For iOS APNS:
 #sudo perl -MCPAN -e "install Net::APNS::Persistent"
 
-use Data::Dumper;
 use File::Basename;
 
 use strict;
@@ -54,28 +56,46 @@ use bytes;
 use constant EVENT_NOTIFICATION_PORT=>9000; 				# port for Websockets connection
 use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';		# Change these to your certs/keys
 use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
+
+
+# if you only want to enable websockets make both of these 0
+
+my $usePushProxy = 1;				# set this to 1 to use a remote push proxy for APNS that I have set up for zmNinja users
+
+my $usePushAPNSDirect = 0;			# set this to 1 if you have an APNS SSL certificate/key pair
+						# the only way to have this is if you have an apple developer
+						# account
+
+my $pushProxyURL = 'https://pliablepixels.ddns.net:8801';  # This is my proxy URL. Don't change it unless you are hosting your on APNS AS
+
+# PUSH_TOKEN_FILE is needed for pushProxy mode as well as direct APNS mode
+# change this to a directory and file of your choosing. 
+# This server will create the file if it does not exist
+
+use constant PUSH_TOKEN_FILE=>'/etc/private/tokens.txt'; # MAKE SURE THIS DIRECTORY HAS WWW-DATA PERMISSIONS
+
+
+#----------- Start: Change these only if you have usePushAPNSDirect set to 1 ------------------
+
+my $isSandbox = 1;				# 1 or 0 depending on your APNS certificate
+
+use constant APNS_CERT_FILE=>'/etc/private/apns-dev-cert.pem';  # only used if usePushAPNSDirect is enabled
+use constant APNS_KEY_FILE=>'/etc/private/apns-dev-key.pem';	# only used if usePushAPNSDirect is enabled
+
+use constant APNS_FEEDBACK_CHECK_INTERVAL => 3600;		# only used if usePushAPNSDirect is enabled
+
+#----------- End: only applies to usePushAPNSDirect = 1 --
+
 use constant SLEEP_DELAY=>5; 						# duration in seconds after which we will check for new events
 use constant MONITOR_RELOAD_INTERVAL => 300;
 use constant WEBSOCKET_AUTH_DELAY => 20; 				# max seconds by which authentication must be done
 
-
-my $useAPNS = 0;				# set this to 1 if you have an APNS SSL certificate/key pair
-						# the only way to have this is if you have an apple developer
-						# account
-
-#----------- Start: If you have disabled APNS, ignore this --
-
-my $isSandbox = 1;				# 1 or 0 depending on your APNS certificate
+# These are needed for the remote push to work. Don't change these
+use constant PUSHPROXY_APP_NAME => 'zmninja';
+use constant PUSHPROXY_APP_ID => '654fe71b4711d6b8f16311e99d1fe2aa';
 
 
-use constant APNS_CERT_FILE=>'/etc/private/apns-dev-cert.pem';
-use constant APNS_KEY_FILE=>'/etc/private/apns-dev-key.pem';
-use constant APNS_TOKEN_FILE=>'/etc/private/tokens.txt'; # MAKE SURE THIS DIRECTORY HAS WWW-DATA PERMISSIONS
-use constant APNS_FEEDBACK_CHECK_INTERVAL => 3600;
-
-#----------- End: If you have disabled APNS, ignore this --
-
-use constant APP_VERSION=>'0.2';
+use constant APP_VERSION=>'0.3';
 use constant PENDING_WEBSOCKET => '1';
 use constant INVALID_WEBSOCKET => '-1';
 use constant INVALID_APNS => '-2';
@@ -91,24 +111,49 @@ if (!try_use ("JSON"))
 	{ Fatal ("JSON or JSON::XS  missing");exit (-1);}
 } 
 
-# These modules are needed only if APNS is enabled
-if ($useAPNS)
+if ($usePushProxy)
+{
+	if ($usePushAPNSDirect)
+	{
+		$usePushAPNSDirect = 0; 
+		Info ("Disabling direct push as push proxy is enabled");
+	}
+	if (!try_use ("LWP::UserAgent") || !try_use ("URI::URL") || !try_use("LWP::Protocol::https"))
+	{
+		Error ("Disabling PushProxy. PushProxy mode needs LWP::Protocol::https, LWP::UserAgent and URI::URL perl packages installed");
+		$usePushProxy = 0;
+	}
+	else
+	{
+		Info ("Push enabled via PushProxy");
+	}
+	
+}
+else
+{
+	Info ("Push Proxy disabled");
+}
+# These modules are needed only if DirectPush is enabled and PushProxy is disabled
+if ($usePushAPNSDirect )
 {
 	if (!try_use ("Net::APNS::Persistent") || !try_use ("Net::APNS::Feedback"))
 	{
-		Warning ("Net::APNS::Feedback and/or Net::APNS::Persistent not present. Disabling APNS support");
-		$useAPNS = 0;
+		Error ("Net::APNS::Feedback and/or Net::APNS::Persistent not present. Disabling direct APNS support");
+		$usePushAPNSDirect = 0;
 
 	}
 	else
 	{
-		Info ("APNS support loaded");
+		Info ("direct APNS support loaded");
 	}
 }
 else
 {
-		Info ("APNS support disabled");
+	Info ("direct APNS disabled");
 }
+
+
+
 
 # ==========================================================================
 #
@@ -149,9 +194,9 @@ my $alarm_header="";
 
 # MAIN
 
-if ($useAPNS)
+if ($usePushAPNSDirect || $usePushProxy)
 {
-	my $dir = dirname(APNS_TOKEN_FILE);
+	my $dir = dirname(PUSH_TOKEN_FILE);
 	if ( ! -d $dir)
 	{
 
@@ -304,12 +349,62 @@ sub validateZM
 
 }
 
+# Passes on device token to the push proxy
+
+sub registerOverPushProxy
+{
+	my ($token) = shift;
+	my ($platform) = shift;
+	my $uri = $pushProxyURL."/api/v2/tokens";
+	my $json = '{"device":"'.$platform.'", "token":"'.$token.'", "channel":"default"}';
+	my $req = HTTP::Request->new ('POST', $uri);
+	$req->header( 'Content-Type' => 'application/json', 'X-AN-APP-NAME'=> PUSHPROXY_APP_NAME, 'X-AN-APP-KEY'=> PUSHPROXY_APP_ID
+	 );
+	 $req->content($json);
+	my $lwp = LWP::UserAgent->new(ssl_opts => { verify_hostname => 0 });
+	my $res = $lwp->request( $req );
+	if ($res->is_success)
+	{
+		Info ("Pushproxy registration success ".$res->content);
+	}
+	else
+	{
+		Warning("Push Proxy Token registration Error:".$res->status_line);
+	}
+
+}
+
+# Sends a push notification to the remote proxy 
+sub sendOverPushProxy
+{
+	
+	my ($obj, $header, $str) = @_;
+	$obj->{badge}++;
+	my $uri = $pushProxyURL."/api/v2/push";
+	my $json = '{"device":"ios", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "badge":"'.$obj->{badge}.'", "custom":{"alarm_details":'.$str.'}}';
+	my $req = HTTP::Request->new ('POST', $uri);
+	$req->header( 'Content-Type' => 'application/json', 'X-AN-APP-NAME'=> PUSHPROXY_APP_NAME, 'X-AN-APP-KEY'=> PUSHPROXY_APP_ID
+	 );
+	 $req->content($json);
+	my $lwp = LWP::UserAgent->new(ssl_opts => { verify_hostname => 0 });
+	my $res = $lwp->request( $req );
+	if ($res->is_success)
+	{
+		Info ("Pushproxy push message success ".$res->content);
+	}
+	else
+	{
+		Info("Push Proxy push message Error:".$res->status_line);
+	}
+}
+
 
 # This function is called when an alarm
 # needs to be transmitted over APNS
+# called only if direct APNS mode is enabled
 sub sendOverAPNS
 {
-  if (!$useAPNS)
+  if (!$usePushAPNSDirect)
   {
 	Info ("Rejecting APNS request as daemon has APNS disabled");
 	return;
@@ -345,12 +440,19 @@ sub sendOverAPNS
 
 # This function polls APNS Feedback
 # to see if any entries need to be removed
+# only applicable for direct apns mode
 sub apnsFeedbackCheck
 {
 
+	
 	if ((time() - $apns_feedback_time) > APNS_FEEDBACK_CHECK_INTERVAL)
 	{
-		if (!$useAPNS)
+		if ($usePushProxy)
+		{
+			Info ("Not checking APNS feedback in PushProxy Mode");
+			return;
+		}
+		if (!$usePushAPNSDirect)
 		{
 			Info ("Rejecting APNS Feedback request as daemon has APNS disabled");
 			return;
@@ -415,7 +517,7 @@ sub checkConnection
 
 	}
 	@active_connections = grep { $_->{pending} != INVALID_WEBSOCKET } @active_connections;
-	if ($useAPNS)
+	if ($usePushAPNSDirect)
 	{
 		@active_connections = grep { $_->{pending} != INVALID_APNS } @active_connections;
 	}
@@ -441,13 +543,13 @@ sub checkMessage
 	#print "Message:$msg\n";
 
 	# This event type is when a command related to push notification is received
-	if (($json_string->{'event'} eq "push") && !$useAPNS)
+	if (($json_string->{'event'} eq "push") && !$usePushAPNSDirect && !$usePushProxy)
 	{
-		my $str = encode_json({event=>'push', type=>'',status=>'Fail', reason => 'APNSDISABLED'});
+		my $str = encode_json({event=>'push', type=>'',status=>'Fail', reason => 'PUSHDISABLED'});
 		eval {$conn->send_utf8($str);};
 		return;
 	}
-	elsif (($json_string->{'event'} eq "push") && $useAPNS)
+	elsif (($json_string->{'event'} eq "push") && ($usePushAPNSDirect || $usePushProxy))
 	{
 		if ($json_string->{'data'}->{'type'} eq "badge")
 		{
@@ -466,6 +568,12 @@ sub checkMessage
 		if ($json_string->{'data'}->{'type'} eq "token")
 		{
 			
+			if (!$json_string->{'data'}->{'platform'})
+			{
+				my $str = encode_json({event=>'push', type=>'token',status=>'Fail', reason => 'MISSINGPLATFORM'});
+				eval {$conn->send_utf8($str);};
+				return;
+			}
 			foreach (@active_connections)
 			{
 				if ($_->{token} eq $json_string->{'data'}->{'token'}) 
@@ -482,10 +590,11 @@ sub checkMessage
 				    ($_->{conn}->port() eq $conn->port()))  
 				{
 					$_->{token} = $json_string->{'data'}->{'token'};
+					$_->{platform} = $json_string->{'data'}->{'platform'};
 					$_->{monlist} = "-1";
 					Info ("Device token ".$_->{token}." stored for APNS");
 					Info ("savetokens/token ".$_->{token}." ".$_->{monlist}."\n");
-					my $emonlist = saveTokens($_->{token}, $_->{monlist});
+					my $emonlist = saveTokens($_->{token}, $_->{monlist}, $_->{platform});
 					$_->{monlist} = $emonlist;
 
 
@@ -509,7 +618,7 @@ sub checkMessage
 
 					$_->{monlist} = $monlist;
 					Info ("savetokens/control ".$_->{token}." ".$_->{monlist}."\n");
-					saveTokens($_->{token}, $_->{monlist});	
+					saveTokens($_->{token}, $_->{monlist}, $_->{platform});	
 				}
 			}
 		}	
@@ -585,28 +694,28 @@ sub checkMessage
 
 sub loadTokens
 {
-	return if (!$useAPNS);
-	if ( ! -f APNS_TOKEN_FILE)
+	return if (!$usePushAPNSDirect && !$usePushProxy);
+	if ( ! -f PUSH_TOKEN_FILE)
 	{
-		open (my $foh, '>', APNS_TOKEN_FILE);
-		Info ("Creating ".APNS_TOKEN_FILE);
+		open (my $foh, '>', PUSH_TOKEN_FILE);
+		Info ("Creating ".PUSH_TOKEN_FILE);
 		print $foh "";
 		close ($foh);
 	}
 	
-	open (my $fh, '<', APNS_TOKEN_FILE);
+	open (my $fh, '<', PUSH_TOKEN_FILE);
 	chomp( my @lines = <$fh>);
 	close ($fh);
 	my @uniquetokens = uniq(@lines);
 
-	open ($fh, '>', APNS_TOKEN_FILE);
+	open ($fh, '>', PUSH_TOKEN_FILE);
 	# This makes sure we rewrite the file with
 	# unique tokens
 	foreach(@uniquetokens)
 	{
 		next if ($_ eq "");
 		print $fh "$_\n";
-		my ($token, $monlist)  = split (":",$_);
+		my ($token, $monlist, $platform)  = split (":",$_);
 		#print "load: PUSHING $row\n";
 		push @active_connections, {
 					   token => $token,
@@ -614,6 +723,7 @@ sub loadTokens
 					   time=>time(),
 					   badge => 0,
 					   monlist => $monlist,
+					   platform => $platform
 					  };
 		
 	}
@@ -626,19 +736,19 @@ sub loadTokens
 sub deleteToken
 {
 	my $dtoken = shift;
-	return if (!$useAPNS);
-	return if ( ! -f APNS_TOKEN_FILE);
+	return if (!$usePushAPNSDirect && !$usePushProxy);
+	return if ( ! -f PUSH_TOKEN_FILE);
 	
-	open (my $fh, '<', APNS_TOKEN_FILE);
+	open (my $fh, '<', PUSH_TOKEN_FILE);
 	chomp( my @lines = <$fh>);
 	close ($fh);
 	my @uniquetokens = uniq(@lines);
 
-	open ($fh, '>', APNS_TOKEN_FILE);
+	open ($fh, '>', PUSH_TOKEN_FILE);
 
 	foreach(@uniquetokens)
 	{
-		my ($token, $monlist)  = split (":",$_);
+		my ($token, $monlist, $platform)  = split (":",$_);
 		next if ($_ eq "" || $token eq $dtoken);
 		print $fh "$_\n";
 		#print "delete: $row\n";
@@ -648,6 +758,7 @@ sub deleteToken
 					   time=>time(),
 					   badge => 0,
 					   monlist => $monlist,
+					   platform => $platform
 					  };
 		
 	}
@@ -664,37 +775,39 @@ sub deleteToken
 
 sub saveTokens
 {
-	return if (!$useAPNS);
+	return if (!$usePushAPNSDirect && !$usePushProxy);
 	my $stoken = shift;
 	my $smonlist = shift;
+	my $splatform = shift;
 	return if ($stoken eq "");
-	open (my $fh, '<', APNS_TOKEN_FILE) || Fatal ("Cannot open for read".APNS_TOKEN_FILE);
+	open (my $fh, '<', PUSH_TOKEN_FILE) || Fatal ("Cannot open for read".PUSH_TOKEN_FILE);
 	chomp( my @lines = <$fh>);
 	close ($fh);
 	my @uniquetokens = uniq(@lines);
 	my $found = 0;
-	open (my $fh, '>', APNS_TOKEN_FILE) || Fatal ("Cannot open for write ".APNS_TOKEN_FILE);
+	open (my $fh, '>', PUSH_TOKEN_FILE) || Fatal ("Cannot open for write ".PUSH_TOKEN_FILE);
 	foreach (@uniquetokens)
 	{
 		next if ($_ eq "");
-		my ($token, $monlist)  = split (":",$_);
+		my ($token, $monlist, $platform)  = split (":",$_);
 		if ($token eq $stoken)
 		{
 			$smonlist = $monlist if ($smonlist eq "-1");
-			print $fh "$stoken:$smonlist\n";
+			print $fh "$stoken:$smonlist:$splatform\n";
 			$found = 1;
 		}
 		else
 		{
-			print $fh "$token:$monlist\n";
+			print $fh "$token:$monlist:$platform\n";
 		}
 
 	}
 
 	$smonlist = "" if ($smonlist eq "-1");
 	
-	print $fh "$stoken:$smonlist\n" if (!$found);
+	print $fh "$stoken:$smonlist:$splatform\n" if (!$found);
 	close ($fh);
+	registerOverPushProxy($stoken,$splatform) if ($usePushProxy);
 	#print "Saved Token $token to file\n";
 	return $smonlist;
 	
@@ -709,11 +822,11 @@ sub uniq
 	my @farray=();
 	foreach (@array)
 	{
-		my ($token,$monlist) = split (":",$_);
+		my ($token,$monlist,$platform) = split (":",$_);
 		# not interested in monlist
 		if (! $seen{$token}++ )
 		{
-			push @farray, "$token:$monlist";
+			push @farray, "$token:$monlist:$platform";
 		}
 		 
 		
@@ -767,7 +880,7 @@ sub initSocketServer
 		tick_period => SLEEP_DELAY,
 		on_tick => sub {
 			checkConnection();
-			apnsFeedbackCheck() if ($useAPNS);
+			apnsFeedbackCheck() if ($usePushAPNSDirect);
 			my $ac = scalar @active_connections;
 			if (checkEvents())
 			{
@@ -803,7 +916,17 @@ sub initSocketServer
 						# if not, send it over Websockets 
 						if ($_->{token} ne "")
 						{
-							sendOverAPNS($_,$alarm_header, \%hash_str) ;
+							if ($usePushProxy)
+							{
+								Info ("Sending notification over PushProxy");
+								sendOverPushProxy($_,$alarm_header, $str) ;		
+							}
+							else
+							{
+
+								Info ("Sending notification directly via APNS");
+								sendOverAPNS($_,$alarm_header, \%hash_str) ;
+							}
 						}
 						# if there is a websocket send it over websockets
 						elsif ($_->{pending} == VALID_WEBSOCKET)
@@ -845,6 +968,7 @@ sub initSocketServer
 								   pending => PENDING_WEBSOCKET, 
 								   time=>$connect_time, 
 								   monlist => "",
+								   platform => "websocket",
 								   badge => 0};
 				},
 				disconnect => sub
