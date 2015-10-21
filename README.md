@@ -90,7 +90,7 @@ use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 * As of today, there are 3 categories of message types your client (zmNinja or your own) can exchange with the server (event notification server)
  1. auth (from client to server)
  1. control (from client to server)
- 1. push (from client to server, used for APNS iOS notifications as of now)
+ 1. push (only applicable for zmNinja -> from client to server, used for APNS iOS notifications as of now)
  1. alarm (from server to client)
 
 
@@ -179,10 +179,10 @@ In this example, a client sends its token ID to the server.
 **Server-->Client:**
 If its successful, there is no response. However, if APNS is disabled it will send back
 ```
-{"event":"push", "type":"", "status":"Fail", "reason": "APNSDISABLED"}
+{"event":"push", "type":"", "status":"Fail", "reason": "PUSHDISABLED"}
 ```
 
-#### 4.1 Badge reset
+#### 4.2 Badge reset
 In push notifications, the server owns the responsibility for badge count (unlike local notifications).
 So a client can request the server to reset its badge count so the next push notification 
 starts from the value provided. 
@@ -197,9 +197,38 @@ can use any other number. The next time the server sends a push via APNS, it wil
 value. 0 makes the badge go away.
 
 
-####APNS Howto
+#### 4.3 APNS Howto - only applicable for zmNinja, not for other consumers###
 
-APNS will only work if you are able to do the following:
+As of version 0.3, APNS is fully supported via a Push Proxy Mode or directly.
+
+Simply put, "Push Proxy" is what most of you want. When enabled, it will route messages from your event server to a push server I have hosted that in turn will send notifications to your devices. This is necessary because both Apple and Google require push notifications coming from a trusted server (that is, a server that has the SSL certificates needed to send push notifications to zmNinja). In other words, it ties into my Google and Apple accounts, so it has to be my server.
+
+**Please don't overload my server. I've set it up for free for you to use and its running in a VM @ Home. If it brings down my workstation, I'll have to remove it**
+
+##### 4.3.1 Push notification via PushProxy
+
+Set ``$usePushProxy = 1`` in the event server script (around line 63) 
+Make sure ``PUSH_TOKEN_FILE`` is set to a file and path that is writable by ``www-data`` (the server will create the file if it does not exist)
+
+Make sure you have ``LWP::Protocol::https`` installed. This is typically as simple as
+```
+sudo perl -MCPAN -e "install LWP::Protocol::https"
+```
+That's it. Run the server in manual mode and check the logs (syslog) to make sure it works fine
+
+###### 4.3.1.2 What sort of data is transmitted to my server?
+
+For push to work, your event server will send my push server the following data:
+1. Your IP
+2. Your device token 
+3. The list of alarms (NO images) that need to be pushed to the phone - this consists of the Monitor Name, Monitor ID,Event ID
+
+FYI if you are using _any_ app that does push notifications, you will always need to transmit the data that needs to be pushed
+to a server hosted by that app provider. This is no different
+
+##### 4.3.2 Push notification directly from your event server
+
+This  will only work if you are able to do the following:
 * You have IOS Developer account and are able to generate APNS certificates. Since I am not hosting my own server, this is the only way. 
 * You will also need to compile zmNinja from source using your certificates. Both certicates and app IDs need to match
 
@@ -208,7 +237,8 @@ If you need to support iOS APNS:
 sudo perl -MCPAN -e "install Net::APNS::Persistent"
 ```
 Next up, you need to make the following changes to the Event Server script:
-* make sure ``$useAPNS`` is set to 1 (around line 62)
+* make sure ``$usePushAPNSDirect`` is set to 1 (around line 65)
+* make sure ``$usePushProxy`` is set to 0 (around line 63) (If both are enabled, PushProxy overrides direct mode)
 * make sure ``APNS_CERT_FILE`` and ``APNS_KEY_FILE`` point to the downloaded certs
 * make sure ``APNS_TOKEN_FILE`` points to an area that has ``www-data`` write permissions. The server will create the file if its not there. Its important to have ``www-data`` write permission as otherwise it will fail when run as a daemon
 * Restart the Event Server
