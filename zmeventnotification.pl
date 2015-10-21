@@ -381,7 +381,7 @@ sub sendOverPushProxy
 	my ($obj, $header, $str) = @_;
 	$obj->{badge}++;
 	my $uri = $pushProxyURL."/api/v2/push";
-	my $json = '{"device":"ios", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "badge":"'.$obj->{badge}.'", "custom":{"alarm_details":'.$str.'}}';
+	my $json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "badge":"'.$obj->{badge}.'", "custom":{"alarm_details":'.$str.'}}';
 	my $req = HTTP::Request->new ('POST', $uri);
 	$req->header( 'Content-Type' => 'application/json', 'X-AN-APP-NAME'=> PUSHPROXY_APP_NAME, 'X-AN-APP-KEY'=> PUSHPROXY_APP_ID
 	 );
