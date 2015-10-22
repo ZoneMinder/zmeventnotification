@@ -90,7 +90,7 @@ use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 * As of today, there are 3 categories of message types your client (zmNinja or your own) can exchange with the server (event notification server)
  1. auth (from client to server)
  1. control (from client to server)
- 1. push (only applicable for zmNinja -> from client to server, used for APNS iOS notifications as of now)
+ 1. push (only applicable for zmNinja)
  1. alarm (from server to client)
 
 
@@ -166,28 +166,45 @@ Sample payload of 2 events being reported:
 ```
 
 
-### 4. Push Notifications (only for iOS for now)
-To make APNS work, please make sure you read the section on enabling APNS for the event server.
+### 4. Push Notifications (for both iOS and Android)
+To make Push Notifications work, please make sure you read the section on enabling Push for the event server.
 
-#### 4.1 Registering APNS token with the server
+#### 4.1 Concepts of Push and why it is only for zmNinja
+
+Both Apple and Google ensure that a "trusted" application server can send push notifications to a specific app running in a device. If they did not require this, anyone could spam apps with messages. So in other words, a "Push" will be routed from a specific server to a specific app. I am currently hosting a push server in my house that has the credentials required to send pushes to "com.pliablepixels.zmninja" which is the ID of my app registered in both Apple and Google. When you enable ``$usePushProxy`` in the script, your locally hosted Event Server will basically send an HTTP POST to my server at my home which will then send a message to APNS or GCM as the case may be and only then will your zmNinja app in your phone get the message. 
+
+Therefore, enabling usePushProxy will only work with zmNinja. If you are writing your own mobile app and want to tie this eventserver with your push server, just change the URL of ``$pushProxyURL`` to yours and change the data format based on what  your push server needs in ``sub sendOverPushProxy`` and that's all.
+
+
+#### 4.2 Registering Push token with the server
 **Client-->Server:**
+
+Registering an iOS device:
 ```
 {"event":"push","data":{"type":"token","platform":"ios","token":"<device tokenid here>"}}
+```
+Here is an example of registering an Android device:
+```
+{"event":"push","data":{"type":"token","platform":"android","token":"<device tokenid here>"}}
 ```
 In this example, a client sends its token ID to the server. 
 
 **Server-->Client:**
-If its successful, there is no response. However, if APNS is disabled it will send back
+If its successful, there is no response. However, if Push is disabled it will send back
 ```
 {"event":"push", "type":"", "status":"Fail", "reason": "PUSHDISABLED"}
 ```
 
-#### 4.2 Badge reset
+#### 4.3 Badge reset
+
+Only applies to iOS. Android push notifications don't have a concept of badge notifications, as it turns out.
+
 In push notifications, the server owns the responsibility for badge count (unlike local notifications).
 So a client can request the server to reset its badge count so the next push notification 
 starts from the value provided. 
 
 **Client-->Server:**
+
 ```
 {"event":"push", "data":{"type":"badge", "badge":"0"}}
 ```
@@ -197,15 +214,15 @@ can use any other number. The next time the server sends a push via APNS, it wil
 value. 0 makes the badge go away.
 
 
-#### 4.3 APNS Howto - only applicable for zmNinja, not for other consumers###
+#### 4.4 APNS/GCM Howto - only applicable for zmNinja, not for other consumers###
 
-As of version 0.3, APNS is fully supported via a Push Proxy Mode or directly.
+As of version 0.3, APNS and GCM are  fully supported via a Push Proxy Mode (or directly for APNS).
 
 Simply put, "Push Proxy" is what most of you want. When enabled, it will route messages from your event server to a push server I have hosted that in turn will send notifications to your devices. This is necessary because both Apple and Google require push notifications coming from a trusted server (that is, a server that has the SSL certificates needed to send push notifications to zmNinja). In other words, it ties into my Google and Apple accounts, so it has to be my server.
 
 **Please don't overload my server. I've set it up for free for you to use and its running in a VM @ Home. If it brings down my workstation, I'll have to remove it**
 
-##### 4.3.1 Push notification via PushProxy
+##### 4.4.1 Push notification via PushProxy
 
 Set ``$usePushProxy = 1`` in the event server script (around line 63) 
 Make sure ``PUSH_TOKEN_FILE`` is set to a file and path that is writable by ``www-data`` (the server will create the file if it does not exist)
@@ -216,7 +233,7 @@ sudo perl -MCPAN -e "install LWP::Protocol::https"
 ```
 That's it. Run the server in manual mode and check the logs (syslog) to make sure it works fine
 
-###### 4.3.1.2 What sort of data is transmitted to my server?
+###### 4.4.1.2 What sort of data is transmitted to my server?
 
 For push to work, your event server will send my push server the following data:
 1. Your IP
@@ -226,7 +243,9 @@ For push to work, your event server will send my push server the following data:
 FYI if you are using _any_ app that does push notifications, you will always need to transmit the data that needs to be pushed
 to a server hosted by that app provider. This is no different
 
-##### 4.3.2 Push notification directly from your event server
+##### 4.4.2 Push notification directly from your event server
+
+This is currently only implemented for APNS. 
 
 This  will only work if you are able to do the following:
 * You have IOS Developer account and are able to generate APNS certificates. Since I am not hosting my own server, this is the only way. 
@@ -265,11 +284,4 @@ Not secure. Easy to snoop.
 **Why ZM auth in addition to WSS?**
 
 WSS offers encryption. We also want to make sure connections are authorized. Reusing ZM authentication credentials is the easiest. You can change it to some other credential match (modify ``validateZM`` function)
-
-**Why do you only have APNS support and not GCM?**
-
-Android has the advantage of letting websockets run in background mode. So you can just use websockets.
-iOS kills sockets when the app goes to background (unless its a specific category of sockets).
-So I had to do APNS. Yes, I get it, GCM is better than websockets as it will work even if the app got killed.
-Soon.
 
