@@ -383,13 +383,16 @@ sub sendOverPushProxy
 	my $uri = $pushProxyURL."/api/v2/push";
 	my $json;
 
+	# Not passing full JSON object - so that payload is limited for now
 	if ($obj->{platform} eq "ios")
 	{
-		$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "sound":"blop.caf", "badge":"'.$obj->{badge}.'", "custom":{"alarm_details":'.$str.'}}';
+		$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "sound":"blop.caf", "badge":"'.$obj->{badge}.'"}';
+		#$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "sound":"blop.caf", "badge":"'.$obj->{badge}.'", "custom":{"alarm_details":'.$str.'}}';
 	}
 	else
 	{
-		$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "sound":"blop", "alert":"'.$header.'", "data":{"alarm_details":'.$str.'}}';
+		$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "sound":"blop", "alert":"'.$header.'"}';
+		#$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "sound":"blop", "alert":"'.$header.'", "data":{"alarm_details":'.$str.'}}';
 	}
 	#print "Sending:$json\n";
 	my $req = HTTP::Request->new ('POST', $uri);
