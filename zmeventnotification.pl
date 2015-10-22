@@ -381,7 +381,17 @@ sub sendOverPushProxy
 	my ($obj, $header, $str) = @_;
 	$obj->{badge}++;
 	my $uri = $pushProxyURL."/api/v2/push";
-	my $json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "badge":"'.$obj->{badge}.'", "custom":{"alarm_details":'.$str.'}}';
+	my $json;
+
+	if ($obj->{platform} eq "ios")
+	{
+		$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "sound":"blop.mp3", "badge":"'.$obj->{badge}.'", "custom":{"alarm_details":'.$str.'}}';
+	}
+	else
+	{
+		$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "soundfile":"blob", "alert":"'.$header.'", "data":{"love":"is here", "alarm_details":'.$str.'}}';
+	}
+	#print "Sending:$json\n";
 	my $req = HTTP::Request->new ('POST', $uri);
 	$req->header( 'Content-Type' => 'application/json', 'X-AN-APP-NAME'=> PUSHPROXY_APP_NAME, 'X-AN-APP-KEY'=> PUSHPROXY_APP_ID
 	 );
@@ -517,7 +527,7 @@ sub checkConnection
 
 	}
 	@active_connections = grep { $_->{pending} != INVALID_WEBSOCKET } @active_connections;
-	if ($usePushAPNSDirect)
+	if ($usePushAPNSDirect || $usePushProxy)
 	{
 		@active_connections = grep { $_->{pending} != INVALID_APNS } @active_connections;
 	}
@@ -919,6 +929,7 @@ sub initSocketServer
 							if ($usePushProxy)
 							{
 								Info ("Sending notification over PushProxy");
+								print ("PSUH PROXY");
 								sendOverPushProxy($_,$alarm_header, $str) ;		
 							}
 							else
