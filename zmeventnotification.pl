@@ -385,7 +385,7 @@ sub sendOverPushProxy
 
 	if ($obj->{platform} eq "ios")
 	{
-		$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "sound":"blop.mp3", "badge":"'.$obj->{badge}.'", "custom":{"alarm_details":'.$str.'}}';
+		$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "sound":"blop.caf", "badge":"'.$obj->{badge}.'", "custom":{"alarm_details":'.$str.'}}';
 	}
 	else
 	{
