@@ -389,7 +389,7 @@ sub sendOverPushProxy
 	}
 	else
 	{
-		$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "soundfile":"blob", "alert":"'.$header.'", "data":{"love":"is here", "alarm_details":'.$str.'}}';
+		$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "sound":"blop", "alert":"'.$header.'", "data":{"alarm_details":'.$str.'}}';
 	}
 	#print "Sending:$json\n";
 	my $req = HTTP::Request->new ('POST', $uri);
@@ -929,7 +929,7 @@ sub initSocketServer
 							if ($usePushProxy)
 							{
 								Info ("Sending notification over PushProxy");
-								print ("PSUH PROXY");
+								#print ("PSUH PROXY");
 								sendOverPushProxy($_,$alarm_header, $str) ;		
 							}
 							else
