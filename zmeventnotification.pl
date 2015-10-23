@@ -45,6 +45,7 @@
 #sudo perl -MCPAN -e "install Net::APNS::Persistent"
 
 use File::Basename;
+use Data::Dumper;
 
 use strict;
 use bytes;
@@ -605,10 +606,12 @@ sub checkMessage
 					$_->{token} = $json_string->{'data'}->{'token'};
 					$_->{platform} = $json_string->{'data'}->{'platform'};
 					$_->{monlist} = "-1";
+					$_->{intlist} = "-1";
 					Info ("Device token ".$_->{token}." stored for APNS");
 					Info ("savetokens/token ".$_->{token}." ".$_->{monlist}."\n");
-					my $emonlist = saveTokens($_->{token}, $_->{monlist}, $_->{platform});
+					my ($emonlist,$eintlist) = saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform});
 					$_->{monlist} = $emonlist;
+					$_->{intlist} = $eintlist;
 
 
 				}
@@ -623,6 +626,8 @@ sub checkMessage
 		if  ($json_string->{'data'}->{'type'} eq "filter")
 		{
 			my $monlist = $json_string->{'data'}->{'monlist'};
+			my $intlist = $json_string->{'data'}->{'intlist'};
+			#print ("CONTROL GOT: $monlist and $intlist\n");
 			foreach (@active_connections)
 			{
 				if ((exists $_->{conn}) && ($_->{conn}->ip() eq $conn->ip())  &&
@@ -630,8 +635,9 @@ sub checkMessage
 				{
 
 					$_->{monlist} = $monlist;
-					Info ("savetokens/control ".$_->{token}." ".$_->{monlist}."\n");
-					saveTokens($_->{token}, $_->{monlist}, $_->{platform});	
+					$_->{intlist} = $intlist;
+					Info ("savetokens/control ".$_->{token}." ".$_->{monlist}." ".$_->{intlist}."\n");
+					saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform});	
 				}
 			}
 		}	
@@ -728,16 +734,18 @@ sub loadTokens
 	{
 		next if ($_ eq "");
 		print $fh "$_\n";
-		my ($token, $monlist, $platform)  = split (":",$_);
+		my ($token, $monlist, $intlist, $platform)  = split (":",$_);
 		#print "load: PUSHING $row\n";
 		push @active_connections, {
-					   token => $token,
-					   pending => VALID_WEBSOCKET,
-					   time=>time(),
-					   badge => 0,
-					   monlist => $monlist,
-					   platform => $platform
-					  };
+			   token => $token,
+			   pending => VALID_WEBSOCKET,
+			   time=>time(),
+			   badge => 0,
+			   monlist => $monlist,
+			   intlist => $intlist,
+			   last_sent=>{},
+			   platform => $platform
+			  };
 		
 	}
 	close ($fh);
@@ -761,7 +769,7 @@ sub deleteToken
 
 	foreach(@uniquetokens)
 	{
-		my ($token, $monlist, $platform)  = split (":",$_);
+		my ($token, $monlist, $intlist, $platform)  = split (":",$_);
 		next if ($_ eq "" || $token eq $dtoken);
 		print $fh "$_\n";
 		#print "delete: $row\n";
@@ -771,6 +779,8 @@ sub deleteToken
 					   time=>time(),
 					   badge => 0,
 					   monlist => $monlist,
+					   intlist => $intlist,
+					   last_sent=>{},
 					   platform => $platform
 					  };
 		
@@ -791,6 +801,7 @@ sub saveTokens
 	return if (!$usePushAPNSDirect && !$usePushProxy);
 	my $stoken = shift;
 	my $smonlist = shift;
+	my $sintlist = shift;
 	my $splatform = shift;
 	return if ($stoken eq "");
 	open (my $fh, '<', PUSH_TOKEN_FILE) || Fatal ("Cannot open for read".PUSH_TOKEN_FILE);
@@ -802,27 +813,29 @@ sub saveTokens
 	foreach (@uniquetokens)
 	{
 		next if ($_ eq "");
-		my ($token, $monlist, $platform)  = split (":",$_);
+		my ($token, $monlist, $intlist, $platform)  = split (":",$_);
 		if ($token eq $stoken)
 		{
 			$smonlist = $monlist if ($smonlist eq "-1");
-			print $fh "$stoken:$smonlist:$splatform\n";
+			$sintlist = $intlist if ($sintlist eq "-1");
+			print $fh "$stoken:$smonlist:$sintlist:$splatform\n";
 			$found = 1;
 		}
 		else
 		{
-			print $fh "$token:$monlist:$platform\n";
+			print $fh "$token:$monlist:$intlist:$platform\n";
 		}
 
 	}
 
 	$smonlist = "" if ($smonlist eq "-1");
+	$sintlist = "" if ($sintlist eq "-1");
 	
-	print $fh "$stoken:$smonlist:$splatform\n" if (!$found);
+	print $fh "$stoken:$smonlist:$sintlist:$splatform\n" if (!$found);
 	close ($fh);
 	registerOverPushProxy($stoken,$splatform) if ($usePushProxy);
 	#print "Saved Token $token to file\n";
-	return $smonlist;
+	return ($smonlist, $sintlist);
 	
 }
 
@@ -835,11 +848,11 @@ sub uniq
 	my @farray=();
 	foreach (@array)
 	{
-		my ($token,$monlist,$platform) = split (":",$_);
-		# not interested in monlist
+		my ($token,$monlist,$intlist,$platform) = split (":",$_);
+		# not interested in monlist & intlist
 		if (! $seen{$token}++ )
 		{
-			push @farray, "$token:$monlist:$platform";
+			push @farray, "$token:$monlist:$intlist:$platform";
 		}
 		 
 		
@@ -848,7 +861,32 @@ sub uniq
 	
 	
 }
+# Checks if the monitor for which
+# an alarm occurred is part of the monitor list
+# for that connection
+sub getInterval
+{
+	my $intlist = shift;
+	my $monlist = shift;
+	my $mid = shift;
 
+	#print ("getInterval:MID:$mid INT:$intlist AND MON:$monlist\n");
+	my @ints = split (',',$intlist);
+	my @mids = split (',',$monlist);
+	my $idx = -1;
+	foreach (@mids)
+	{
+		$idx++;
+		#print ("Comparing $mid with $_\n");
+		if ($mid eq $_)
+		{
+			last;
+		}
+	}
+	#print ("RETURNING index:$idx with Value:".$ints[$idx]."\n");
+	return $ints[$idx];
+	
+}
 # Checks if the monitor for which
 # an alarm occurred is part of the monitor list
 # for that connection
@@ -904,6 +942,9 @@ sub initSocketServer
 					{
 						# Let's see if this connection is interested in this alarm
 						my $monlist = $_->{monlist};
+						my $intlist = $_->{intlist};
+						my $last_sent = $_->{last_sent};
+						my $obj = $_;
 
 						# we need to create a per connection array which will be
 						# a subset of main events with the ones that are not in its
@@ -913,7 +954,31 @@ sub initSocketServer
 						{
 							if ($monlist eq "" || isInList($monlist, $_->{MonitorId} ) )
 							{
-								push (@localevents, $_);
+								#print "Dumping LAST SENT " . Dumper($last_sent)."\n";
+								my $mint = getInterval($intlist, $monlist, $_->{MonitorId});
+								my $elapsed;
+								if ($last_sent->{$_->{MonitorId}})
+								{
+									 $elapsed = time() -  $last_sent->{$_->{MonitorId}};
+									 if ($elapsed >= $mint)
+									{
+										push (@localevents, $_);
+									}
+									else
+									{
+										
+									#	 Info("Not sending this out as $elapsed is less than interval of $mint");
+									}
+
+								}
+								else
+								{
+									# This means we have no record of sending any event to this monitor
+									$last_sent->{$_->{MonitorId}} = time();
+									push (@localevents, $_);
+									#print "Sending this out as this is the first time\n";
+								}
+
 							}
 
 						}
@@ -932,7 +997,6 @@ sub initSocketServer
 							if ($usePushProxy)
 							{
 								Info ("Sending notification over PushProxy");
-								#print ("PSUH PROXY");
 								sendOverPushProxy($_,$alarm_header, $str) ;		
 							}
 							else
@@ -982,6 +1046,8 @@ sub initSocketServer
 								   pending => PENDING_WEBSOCKET, 
 								   time=>$connect_time, 
 								   monlist => "",
+								   intlist => "",
+								   last_sent=>{},
 								   platform => "websocket",
 								   badge => 0};
 				},
