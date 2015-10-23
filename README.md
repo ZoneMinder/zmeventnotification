@@ -130,15 +130,19 @@ No authentication received in time limit:
 Control messages manage the nature of notifications received/sent. As of today, Clients send control messages to the Server.
 In future this may be bi-directional
 
-##### 2.1 Control message to restrict monitor IDs for events
+##### 2.1 Control message to restrict monitor IDs for events as well as interval durations for reporting
 A client can send a control message to restrict which monitor IDs it is interested in. When received, the server will only
-send it alarms for those specific monitor IDs
+send it alarms for those specific monitor IDs. You can also specify the reporting interval for events.
 
 **Client-->Server:**
 ```
-{"event":"control","data":{"type":"filter","monlist":"1,2,4,5,6"}}
+{"event":"control","data":{"type":"filter","monlist":"1,2,4,5,6", "intlist":"0,0,3600,60,0"}}
 ```
 In this example, a client has requested to be notified of events only from monitor IDs 1,2,4,5 and 6
+Furthermore it wants to be notified for each alarm for monitors 1,2,6. For monitor 4, it wants to be
+notified only if the time difference between the previous and current event is 1 hour or more (3600 seconds)
+while for monitor 5, it wants the time difference between the previous and current event to be 1 minute (60 seconds)
+
 
 There is no response for this request.
 
