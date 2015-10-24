@@ -87,6 +87,7 @@ use constant APNS_FEEDBACK_CHECK_INTERVAL => 3600;		# only used if usePushAPNSDi
 
 #----------- End: only applies to usePushAPNSDirect = 1 --
 
+use constant PUSH_CHECK_REACH_INTERVAL => 3600;				# time in seconds to do a reachability test with push proxt
 use constant SLEEP_DELAY=>5; 						# duration in seconds after which we will check for new events
 use constant MONITOR_RELOAD_INTERVAL => 300;
 use constant WEBSOCKET_AUTH_DELAY => 20; 				# max seconds by which authentication must be done
@@ -188,6 +189,7 @@ my $dbh = zmDbConnect();
 my %monitors;
 my $monitor_reload_time = 0;
 my $apns_feedback_time = 0;
+my $proxy_reach_time=0;
 my $wss;
 my @events=();
 my @active_connections=();
@@ -322,6 +324,30 @@ sub loadMonitors
         $new_monitors{$monitor->{Id}} = $monitor;
     }
     %monitors = %new_monitors;
+}
+
+# Does a health check to make sure push proxy is reachable
+sub testProxyURL
+{
+	if ((time() - $proxy_reach_time) > PUSH_CHECK_REACH_INTERVAL)
+	{
+		Info ("Checking $pushProxyURL reachability...");
+		my $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 0 });
+		$ua->timeout(10);
+		$ua->env_proxy;
+		my $response = $ua->get($pushProxyURL);
+		if ($response->is_success)
+		{
+			Info ("PushProxy $pushProxyURL is reachable.");
+
+		}
+		else
+		{
+			Error ("PushProxy $pushProxyURL is NOT reachable. Notifications will not work. Please reach out to the proxy owner if this error persists");
+		}
+		$proxy_reach_time = time();
+
+	}
 }
 
 # This function compares the password provided over websockets
@@ -942,6 +968,7 @@ sub getIdentity
 sub initSocketServer
 {
 	checkEvents();
+	testProxyURL() if ($usePushProxy);
 
 	my $ssl_server = IO::Socket::SSL->new(
       	      Listen        => 10,
@@ -960,6 +987,7 @@ sub initSocketServer
 		on_tick => sub {
 			checkConnection();
 			apnsFeedbackCheck() if ($usePushAPNSDirect);
+			testProxyURL() if ($usePushProxy);
 			my $ac = scalar @active_connections;
 			if (checkEvents())
 			{
