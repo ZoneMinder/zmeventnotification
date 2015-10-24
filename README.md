@@ -182,7 +182,7 @@ Sample payload of 2 events being reported:
 
 
 ### 4. Push Notifications (for both iOS and Android)
-To make Push Notifications work, please make sure you read the section on enabling Push for the event server.
+To make Push Notifications work, please make sure you read the [section on enabling Push](https://github.com/pliablepixels/zmeventserver#44-apnsgcm-howto---only-applicable-for-zmninja-not-for-other-consumers)  for the event server.
 
 #### 4.1 Concepts of Push and why it is only for zmNinja
 
