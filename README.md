@@ -240,7 +240,7 @@ Simply put, "Push Proxy" is what most of you want. When enabled, it will route m
 ##### 4.4.1 Push notification via PushProxy
 
 Set ``$usePushProxy = 1`` in the event server script (around line 63) 
-Make sure ``PUSH_TOKEN_FILE`` is set to a file and path that is writable by ``www-data`` (the server will create the file if it does not exist)
+Make sure ``PUSH_TOKEN_FILE`` (around line 76) is set to a file and path that is writable by ``www-data`` (the server will create the file if it does not exist)
 
 Make sure you have ``LWP::Protocol::https`` installed. This is typically as simple as
 ```
@@ -260,7 +260,8 @@ to a server hosted by that app provider. This is no different
 
 ##### 4.4.2 Push notification directly from your event server
 
-This is currently only implemented for APNS. 
+This is currently only implemented for APNS. This allows you to issue push notification directly to your phone from your Event server
+without using my proxy.
 
 This  will only work if you are able to do the following:
 * You have IOS Developer account and are able to generate APNS certificates. Since I am not hosting my own server, this is the only way. 

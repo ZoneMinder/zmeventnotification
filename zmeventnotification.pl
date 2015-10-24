@@ -607,8 +607,7 @@ sub checkMessage
 					$_->{platform} = $json_string->{'data'}->{'platform'};
 					$_->{monlist} = "-1";
 					$_->{intlist} = "-1";
-					Info ("Device token ".$_->{token}." stored for APNS");
-					Info ("savetokens/token ".$_->{token}." ".$_->{monlist}."\n");
+					Info ("Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}."\n");
 					my ($emonlist,$eintlist) = saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform});
 					$_->{monlist} = $emonlist;
 					$_->{intlist} = $eintlist;
@@ -648,7 +647,7 @@ sub checkMessage
 
 					$_->{monlist} = $monlist;
 					$_->{intlist} = $intlist;
-					Info ("savetokens/control ".$_->{token}." ".$_->{monlist}." ".$_->{intlist}."\n");
+					Info ("Storing ...".substr($_->{token},-10).":".$_->{monlist}.":".$_->{intlist}."\n");
 					saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform});	
 				}
 			}
@@ -921,6 +920,23 @@ sub isInList
 	
 }
 
+sub getIdentity
+{
+	my $obj=shift;
+	my $identity="";
+	if (exists $obj->{conn} )
+	{
+		$identity = $obj->{conn}->ip().":".$obj->{conn}->port();
+	}
+	if ($obj->{token})
+	{
+		$identity=$identity." token ending in:...". substr($obj->{token},-10);
+	}
+	$identity="(unknown)" if (!$identity);
+	return $identity;
+}
+	
+
 # This is really the main module
 # It opens a WSS socket and keeps listening
 sub initSocketServer
@@ -957,7 +973,8 @@ sub initSocketServer
 						my $intlist = $_->{intlist};
 						my $last_sent = $_->{last_sent};
 						my $obj = $_;
-
+						my $connid = getIdentity($obj);
+						Info ("Checking alarm rules for $connid");
 						# we need to create a per connection array which will be
 						# a subset of main events with the ones that are not in its
 						# monlist left out
@@ -979,7 +996,7 @@ sub initSocketServer
 									else
 									{
 										
-									#	 Info("Not sending this out as $elapsed is less than interval of $mint");
+										 Info("Not sending this out as $elapsed is less than interval of $mint");
 									}
 
 								}
