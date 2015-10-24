@@ -144,7 +144,18 @@ notified only if the time difference between the previous and current event is 1
 while for monitor 5, it wants the time difference between the previous and current event to be 1 minute (60 seconds)
 
 
-There is no response for this request.
+There is no response for this request, unless the payload did not have either monlist or intlist.
+
+No monitorlist received:
+```
+{"event":"control","type":"filter", "status":"Fail","reason":"NOMONITORLIST"}
+```
+No interval received:
+```
+{"event":"control","type":"filter", "status":"Fail","reason":"NOINTERVALLIST"}
+```
+
+Note that if you don't want to specify intervals, send it a interval list comprising of comma separated 0's, one for each monitor in monitor list.
 
 
 ##### 2.2 Control message to get Event Server version
