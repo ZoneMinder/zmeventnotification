@@ -94,7 +94,7 @@ use constant WEBSOCKET_AUTH_DELAY => 20; 				# max seconds by which authenticati
 
 # These are needed for the remote push to work. Don't change these
 use constant PUSHPROXY_APP_NAME => 'zmninja';
-use constant PUSHPROXY_APP_ID => '654fe71b4711d6b8f16311e99d1fe2aa';
+use constant PUSHPROXY_APP_ID => '82d338ce47314f7d5c9865d4338c5b19';
 
 
 use constant APP_VERSION=>'0.3';
