@@ -35,6 +35,7 @@
 # ==========================================================================
 
 
+
 #sudo perl -MCPAN -e "install Crypt::MySQL"
 #sudo perl -MCPAN -e "install Net::WebSocket::Server"
 
@@ -49,6 +50,9 @@ use Data::Dumper;
 
 use strict;
 use bytes;
+
+my $app_version="0.4";
+
 # ==========================================================================
 #
 # These are the elements you can edit to suit your installation
@@ -97,11 +101,13 @@ use constant PUSHPROXY_APP_NAME => 'zmninja';
 use constant PUSHPROXY_APP_ID => '82d338ce47314f7d5c9865d4338c5b19';
 
 
-use constant APP_VERSION=>'0.3';
 use constant PENDING_WEBSOCKET => '1';
 use constant INVALID_WEBSOCKET => '-1';
 use constant INVALID_APNS => '-2';
 use constant VALID_WEBSOCKET => '0';
+
+my $alarmEventId = 1;			# tags the event id along with the alarm - useful for correlation
+					# only for geeks though - most people won't give a damn. I do.
 
 if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");exit (-1);}
 if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL  missing");exit (-1);}
@@ -183,7 +189,6 @@ sub Usage
 logInit();
 logSetSignal();
 
-Info( "Event Notification daemon  starting\n" );
 
 my $dbh = zmDbConnect();
 my %monitors;
@@ -208,6 +213,7 @@ if ($usePushAPNSDirect || $usePushProxy)
 	}
 }
 
+Info( "Event Notification daemon v $app_version starting\n" );
 loadTokens();
 initSocketServer();
 Info( "Event Notification daemon exiting\n" );
@@ -275,7 +281,9 @@ sub checkEvents()
 				my $eid = $last_event;
 				push @events, {Name => $name, MonitorId => $mid, EventId => $last_event};
 				$alarm_header = "Alarms: " if (!$alarm_header);
-				$alarm_header = $alarm_header . $name .",";
+				$alarm_header = $alarm_header . $name ;
+				$alarm_header = $alarm_header . " (".$last_event.") " if ($alarmEventId);
+				$alarm_header = $alarm_header . "," ;
 				$eventFound = 1;
 			}
 			
@@ -414,8 +422,8 @@ sub sendOverPushProxy
 	if ($obj->{platform} eq "ios")
 	{
 		$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "sound":"blop.caf", "badge":"'.$obj->{badge}.'"}';
-		#$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "sound":"blop.caf", "badge":"'.$obj->{badge}.'", "custom":{"alarm_details":'.$str.'}}';
-	}
+		#$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'",  "badge":"'.$obj->{badge}.'"}';
+			}
 	else
 	{
 		$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "sound":"blop", "alert":"'.$header.'"}';
@@ -539,6 +547,7 @@ sub checkConnection
 		my $curtime = time();
 		if ($_->{pending} == PENDING_WEBSOCKET)
 		{
+			# This takes care of purging connections that have not authenticated
 			if ($curtime - $_->{time} > WEBSOCKET_AUTH_DELAY)
 			{
 			# What happens if auth is not provided but device token is registered?
@@ -589,8 +598,15 @@ sub checkMessage
 		eval {$conn->send_utf8($str);};
 		return;
 	}
+	#-----------------------------------------------------------------------------------
+	# "push" event processing
+	#-----------------------------------------------------------------------------------
 	elsif (($json_string->{'event'} eq "push") && ($usePushAPNSDirect || $usePushProxy))
 	{
+		# sets the unread event count of events for a specific connection
+		# the server keeps a tab of # of events it pushes out per connection
+		# but won't know when the client has read them, so the client call tell the server
+		# using this message
 		if ($json_string->{'data'}->{'type'} eq "badge")
 		{
 			foreach (@active_connections)
@@ -608,6 +624,7 @@ sub checkMessage
 		if ($json_string->{'data'}->{'type'} eq "token")
 		{
 			
+			# a token must have a platform otherwise I don't know whether to use APNS or GCM
 			if (!$json_string->{'data'}->{'platform'})
 			{
 				my $str = encode_json({event=>'push', type=>'token',status=>'Fail', reason => 'MISSINGPLATFORM'});
@@ -616,8 +633,14 @@ sub checkMessage
 			}
 			foreach (@active_connections)
 			{
+				# this token already exists
 				if ($_->{token} eq $json_string->{'data'}->{'token'}) 
 				{
+					# if the token doesn't belong to the same connection
+					# then we have two connections owning the same token
+					# so we need to delete the old one. This can happen when you load
+					# the token from the persistent file and there is no connection
+					# and then the client is loaded 
 					if ( (!exists $_->{conn}) || ($_->{conn}->ip() ne $conn->ip() 
 						&& $_->{conn}->port() ne $conn->port()))
 					{
@@ -625,7 +648,22 @@ sub checkMessage
 						Info ("Duplicate token found, marking for deletion");
 
 					}
+					else # token matches and connection matches, so it may be an update
+					{
+						$_->{token} = $json_string->{'data'}->{'token'};
+						$_->{platform} = $json_string->{'data'}->{'platform'};
+						$_->{monlist} = "-1";
+						$_->{intlist} = "-1";
+						$_->{pushstate} = $json_string->{'data'}->{'state'};
+						Info ("Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}.",pushstate:".$_->{pushstate}."\n");
+						my ($emonlist,$eintlist) = saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate});
+						$_->{monlist} = $emonlist;
+						$_->{intlist} = $eintlist;
+					}
 				}
+				# The connection matches but the token does not 
+				# this can happen if this is the first token registration after push notification registration
+				# response is received
 				elsif ( (exists $_->{conn}) && ($_->{conn}->ip() eq $conn->ip())  &&
 				    ($_->{conn}->port() eq $conn->port()))  
 				{
@@ -633,8 +671,9 @@ sub checkMessage
 					$_->{platform} = $json_string->{'data'}->{'platform'};
 					$_->{monlist} = "-1";
 					$_->{intlist} = "-1";
-					Info ("Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}."\n");
-					my ($emonlist,$eintlist) = saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform});
+					$_->{pushstate} = $json_string->{'data'}->{'state'};
+					Info ("Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}.",pushstate:".$_->{pushstate}."\n");
+					my ($emonlist,$eintlist) = saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate});
 					$_->{monlist} = $emonlist;
 					$_->{intlist} = $eintlist;
 
@@ -646,6 +685,9 @@ sub checkMessage
 		}
 		
 	} # event = push
+	#-----------------------------------------------------------------------------------
+	# "control" event processing
+	#-----------------------------------------------------------------------------------
 	elsif (($json_string->{'event'} eq "control") )
 	{
 		if  ($json_string->{'data'}->{'type'} eq "filter")
@@ -673,8 +715,8 @@ sub checkMessage
 
 					$_->{monlist} = $monlist;
 					$_->{intlist} = $intlist;
-					Info ("Storing ...".substr($_->{token},-10).":".$_->{monlist}.":".$_->{intlist}."\n");
-					saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform});	
+					Info ("Contrl: Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}.",pushstate:".$_->{pushstate}."\n");
+					saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate});	
 				}
 			}
 		}	
@@ -685,7 +727,7 @@ sub checkMessage
 				if ((exists $_->{conn}) && ($_->{conn}->ip() eq $conn->ip())  &&
 				    ($_->{conn}->port() eq $conn->port()))  
 				{
-					my $str = encode_json({event=>'control',type=>'version', status=>'Success', reason => '', version => APP_VERSION});
+					my $str = encode_json({event=>'control',type=>'version', status=>'Success', reason => '', version => $app_version});
 					eval {$_->{conn}->send_utf8($str);};
 
 				}
@@ -695,7 +737,9 @@ sub checkMessage
 	} # event = control
 
 
-
+	#-----------------------------------------------------------------------------------
+	# "auth" event processing
+	#-----------------------------------------------------------------------------------
 	# This event type is when a command related to authorization is sent
 	elsif ($json_string->{'event'} eq "auth")
 	{
@@ -725,7 +769,7 @@ sub checkMessage
 					# all good, connection auth was valid
 					$_->{pending}=VALID_WEBSOCKET;
 					$_->{token}='';
-					my $str = encode_json({event=>'auth', type=>'', status=>'Success', reason => '', version => APP_VERSION});
+					my $str = encode_json({event=>'auth', type=>'', status=>'Success', reason => '', version => $app_version});
 					eval {$_->{conn}->send_utf8($str);};
 					Info("Correct authentication provided by ".$_->{conn}->ip());
 					
@@ -761,6 +805,7 @@ sub loadTokens
 	
 	open (my $fh, '<', PUSH_TOKEN_FILE);
 	chomp( my @lines = <$fh>);
+
 	close ($fh);
 	my @uniquetokens = uniq(@lines);
 
@@ -771,7 +816,7 @@ sub loadTokens
 	{
 		next if ($_ eq "");
 		print $fh "$_\n";
-		my ($token, $monlist, $intlist, $platform)  = split (":",$_);
+		my ($token, $monlist, $intlist, $platform, $pushstate)  = split (":",$_);
 		#print "load: PUSHING $row\n";
 		push @active_connections, {
 			   token => $token,
@@ -781,7 +826,8 @@ sub loadTokens
 			   monlist => $monlist,
 			   intlist => $intlist,
 			   last_sent=>{},
-			   platform => $platform
+			   platform => $platform,
+			   pushstate => $pushstate
 			  };
 		
 	}
@@ -806,7 +852,7 @@ sub deleteToken
 
 	foreach(@uniquetokens)
 	{
-		my ($token, $monlist, $intlist, $platform)  = split (":",$_);
+		my ($token, $monlist, $intlist, $platform, $pushstate)  = split (":",$_);
 		next if ($_ eq "" || $token eq $dtoken);
 		print $fh "$_\n";
 		#print "delete: $row\n";
@@ -818,7 +864,8 @@ sub deleteToken
 					   monlist => $monlist,
 					   intlist => $intlist,
 					   last_sent=>{},
-					   platform => $platform
+					   platform => $platform,
+					   pushstate => $pushstate
 					  };
 		
 	}
@@ -837,9 +884,11 @@ sub saveTokens
 {
 	return if (!$usePushAPNSDirect && !$usePushProxy);
 	my $stoken = shift;
+	return if ($stoken eq "");
 	my $smonlist = shift;
 	my $sintlist = shift;
 	my $splatform = shift;
+	my $spushstate = shift;
 	return if ($stoken eq "");
 	open (my $fh, '<', PUSH_TOKEN_FILE) || Fatal ("Cannot open for read".PUSH_TOKEN_FILE);
 	chomp( my @lines = <$fh>);
@@ -850,17 +899,19 @@ sub saveTokens
 	foreach (@uniquetokens)
 	{
 		next if ($_ eq "");
-		my ($token, $monlist, $intlist, $platform)  = split (":",$_);
+		my ($token, $monlist, $intlist, $platform, $pushstate)  = split (":",$_);
 		if ($token eq $stoken)
 		{
 			$smonlist = $monlist if ($smonlist eq "-1");
 			$sintlist = $intlist if ($sintlist eq "-1");
-			print $fh "$stoken:$smonlist:$sintlist:$splatform\n";
+			$spushstate = $pushstate if ($spushstate eq "");
+			print $fh "$stoken:$smonlist:$sintlist:$splatform:$spushstate\n";
 			$found = 1;
 		}
 		else
 		{
-			print $fh "$token:$monlist:$intlist:$platform\n";
+			$pushstate="enabled" if ($pushstate="");
+			print $fh "$token:$monlist:$intlist:$platform:$pushstate\n";
 		}
 
 	}
@@ -868,7 +919,7 @@ sub saveTokens
 	$smonlist = "" if ($smonlist eq "-1");
 	$sintlist = "" if ($sintlist eq "-1");
 	
-	print $fh "$stoken:$smonlist:$sintlist:$splatform\n" if (!$found);
+	print $fh "$stoken:$smonlist:$sintlist:$splatform:$spushstate\n" if (!$found);
 	close ($fh);
 	registerOverPushProxy($stoken,$splatform) if ($usePushProxy);
 	#print "Saved Token $token to file\n";
@@ -885,11 +936,11 @@ sub uniq
 	my @farray=();
 	foreach (@array)
 	{
-		my ($token,$monlist,$intlist,$platform) = split (":",$_);
+		my ($token,$monlist,$intlist,$platform, $pushstate) = split (":",$_);
 		# not interested in monlist & intlist
 		if (! $seen{$token}++ )
 		{
-			push @farray, "$token:$monlist:$intlist:$platform";
+			push @farray, "$token:$monlist:$intlist:$platform:$pushstate";
 		}
 		 
 		
@@ -1011,7 +1062,6 @@ sub initSocketServer
 						{
 							if ($monlist eq "" || isInList($monlist, $_->{MonitorId} ) )
 							{
-								#print "Dumping LAST SENT " . Dumper($last_sent)."\n";
 								my $mint = getInterval($intlist, $monlist, $_->{MonitorId});
 								my $elapsed;
 								if ($last_sent->{$_->{MonitorId}})
@@ -1019,12 +1069,13 @@ sub initSocketServer
 									 $elapsed = time() -  $last_sent->{$_->{MonitorId}};
 									 if ($elapsed >= $mint)
 									{
+										 Info("Monitor ".$_->{MonitorId}." event: sending this out as $elapsed is more than interval of $mint");
 										push (@localevents, $_);
 									}
 									else
 									{
 										
-										 Info("Not sending this out as $elapsed is less than interval of $mint");
+										 Info("Monitor ".$_->{MonitorId}." event: NOT sending this out as $elapsed is less than interval of $mint");
 									}
 
 								}
@@ -1032,14 +1083,13 @@ sub initSocketServer
 								{
 									# This means we have no record of sending any event to this monitor
 									$last_sent->{$_->{MonitorId}} = time();
+									Info("Monitor ".$_->{MonitorId}." event: last time not found, so sending");
 									push (@localevents, $_);
-									#print "Sending this out as this is the first time\n";
 								}
 
 							}
 
 						}
-						#print "DUMPING " .Dumper(@localevents);
 						# if this array is empty that means none of the alarms 
 						# were generated from a monitor it is interested in
 						next if (scalar @localevents == 0);
@@ -1049,14 +1099,17 @@ sub initSocketServer
 						$i++;
 						# if there is APNS send it over APNS
 						# if not, send it over Websockets 
-						if ($_->{token} ne "")
+						# also disabled is a special state which means its registered over push
+						# but it still wants messages over websockets - zmNinja sets this
+						# when websockets override is enabled
+						if (($_->{token} ne "") && ($_->{pushstate} ne "disabled" ))
 						{
 							if ($usePushProxy)
 							{
 								Info ("Sending notification over PushProxy");
 								sendOverPushProxy($_,$alarm_header, $str) ;		
 							}
-							else
+							elsif ($usePushAPNSDirect)
 							{
 
 								Info ("Sending notification directly via APNS");
@@ -1106,6 +1159,7 @@ sub initSocketServer
 								   intlist => "",
 								   last_sent=>{},
 								   platform => "websocket",
+								   pushstate => '',
 								   badge => 0};
 				},
 				disconnect => sub
