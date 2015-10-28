@@ -1,3 +1,5 @@
+###### Latest Version: 0.4
+
 ### What is it?
 A WSS (Secure Web Sockets) based event notification server that broadcasts new events to any authenticated listeners.
 
@@ -196,13 +198,25 @@ Therefore, enabling usePushProxy will only work with zmNinja. If you are writing
 
 Registering an iOS device:
 ```
-{"event":"push","data":{"type":"token","platform":"ios","token":"<device tokenid here>"}}
+{"event":"push","data":{"type":"token","platform":"ios","token":"<device tokenid here>", "state":"enabled"}}
 ```
 Here is an example of registering an Android device:
 ```
-{"event":"push","data":{"type":"token","platform":"android","token":"<device tokenid here>"}}
+{"event":"push","data":{"type":"token","platform":"android","token":"<device tokenid here>", "state":"enabled"}}
 ```
-In this example, a client sends its token ID to the server. 
+For devices capable of receiving push notifications, but want to stop receiving push notifications over APNS/GCM
+and have it delivered over websockets instead, set the state to disabled
+
+For example:
+Here is an example of registering an Android device, which disables push notifications over GCM:
+```
+{"event":"push","data":{"type":"token","platform":"android","token":"<device tokenid here>", "state":"disabled"}}
+```
+What happens here is if there is a new event to report, the Event Server will send it over websockets. This means
+if the app is running (foreground or background in Android, foreground in iOS) it will receive this notification
+over the open websocket. Note that in iOS this means you won't receive notifications when the app is not running
+in the foreground. We went over why, remember? 
+
 
 **Server-->Client:**
 If its successful, there is no response. However, if Push is disabled it will send back
