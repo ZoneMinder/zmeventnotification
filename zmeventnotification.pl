@@ -1069,8 +1069,9 @@ sub initSocketServer
 									 $elapsed = time() -  $last_sent->{$_->{MonitorId}};
 									 if ($elapsed >= $mint)
 									{
-										 Info("Monitor ".$_->{MonitorId}." event: sending this out as $elapsed is more than interval of $mint");
+										Info("Monitor ".$_->{MonitorId}." event: sending this out as $elapsed is >= interval of $mint");
 										push (@localevents, $_);
+										$last_sent->{$_->{MonitorId}} = time();
 									}
 									else
 									{
