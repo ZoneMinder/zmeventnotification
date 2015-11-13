@@ -51,7 +51,7 @@ use Data::Dumper;
 use strict;
 use bytes;
 
-my $app_version="0.4";
+my $app_version="0.5";
 
 # ==========================================================================
 #
@@ -1096,6 +1096,7 @@ sub initSocketServer
 						next if (scalar @localevents == 0);
 
 						my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => \@localevents});
+						my $sup_str = encode_json({event => 'alarm', type=>'', status=>'Success', supplementary=>'true', events => \@localevents});
 						my %hash_str = (event => 'alarm', status=>'Success', events => \@localevents);
 						$i++;
 						# if there is APNS send it over APNS
@@ -1116,6 +1117,21 @@ sub initSocketServer
 								Info ("Sending notification directly via APNS");
 								sendOverAPNS($_,$alarm_header, \%hash_str) ;
 							}
+							# send supplementary event data over websocket
+							if ($_->{pending} == VALID_WEBSOCKET)
+							{
+								if (exists $_->{conn})
+								{
+									Info ($_->{conn}->ip()."-sending supplementary data over websockets\n");
+									eval {$_->{conn}->send_utf8($sup_str);};
+									if ($@)
+									{
+								
+										$_->{pending} = INVALID_WEBSOCKET;
+									}
+								}
+							}
+
 						}
 						# if there is a websocket send it over websockets
 						elsif ($_->{pending} == VALID_WEBSOCKET)
