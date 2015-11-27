@@ -70,6 +70,12 @@ In ubuntu, do this to install JSON:
 apt-get install libjson-perl
 ```
 
+Get HTTPS library for LWP:
+```
+perl -MCPAN -e "install LWP::Protocol::https"
+```
+
+
 
 You **also need to make sure you generate SSL certificates otherwise the script won't run**
 If you are using SSL for ZoneMinder, simply point this script to the certificates.
