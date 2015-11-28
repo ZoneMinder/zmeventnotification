@@ -85,7 +85,7 @@ easy as:
 
 (replace /etc/apache2/ssl/ with the directory you want the certificate and key files to be stored in)
 ```
-sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/apache2/ssl/zmeventserver.key -out /etc/apache2/ssl/zmeventserver.crt
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/apache2/ssl/zoneminder.key -out /etc/apache2/ssl/zoneminder.crt
 ```
 
 
