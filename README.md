@@ -79,7 +79,15 @@ perl -MCPAN -e "install LWP::Protocol::https"
 
 You **also need to make sure you generate SSL certificates otherwise the script won't run**
 If you are using SSL for ZoneMinder, simply point this script to the certificates.
-If you are not, please generate them. You can read up how to do that [here](https://github.com/pliablepixels/zmNinja/blob/master/docs/SSL-Configuration.md)
+
+If you are not already using SSL for ZoneMinder and don't have certificates, generating them is as
+easy as:
+
+(replace /etc/apache2/ssl/ with the directory you want the certificate and key files to be stored in)
+```
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/apache2/ssl/zmeventserver.key -out /etc/apache2/ssl/zmeventserver.crt
+```
+
 
 Once you do that please change the following lines in the perl server to point to your SSL certs/keys:
 ```
