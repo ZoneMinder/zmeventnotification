@@ -1,4 +1,4 @@
-#!/usr/bin/perl -T
+#!/usr/bin/perl  -T
 #
 # ==========================================================================
 #
@@ -45,6 +45,7 @@
 #For iOS APNS:
 #sudo perl -MCPAN -e "install Net::APNS::Persistent"
 
+
 use File::Basename;
 use Data::Dumper;
 
@@ -78,6 +79,14 @@ my $pushProxyURL = 'https://pliablepixels.ddns.net:8801';  # This is my proxy UR
 # This server will create the file if it does not exist
 
 use constant PUSH_TOKEN_FILE=>'/etc/private/tokens.txt'; # MAKE SURE THIS DIRECTORY HAS WWW-DATA PERMISSIONS
+
+
+# -------- There seems to be an LWP perl bug that fails certifying self signed certs
+# refer to https://bugs.launchpad.net/ubuntu/+source/libwww-perl/+bug/1408331
+# you don't have to make it this drastic, you can also follow other tips in that thread to point to
+# a mozilla cert. I haven't tried
+
+my %ssl_push_opts = ( ssl_opts=>{verify_hostname => 0,SSL_verify_mode => 0,SSL_verifycn_scheme => 'none'} );
 
 
 #----------- Start: Change these only if you have usePushAPNSDirect set to 1 ------------------
@@ -340,7 +349,7 @@ sub testProxyURL
 	if ((time() - $proxy_reach_time) > PUSH_CHECK_REACH_INTERVAL)
 	{
 		Info ("Checking $pushProxyURL reachability...");
-		my $ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 0 });
+		my $ua = LWP::UserAgent->new(%ssl_push_opts);
 		$ua->timeout(10);
 		$ua->env_proxy;
 		my $response = $ua->get($pushProxyURL);
@@ -351,6 +360,7 @@ sub testProxyURL
 		}
 		else
 		{
+			Error ($response->status_line);
 			Error ("PushProxy $pushProxyURL is NOT reachable. Notifications will not work. Please reach out to the proxy owner if this error persists");
 		}
 		$proxy_reach_time = time();
@@ -396,7 +406,7 @@ sub registerOverPushProxy
 	$req->header( 'Content-Type' => 'application/json', 'X-AN-APP-NAME'=> PUSHPROXY_APP_NAME, 'X-AN-APP-KEY'=> PUSHPROXY_APP_ID
 	 );
 	 $req->content($json);
-	my $lwp = LWP::UserAgent->new(ssl_opts => { verify_hostname => 0 });
+	my $lwp = LWP::UserAgent->new(%ssl_push_opts);
 	my $res = $lwp->request( $req );
 	if ($res->is_success)
 	{
@@ -434,7 +444,7 @@ sub sendOverPushProxy
 	$req->header( 'Content-Type' => 'application/json', 'X-AN-APP-NAME'=> PUSHPROXY_APP_NAME, 'X-AN-APP-KEY'=> PUSHPROXY_APP_ID
 	 );
 	 $req->content($json);
-	my $lwp = LWP::UserAgent->new(ssl_opts => { verify_hostname => 0 });
+	my $lwp = LWP::UserAgent->new(%ssl_push_opts);
 	my $res = $lwp->request( $req );
 	if ($res->is_success)
 	{
