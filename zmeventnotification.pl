@@ -106,8 +106,8 @@ use constant MONITOR_RELOAD_INTERVAL => 300;
 use constant WEBSOCKET_AUTH_DELAY => 20; 				# max seconds by which authentication must be done
 
 # These are needed for the remote push to work. Don't change these
-use constant PUSHPROXY_APP_NAME => 'zmninja';
-use constant PUSHPROXY_APP_ID => '82d338ce47314f7d5c9865d4338c5b19';
+use constant PUSHPROXY_APP_NAME => 'zmninjapro';
+use constant PUSHPROXY_APP_ID => '3905d86d1f2922ed8f77583058471d70';
 
 
 use constant PENDING_WEBSOCKET => '1';
