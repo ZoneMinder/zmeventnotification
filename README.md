@@ -1,7 +1,8 @@
-###### Latest Version: 0.5
+###### Latest Version: 0.6
 
 ### What is it?
 A WSS (Secure Web Sockets) based event notification server that broadcasts new events to any authenticated listeners.
+(As of 0.6, it also includes a non secure websocket option, if that's how you want to run it)
 
 ### What can you do with it?
 Well, [zmNinja](https://github.com/pliablepixels/zmNinja) uses it to display real time notifications of events.
@@ -77,7 +78,7 @@ perl -MCPAN -e "install LWP::Protocol::https"
 
 
 
-You **also need to make sure you generate SSL certificates otherwise the script won't run**
+If you are using secure mode (default) you **also need to make sure you generate SSL certificates otherwise the script won't run**
 If you are using SSL for ZoneMinder, simply point this script to the certificates.
 
 If you are not already using SSL for ZoneMinder and don't have certificates, generating them is as
@@ -97,6 +98,11 @@ use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';
 use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 ```
 
+###How do I disable secure mode?
+
+As of 0.6, I've added an option to run the server using unsecure websockets (WS instead of WSS).
+As it turns out many folks run ZM inside the LAN only and don't want to deal with certificates. Fair enough.
+For that situation, edit zmeventnotification.pl and change $useSecure to 0 (around line 64)
 
 ###How do I talk to it?
 *  ``{"JSON":"everywhere"}``
@@ -328,6 +334,8 @@ Plus it may get passed along from the source when accessing another URL via the 
 **Why WSS and not WS?**
 
 Not secure. Easy to snoop.
+Updated: As of 0.6, I've also added a non secure version - change $useSecure to 0 arund line 64.
+As it turns out many folks don't expose ZM to the WAN and for that, I guess WS instead of WSS is ok.
 
 **Why ZM auth in addition to WSS?**
 
