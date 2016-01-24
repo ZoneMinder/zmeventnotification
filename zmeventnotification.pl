@@ -52,7 +52,7 @@ use Data::Dumper;
 use strict;
 use bytes;
 
-my $app_version="0.5";
+my $app_version="0.6";
 
 # ==========================================================================
 #
@@ -60,6 +60,10 @@ my $app_version="0.5";
 #
 # ==========================================================================
 use constant EVENT_NOTIFICATION_PORT=>9000; 				# port for Websockets connection
+
+my $useSecure = 1;							# make this 0 if you don't want SSL
+
+# ignore if useSecure is 0
 use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';		# Change these to your certs/keys
 use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 
@@ -1031,19 +1035,27 @@ sub initSocketServer
 	checkEvents();
 	testProxyURL() if ($usePushProxy);
 
-	my $ssl_server = IO::Socket::SSL->new(
-      	      Listen        => 10,
-	      LocalPort     => EVENT_NOTIFICATION_PORT,
-	      Proto         => 'tcp',
-	      Reuse	    => 1,
-	      SSL_cert_file => SSL_CERT_FILE,
-	      SSL_key_file  => SSL_KEY_FILE
-	    ) or die "failed to listen: $!";
-
+	my $ssl_server;
+	if ($useSecure)
+	{
+		$ssl_server = IO::Socket::SSL->new(
+		      Listen        => 10,
+		      LocalPort     => EVENT_NOTIFICATION_PORT,
+		      Proto         => 'tcp',
+		      Reuse	    => 1,
+		      SSL_cert_file => SSL_CERT_FILE,
+		      SSL_key_file  => SSL_KEY_FILE
+		    ) or die "failed to listen: $!";
+		Info ("Secure WS(WSS) is enabled...");
+	}
+	else
+	{
+		Info ("Secure WS is disabled...");
+	}
 	Info ("Web Socket Event Server listening on port ".EVENT_NOTIFICATION_PORT."\n");
 
 	$wss = Net::WebSocket::Server->new(
-		listen => $ssl_server,
+		listen => $useSecure ? $ssl_server : EVENT_NOTIFICATION_PORT,
 		tick_period => SLEEP_DELAY,
 		on_tick => sub {
 			checkConnection();
