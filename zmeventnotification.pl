@@ -52,7 +52,7 @@ use Data::Dumper;
 use strict;
 use bytes;
 
-my $app_version="0.6";
+my $app_version="0.7";
 
 # ==========================================================================
 #
@@ -76,7 +76,9 @@ my $usePushAPNSDirect = 0;			# set this to 1 if you have an APNS SSL certificate
 						# the only way to have this is if you have an apple developer
 						# account
 
-my $pushProxyURL = 'https://pliablepixels.ddns.net:8801';  # This is my proxy URL. Don't change it unless you are hosting your on APNS AS
+my $pushProxyURL = 'https://pliablepixels.ddns.net:8802';  # This is my proxy URL. Don't change it unless you are hosting your on APNS AS
+
+my $useCustomNotificationSound = 1;		# set to 0 for default sound
 
 # PUSH_TOKEN_FILE is needed for pushProxy mode as well as direct APNS mode
 # change this to a directory and file of your choosing. 
@@ -435,13 +437,25 @@ sub sendOverPushProxy
 	# Not passing full JSON object - so that payload is limited for now
 	if ($obj->{platform} eq "ios")
 	{
-		$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "sound":"blop.caf", "badge":"'.$obj->{badge}.'"}';
-		#$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'",  "badge":"'.$obj->{badge}.'"}';
-			}
+		if ($useCustomNotificationSound)
+		{
+			$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "sound":"blop.caf", "badge":"'.$obj->{badge}.'"}';
+		}
+		else
+		{
+			$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "sound":"true",  "badge":"'.$obj->{badge}.'"}';
+		}
+	}
 	else
 	{
-		$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "sound":"blop", "alert":"'.$header.'"}';
-		#$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "sound":"blop", "alert":"'.$header.'", "data":{"alarm_details":'.$str.'}}';
+		if ($useCustomNotificationSound)
+		{
+			$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "sound":"blop", "alert":"'.$header.'"}';
+		}
+		else
+		{
+			$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'",  "alert":"'.$header.'"}';
+		}
 	}
 	#print "Sending:$json\n";
 	my $req = HTTP::Request->new ('POST', $uri);
