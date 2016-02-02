@@ -1,4 +1,4 @@
-###### Latest Version: 0.6
+###### Latest Version: 0.7
 
 ### What is it?
 A WSS (Secure Web Sockets) based event notification server that broadcasts new events to any authenticated listeners.
