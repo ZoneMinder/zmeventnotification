@@ -27,7 +27,22 @@ No. I developed it for zmNinja, but you can use it with your own consumer.
 * Either run it manually like ``sudo /usr/bin/zmeventnotification.pl`` or add it as a daemon to ``/usr/bin/zmdc.pl`` (the advantage of the latter is that it gets automatically started when ZM starts
 and restarted if it crashes)
 
-#####How do I run it as a daemon so it starts automatically along with ZoneMinder?
+### How do I safely upgrade zmeventserver to new versions? ###
+
+```
+sudo zmdc.pl stop zmeventnotification.pl
+```
+
+Now copy the new zmeventnotification.pl to the right place (usually ``/usr/bin``)
+
+```
+sudo zmdc.pl start zmeventnotification.pl
+```
+
+Make sure you look at the syslogs to make sure its started properly
+
+
+###How do I run it as a daemon so it starts automatically along with ZoneMinder?
 
 **WARNING: Do NOT do this before you run it manually as I've mentioned above to test. Make sure it works, all packages are present etc. before you 
 add it as  a daemon as if you don't and it crashes you won't know why**
@@ -41,6 +56,10 @@ add it as  a daemon as if you don't and it crashes you won't know why**
 * To check if its running do a ``zmdc.pl status zmeventnotification.pl``
 
 You can/should run it manually at first to check if it works 
+
+###Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!###
+
+Fear not. You just need to redo the changes you did to ``zmpkg.pl`` and ``zmdc.pl`` and restart ZM. You see, when you upgrade ZM, it overwrites those files.
 
 ###Dependencies
 The following perl packages need to be added
