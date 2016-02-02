@@ -76,7 +76,7 @@ my $usePushAPNSDirect = 0;			# set this to 1 if you have an APNS SSL certificate
 						# the only way to have this is if you have an apple developer
 						# account
 
-my $pushProxyURL = 'https://pliablepixels.ddns.net:8802';  # This is my proxy URL. Don't change it unless you are hosting your on APNS AS
+my $pushProxyURL = 'https://pliablepixels.ddns.net:8801';  # This is my proxy URL. Don't change it unless you are hosting your on APNS AS
 
 my $useCustomNotificationSound = 1;		# set to 0 for default sound
 
