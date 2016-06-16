@@ -52,7 +52,7 @@ use Data::Dumper;
 use strict;
 use bytes;
 
-my $app_version="0.7";
+my $app_version="0.8";
 
 # ==========================================================================
 #
@@ -76,7 +76,7 @@ my $usePushAPNSDirect = 0;			# set this to 1 if you have an APNS SSL certificate
 						# the only way to have this is if you have an apple developer
 						# account
 
-my $pushProxyURL = 'https://pliablepixels.ddns.net:8801';  # This is my proxy URL. Don't change it unless you are hosting your on APNS AS
+my $pushProxyURL = 'https://185.124.74.36:8801';  # This is my proxy URL. Don't change it unless you are hosting your on APNS AS
 
 my $useCustomNotificationSound = 1;		# set to 0 for default sound
 
@@ -113,7 +113,7 @@ use constant WEBSOCKET_AUTH_DELAY => 20; 				# max seconds by which authenticati
 
 # These are needed for the remote push to work. Don't change these
 use constant PUSHPROXY_APP_NAME => 'zmninjapro';
-use constant PUSHPROXY_APP_ID => '3905d86d1f2922ed8f77583058471d70';
+use constant PUSHPROXY_APP_ID => 'e10db4ac29d34243f66f15592328fecc';
 
 
 use constant PENDING_WEBSOCKET => '1';
