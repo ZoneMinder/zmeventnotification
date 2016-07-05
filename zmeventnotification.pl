@@ -52,7 +52,7 @@ use Data::Dumper;
 use strict;
 use bytes;
 
-my $app_version="0.8";
+my $app_version="0.9";
 
 # ==========================================================================
 #
@@ -214,6 +214,7 @@ my $wss;
 my @events=();
 my @active_connections=();
 my $alarm_header="";
+my $alarm_mid="";
 
 # MAIN
 
@@ -275,6 +276,7 @@ sub checkEvents()
 
 	@events = ();
 	$alarm_header = "";
+	$alarm_mid="";
 	foreach my $monitor ( values(%monitors) )
 	{ 
 		my ( $state, $last_event )
@@ -297,6 +299,7 @@ sub checkEvents()
 				push @events, {Name => $name, MonitorId => $mid, EventId => $last_event};
 				$alarm_header = "Alarms: " if (!$alarm_header);
 				$alarm_header = $alarm_header . $name ;
+				$alarm_mid = $alarm_mid.$mid.",";
 				$alarm_header = $alarm_header . " (".$last_event.") " if ($alarmEventId);
 				$alarm_header = $alarm_header . "," ;
 				$eventFound = 1;
@@ -305,6 +308,7 @@ sub checkEvents()
 		}
 	}
 	chop($alarm_header) if ($alarm_header);
+	chop ($alarm_mid) if ($alarm_mid);
 	return ($eventFound);
 }
 
@@ -429,7 +433,7 @@ sub registerOverPushProxy
 sub sendOverPushProxy
 {
 	
-	my ($obj, $header, $str) = @_;
+	my ($obj, $header, $mid, $str) = @_;
 	$obj->{badge}++;
 	my $uri = $pushProxyURL."/api/v2/push";
 	my $json;
@@ -439,23 +443,54 @@ sub sendOverPushProxy
 	{
 		if ($useCustomNotificationSound)
 		{
-			$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "sound":"blop.caf", "badge":"'.$obj->{badge}.'"}';
+			$json = encode_json ({
+				device=>$obj->{platform},
+				token=>$obj->{token},
+				alert=>$header,
+				sound=>'blop.caf',
+				custom=> { mid=>$mid},
+				badge=>$obj->{badge}
+
+			});
+
 		}
 		else
 		{
-			$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "alert":"'.$header.'", "sound":"true",  "badge":"'.$obj->{badge}.'"}';
+			$json = encode_json ({
+				device=>$obj->{platform},
+				token=>$obj->{token},
+				alert=>$header,
+				sound=>'true',
+				custom=> { mid=>$mid},
+				badge=>$obj->{badge}
+
+			});
+
 		}
 	}
-	else
+	else # android
 	{
 		if ($useCustomNotificationSound)
 		{
-			$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'", "sound":"blop", "alert":"'.$header.'"}';
+			$json = encode_json ({
+				device=>$obj->{platform},
+				token=>$obj->{token},
+				alert=>$header,
+				sound=>'blop',
+				extra=> { mid=>$mid}
+
+			});
 		}
 		else
 		{
-			$json = '{"device":"'.$obj->{platform}.'", "token":"'.$obj->{token}.'",  "alert":"'.$header.'"}';
-		}
+			$json = encode_json ({
+				device=>$obj->{platform},
+				token=>$obj->{token},
+				extra=> { mid=>$mid},
+				alert=>$header
+
+			});
+}
 	}
 	#print "Sending:$json\n";
 	my $req = HTTP::Request->new ('POST', $uri);
@@ -486,7 +521,7 @@ sub sendOverAPNS
 	return;
   }
 
-  my ($obj, $header, $str) = @_;
+  my ($obj, $header, $mid, $str) = @_;
   my (%hash) = %{$str}; 
       
     my $apns = Net::APNS::Persistent->new({
@@ -1052,6 +1087,7 @@ sub initSocketServer
 	my $ssl_server;
 	if ($useSecure)
 	{
+		Info ("About to start listening to socket");
 		$ssl_server = IO::Socket::SSL->new(
 		      Listen        => 10,
 		      LocalPort     => EVENT_NOTIFICATION_PORT,
@@ -1145,13 +1181,13 @@ sub initSocketServer
 							if ($usePushProxy)
 							{
 								Info ("Sending notification over PushProxy");
-								sendOverPushProxy($_,$alarm_header, $str) ;		
+								sendOverPushProxy($_,$alarm_header, $alarm_mid, $str) ;		
 							}
 							elsif ($usePushAPNSDirect)
 							{
 
 								Info ("Sending notification directly via APNS");
-								sendOverAPNS($_,$alarm_header, \%hash_str) ;
+								sendOverAPNS($_,$alarm_header, $alarm_mid, \%hash_str) ;
 							}
 							# send supplementary event data over websocket
 							if ($_->{pending} == VALID_WEBSOCKET)
