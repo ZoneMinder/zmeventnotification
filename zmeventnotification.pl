@@ -1093,6 +1093,7 @@ sub initSocketServer
 		      LocalPort     => EVENT_NOTIFICATION_PORT,
 		      Proto         => 'tcp',
 		      Reuse	    => 1,
+		      ReuseAddr	    => 1,
 		      SSL_cert_file => SSL_CERT_FILE,
 		      SSL_key_file  => SSL_KEY_FILE
 		    ) or die "failed to listen: $!";
