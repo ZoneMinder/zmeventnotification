@@ -117,6 +117,13 @@ use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';
 use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 ```
 
+###Troubleshooting
+
+* If it runs fine when you run it from command line, but keeps exiting when run as a daemon:
+  - Make sure the file where you store tokens (/etc/private/tokens.txt or whatever you have used) is not RW Root only. It needs to be RW www-data
+  - Make sure your certificates are readable by www-data (thanks to [@jagee](https://github.com/pliablepixels/zmeventserver/issues/8)) 
+
+
 ###How do I disable secure mode?
 
 As of 0.6, I've added an option to run the server using unsecure websockets (WS instead of WSS).
