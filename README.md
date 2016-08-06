@@ -95,7 +95,7 @@ Get HTTPS library for LWP:
 perl -MCPAN -e "install LWP::Protocol::https"
 ```
 
-
+###SSL certificate
 
 If you are using secure mode (default) you **also need to make sure you generate SSL certificates otherwise the script won't run**
 If you are using SSL for ZoneMinder, simply point this script to the certificates.
