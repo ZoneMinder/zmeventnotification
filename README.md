@@ -23,7 +23,7 @@ No. I developed it for zmNinja, but you can use it with your own consumer.
 
 ###How do I install it?
 
-* Grab the server (its a simple perl file) and place it in the same place other ZM scripts are stored (example ``/usr/bin``)
+* [Grab the server](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.pl) (its a simple perl file) and place it in the same place other ZM scripts are stored (example ``/usr/bin``)
 * Either run it manually like ``sudo /usr/bin/zmeventnotification.pl`` or add it as a daemon to ``/usr/bin/zmdc.pl`` (the advantage of the latter is that it gets automatically started when ZM starts
 and restarted if it crashes)
 
