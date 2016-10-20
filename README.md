@@ -141,8 +141,8 @@ Here is how to debug and report:
 * Enable Debug logs in zmNinja (Setting->Developer Options->Enable Debug Log)
 * telnet/ssh into your zoneminder server
 * Stop the zmeventnotification doing `sudo zmdc.pl status zmeventnotification.pl`
-* Start a terminalb (lets call it Terminal-Log window to tail logs like so `tail -f /var/log/syslog | grep zmeventnotification`
-* Start zmeventserver manually from command line like so `sudo /usr/bin/zmeventnotification.pl`
+* Start a terminal (lets call it Terminal-Log)  to tail logs like so `tail -f /var/log/syslog | grep zmeventnotification`
+* Start another terminal and start zmeventserver manually from command line like so `sudo /usr/bin/zmeventnotification.pl`
 * Make sure you see logs like this in the logs window like so:
 ```
 Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [direct APNS disabled]
@@ -169,6 +169,7 @@ Oct 20 10:23:19 homeserver zmeventnotification[27789]: INF [Contrl: Storing toke
 Oct 20 10:23:19 homeserver zmeventnotification[27789]: INF [Pushproxy registration success ]
 
 ```
+
 If you don't see anything there is a connection problem. Review SSL guidelines above, or temporarily turn off websocket SSL as described above
 * Open up ZM console and force an alarm, you should see logs in your log window above like so:
 ```
@@ -179,6 +180,11 @@ Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Monitor 1 event: las
 Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Sending notification over PushProxy]
 Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push message success ]
 ```
+
+* If you have issues, please send me a copy of your zmeventserver logs generated above from Terminal-Log, as well as zmNinja debug logs
+
+
+
 
 ###============ For Developers writing their own consumers============
 
