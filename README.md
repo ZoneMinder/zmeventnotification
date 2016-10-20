@@ -24,6 +24,7 @@ No. I developed it for zmNinja, but you can use it with your own consumer.
 * [Download the server](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.pl) (its a simple perl file) and place it in the same place other ZM scripts are stored (example ``/usr/bin``)
 * Either run it manually like ``sudo /usr/bin/zmeventnotification.pl`` or [add it as a daemon](https://github.com/pliablepixels/zmeventserver#how-do-i-run-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder) to ``/usr/bin/zmdc.pl`` (the advantage of the latter is that it gets automatically started when ZM starts
 and restarted if it crashes)
+* Its is HIGHLY RECOMMENDED that you first start the event server manually from terminal, ensure you inspect syslog to validate all logs are correct and THEN make it a daemon in ZoneMinder. If you don't, it will be hard to know what is going wrong. See the [debugging](https://github.com/pliablepixels/zmeventserver#debugging-and-reporting-problems) section later that describes how to make sure its all working fine from command line.
 
 ### How do I safely upgrade zmeventserver to new versions? ###
 
