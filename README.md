@@ -26,42 +26,8 @@ No. I developed it for zmNinja, but you can use it with your own consumer.
 and restarted if it crashes)
 * Its is HIGHLY RECOMMENDED that you first start the event server manually from terminal, ensure you inspect syslog to validate all logs are correct and THEN make it a daemon in ZoneMinder. If you don't, it will be hard to know what is going wrong. See the [debugging](https://github.com/pliablepixels/zmeventserver#debugging-and-reporting-problems) section later that describes how to make sure its all working fine from command line.
 
-### How do I safely upgrade zmeventserver to new versions? ###
-
-```
-sudo zmdc.pl stop zmeventnotification.pl
-```
-
-Now copy the new zmeventnotification.pl to the right place (usually ``/usr/bin``)
-
-```
-sudo zmdc.pl start zmeventnotification.pl
-```
-
-Make sure you look at the syslogs to make sure its started properly
-
-
-###How do I run it as a daemon so it starts automatically along with ZoneMinder?
-
-**WARNING: Do NOT do this before you run it manually as I've mentioned above to test. Make sure it works, all packages are present etc. before you 
-add it as  a daemon as if you don't and it crashes you won't know why**
-
-(Note if you have compiled from source using cmake, the paths may be ``/usr/local/bin`` not ``/usr/bin``)
-
-* Copy ``zmeventnotification.pl`` to ``/usr/bin``
-* Edit ``/usr/bin/zmdc.pl`` and in the array ``@daemons`` (starting line 80) add ``'zmeventnotification.pl'`` like [this](https://gist.github.com/pliablepixels/18bb68438410d5e4b644)
-* Edit ``/usr/bin/zmpkg.pl`` and around line 260, right after the comment that says ``#this is now started unconditionally`` and right before the line that says ``runCommand( "zmdc.pl start zmfilter.pl" );`` start zmeventnotification.pl by adding ``runCommand( "zmdc.pl start zmeventnotification.pl" );`` like  [this](https://gist.github.com/pliablepixels/0977a77fa100842e25f2)
-* Make sure you restart ZM. Rebooting the server is better - sometimes zmdc hangs around and you'll be wondering why your new daemon hasn't started
-* To check if its running do a ``zmdc.pl status zmeventnotification.pl``
-
-You can/should run it manually at first to check if it works 
-
-###Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!###
-
-Fear not. You just need to redo the changes you did to ``zmpkg.pl`` and ``zmdc.pl`` and restart ZM. You see, when you upgrade ZM, it overwrites those files.
-
-###Dependencies
-The following perl packages need to be added
+####Installing Dependencies
+The following perl packages need to be added (these are for Ubuntu - if you are on a different OS, you'll have to figure out which packages are needed - I don't know what they might be)
  
 * Crypt::MySQL
 * Net::WebSocket::Server
@@ -93,6 +59,45 @@ Get HTTPS library for LWP:
 ```
 perl -MCPAN -e "install LWP::Protocol::https"
 ```
+
+####Making sure everything is running
+* Start the event server manually first using `sudo /usr/bin/zmeventnotification.pl` and make sure you check syslogs to ensure its loaded up and all dependencies are found. If you see errors, fix them. Then exit and follow the steps below to start it along with Zoneminder
+
+####How do I run it as a daemon so it starts automatically along with ZoneMinder?
+
+**WARNING: Do NOT do this before you run it manually as I've mentioned above to test. Make sure it works, all packages are present etc. before you 
+add it as  a daemon as if you don't and it crashes you won't know why**
+
+(Note if you have compiled from source using cmake, the paths may be ``/usr/local/bin`` not ``/usr/bin``)
+
+* Copy ``zmeventnotification.pl`` to ``/usr/bin``
+* Edit ``/usr/bin/zmdc.pl`` and in the array ``@daemons`` (starting line 80) add ``'zmeventnotification.pl'`` like [this](https://gist.github.com/pliablepixels/18bb68438410d5e4b644)
+* Edit ``/usr/bin/zmpkg.pl`` and around line 260, right after the comment that says ``#this is now started unconditionally`` and right before the line that says ``runCommand( "zmdc.pl start zmfilter.pl" );`` start zmeventnotification.pl by adding ``runCommand( "zmdc.pl start zmeventnotification.pl" );`` like  [this](https://gist.github.com/pliablepixels/0977a77fa100842e25f2)
+* Make sure you restart ZM. Rebooting the server is better - sometimes zmdc hangs around and you'll be wondering why your new daemon hasn't started
+* To check if its running do a ``zmdc.pl status zmeventnotification.pl``
+
+You can/should run it manually at first to check if it works 
+
+### How do I safely upgrade zmeventserver to new versions? ###
+
+```
+sudo zmdc.pl stop zmeventnotification.pl
+```
+
+Now copy the new zmeventnotification.pl to the right place (usually ``/usr/bin``)
+
+```
+sudo zmdc.pl start zmeventnotification.pl
+```
+
+Make sure you look at the syslogs to make sure its started properly
+
+
+###Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!###
+
+Fear not. You just need to redo the changes you did to ``zmpkg.pl`` and ``zmdc.pl`` and restart ZM. You see, when you upgrade ZM, it overwrites those files.
+
+
 
 ###SSL certificate
 
