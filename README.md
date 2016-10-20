@@ -17,14 +17,12 @@ You can implement your own receiver to get real time event notification and do w
 ###Is this officially developed by ZM developers?
 No. I developed it for zmNinja, but you can use it with your own consumer.
 
-### Where can I get it?
-* Grab the script from this repository - its a perl file.
-* Place it along with other ZM scripts (see below)
 
 ###How do I install it?
 
-* [Grab the server](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.pl) (its a simple perl file) and place it in the same place other ZM scripts are stored (example ``/usr/bin``)
-* Either run it manually like ``sudo /usr/bin/zmeventnotification.pl`` or add it as a daemon to ``/usr/bin/zmdc.pl`` (the advantage of the latter is that it gets automatically started when ZM starts
+* Make sure all the dependencies are installed ([see here](https://github.com/pliablepixels/zmeventserver#dependencies))
+* [Download the server](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.pl) (its a simple perl file) and place it in the same place other ZM scripts are stored (example ``/usr/bin``)
+* Either run it manually like ``sudo /usr/bin/zmeventnotification.pl`` or [add it as a daemon](https://github.com/pliablepixels/zmeventserver#how-do-i-run-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder) to ``/usr/bin/zmdc.pl`` (the advantage of the latter is that it gets automatically started when ZM starts
 and restarted if it crashes)
 
 ### How do I safely upgrade zmeventserver to new versions? ###
