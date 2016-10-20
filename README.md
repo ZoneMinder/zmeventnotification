@@ -130,6 +130,58 @@ As of 0.6, I've added an option to run the server using unsecure websockets (WS 
 As it turns out many folks run ZM inside the LAN only and don't want to deal with certificates. Fair enough.
 For that situation, edit zmeventnotification.pl and change $useSecure to 0 (around line 64)
 
+###Debugging and reporting problems
+There could be several reasons why you may not be receiving notifications:
+* Your event server is not running
+* Your app is not able to reach the server
+* You have enabled SSL but the certificate is invalid
+* The event server is rejecting the connections
+
+Here is how to debug and report:
+* Enable Debug logs in zmNinja (Setting->Developer Options->Enable Debug Log)
+* telnet/ssh into your zoneminder server
+* Stop the zmeventnotification doing `sudo zmdc.pl status zmeventnotification.pl`
+* Start a terminalb (lets call it Terminal-Log window to tail logs like so `tail -f /var/log/syslog | grep zmeventnotification`
+* Start zmeventserver manually from command line like so `sudo /usr/bin/zmeventnotification.pl`
+* Make sure you see logs like this in the logs window like so:
+```
+Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [direct APNS disabled]
+Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [Event Notification daemon v 0.91 starting]
+Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [Total event client connections: 11]
+Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [Reloading Monitors...]
+Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [Loading monitors]
+Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [Checking https://185.124.74.36:8801 reachability...]
+Oct 20 10:02:32 homeserver zmeventnotification[27671]: INF [PushProxy https://185.124.74.36:8801 is reachable.]
+Oct 20 10:02:32 homeserver zmeventnotification[27671]: INF [About to start listening to socket]
+Oct 20 10:02:32 homeserver zmeventnotification[27671]: INF [Secure WS(WSS) is enabled...]
+Oct 20 10:02:32 homeserver zmeventnotification[27671]: INF [Web Socket Event Server listening on port 9000]
+```
+* Open up zmNinja, clear logs
+* Enable event server in zmNinja
+* Check that when you save the event server connections in zmNinja, you see logs in the log window like this
+```
+Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [got a websocket connection from XX.XX.XX.XX (11) active connections]
+Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [Websockets: New Connection Handshake requested from XX.XX.XX.XX:55189 state=pending auth]
+Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [Correct authentication provided byXX.XX.XX.XX]
+Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [Storing token ...9f665f182b,monlist:-1,intlist:-1,pushstate:enabled]
+Oct 20 10:23:19 homeserver zmeventnotification[27789]: INF [Pushproxy registration success ]
+Oct 20 10:23:19 homeserver zmeventnotification[27789]: INF [Contrl: Storing token ...9f665f182b,monlist:1,2,4,5,6,7,10,intlist:0,0,0,0,0,0,0,pushstate:enabled]
+Oct 20 10:23:19 homeserver zmeventnotification[27789]: INF [Pushproxy registration success ]
+
+```
+If you don't see anything there is a connection problem. Review SSL guidelines above, or temporarily turn off websocket SSL as described above
+* Open up ZM console and force an alarm, you should see logs in your log window above like so:
+```
+Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [New event 32910 reported for Garage]
+Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Broadcasting new events to all 12 websocket clients]
+Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Checking alarm rules for  token ending in:...2baa57e387]
+Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Monitor 1 event: last time not found, so sending]
+Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Sending notification over PushProxy]
+Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push message success ]
+```
+
+###============ For Developers writing their own consumers============
+
 ###How do I talk to it?
 *  ``{"JSON":"everywhere"}``
 * Your client sends messages (authentication) over JSON
