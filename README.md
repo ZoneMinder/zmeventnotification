@@ -17,52 +17,18 @@ You can implement your own receiver to get real time event notification and do w
 ###Is this officially developed by ZM developers?
 No. I developed it for zmNinja, but you can use it with your own consumer.
 
-### Where can I get it?
-* Grab the script from this repository - its a perl file.
-* Place it along with other ZM scripts (see below)
 
 ###How do I install it?
 
-* [Grab the server](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.pl) (its a simple perl file) and place it in the same place other ZM scripts are stored (example ``/usr/bin``)
-* Either run it manually like ``sudo /usr/bin/zmeventnotification.pl`` or add it as a daemon to ``/usr/bin/zmdc.pl`` (the advantage of the latter is that it gets automatically started when ZM starts
+* Make sure all the dependencies are installed ([see here](https://github.com/pliablepixels/zmeventserver#installing-dependencies))
+* [Download the server](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.pl) (its a simple perl file) and place it in the same place other ZM scripts are stored (example ``/usr/bin``). Make sure you do a `chmod a+x` on it.
+* If you are behind a firewall, make sure you enable port 9000, TCP, bi-directional (unless you changed the port in the code)
+* Either run it manually like ``sudo /usr/bin/zmeventnotification.pl`` or [add it as a daemon](https://github.com/pliablepixels/zmeventserver#how-do-i-run-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder) to ``/usr/bin/zmdc.pl`` (the advantage of the latter is that it gets automatically started when ZM starts
 and restarted if it crashes)
+* Its is HIGHLY RECOMMENDED that you first start the event server manually from terminal, ensure you inspect syslog to validate all logs are correct and THEN make it a daemon in ZoneMinder. If you don't, it will be hard to know what is going wrong. See the [debugging](https://github.com/pliablepixels/zmeventserver#debugging-and-reporting-problems) section later that describes how to make sure its all working fine from command line.
 
-### How do I safely upgrade zmeventserver to new versions? ###
-
-```
-sudo zmdc.pl stop zmeventnotification.pl
-```
-
-Now copy the new zmeventnotification.pl to the right place (usually ``/usr/bin``)
-
-```
-sudo zmdc.pl start zmeventnotification.pl
-```
-
-Make sure you look at the syslogs to make sure its started properly
-
-
-###How do I run it as a daemon so it starts automatically along with ZoneMinder?
-
-**WARNING: Do NOT do this before you run it manually as I've mentioned above to test. Make sure it works, all packages are present etc. before you 
-add it as  a daemon as if you don't and it crashes you won't know why**
-
-(Note if you have compiled from source using cmake, the paths may be ``/usr/local/bin`` not ``/usr/bin``)
-
-* Copy ``zmeventnotification.pl`` to ``/usr/bin``
-* Edit ``/usr/bin/zmdc.pl`` and in the array ``@daemons`` (starting line 80) add ``'zmeventnotification.pl'`` like [this](https://gist.github.com/pliablepixels/18bb68438410d5e4b644)
-* Edit ``/usr/bin/zmpkg.pl`` and around line 260, right after the comment that says ``#this is now started unconditionally`` and right before the line that says ``runCommand( "zmdc.pl start zmfilter.pl" );`` start zmeventnotification.pl by adding ``runCommand( "zmdc.pl start zmeventnotification.pl" );`` like  [this](https://gist.github.com/pliablepixels/0977a77fa100842e25f2)
-* Make sure you restart ZM. Rebooting the server is better - sometimes zmdc hangs around and you'll be wondering why your new daemon hasn't started
-* To check if its running do a ``zmdc.pl status zmeventnotification.pl``
-
-You can/should run it manually at first to check if it works 
-
-###Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!###
-
-Fear not. You just need to redo the changes you did to ``zmpkg.pl`` and ``zmdc.pl`` and restart ZM. You see, when you upgrade ZM, it overwrites those files.
-
-###Dependencies
-The following perl packages need to be added
+####Installing Dependencies
+The following perl packages need to be added (these are for Ubuntu - if you are on a different OS, you'll have to figure out which packages are needed - I don't know what they might be)
  
 * Crypt::MySQL
 * Net::WebSocket::Server
@@ -94,6 +60,45 @@ Get HTTPS library for LWP:
 ```
 perl -MCPAN -e "install LWP::Protocol::https"
 ```
+
+####Making sure everything is running
+* Start the event server manually first using `sudo /usr/bin/zmeventnotification.pl` and make sure you check syslogs to ensure its loaded up and all dependencies are found. If you see errors, fix them. Then exit and follow the steps below to start it along with Zoneminder
+
+####How do I run it as a daemon so it starts automatically along with ZoneMinder?
+
+**WARNING: Do NOT do this before you run it manually as I've mentioned above to test. Make sure it works, all packages are present etc. before you 
+add it as  a daemon as if you don't and it crashes you won't know why**
+
+(Note if you have compiled from source using cmake, the paths may be ``/usr/local/bin`` not ``/usr/bin``)
+
+* Copy ``zmeventnotification.pl`` to ``/usr/bin``
+* Edit ``/usr/bin/zmdc.pl`` and in the array ``@daemons`` (starting line 80) add ``'zmeventnotification.pl'`` like [this](https://gist.github.com/pliablepixels/18bb68438410d5e4b644)
+* Edit ``/usr/bin/zmpkg.pl`` and around line 260, right after the comment that says ``#this is now started unconditionally`` and right before the line that says ``runCommand( "zmdc.pl start zmfilter.pl" );`` start zmeventnotification.pl by adding ``runCommand( "zmdc.pl start zmeventnotification.pl" );`` like  [this](https://gist.github.com/pliablepixels/0977a77fa100842e25f2)
+* Make sure you restart ZM. Rebooting the server is better - sometimes zmdc hangs around and you'll be wondering why your new daemon hasn't started
+* To check if its running do a ``zmdc.pl status zmeventnotification.pl``
+
+You can/should run it manually at first to check if it works 
+
+### How do I safely upgrade zmeventserver to new versions? ###
+
+```
+sudo zmdc.pl stop zmeventnotification.pl
+```
+
+Now copy the new zmeventnotification.pl to the right place (usually ``/usr/bin``)
+
+```
+sudo zmdc.pl start zmeventnotification.pl
+```
+
+Make sure you look at the syslogs to make sure its started properly
+
+
+###Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!###
+
+Fear not. You just need to redo the changes you did to ``zmpkg.pl`` and ``zmdc.pl`` and restart ZM. You see, when you upgrade ZM, it overwrites those files.
+
+
 
 ###SSL certificate
 
@@ -129,6 +134,64 @@ use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 As of 0.6, I've added an option to run the server using unsecure websockets (WS instead of WSS).
 As it turns out many folks run ZM inside the LAN only and don't want to deal with certificates. Fair enough.
 For that situation, edit zmeventnotification.pl and change $useSecure to 0 (around line 64)
+
+###Debugging and reporting problems
+There could be several reasons why you may not be receiving notifications:
+* Your event server is not running
+* Your app is not able to reach the server
+* You have enabled SSL but the certificate is invalid
+* The event server is rejecting the connections
+
+Here is how to debug and report:
+* Enable Debug logs in zmNinja (Setting->Developer Options->Enable Debug Log)
+* telnet/ssh into your zoneminder server
+* Stop the zmeventnotification doing `sudo zmdc.pl status zmeventnotification.pl`
+* Start a terminal (lets call it Terminal-Log)  to tail logs like so `tail -f /var/log/syslog | grep zmeventnotification`
+* Start another terminal and start zmeventserver manually from command line like so `sudo /usr/bin/zmeventnotification.pl`
+* Make sure you see logs like this in the logs window like so:
+```
+Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [direct APNS disabled]
+Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [Event Notification daemon v 0.91 starting]
+Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [Total event client connections: 11]
+Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [Reloading Monitors...]
+Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [Loading monitors]
+Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [Checking https://185.124.74.36:8801 reachability...]
+Oct 20 10:02:32 homeserver zmeventnotification[27671]: INF [PushProxy https://185.124.74.36:8801 is reachable.]
+Oct 20 10:02:32 homeserver zmeventnotification[27671]: INF [About to start listening to socket]
+Oct 20 10:02:32 homeserver zmeventnotification[27671]: INF [Secure WS(WSS) is enabled...]
+Oct 20 10:02:32 homeserver zmeventnotification[27671]: INF [Web Socket Event Server listening on port 9000]
+```
+* Open up zmNinja, clear logs
+* Enable event server in zmNinja
+* Check that when you save the event server connections in zmNinja, you see logs in the log window like this
+```
+Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [got a websocket connection from XX.XX.XX.XX (11) active connections]
+Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [Websockets: New Connection Handshake requested from XX.XX.XX.XX:55189 state=pending auth]
+Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [Correct authentication provided byXX.XX.XX.XX]
+Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [Storing token ...9f665f182b,monlist:-1,intlist:-1,pushstate:enabled]
+Oct 20 10:23:19 homeserver zmeventnotification[27789]: INF [Pushproxy registration success ]
+Oct 20 10:23:19 homeserver zmeventnotification[27789]: INF [Contrl: Storing token ...9f665f182b,monlist:1,2,4,5,6,7,10,intlist:0,0,0,0,0,0,0,pushstate:enabled]
+Oct 20 10:23:19 homeserver zmeventnotification[27789]: INF [Pushproxy registration success ]
+
+```
+
+If you don't see anything there is a connection problem. Review SSL guidelines above, or temporarily turn off websocket SSL as described above
+* Open up ZM console and force an alarm, you should see logs in your log window above like so:
+```
+Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [New event 32910 reported for Garage]
+Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Broadcasting new events to all 12 websocket clients]
+Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Checking alarm rules for  token ending in:...2baa57e387]
+Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Monitor 1 event: last time not found, so sending]
+Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Sending notification over PushProxy]
+Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push message success ]
+```
+
+* If you have issues, please send me a copy of your zmeventserver logs generated above from Terminal-Log, as well as zmNinja debug logs
+
+
+
+
+###============ For Developers writing their own consumers============
 
 ###How do I talk to it?
 *  ``{"JSON":"everywhere"}``
