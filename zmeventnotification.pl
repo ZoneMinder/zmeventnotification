@@ -52,7 +52,7 @@ use Data::Dumper;
 use strict;
 use bytes;
 
-my $app_version="0.91";
+my $app_version="0.92";
 
 # ==========================================================================
 #
@@ -733,9 +733,23 @@ sub checkMessage
                     {
                         $_->{token} = $json_string->{'data'}->{'token'};
                         $_->{platform} = $json_string->{'data'}->{'platform'};
-                        $_->{monlist} = "-1";
-                        $_->{intlist} = "-1";
-                        $_->{pushstate} = $json_string->{'data'}->{'state'};
+			if (exists($json_string->{'data'}->{'monlist'}))
+			{
+				$_->{monlist} = $json_string->{'data'}->{'monlist'};
+			}
+			else
+			{
+                        	$_->{monlist} = "-1";
+			}
+                        if (exists($json_string->{'data'}->{'intlist'}))
+			{
+				$_->{intlist} = $json_string->{'data'}->{'intlist'};
+			}
+			else
+			{
+                        	$_->{intlist} = "-1";
+			}
+			$_->{pushstate} = $json_string->{'data'}->{'state'};
                         Info ("Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}.",pushstate:".$_->{pushstate}."\n");
                         my ($emonlist,$eintlist) = saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate});
                         $_->{monlist} = $emonlist;
@@ -750,8 +764,24 @@ sub checkMessage
                 {
                     $_->{token} = $json_string->{'data'}->{'token'};
                     $_->{platform} = $json_string->{'data'}->{'platform'};
-                    $_->{monlist} = "-1";
-                    $_->{intlist} = "-1";
+                    $_->{monlist} = $json_string->{'data'}->{'monlist'};
+                    $_->{intlist} = $json_string->{'data'}->{'intlist'};
+                    if (exists($json_string->{'data'}->{'monlist'}))
+			{
+				$_->{monlist} = $json_string->{'data'}->{'monlist'};
+			}
+			else
+			{
+                        	$_->{monlist} = "-1";
+			}
+                        if (exists($json_string->{'data'}->{'intlist'}))
+			{
+				$_->{intlist} = $json_string->{'data'}->{'intlist'};
+			}
+			else
+			{
+                        	$_->{intlist} = "-1";
+			}
                     $_->{pushstate} = $json_string->{'data'}->{'state'};
                     Info ("Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}.",pushstate:".$_->{pushstate}."\n");
                     my ($emonlist,$eintlist) = saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate});
@@ -970,6 +1000,9 @@ sub saveTokens
     my $sintlist = shift;
     my $splatform = shift;
     my $spushstate = shift;
+
+    Info ("SaveTokens called with:monlist=$smonlist, intlist=$sintlist, platform=$splatform, push=$spushstate");
+    
     return if ($stoken eq "");
     open (my $fh, '<', PUSH_TOKEN_FILE) || Fatal ("Cannot open for read".PUSH_TOKEN_FILE);
     chomp( my @lines = <$fh>);
@@ -983,10 +1016,12 @@ sub saveTokens
         my ($token, $monlist, $intlist, $platform, $pushstate)  = split (":",$_);
         if ($token eq $stoken)
         {
+	    Info ("token $token matched, previously stored monlist is: $monlist");
             $smonlist = $monlist if ($smonlist eq "-1");
             $sintlist = $intlist if ($sintlist eq "-1");
             $spushstate = $pushstate if ($spushstate eq "");
             print $fh "$stoken:$smonlist:$sintlist:$splatform:$spushstate\n";
+	    Info ("overwriting $token monlist with:$smonlist");
             $found = 1;
         }
         else
@@ -1000,7 +1035,11 @@ sub saveTokens
     $smonlist = "" if ($smonlist eq "-1");
     $sintlist = "" if ($sintlist eq "-1");
     
-    print $fh "$stoken:$smonlist:$sintlist:$splatform:$spushstate\n" if (!$found);
+    if (!$found)
+    {
+	Info ("$stoken not found, creating new record with monlist=$smonlist");
+    	print $fh "$stoken:$smonlist:$sintlist:$splatform:$spushstate\n";
+    }
     close ($fh);
     registerOverPushProxy($stoken,$splatform) if ($usePushProxy);
     #print "Saved Token $token to file\n";
@@ -1254,6 +1293,7 @@ sub initSocketServer
             $conn->on(
                 utf8 => sub {
                     my ($conn, $msg) = @_;
+		    Debug ("Raw incoming message: $msg");
                     checkMessage($conn, $msg);
                 },
                 handshake => sub {
