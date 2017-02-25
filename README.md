@@ -114,8 +114,6 @@ sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/apache2/ss
 ```
 It's **very important** to ensure the "Common Name" selected while generating the certificate is the same as the hostname or IP of the server. For example if you plan to access the server as "myserver.ddns.net" Please make sure you use myserver.ddns.net as the common name. If you are planning to access it via IP, please make sure you use the same IP.
 
-Once that certificate is done, you also need to install it on your phone - thats as simple as emailing yourself the ".crt" file and double tapping it to install it.
-
 Once you do that please change the following lines in the perl server to point to your SSL certs/keys:
 ```
 use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';	 
