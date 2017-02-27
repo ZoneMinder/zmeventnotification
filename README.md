@@ -29,6 +29,8 @@ and restarted if it crashes)
 
 ####Installing Dependencies
 The following perl packages need to be added (these are for Ubuntu - if you are on a different OS, you'll have to figure out which packages are needed - I don't know what they might be)
+
+(**General note** - some users may face issues installing dependencies via `perl -MCPAN -e "Module::Name"`. If so, its usually more reliable to get into the CPAN shell and install it from the shell as a 2 step process. You'd do that using `sudo perl -MCPAN -e shell` and then whilst inside the shell, `install Module::Name`)
  
 * Crypt::MySQL
 * Net::WebSocket::Server
