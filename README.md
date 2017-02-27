@@ -110,7 +110,7 @@ easy as:
 
 (replace /etc/apache2/ssl/ with the directory you want the certificate and key files to be stored in)
 ```
-sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/apache2/ssl/zoneminder.key -out /etc/apache2/ssl/zoneminder.crt
+sudo openssl req -x509 -nodes -days 4096 -newkey rsa:2048 -keyout /etc/apache2/ssl/zoneminder.key -out /etc/apache2/ssl/zoneminder.crt
 ```
 It's **very important** to ensure the "Common Name" selected while generating the certificate is the same as the hostname or IP of the server. For example if you plan to access the server as "myserver.ddns.net" Please make sure you use myserver.ddns.net as the common name. If you are planning to access it via IP, please make sure you use the same IP.
 
