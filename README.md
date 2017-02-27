@@ -120,6 +120,10 @@ use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';
 use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 ```
 
+####IOS Users 
+Starting IOS 10.2, I noticed that zmNinja was not able to register with the event server when it was using WSS (`$useSecure=1`) and self-signed certificates. To solve this, I had to email myself the zoneminder certificate (`zoneminder.crt`) file and install it in the phone. Why that is needed only for WSS and not for HTTPS is a mystery to me. The alternative is to run the eventserver in WS mode (`$useSecure=0`).
+
+
 ###Troubleshooting
 
 * If it runs fine when you run it from command line, but keeps exiting when run as a daemon:
