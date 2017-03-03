@@ -52,7 +52,7 @@ use Data::Dumper;
 use strict;
 use bytes;
 
-my $app_version="0.92";
+my $app_version="0.93";
 
 # ==========================================================================
 #
@@ -1000,6 +1000,11 @@ sub saveTokens
     my $sintlist = shift;
     my $splatform = shift;
     my $spushstate = shift;
+	if (($spushstate eq "") && ($stoken ne "") )
+	{
+		$spushstate = "enabled";
+		Info ("Overriding token state, setting to enabled as I got a null with a valid token");
+	}
 
     Info ("SaveTokens called with:monlist=$smonlist, intlist=$sintlist, platform=$splatform, push=$spushstate");
     
@@ -1057,6 +1062,7 @@ sub uniq
     foreach (@array)
     {
         my ($token,$monlist,$intlist,$platform, $pushstate) = split (":",$_);
+		$pushstate = "enabled" if (($pushstate eq "") && ($token ne "") );
         # not interested in monlist & intlist
         if (! $seen{$token}++ )
         {
