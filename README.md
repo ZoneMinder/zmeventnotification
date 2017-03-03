@@ -1,4 +1,4 @@
-###### Latest Version: 0.91
+###### Latest Version: 0.92
 
 ### What is it?
 A WSS (Secure Web Sockets) based event notification server that broadcasts new events to any authenticated listeners.
@@ -29,6 +29,8 @@ and restarted if it crashes)
 
 ####Installing Dependencies
 The following perl packages need to be added (these are for Ubuntu - if you are on a different OS, you'll have to figure out which packages are needed - I don't know what they might be)
+
+(**General note** - some users may face issues installing dependencies via `perl -MCPAN -e "Module::Name"`. If so, its usually more reliable to get into the CPAN shell and install it from the shell as a 2 step process. You'd do that using `sudo perl -MCPAN -e shell` and then whilst inside the shell, `install Module::Name`)
  
 * Crypt::MySQL
 * Net::WebSocket::Server
@@ -110,17 +112,19 @@ easy as:
 
 (replace /etc/apache2/ssl/ with the directory you want the certificate and key files to be stored in)
 ```
-sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/apache2/ssl/zoneminder.key -out /etc/apache2/ssl/zoneminder.crt
+sudo openssl req -x509 -nodes -days 4096 -newkey rsa:2048 -keyout /etc/apache2/ssl/zoneminder.key -out /etc/apache2/ssl/zoneminder.crt
 ```
 It's **very important** to ensure the "Common Name" selected while generating the certificate is the same as the hostname or IP of the server. For example if you plan to access the server as "myserver.ddns.net" Please make sure you use myserver.ddns.net as the common name. If you are planning to access it via IP, please make sure you use the same IP.
-
-Once that certificate is done, you also need to install it on your phone - thats as simple as emailing yourself the ".crt" file and double tapping it to install it.
 
 Once you do that please change the following lines in the perl server to point to your SSL certs/keys:
 ```
 use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';	 
 use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 ```
+
+####IOS Users 
+Starting IOS 10.2, I noticed that zmNinja was not able to register with the event server when it was using WSS (`$useSecure=1`) and self-signed certificates. To solve this, I had to email myself the zoneminder certificate (`zoneminder.crt`) file and install it in the phone. Why that is needed only for WSS and not for HTTPS is a mystery to me. The alternative is to run the eventserver in WS mode (`$useSecure=0`).
+
 
 ###Troubleshooting
 
