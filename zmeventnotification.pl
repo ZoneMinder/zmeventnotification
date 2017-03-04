@@ -87,7 +87,6 @@ my $useCustomNotificationSound = 1;     # set to 0 for default sound
 use constant PUSH_TOKEN_FILE=>'/etc/private/tokens.txt'; # MAKE SURE THIS DIRECTORY HAS WWW-DATA PERMISSIONS
 
 
-my $printDebugToConsole = 1; # set this to OFF unless you are debugging. If 1, make sure its NOT running via zmdc
 
 
 # -------- There seems to be an LWP perl bug that fails certifying self signed certs
@@ -279,7 +278,6 @@ sub checkEvents()
               $cip = $_->{conn}->ip();
           }
           Debug ("-->Connection $ndx: IP->".$cip." Token->:".$_->{token}." Plat:".$_->{platform}." Push:".$_->{pushstate}); 
-          printdbg ("-->Connection $ndx: IP->".$cip." Token->:".$_->{token}." Plat:".$_->{platform}." Push:".$_->{pushstate});
           $ndx++;
         }
         Info ("Reloading Monitors...\n");
