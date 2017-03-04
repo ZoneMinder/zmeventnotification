@@ -250,7 +250,8 @@ sub try_use
   return($@ ? 0:1);
 }
 
-sub printdbg
+# console print
+sub printdbg 
 {
     print(join(" ", @ARGV), "\n") if $printDebugToConsole;
 }
