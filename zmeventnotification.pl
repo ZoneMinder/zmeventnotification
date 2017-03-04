@@ -305,7 +305,6 @@ sub checkEvents()
                  ]
         );
         Debug ("State for ".$monitor->{Name}." reported as:".$state);
-        printdbg ("State for ".$monitor->{Name}." reported as:".$state);
         if ($state == STATE_ALARM || $state == STATE_ALERT)
         {
             Debug ("state is STATE_ALARM or ALERT for ".$monitor->{Name});
@@ -614,6 +613,7 @@ sub apnsFeedbackCheck
                 {
                     if ($_->{token} eq $delete_token)
                     {
+                        printdbg ("FEEDBACK: marking $delete_token as INVALID_APNS with directAPNS= $usePushAPNSDirect");
                         $_->{pending} = INVALID_APNS;
                         Info ("Marking entry as invalid apns token: ". $delete_token."\n");
                     }
@@ -644,6 +644,7 @@ sub checkConnection
                 {
                     my $conn = $_->{conn};
                     Info ("Rejecting ".$conn->ip()." - authentication timeout");
+                    printdbg ("Rejecting ".$conn->ip()." - authentication timeout marking as INVALID_WEBSOCKET");
                     $_->{pending} = INVALID_WEBSOCKET;
                     my $str = encode_json({event => 'auth', type=>'',status=>'Fail', reason => 'NOAUTH'});
                     eval {$_->{conn}->send_utf8($str);};
@@ -653,10 +654,16 @@ sub checkConnection
         }
 
     }
+    my $ac1 = scalar @active_connections;
+    printdbg ("Active connects before purge=$ac1");
     @active_connections = grep { $_->{pending} != INVALID_WEBSOCKET } @active_connections;
+    $ac1 = scalar @active_connections;
+    printdbg ("Active connects after INVALID_WEBSOCKET purge=$ac1");
     if ($usePushAPNSDirect || $usePushProxy)
     {
         @active_connections = grep { $_->{pending} != INVALID_APNS } @active_connections;
+        $ac1 = scalar @active_connections;
+        printdbg ("Active connects after INVALID_APNS purge=$ac1");
     }
 }
 
@@ -733,6 +740,7 @@ sub checkMessage
                     if ( (!exists $_->{conn}) || ($_->{conn}->ip() ne $conn->ip() 
                         && $_->{conn}->port() ne $conn->port()))
                     {
+                        printdbg ("REGISTRATION: marking ".$_->{token}." as INVALID_APNS with directAPNS= $usePushAPNSDirect");
                         $_->{pending} = INVALID_APNS;
                         Info ("Duplicate token found, marking for deletion");
 
@@ -879,6 +887,7 @@ sub checkMessage
                     my $str = encode_json({event=>'auth', type=>'', status=>'Fail', reason => 'BADAUTH'});
                     eval {$_->{conn}->send_utf8($str);};
                     Info("Bad authentication provided by ".$_->{conn}->ip());
+                    printdbg("marking INVALID_WEBSOCKET Bad authentication provided by ".$_->{conn}->ip());
                     $_->{pending}=INVALID_WEBSOCKET;
                 }
                 else
@@ -959,6 +968,7 @@ sub loadTokens
 sub deleteToken
 {
     my $dtoken = shift;
+    printdbg ("DeleteToken called with $dtoken and APNSDirect=$usePushAPNSDirect");
     return if (!$usePushAPNSDirect && !$usePushProxy);
     return if ( ! -f PUSH_TOKEN_FILE);
     
@@ -1003,15 +1013,17 @@ sub saveTokens
 {
     return if (!$usePushAPNSDirect && !$usePushProxy);
     my $stoken = shift;
-    return if ($stoken eq "");
+    if ($stoken eq "") {printdbg ("Not saving, no token. Desktop?"); return};
     my $smonlist = shift;
     my $sintlist = shift;
     my $splatform = shift;
     my $spushstate = shift;
+    printdbg ("saveTokens called with=>$stoken:$smonlist:$sintlist:$splatform:$spushstate");
 	if (($spushstate eq "") && ($stoken ne "") )
 	{
 		$spushstate = "enabled";
 		Info ("Overriding token state, setting to enabled as I got a null with a valid token");
+		printdbg ("Overriding token state, setting to enabled as I got a null with a valid token");
 	}
 
     Info ("SaveTokens called with:monlist=$smonlist, intlist=$sintlist, platform=$splatform, push=$spushstate");
@@ -1070,11 +1082,17 @@ sub uniq
     foreach (@array)
     {
         my ($token,$monlist,$intlist,$platform, $pushstate) = split (":",$_);
-		$pushstate = "enabled" if (($pushstate eq "") && ($token ne "") );
+        if (($pushstate ne "enabled") && ($pushstate ne "disabled"))
+        {
+            printdbg ("huh? uniq read $token,$monlist,$intlist,$platform, $pushstate => forcing state to enabled");
+            $pushstate="enabled";
+            
+        }
         # not interested in monlist & intlist
         if (! $seen{$token}++ )
         {
             push @farray, "$token:$monlist:$intlist:$platform:$pushstate";
+            #printdbg ("\@uniq pushing: $token:$monlist:$intlist:$platform:$pushstate");
         }
          
         
@@ -1270,8 +1288,10 @@ sub initSocketServer
                                     eval {$_->{conn}->send_utf8($sup_str);};
                                     if ($@)
                                     {
-                                
+                            
+                                        printdbg ("Marking ".$_->{conn}->ip()." as INVALID_WEBSOCKET, as websocket send error");     
                                         $_->{pending} = INVALID_WEBSOCKET;
+
                                     }
                                 }
                             }
@@ -1287,6 +1307,7 @@ sub initSocketServer
                                 if ($@)
                                 {
                             
+                                    printdbg ("Marking ".$_->{conn}->ip()." as INVALID_WEBSOCKET, as websocket send error");     
                                     $_->{pending} = INVALID_WEBSOCKET;
                                 }
                             }
