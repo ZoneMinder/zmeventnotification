@@ -253,7 +253,8 @@ sub try_use
 # console print
 sub printdbg 
 {
-    print(join(" ", @ARGV), "\n") if $printDebugToConsole;
+	my $a = shift;
+    print($a, "\n") if $printDebugToConsole;
 }
 
 
@@ -304,6 +305,7 @@ sub checkEvents()
                  ]
         );
         Debug ("State for ".$monitor->{Name}." reported as:".$state);
+        printdbg ("State for ".$monitor->{Name}." reported as:".$state);
         if ($state == STATE_ALARM || $state == STATE_ALERT)
         {
             Debug ("state is STATE_ALARM or ALERT for ".$monitor->{Name});
