@@ -73,8 +73,8 @@ use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 my $usePushProxy = 1;               # set this to 1 to use a remote push proxy for APNS that I have set up for zmNinja users
 
 my $usePushAPNSDirect = 0;          # set this to 1 if you have an APNS SSL certificate/key pair
-                        # the only way to have this is if you have an apple developer
-                        # account
+                                    # the only way to have this is if you have an apple developer
+                                    # account
 
 my $pushProxyURL = 'https://185.124.74.36:8801';  # This is my proxy URL. Don't change it unless you are hosting your on APNS AS
 
@@ -85,6 +85,9 @@ my $useCustomNotificationSound = 1;     # set to 0 for default sound
 # This server will create the file if it does not exist
 
 use constant PUSH_TOKEN_FILE=>'/etc/private/tokens.txt'; # MAKE SURE THIS DIRECTORY HAS WWW-DATA PERMISSIONS
+
+
+my $printDebugToConsole = 1; # set this to OFF unless you are debugging. If 1, make sure its NOT running via zmdc
 
 
 # -------- There seems to be an LWP perl bug that fails certifying self signed certs
@@ -107,7 +110,7 @@ use constant APNS_FEEDBACK_CHECK_INTERVAL => 3600;      # only used if usePushAP
 #----------- End: only applies to usePushAPNSDirect = 1 --
 
 use constant PUSH_CHECK_REACH_INTERVAL => 3600;             # time in seconds to do a reachability test with push proxt
-use constant SLEEP_DELAY=>5;                        # duration in seconds after which we will check for new events
+use constant SLEEP_DELAY=>5;                                # duration in seconds after which we will check for new events
 use constant MONITOR_RELOAD_INTERVAL => 300;
 use constant WEBSOCKET_AUTH_DELAY => 20;                # max seconds by which authentication must be done
 
@@ -122,8 +125,9 @@ use constant INVALID_APNS => '-2';
 use constant VALID_WEBSOCKET => '0';
 
 my $alarmEventId = 1;           # tags the event id along with the alarm - useful for correlation
-                    # only for geeks though - most people won't give a damn. I do.
+                                # only for geeks though - most people won't give a damn. I do.
 
+# This part makes sure we have the righ deps
 if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");exit (-1);}
 if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL  missing");exit (-1);}
 if (!try_use ("Crypt::MySQL qw(password password41)")) {Fatal ("Crypt::MySQL  missing");exit (-1);}
@@ -136,7 +140,7 @@ if (!try_use ("JSON"))
 
 if ($usePushProxy)
 {
-    if ($usePushAPNSDirect)
+    if ($usePushAPNSDirect) # can't have both
     {
         $usePushAPNSDirect = 0; 
         Info ("Disabling direct push as push proxy is enabled");
@@ -246,6 +250,11 @@ sub try_use
   return($@ ? 0:1);
 }
 
+sub printdbg
+{
+    print(join(" ", @ARGV), "\n") if $printDebugToConsole;
+}
+
 
 # This function uses shared memory polling to check if 
 # ZM reported any new events. If it does find events
@@ -254,14 +263,9 @@ sub try_use
 sub checkEvents()
 {
     
-    #foreach (@active_connections)
-    #{
-        #print " IP:".$_->{conn}->ip().":".$_->{conn}->port()."Token:".$_->{token}."\n";
-    #}
-
     my $eventFound = 0;
     if ( (time() - $monitor_reload_time) > MONITOR_RELOAD_INTERVAL )
-        {
+    {
         my $len = scalar @active_connections;
         Info ("Total event client connections: ".$len."\n");
         my $ndx = 1;
@@ -275,6 +279,7 @@ sub checkEvents()
               $cip = $_->{conn}->ip();
           }
           Debug ("-->Connection $ndx: IP->".$cip." Token->:".$_->{token}." Plat:".$_->{platform}." Push:".$_->{pushstate}); 
+          printdbg ("-->Connection $ndx: IP->".$cip." Token->:".$_->{token}." Plat:".$_->{platform}." Push:".$_->{pushstate});
           $ndx++;
         }
         Info ("Reloading Monitors...\n");
