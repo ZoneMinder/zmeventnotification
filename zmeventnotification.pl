@@ -1063,7 +1063,7 @@ sub saveTokens
         }
         else # write token as is
         {
-            $pushstate="enabled" if ($pushstate="");
+            if ($pushstate eq "") {$pushstate = "enabled"; printdbg ("nochange, but pushstate was EMPTY. WHY?"); }
             printdbg ("no change - saving $token with $pushstate");
             print $fh "$token:$monlist:$intlist:$platform:$pushstate\n";
         }
