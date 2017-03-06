@@ -60,18 +60,14 @@ my $app_version="0.93";
 #
 # ==========================================================================
 use constant EVENT_NOTIFICATION_PORT=>9000;                 # port for Websockets connection
-
 my $useSecure = 1;                                          # make this 0 if you don't want SSL
 
 # ignore if useSecure is 0
 use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';      # Change these to your certs/keys
 use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 
-
 # if you only want to enable websockets make both of these 0
-
 my $usePushProxy = 1;               # set this to 1 to use a remote push proxy for APNS that I have set up for zmNinja users
-
 my $usePushAPNSDirect = 0;          # set this to 1 if you have an APNS SSL certificate/key pair
                                     # the only way to have this is if you have an apple developer
                                     # account
@@ -85,7 +81,6 @@ my $useCustomNotificationSound = 1;     # set to 0 for default sound
 # This server will create the file if it does not exist
 
 use constant PUSH_TOKEN_FILE=>'/etc/private/tokens.txt'; # MAKE SURE THIS DIRECTORY HAS WWW-DATA PERMISSIONS
-
 
 my $printDebugToConsole = 1; # set this to OFF unless you are debugging. If 1, make sure its NOT running via zmdc
 
@@ -124,6 +119,7 @@ use constant INVALID_WEBSOCKET => '-1';
 use constant INVALID_APNS => '-2';
 use constant VALID_WEBSOCKET => '0';
 
+
 my $alarmEventId = 1;           # tags the event id along with the alarm - useful for correlation
                                 # only for geeks though - most people won't give a damn. I do.
 
@@ -138,6 +134,7 @@ if (!try_use ("JSON"))
     { Fatal ("JSON or JSON::XS  missing");exit (-1);}
 } 
 
+# Lets now load all the dependent libraries in a failsafe way
 if ($usePushProxy)
 {
     if ($usePushAPNSDirect) # can't have both
@@ -180,8 +177,6 @@ else
 }
 
 
-
-
 # ==========================================================================
 #
 # Don't change anything below here
@@ -192,6 +187,7 @@ use lib '/usr/local/lib/x86_64-linux-gnu/perl5';
 use ZoneMinder;
 use POSIX;
 use DBI;
+
 
 $| = 1;
 
@@ -667,6 +663,15 @@ sub checkConnection
     }
 }
 
+# tokens can have :
+# http://stackoverflow.com/a/37870235/1361529
+sub rsplit {
+    my $pattern = shift(@_);    # Precompiled regex pattern (i.e. qr/pattern/)
+    my $expr    = shift(@_);    # String to split
+    my $limit   = shift(@_);    # Number of chunks to split into
+    map { scalar reverse($_) } reverse split(/$pattern/, scalar reverse($expr), $limit);
+}
+
 # This function  is called whenever we receive a message from a client
 
 sub checkMessage
@@ -715,6 +720,7 @@ sub checkMessage
                     $_->{badge} = $json_string->{'data'}->{'badge'};
                 }
             }
+            return;
         }
         # This sub type is when a device token is registered
         if ($json_string->{'data'}->{'type'} eq "token")
@@ -742,36 +748,38 @@ sub checkMessage
                     {
                         printdbg ("REGISTRATION: marking ".$_->{token}." as INVALID_APNS with directAPNS= $usePushAPNSDirect");
                         $_->{pending} = INVALID_APNS;
-                        Info ("Duplicate token found, marking for deletion");
+                        Info ("Duplicate token found, removing old data point");
+
 
                     }
                     else # token matches and connection matches, so it may be an update
                     {
                         $_->{token} = $json_string->{'data'}->{'token'};
                         $_->{platform} = $json_string->{'data'}->{'platform'};
-			if (exists($json_string->{'data'}->{'monlist'}))
-			{
-				$_->{monlist} = $json_string->{'data'}->{'monlist'};
-			}
-			else
-			{
-                        	$_->{monlist} = "-1";
-			}
+                        if (exists($json_string->{'data'}->{'monlist'}))
+                        {
+                            $_->{monlist} = $json_string->{'data'}->{'monlist'};
+                        }
+                        else
+                        {
+                            $_->{monlist} = "-1";
+                        }
                         if (exists($json_string->{'data'}->{'intlist'}))
-			{
-				$_->{intlist} = $json_string->{'data'}->{'intlist'};
-			}
-			else
-			{
-                        	$_->{intlist} = "-1";
-			}
-			$_->{pushstate} = $json_string->{'data'}->{'state'};
+                        {
+                            $_->{intlist} = $json_string->{'data'}->{'intlist'};
+                        }
+                        else
+                        {
+                             $_->{intlist} = "-1";
+                        }
+                        $_->{pushstate} = $json_string->{'data'}->{'state'};
                         Info ("Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}.",pushstate:".$_->{pushstate}."\n");
                         my ($emonlist,$eintlist) = saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate});
                         $_->{monlist} = $emonlist;
                         $_->{intlist} = $eintlist;
-                    }
-                }
+                    } # token and conn. matches
+                } # end of token matches
+
                 # The connection matches but the token does not 
                 # this can happen if this is the first token registration after push notification registration
                 # response is received
@@ -933,8 +941,11 @@ sub loadTokens
     
     open (my $fh, '<', PUSH_TOKEN_FILE);
     chomp( my @lines = <$fh>);
-
     close ($fh);
+
+
+
+
     my @uniquetokens = uniq(@lines);
 
     open ($fh, '>', PUSH_TOKEN_FILE);
@@ -944,7 +955,7 @@ sub loadTokens
     {
         next if ($_ eq "");
         print $fh "$_\n";
-        my ($token, $monlist, $intlist, $platform, $pushstate)  = split (":",$_);
+        my ($token, $monlist, $intlist, $platform, $pushstate)  = rsplit(qr/:/, $_, 5); # split (":",$_);
         #print "load: PUSHING $row\n";
         push @active_connections, {
                token => $token,
@@ -981,7 +992,7 @@ sub deleteToken
 
     foreach(@uniquetokens)
     {
-        my ($token, $monlist, $intlist, $platform, $pushstate)  = split (":",$_);
+        my ($token, $monlist, $intlist, $platform, $pushstate)  = rsplit(qr/:/, $_, 5); #split (":",$_);
         next if ($_ eq "" || $token eq $dtoken);
         print $fh "$_\n";
         #print "delete: $row\n";
@@ -1038,7 +1049,7 @@ sub saveTokens
     foreach (@uniquetokens)
     {
         next if ($_ eq "");
-        my ($token, $monlist, $intlist, $platform, $pushstate)  = split (":",$_);
+        my ($token, $monlist, $intlist, $platform, $pushstate)  = rsplit(qr/:/, $_, 5); #split (":",$_);
         if ($token eq $stoken)
         {
 	    Info ("token $token matched, previously stored monlist is: $monlist");
@@ -1081,7 +1092,9 @@ sub uniq
     my @farray=();
     foreach (@array)
     {
-        my ($token,$monlist,$intlist,$platform, $pushstate) = split (":",$_);
+        next if  ($_ =~ /^\s*$/); # skip blank lines - we don't really need this - as token check is later
+        my ($token,$monlist,$intlist,$platform, $pushstate) = rsplit(qr/:/, $_, 5); #split (":",$_);
+        next if ($token eq "");
         if (($pushstate ne "enabled") && ($pushstate ne "disabled"))
         {
             printdbg ("huh? uniq read $token,$monlist,$intlist,$platform, $pushstate => forcing state to enabled");
