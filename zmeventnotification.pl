@@ -277,7 +277,7 @@ sub checkEvents()
               $cip = $_->{conn}->ip();
           }
           Debug ("-->Connection $ndx: IP->".$cip." Token->:".$_->{token}." Plat:".$_->{platform}." Push:".$_->{pushstate}); 
-          printdbg ("-->Connection $ndx: IP->".$cip." Token->:".$_->{token}." Plat:".$_->{platform}." Push:".$_->{pushstate});
+          printdbg ("-->Connection $ndx: IP->".$cip." Token->".$_->{token}." Plat:".$_->{platform}." Push:".$_->{pushstate});
           $ndx++;
         }
         Info ("Reloading Monitors...\n");
@@ -945,7 +945,7 @@ sub loadTokens
 
 
 
-
+    printdbg ("Calling uniq from loadTokens");
     my @uniquetokens = uniq(@lines);
 
     open ($fh, '>', PUSH_TOKEN_FILE);
@@ -1040,7 +1040,7 @@ sub saveTokens
     Info ("SaveTokens called with:monlist=$smonlist, intlist=$sintlist, platform=$splatform, push=$spushstate");
     
     return if ($stoken eq "");
-    open (my $fh, '<', PUSH_TOKEN_FILE) || Fatal ("Cannot open for read".PUSH_TOKEN_FILE);
+    open (my $fh, '<', PUSH_TOKEN_FILE) || Fatal ("Cannot open for read ".PUSH_TOKEN_FILE);
     chomp( my @lines = <$fh>);
     close ($fh);
     my @uniquetokens = uniq(@lines);
@@ -1050,19 +1050,21 @@ sub saveTokens
     {
         next if ($_ eq "");
         my ($token, $monlist, $intlist, $platform, $pushstate)  = rsplit(qr/:/, $_, 5); #split (":",$_);
-        if ($token eq $stoken)
+        if ($token eq $stoken) # update token in file with new information
         {
 	    Info ("token $token matched, previously stored monlist is: $monlist");
             $smonlist = $monlist if ($smonlist eq "-1");
             $sintlist = $intlist if ($sintlist eq "-1");
             $spushstate = $pushstate if ($spushstate eq "");
+            printdbg ("updating $token with $pushstate");
             print $fh "$stoken:$smonlist:$sintlist:$splatform:$spushstate\n";
-	    Info ("overwriting $token monlist with:$smonlist");
+	        Info ("overwriting $token monlist with:$smonlist");
             $found = 1;
         }
-        else
+        else # write token as is
         {
             $pushstate="enabled" if ($pushstate="");
+            printdbg ("no change - saving $token with $pushstate");
             print $fh "$token:$monlist:$intlist:$platform:$pushstate\n";
         }
 
@@ -1073,7 +1075,8 @@ sub saveTokens
     
     if (!$found)
     {
-	Info ("$stoken not found, creating new record with monlist=$smonlist");
+	    Info ("$stoken not found, creating new record with monlist=$smonlist");
+        printdbg ("Saving $stoken as it does not exist");
     	print $fh "$stoken:$smonlist:$sintlist:$splatform:$spushstate\n";
     }
     close ($fh);
