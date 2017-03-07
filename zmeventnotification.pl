@@ -652,7 +652,8 @@ sub checkConnection
     }
     my $ac1 = scalar @active_connections;
     printdbg ("Active connects before purge=$ac1");
-    @active_connections = grep { $_->{pending} != INVALID_WEBSOCKET } @active_connections;
+    @active_connections = grep { $_->{pending} != INVALID_WEBSOCKET && $_->{token} ne "" } @active_connections;
+    #@active_connections = grep { $_->{pending} != INVALID_WEBSOCKET   } @active_connections;
     $ac1 = scalar @active_connections;
     printdbg ("Active connects after INVALID_WEBSOCKET purge=$ac1");
     if ($usePushAPNSDirect || $usePushProxy)
