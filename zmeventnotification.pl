@@ -218,6 +218,8 @@ my $alarm_mid="";
 
 # MAIN
 
+
+printdbg ("******You are running version: $app_version");
 if ($usePushAPNSDirect || $usePushProxy)
 {
     my $dir = dirname(PUSH_TOKEN_FILE);
@@ -250,7 +252,7 @@ sub try_use
 sub printdbg 
 {
 	my $a = shift;
-    print($a, "\n") if $printDebugToConsole;
+    print(localtime,":",$a, "\n") if $printDebugToConsole;
 }
 
 
@@ -658,7 +660,7 @@ sub checkConnection
     printdbg ("Active connects after INVALID_WEBSOCKET purge=$ac1");
     if ($usePushAPNSDirect || $usePushProxy)
     {
-        @active_connections = grep { $_->{pending} != INVALID_APNS } @active_connections;
+        @active_connections = grep { $_->{pending} != INVALID_APNS && $_->{token} ne ""} @active_connections;
         $ac1 = scalar @active_connections;
         printdbg ("Active connects after INVALID_APNS purge=$ac1");
     }
@@ -792,26 +794,26 @@ sub checkMessage
                     $_->{monlist} = $json_string->{'data'}->{'monlist'};
                     $_->{intlist} = $json_string->{'data'}->{'intlist'};
                     if (exists($json_string->{'data'}->{'monlist'}))
-			{
-				$_->{monlist} = $json_string->{'data'}->{'monlist'};
-			}
-			else
-			{
-                        	$_->{monlist} = "-1";
-			}
-                        if (exists($json_string->{'data'}->{'intlist'}))
-			{
-				$_->{intlist} = $json_string->{'data'}->{'intlist'};
-			}
-			else
-			{
-                        	$_->{intlist} = "-1";
-			}
-                    $_->{pushstate} = $json_string->{'data'}->{'state'};
-                    Info ("Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}.",pushstate:".$_->{pushstate}."\n");
-                    my ($emonlist,$eintlist) = saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate});
-                    $_->{monlist} = $emonlist;
-                    $_->{intlist} = $eintlist;
+                    {
+                        $_->{monlist} = $json_string->{'data'}->{'monlist'};
+                    }
+                    else
+                    {
+                            $_->{monlist} = "-1";
+                    }
+                    if (exists($json_string->{'data'}->{'intlist'}))
+                    {
+                        $_->{intlist} = $json_string->{'data'}->{'intlist'};
+                    }
+                    else
+                    {
+                            $_->{intlist} = "-1";
+                    }
+                            $_->{pushstate} = $json_string->{'data'}->{'state'};
+                            Info ("Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}.",pushstate:".$_->{pushstate}."\n");
+                            my ($emonlist,$eintlist) = saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate});
+                            $_->{monlist} = $emonlist;
+                            $_->{intlist} = $eintlist;
 
 
                 }
@@ -1346,6 +1348,7 @@ sub initSocketServer
                 utf8 => sub {
                     my ($conn, $msg) = @_;
 		    Debug ("Raw incoming message: $msg");
+            printdbg ("Raw incoming message: $msg");
                     checkMessage($conn, $msg);
                 },
                 handshake => sub {
