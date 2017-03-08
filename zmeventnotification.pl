@@ -742,6 +742,7 @@ sub checkMessage
                 # this token already exists
                 if ($_->{token} eq $json_string->{'data'}->{'token'}) 
                 {
+                    printdbg ("**** TOKEN MATCH");
                     # if the token doesn't belong to the same connection
                     # then we have two connections owning the same token
                     # so we need to delete the old one. This can happen when you load
@@ -751,6 +752,7 @@ sub checkMessage
                         && $_->{conn}->port() ne $conn->port()))
                     {
                         printdbg ("REGISTRATION: marking ".$_->{token}." as INVALID_APNS with directAPNS= $usePushAPNSDirect");
+                        
                         $_->{pending} = INVALID_APNS;
                         Info ("Duplicate token found, removing old data point");
 
