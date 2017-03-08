@@ -249,10 +249,6 @@ sub try_use
   return($@ ? 0:1);
 }
 
-sub printdbg
-{
-    print(join(" ", @ARGV), "\n") if $printDebugToConsole;
-}
 
 
 # This function uses shared memory polling to check if 
