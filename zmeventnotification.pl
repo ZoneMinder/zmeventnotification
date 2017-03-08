@@ -1354,6 +1354,7 @@ sub initSocketServer
                 },
                 handshake => sub {
                     my ($conn, $handshake) = @_;
+                    printdbg ("HANDSHAKE: Websockets: New Connection Handshake requested from ".$conn->ip().":".$conn->port()." state=pending auth");
                     Info ("Websockets: New Connection Handshake requested from ".$conn->ip().":".$conn->port()." state=pending auth");
                     my $connect_time = time();
                     push @active_connections, {conn => $conn, 
@@ -1365,6 +1366,7 @@ sub initSocketServer
                                    platform => "websocket",
                                    pushstate => '',
                                    badge => 0};
+                   
                 },
                 disconnect => sub
                 {
