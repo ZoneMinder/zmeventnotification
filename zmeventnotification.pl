@@ -252,7 +252,8 @@ sub try_use
 sub printdbg 
 {
 	my $a = shift;
-    print(localtime,":",$a, "\n") if $printDebugToConsole;
+    my $now = strftime('%Y-%m-%d,%H:%M:%S',localtime);
+    print($now," ",$a, "\n") if $printDebugToConsole;
 }
 
 
