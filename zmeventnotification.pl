@@ -81,7 +81,7 @@ my $useCustomNotificationSound = 1;     # set to 0 for default sound
 
 use constant PUSH_TOKEN_FILE=>'/etc/private/tokens.txt'; # MAKE SURE THIS DIRECTORY HAS WWW-DATA PERMISSIONS
 
-my $printDebugToConsole = 1; # set this to OFF unless you are debugging. If 1, make sure its NOT running via zmdc
+my $printDebugToConsole = 0; # set this to OFF unless you are debugging. If 1, make sure its NOT running via zmdc
 
 
 # -------- There seems to be an LWP perl bug that fails certifying self signed certs
@@ -276,7 +276,6 @@ sub checkEvents()
           my $cip="(none)";
           if (exists $_->{conn} )
           {
-
               $cip = $_->{conn}->ip();
           }
           Debug ("-->Connection $ndx: IP->".$cip." Token->:".$_->{token}." Plat:".$_->{platform}." Push:".$_->{pushstate}); 
@@ -290,8 +289,6 @@ sub checkEvents()
         }
         loadMonitors();
     }
-
-
     @events = ();
     $alarm_header = "";
     $alarm_mid="";
@@ -427,7 +424,6 @@ sub validateZM
 }
 
 # Passes on device token to the push proxy
-
 sub registerOverPushProxy
 {
     my ($token) = shift;
@@ -626,7 +622,6 @@ sub apnsFeedbackCheck
 # that are inactive or have had an error
 # This also closes any connection that has not provided
 # credentials in the time configured after opening a socket
-
 sub checkConnection
 {
     foreach (@active_connections)
@@ -667,7 +662,7 @@ sub checkConnection
     }
 }
 
-# tokens can have :
+# tokens can have : , so right split - this way I don't break existing token files
 # http://stackoverflow.com/a/37870235/1361529
 sub rsplit {
     my $pattern = shift(@_);    # Precompiled regex pattern (i.e. qr/pattern/)
@@ -692,9 +687,6 @@ sub checkMessage
         eval {$conn->send_utf8($str);};
         return;
     }
-
-    
-    #print "Message:$msg\n";
 
     # This event type is when a command related to push notification is received
     if (($json_string->{'event'} eq "push") && !$usePushAPNSDirect && !$usePushProxy)
@@ -742,7 +734,6 @@ sub checkMessage
                 # this token already exists
                 if ($_->{token} eq $json_string->{'data'}->{'token'}) 
                 {
-                    printdbg ("**** TOKEN MATCH");
                     # if the token doesn't belong to the same connection
                     # then we have two connections owning the same token
                     # so we need to delete the old one. This can happen when you load
