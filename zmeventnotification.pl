@@ -47,7 +47,6 @@
 
 
 use File::Basename;
-use Data::Dumper;
 
 use strict;
 use bytes;
@@ -117,6 +116,7 @@ use constant PUSHPROXY_APP_ID => 'e10db4ac29d34243f66f15592328fecc';
 use constant PENDING_WEBSOCKET => '1';
 use constant INVALID_WEBSOCKET => '-1';
 use constant INVALID_APNS => '-2';
+use constant INVALID_AUTH => '-3';
 use constant VALID_WEBSOCKET => '0';
 
 
@@ -643,8 +643,8 @@ sub checkConnection
                 {
                     my $conn = $_->{conn};
                     Info ("Rejecting ".$conn->ip()." - authentication timeout");
-                    printdbg ("Rejecting ".$conn->ip()." - authentication timeout marking as INVALID_WEBSOCKET");
-                    $_->{pending} = INVALID_WEBSOCKET;
+                    printdbg ("Rejecting ".$conn->ip()." - authentication timeout marking as INVALID_AUTH");
+                    $_->{pending} = INVALID_AUTH;
                     my $str = encode_json({event => 'auth', type=>'',status=>'Fail', reason => 'NOAUTH'});
                     eval {$_->{conn}->send_utf8($str);};
                     $_->{conn}->disconnect();
@@ -655,13 +655,13 @@ sub checkConnection
     }
     my $ac1 = scalar @active_connections;
     printdbg ("Active connects before purge=$ac1");
-    @active_connections = grep { $_->{pending} != INVALID_WEBSOCKET && $_->{token} ne "" } @active_connections;
-    #@active_connections = grep { $_->{pending} != INVALID_WEBSOCKET   } @active_connections;
+    @active_connections = grep { $_->{pending} != INVALID_AUTH   } @active_connections;
     $ac1 = scalar @active_connections;
-    printdbg ("Active connects after INVALID_WEBSOCKET purge=$ac1");
+    printdbg ("Active connects after INVALID_AUTH purge=$ac1");
     if ($usePushAPNSDirect || $usePushProxy)
     {
-        @active_connections = grep { $_->{pending} != INVALID_APNS && $_->{token} ne ""} @active_connections;
+        #@active_connections = grep { $_->{'pending'} != INVALID_APNS || $_->{'token'} ne ''} @active_connections;
+        @active_connections = grep { $_->{'pending'} != INVALID_APNS} @active_connections;
         $ac1 = scalar @active_connections;
         printdbg ("Active connects after INVALID_APNS purge=$ac1");
     }
@@ -1311,7 +1311,7 @@ sub initSocketServer
                                     if ($@)
                                     {
                             
-                                        printdbg ("Marking ".$_->{conn}->ip()." as INVALID_WEBSOCKET, as websocket send error");     
+                                        printdbg ("Marking ".$_->{conn}->ip()." as INVALID_WEBSOCKET, as websocket send error with token:",$_->{token});     
                                         $_->{pending} = INVALID_WEBSOCKET;
 
                                     }
