@@ -47,7 +47,6 @@
 
 
 use File::Basename;
-use Data::Dumper;
 
 use strict;
 use bytes;
@@ -60,18 +59,14 @@ my $app_version="0.93";
 #
 # ==========================================================================
 use constant EVENT_NOTIFICATION_PORT=>9000;                 # port for Websockets connection
-
 my $useSecure = 1;                                          # make this 0 if you don't want SSL
 
 # ignore if useSecure is 0
 use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';      # Change these to your certs/keys
 use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 
-
 # if you only want to enable websockets make both of these 0
-
 my $usePushProxy = 1;               # set this to 1 to use a remote push proxy for APNS that I have set up for zmNinja users
-
 my $usePushAPNSDirect = 0;          # set this to 1 if you have an APNS SSL certificate/key pair
                                     # the only way to have this is if you have an apple developer
                                     # account
@@ -86,9 +81,8 @@ my $useCustomNotificationSound = 1;     # set to 0 for default sound
 
 use constant PUSH_TOKEN_FILE=>'/etc/private/tokens.txt'; # MAKE SURE THIS DIRECTORY HAS WWW-DATA PERMISSIONS
 
-
-
-
+my $printDebugToConsole = 0; # set this to OFF unless you are debugging. If 1, make sure its NOT running via zmdc
+#
 # -------- There seems to be an LWP perl bug that fails certifying self signed certs
 # refer to https://bugs.launchpad.net/ubuntu/+source/libwww-perl/+bug/1408331
 # you don't have to make it this drastic, you can also follow other tips in that thread to point to
@@ -121,7 +115,9 @@ use constant PUSHPROXY_APP_ID => 'e10db4ac29d34243f66f15592328fecc';
 use constant PENDING_WEBSOCKET => '1';
 use constant INVALID_WEBSOCKET => '-1';
 use constant INVALID_APNS => '-2';
+use constant INVALID_AUTH => '-3';
 use constant VALID_WEBSOCKET => '0';
+
 
 my $alarmEventId = 1;           # tags the event id along with the alarm - useful for correlation
                                 # only for geeks though - most people won't give a damn. I do.
@@ -137,6 +133,7 @@ if (!try_use ("JSON"))
     { Fatal ("JSON or JSON::XS  missing");exit (-1);}
 } 
 
+# Lets now load all the dependent libraries in a failsafe way
 if ($usePushProxy)
 {
     if ($usePushAPNSDirect) # can't have both
@@ -179,8 +176,6 @@ else
 }
 
 
-
-
 # ==========================================================================
 #
 # Don't change anything below here
@@ -191,6 +186,7 @@ use lib '/usr/local/lib/x86_64-linux-gnu/perl5';
 use ZoneMinder;
 use POSIX;
 use DBI;
+
 
 $| = 1;
 
@@ -221,6 +217,8 @@ my $alarm_mid="";
 
 # MAIN
 
+
+printdbg ("******You are running version: $app_version");
 if ($usePushAPNSDirect || $usePushProxy)
 {
     my $dir = dirname(PUSH_TOKEN_FILE);
@@ -249,9 +247,12 @@ sub try_use
   return($@ ? 0:1);
 }
 
-sub printdbg
+# console print
+sub printdbg 
 {
-    print(join(" ", @ARGV), "\n") if $printDebugToConsole;
+	my $a = shift;
+    my $now = strftime('%Y-%m-%d,%H:%M:%S',localtime);
+    print($now," ",$a, "\n") if $printDebugToConsole;
 }
 
 
@@ -274,10 +275,10 @@ sub checkEvents()
           my $cip="(none)";
           if (exists $_->{conn} )
           {
-
               $cip = $_->{conn}->ip();
           }
           Debug ("-->Connection $ndx: IP->".$cip." Token->:".$_->{token}." Plat:".$_->{platform}." Push:".$_->{pushstate}); 
+          printdbg ("-->Connection $ndx: IP->".$cip." Token->".$_->{token}." Plat:".$_->{platform}." Push:".$_->{pushstate});
           $ndx++;
         }
         Info ("Reloading Monitors...\n");
@@ -287,8 +288,6 @@ sub checkEvents()
         }
         loadMonitors();
     }
-
-
     @events = ();
     $alarm_header = "";
     $alarm_mid="";
@@ -424,7 +423,6 @@ sub validateZM
 }
 
 # Passes on device token to the push proxy
-
 sub registerOverPushProxy
 {
     my ($token) = shift;
@@ -609,6 +607,7 @@ sub apnsFeedbackCheck
                 {
                     if ($_->{token} eq $delete_token)
                     {
+                        printdbg ("FEEDBACK: marking $delete_token as INVALID_APNS with directAPNS= $usePushAPNSDirect");
                         $_->{pending} = INVALID_APNS;
                         Info ("Marking entry as invalid apns token: ". $delete_token."\n");
                     }
@@ -622,7 +621,6 @@ sub apnsFeedbackCheck
 # that are inactive or have had an error
 # This also closes any connection that has not provided
 # credentials in the time configured after opening a socket
-
 sub checkConnection
 {
     foreach (@active_connections)
@@ -639,7 +637,8 @@ sub checkConnection
                 {
                     my $conn = $_->{conn};
                     Info ("Rejecting ".$conn->ip()." - authentication timeout");
-                    $_->{pending} = INVALID_WEBSOCKET;
+                    printdbg ("Rejecting ".$conn->ip()." - authentication timeout marking as INVALID_AUTH");
+                    $_->{pending} = INVALID_AUTH;
                     my $str = encode_json({event => 'auth', type=>'',status=>'Fail', reason => 'NOAUTH'});
                     eval {$_->{conn}->send_utf8($str);};
                     $_->{conn}->disconnect();
@@ -648,11 +647,27 @@ sub checkConnection
         }
 
     }
-    @active_connections = grep { $_->{pending} != INVALID_WEBSOCKET } @active_connections;
+    my $ac1 = scalar @active_connections;
+    printdbg ("Active connects before purge=$ac1");
+    @active_connections = grep { $_->{pending} != INVALID_AUTH   } @active_connections;
+    $ac1 = scalar @active_connections;
+    printdbg ("Active connects after INVALID_AUTH purge=$ac1");
     if ($usePushAPNSDirect || $usePushProxy)
     {
-        @active_connections = grep { $_->{pending} != INVALID_APNS } @active_connections;
+        #@active_connections = grep { $_->{'pending'} != INVALID_APNS || $_->{'token'} ne ''} @active_connections;
+        @active_connections = grep { $_->{'pending'} != INVALID_APNS} @active_connections;
+        $ac1 = scalar @active_connections;
+        printdbg ("Active connects after INVALID_APNS purge=$ac1");
     }
+}
+
+# tokens can have : , so right split - this way I don't break existing token files
+# http://stackoverflow.com/a/37870235/1361529
+sub rsplit {
+    my $pattern = shift(@_);    # Precompiled regex pattern (i.e. qr/pattern/)
+    my $expr    = shift(@_);    # String to split
+    my $limit   = shift(@_);    # Number of chunks to split into
+    map { scalar reverse($_) } reverse split(/$pattern/, scalar reverse($expr), $limit);
 }
 
 # This function  is called whenever we receive a message from a client
@@ -671,9 +686,6 @@ sub checkMessage
         eval {$conn->send_utf8($str);};
         return;
     }
-
-    
-    #print "Message:$msg\n";
 
     # This event type is when a command related to push notification is received
     if (($json_string->{'event'} eq "push") && !$usePushAPNSDirect && !$usePushProxy)
@@ -703,6 +715,7 @@ sub checkMessage
                     $_->{badge} = $json_string->{'data'}->{'badge'};
                 }
             }
+            return;
         }
         # This sub type is when a device token is registered
         if ($json_string->{'data'}->{'type'} eq "token")
@@ -728,37 +741,41 @@ sub checkMessage
                     if ( (!exists $_->{conn}) || ($_->{conn}->ip() ne $conn->ip() 
                         && $_->{conn}->port() ne $conn->port()))
                     {
+                        printdbg ("REGISTRATION: marking ".$_->{token}." as INVALID_APNS with directAPNS= $usePushAPNSDirect");
+                        
                         $_->{pending} = INVALID_APNS;
-                        Info ("Duplicate token found, marking for deletion");
+                        Info ("Duplicate token found, removing old data point");
+
 
                     }
                     else # token matches and connection matches, so it may be an update
                     {
                         $_->{token} = $json_string->{'data'}->{'token'};
                         $_->{platform} = $json_string->{'data'}->{'platform'};
-			if (exists($json_string->{'data'}->{'monlist'}))
-			{
-				$_->{monlist} = $json_string->{'data'}->{'monlist'};
-			}
-			else
-			{
-                        	$_->{monlist} = "-1";
-			}
+                        if (exists($json_string->{'data'}->{'monlist'}))
+                        {
+                            $_->{monlist} = $json_string->{'data'}->{'monlist'};
+                        }
+                        else
+                        {
+                            $_->{monlist} = "-1";
+                        }
                         if (exists($json_string->{'data'}->{'intlist'}))
-			{
-				$_->{intlist} = $json_string->{'data'}->{'intlist'};
-			}
-			else
-			{
-                        	$_->{intlist} = "-1";
-			}
-			$_->{pushstate} = $json_string->{'data'}->{'state'};
+                        {
+                            $_->{intlist} = $json_string->{'data'}->{'intlist'};
+                        }
+                        else
+                        {
+                             $_->{intlist} = "-1";
+                        }
+                        $_->{pushstate} = $json_string->{'data'}->{'state'};
                         Info ("Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}.",pushstate:".$_->{pushstate}."\n");
                         my ($emonlist,$eintlist) = saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate});
                         $_->{monlist} = $emonlist;
                         $_->{intlist} = $eintlist;
-                    }
-                }
+                    } # token and conn. matches
+                } # end of token matches
+
                 # The connection matches but the token does not 
                 # this can happen if this is the first token registration after push notification registration
                 # response is received
@@ -770,26 +787,26 @@ sub checkMessage
                     $_->{monlist} = $json_string->{'data'}->{'monlist'};
                     $_->{intlist} = $json_string->{'data'}->{'intlist'};
                     if (exists($json_string->{'data'}->{'monlist'}))
-			{
-				$_->{monlist} = $json_string->{'data'}->{'monlist'};
-			}
-			else
-			{
-                        	$_->{monlist} = "-1";
-			}
-                        if (exists($json_string->{'data'}->{'intlist'}))
-			{
-				$_->{intlist} = $json_string->{'data'}->{'intlist'};
-			}
-			else
-			{
-                        	$_->{intlist} = "-1";
-			}
-                    $_->{pushstate} = $json_string->{'data'}->{'state'};
-                    Info ("Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}.",pushstate:".$_->{pushstate}."\n");
-                    my ($emonlist,$eintlist) = saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate});
-                    $_->{monlist} = $emonlist;
-                    $_->{intlist} = $eintlist;
+                    {
+                        $_->{monlist} = $json_string->{'data'}->{'monlist'};
+                    }
+                    else
+                    {
+                            $_->{monlist} = "-1";
+                    }
+                    if (exists($json_string->{'data'}->{'intlist'}))
+                    {
+                        $_->{intlist} = $json_string->{'data'}->{'intlist'};
+                    }
+                    else
+                    {
+                            $_->{intlist} = "-1";
+                    }
+                            $_->{pushstate} = $json_string->{'data'}->{'state'};
+                            Info ("Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}.",pushstate:".$_->{pushstate}."\n");
+                            my ($emonlist,$eintlist) = saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate});
+                            $_->{monlist} = $emonlist;
+                            $_->{intlist} = $eintlist;
 
 
                 }
@@ -874,6 +891,7 @@ sub checkMessage
                     my $str = encode_json({event=>'auth', type=>'', status=>'Fail', reason => 'BADAUTH'});
                     eval {$_->{conn}->send_utf8($str);};
                     Info("Bad authentication provided by ".$_->{conn}->ip());
+                    printdbg("marking INVALID_WEBSOCKET Bad authentication provided by ".$_->{conn}->ip());
                     $_->{pending}=INVALID_WEBSOCKET;
                 }
                 else
@@ -919,8 +937,11 @@ sub loadTokens
     
     open (my $fh, '<', PUSH_TOKEN_FILE);
     chomp( my @lines = <$fh>);
-
     close ($fh);
+
+
+
+    printdbg ("Calling uniq from loadTokens");
     my @uniquetokens = uniq(@lines);
 
     open ($fh, '>', PUSH_TOKEN_FILE);
@@ -930,7 +951,7 @@ sub loadTokens
     {
         next if ($_ eq "");
         print $fh "$_\n";
-        my ($token, $monlist, $intlist, $platform, $pushstate)  = split (":",$_);
+        my ($token, $monlist, $intlist, $platform, $pushstate)  = rsplit(qr/:/, $_, 5); # split (":",$_);
         #print "load: PUSHING $row\n";
         push @active_connections, {
                token => $token,
@@ -954,6 +975,7 @@ sub loadTokens
 sub deleteToken
 {
     my $dtoken = shift;
+    printdbg ("DeleteToken called with $dtoken and APNSDirect=$usePushAPNSDirect");
     return if (!$usePushAPNSDirect && !$usePushProxy);
     return if ( ! -f PUSH_TOKEN_FILE);
     
@@ -966,7 +988,7 @@ sub deleteToken
 
     foreach(@uniquetokens)
     {
-        my ($token, $monlist, $intlist, $platform, $pushstate)  = split (":",$_);
+        my ($token, $monlist, $intlist, $platform, $pushstate)  = rsplit(qr/:/, $_, 5); #split (":",$_);
         next if ($_ eq "" || $token eq $dtoken);
         print $fh "$_\n";
         #print "delete: $row\n";
@@ -998,21 +1020,23 @@ sub saveTokens
 {
     return if (!$usePushAPNSDirect && !$usePushProxy);
     my $stoken = shift;
-    return if ($stoken eq "");
+    if ($stoken eq "") {printdbg ("Not saving, no token. Desktop?"); return};
     my $smonlist = shift;
     my $sintlist = shift;
     my $splatform = shift;
     my $spushstate = shift;
+    printdbg ("saveTokens called with=>$stoken:$smonlist:$sintlist:$splatform:$spushstate");
 	if (($spushstate eq "") && ($stoken ne "") )
 	{
 		$spushstate = "enabled";
 		Info ("Overriding token state, setting to enabled as I got a null with a valid token");
+		printdbg ("Overriding token state, setting to enabled as I got a null with a valid token");
 	}
 
     Info ("SaveTokens called with:monlist=$smonlist, intlist=$sintlist, platform=$splatform, push=$spushstate");
     
     return if ($stoken eq "");
-    open (my $fh, '<', PUSH_TOKEN_FILE) || Fatal ("Cannot open for read".PUSH_TOKEN_FILE);
+    open (my $fh, '<', PUSH_TOKEN_FILE) || Fatal ("Cannot open for read ".PUSH_TOKEN_FILE);
     chomp( my @lines = <$fh>);
     close ($fh);
     my @uniquetokens = uniq(@lines);
@@ -1021,20 +1045,22 @@ sub saveTokens
     foreach (@uniquetokens)
     {
         next if ($_ eq "");
-        my ($token, $monlist, $intlist, $platform, $pushstate)  = split (":",$_);
-        if ($token eq $stoken)
+        my ($token, $monlist, $intlist, $platform, $pushstate)  = rsplit(qr/:/, $_, 5); #split (":",$_);
+        if ($token eq $stoken) # update token in file with new information
         {
 	    Info ("token $token matched, previously stored monlist is: $monlist");
             $smonlist = $monlist if ($smonlist eq "-1");
             $sintlist = $intlist if ($sintlist eq "-1");
             $spushstate = $pushstate if ($spushstate eq "");
+            printdbg ("updating $token with $pushstate");
             print $fh "$stoken:$smonlist:$sintlist:$splatform:$spushstate\n";
-	    Info ("overwriting $token monlist with:$smonlist");
+	        Info ("overwriting $token monlist with:$smonlist");
             $found = 1;
         }
-        else
+        else # write token as is
         {
-            $pushstate="enabled" if ($pushstate="");
+            if ($pushstate eq "") {$pushstate = "enabled"; printdbg ("nochange, but pushstate was EMPTY. WHY?"); }
+            printdbg ("no change - saving $token with $pushstate");
             print $fh "$token:$monlist:$intlist:$platform:$pushstate\n";
         }
 
@@ -1045,7 +1071,8 @@ sub saveTokens
     
     if (!$found)
     {
-	Info ("$stoken not found, creating new record with monlist=$smonlist");
+	    Info ("$stoken not found, creating new record with monlist=$smonlist");
+        printdbg ("Saving $stoken as it does not exist");
     	print $fh "$stoken:$smonlist:$sintlist:$splatform:$spushstate\n";
     }
     close ($fh);
@@ -1064,12 +1091,20 @@ sub uniq
     my @farray=();
     foreach (@array)
     {
-        my ($token,$monlist,$intlist,$platform, $pushstate) = split (":",$_);
-		$pushstate = "enabled" if (($pushstate eq "") && ($token ne "") );
+        next if  ($_ =~ /^\s*$/); # skip blank lines - we don't really need this - as token check is later
+        my ($token,$monlist,$intlist,$platform, $pushstate) = rsplit(qr/:/, $_, 5); #split (":",$_);
+        next if ($token eq "");
+        if (($pushstate ne "enabled") && ($pushstate ne "disabled"))
+        {
+            printdbg ("huh? uniq read $token,$monlist,$intlist,$platform, $pushstate => forcing state to enabled");
+            $pushstate="enabled";
+            
+        }
         # not interested in monlist & intlist
         if (! $seen{$token}++ )
         {
             push @farray, "$token:$monlist:$intlist:$platform:$pushstate";
+            #printdbg ("\@uniq pushing: $token:$monlist:$intlist:$platform:$pushstate");
         }
          
         
@@ -1265,8 +1300,10 @@ sub initSocketServer
                                     eval {$_->{conn}->send_utf8($sup_str);};
                                     if ($@)
                                     {
-                                
+                            
+                                        printdbg ("Marking ".$_->{conn}->ip()." as INVALID_WEBSOCKET, as websocket send error with token:",$_->{token});     
                                         $_->{pending} = INVALID_WEBSOCKET;
+
                                     }
                                 }
                             }
@@ -1282,6 +1319,7 @@ sub initSocketServer
                                 if ($@)
                                 {
                             
+                                    printdbg ("Marking ".$_->{conn}->ip()." as INVALID_WEBSOCKET, as websocket send error");     
                                     $_->{pending} = INVALID_WEBSOCKET;
                                 }
                             }
@@ -1303,10 +1341,12 @@ sub initSocketServer
                 utf8 => sub {
                     my ($conn, $msg) = @_;
 		    Debug ("Raw incoming message: $msg");
+            printdbg ("Raw incoming message: $msg");
                     checkMessage($conn, $msg);
                 },
                 handshake => sub {
                     my ($conn, $handshake) = @_;
+                    printdbg ("HANDSHAKE: Websockets: New Connection Handshake requested from ".$conn->ip().":".$conn->port()." state=pending auth");
                     Info ("Websockets: New Connection Handshake requested from ".$conn->ip().":".$conn->port()." state=pending auth");
                     my $connect_time = time();
                     push @active_connections, {conn => $conn, 
@@ -1318,6 +1358,7 @@ sub initSocketServer
                                    platform => "websocket",
                                    pushstate => '',
                                    badge => 0};
+                   
                 },
                 disconnect => sub
                 {
