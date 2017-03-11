@@ -255,7 +255,6 @@ sub printdbg
     print($now," ",$a, "\n") if $printDebugToConsole;
 }
 
-
 # This function uses shared memory polling to check if 
 # ZM reported any new events. If it does find events
 # then the details are packaged into the events array
