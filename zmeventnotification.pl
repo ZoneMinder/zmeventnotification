@@ -890,8 +890,8 @@ sub checkMessage
                     my $str = encode_json({event=>'auth', type=>'', status=>'Fail', reason => 'BADAUTH'});
                     eval {$_->{conn}->send_utf8($str);};
                     Info("Bad authentication provided by ".$_->{conn}->ip());
-                    printdbg("marking INVALID_WEBSOCKET Bad authentication provided by ".$_->{conn}->ip());
-                    $_->{pending}=INVALID_WEBSOCKET;
+                    printdbg("marking INVALID_AUTH Bad authentication provided by ".$_->{conn}->ip());
+                    $_->{pending}=INVALID_AUTH;
                 }
                 else
                 {
