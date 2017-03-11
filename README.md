@@ -216,7 +216,7 @@ Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push messa
 #### 1. Authentication messages
 
 To connect with the server you need to send the following JSON object (replace username/password)
-Note this is encrypted
+Note this payload is NOT encrypted. If you are not using SSL, it will be sent in clear.
 
 Authentication messages can be sent multiple times. It is necessary that you send the first one
 within 20 seconds of opening a connection or the server will terminate your connection.
