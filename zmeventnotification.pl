@@ -82,8 +82,7 @@ my $useCustomNotificationSound = 1;     # set to 0 for default sound
 use constant PUSH_TOKEN_FILE=>'/etc/private/tokens.txt'; # MAKE SURE THIS DIRECTORY HAS WWW-DATA PERMISSIONS
 
 my $printDebugToConsole = 0; # set this to OFF unless you are debugging. If 1, make sure its NOT running via zmdc
-
-
+#
 # -------- There seems to be an LWP perl bug that fails certifying self signed certs
 # refer to https://bugs.launchpad.net/ubuntu/+source/libwww-perl/+bug/1408331
 # you don't have to make it this drastic, you can also follow other tips in that thread to point to
