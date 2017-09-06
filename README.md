@@ -34,8 +34,8 @@
                 - [4.4.1.2 What sort of data is transmitted to my server?](#4412-what-sort-of-data-is-transmitted-to-my-server)
             - [4.4.2 Push notification directly from your event server](#442-push-notification-directly-from-your-event-server)
         - [Testing from command line](#testing-from-command-line)
-    - [How scalable is it?](#how-scalable-is-it)
-    - [Brickbats](#brickbats)
+- [How scalable is it?](#how-scalable-is-it)
+- [Brickbats](#brickbats)
 
 <!-- /TOC -->
 
@@ -233,7 +233,6 @@ Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push messa
 
 
 ## For Developers writing their own consumers
-
 
 ### How do I talk to it?
 *  ``{"JSON":"everywhere"}``
@@ -463,10 +462,10 @@ In the example above, I used `wscat` to connect to my event server and then sent
 
 
 
-### How scalable is it?
+## How scalable is it?
 It's a lightweight single threaded process. I really don't see a need for launching a zillion threads or a process per monitor etc for what it does. I'd argue its simplicity is its scalability. Plus I don't expect more than a handful of consumers to connect to it. I really don't see why it won't be able to scale to for what is does. But if you are facing scalability issues, let me know. There is [Mojolicious](http://mojolicio.us/) I can use to make it more scalable if I am proven wrong about scalability.
 
-### Brickbats
+## Brickbats
 
 **Why not just supply the username and password in the URL as a resource? It's over TLS**
 
