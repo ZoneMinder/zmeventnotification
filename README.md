@@ -8,13 +8,14 @@
 - [Is this officially developed by ZM developers?](#is-this-officially-developed-by-zm-developers)
 - [How do I install it?](#how-do-i-install-it)
     - [Installing Dependencies](#installing-dependencies)
+    - [SSL certificate](#ssl-certificate)
+        - [IOS Users](#ios-users)
     - [Making sure everything is running](#making-sure-everything-is-running)
-        - [How do I run it as a daemon so it starts automatically along with ZoneMinder?](#how-do-i-run-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
+    - [How do I run it as a daemon so it starts automatically along with ZoneMinder?](#how-do-i-run-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
 - [How do I safely upgrade zmeventserver to new versions?](#how-do-i-safely-upgrade-zmeventserver-to-new-versions)
-- [Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!](#great-krypton-i-just-upgraded-zoneminder-and-im-not-getting-push-anymore)
-- [SSL certificate](#ssl-certificate)
-    - [IOS Users](#ios-users)
-- [Troubleshooting](#troubleshooting)
+- [Troubleshooting common situations](#troubleshooting-common-situations)
+    - [The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)](#the-server-runs-fine-when-manually-executed-but-fails-when-run-in-daemon-mode-started-by-zmdcpl)
+    - [Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!](#great-krypton-i-just-upgraded-zoneminder-and-im-not-getting-push-anymore)
 - [How do I disable secure mode?](#how-do-i-disable-secure-mode)
 - [Debugging and reporting problems](#debugging-and-reporting-problems)
 - [For Developers writing their own consumers](#for-developers-writing-their-own-consumers)
@@ -101,10 +102,33 @@ Get HTTPS library for LWP:
 perl -MCPAN -e "install LWP::Protocol::https"
 ```
 
+### SSL certificate
+
+If you are using secure mode (default) you **also need to make sure you generate SSL certificates otherwise the script won't run**
+If you are using SSL for ZoneMinder, simply point this script to the certificates.
+
+If you are not already using SSL for ZoneMinder and don't have certificates, generating them is as
+easy as:
+
+(replace /etc/apache2/ssl/ with the directory you want the certificate and key files to be stored in)
+```
+sudo openssl req -x509 -nodes -days 4096 -newkey rsa:2048 -keyout /etc/apache2/ssl/zoneminder.key -out /etc/apache2/ssl/zoneminder.crt
+```
+It's **very important** to ensure the "Common Name" selected while generating the certificate is the same as the hostname or IP of the server. For example if you plan to access the server as "myserver.ddns.net" Please make sure you use myserver.ddns.net as the common name. If you are planning to access it via IP, please make sure you use the same IP.
+
+Once you do that please change the following lines in the perl server to point to your SSL certs/keys:
+```
+use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';	 
+use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
+```
+
+#### IOS Users 
+Starting IOS 10.2, I noticed that zmNinja was not able to register with the event server when it was using WSS (`$useSecure=1`) and self-signed certificates. To solve this, I had to email myself the zoneminder certificate (`zoneminder.crt`) file and install it in the phone. Why that is needed only for WSS and not for HTTPS is a mystery to me. The alternative is to run the eventserver in WS mode (`$useSecure=0`).
+
 ### Making sure everything is running
 * Start the event server manually first using `sudo /usr/bin/zmeventnotification.pl` and make sure you check syslogs to ensure its loaded up and all dependencies are found. If you see errors, fix them. Then exit and follow the steps below to start it along with Zoneminder
 
-#### How do I run it as a daemon so it starts automatically along with ZoneMinder?
+### How do I run it as a daemon so it starts automatically along with ZoneMinder?
 
 **WARNING: Do NOT do this before you run it manually as I've mentioned above to test. Make sure it works, all packages are present etc. before you 
 add it as  a daemon as if you don't and it crashes you won't know why**
@@ -134,41 +158,16 @@ sudo zmdc.pl start zmeventnotification.pl
 Make sure you look at the syslogs to make sure its started properly
 
 
-## Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!###
+## Troubleshooting common situations
 
-Fear not. You just need to redo the changes you did to ``zmpkg.pl`` and ``zmdc.pl`` and restart ZM. You see, when you upgrade ZM, it overwrites those files.
-
-
-
-## SSL certificate
-
-If you are using secure mode (default) you **also need to make sure you generate SSL certificates otherwise the script won't run**
-If you are using SSL for ZoneMinder, simply point this script to the certificates.
-
-If you are not already using SSL for ZoneMinder and don't have certificates, generating them is as
-easy as:
-
-(replace /etc/apache2/ssl/ with the directory you want the certificate and key files to be stored in)
-```
-sudo openssl req -x509 -nodes -days 4096 -newkey rsa:2048 -keyout /etc/apache2/ssl/zoneminder.key -out /etc/apache2/ssl/zoneminder.crt
-```
-It's **very important** to ensure the "Common Name" selected while generating the certificate is the same as the hostname or IP of the server. For example if you plan to access the server as "myserver.ddns.net" Please make sure you use myserver.ddns.net as the common name. If you are planning to access it via IP, please make sure you use the same IP.
-
-Once you do that please change the following lines in the perl server to point to your SSL certs/keys:
-```
-use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';	 
-use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
-```
-
-### IOS Users 
-Starting IOS 10.2, I noticed that zmNinja was not able to register with the event server when it was using WSS (`$useSecure=1`) and self-signed certificates. To solve this, I had to email myself the zoneminder certificate (`zoneminder.crt`) file and install it in the phone. Why that is needed only for WSS and not for HTTPS is a mystery to me. The alternative is to run the eventserver in WS mode (`$useSecure=0`).
-
-
-## Troubleshooting
-
-* If it runs fine when you run it from command line, but keeps exiting when run as a daemon:
+### The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)
   - Make sure the file where you store tokens (`/etc/private/tokens.txt or whatever you have used`) is not RW Root only. It needs to be RW `www-data` for Ubuntu/Debian or `apache` for Fedora/CentOS
   - Make sure your certificates are readable by `www-data` for Ubuntu/Debian, or `apache` for Fedora/CentOS (thanks to [@jagee](https://github.com/pliablepixels/zmeventserver/issues/8)) 
+
+
+### Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!###
+
+Fear not. You just need to redo the changes you did to ``zmpkg.pl`` and ``zmdc.pl`` and restart ZM. You see, when you upgrade ZM, it overwrites those files.
 
 
 ## How do I disable secure mode?
