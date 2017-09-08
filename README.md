@@ -60,9 +60,9 @@ No. I developed it for zmNinja, but you can use it with your own consumer.
 
 ## 0.5. How do I install it?
 
-* Make sure all the dependencies are installed ([see here](https://github.com/pliablepixels/zmeventserver#installing-dependencies))
 * [Download the server](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.pl) (its a simple perl file) and place it in the same place other ZM scripts are stored (example ``/usr/bin``). Make sure you do a `chmod a+x` on it.
-* If you are behind a firewall, make sure you enable port 9000, TCP, bi-directional (unless you changed the port in the code)
+* If you are behind a firewall, make sure you enable port `9000`, TCP, bi-directional (unless you changed the port in the code)
+* We now need to install a bunch of dependencies (as described below)
 
 ### 0.5.1. Installing Dependencies
 The following perl packages need to be added (these are for Ubuntu - if you are on a different OS, you'll have to figure out which packages are needed - I don't know what they might be)
@@ -112,7 +112,7 @@ easy as:
 ```
 sudo openssl req -x509 -nodes -days 4096 -newkey rsa:2048 -keyout /etc/apache2/ssl/zoneminder.key -out /etc/apache2/ssl/zoneminder.crt
 ```
-It's **very important** to ensure the "Common Name" selected while generating the certificate is the same as the hostname or IP of the server. For example if you plan to access the server as "myserver.ddns.net" Please make sure you use myserver.ddns.net as the common name. If you are planning to access it via IP, please make sure you use the same IP.
+It's **very important** to ensure the `Common Name` selected while generating the certificate is the same as the hostname or IP of the server. For example if you plan to access the server as `myserver.ddns.net` Please make sure you use `myserver.ddns.net` as the common name. If you are planning to access it via IP, please make sure you use the same IP.
 
 Once you do that please change the following lines in the perl server to point to your SSL certs/keys:
 ```
