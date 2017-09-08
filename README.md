@@ -181,7 +181,7 @@ As it turns out many folks run ZM inside the LAN only and don't want to deal wit
 For that situation, edit zmeventnotification.pl and change $useSecure to 0 (around line 64)
 
 ## 0.9. Debugging and reporting problems
-STOP. Before you shoot me an email, **please** make sure you have read the [common problems](#07-troubleshooting-common-situations) and have followed _every step_ of the [install guide]((#05-how-do-i-install-it) and in sequence. I can't emphasize how important it is.
+STOP. Before you shoot me an email, **please** make sure you have read the [common problems](#07-troubleshooting-common-situations) and have followed _every step_ of the [install guide](#05-how-do-i-install-it) and in sequence. I can't emphasize how important it is.
 
 There could be several reasons why you may not be receiving notifications:
 * Your event server is not running
