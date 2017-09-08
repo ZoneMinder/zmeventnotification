@@ -2,71 +2,69 @@
 
 <!-- TOC -->
 
-- [What is it?](#what-is-it)
-- [What can you do with it?](#what-can-you-do-with-it)
-- [Why do we need it?](#why-do-we-need-it)
-- [Is this officially developed by ZM developers?](#is-this-officially-developed-by-zm-developers)
-- [How do I install it?](#how-do-i-install-it)
-    - [Installing Dependencies](#installing-dependencies)
-    - [SSL certificate](#ssl-certificate)
-        - [IOS Users](#ios-users)
-    - [Making sure everything is running](#making-sure-everything-is-running)
-    - [How do I run it as a daemon so it starts automatically along with ZoneMinder?](#how-do-i-run-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
-- [How do I safely upgrade zmeventserver to new versions?](#how-do-i-safely-upgrade-zmeventserver-to-new-versions)
-- [Troubleshooting common situations](#troubleshooting-common-situations)
-    - [The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)](#the-server-runs-fine-when-manually-executed-but-fails-when-run-in-daemon-mode-started-by-zmdcpl)
-    - [Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!](#great-krypton-i-just-upgraded-zoneminder-and-im-not-getting-push-anymore)
-- [How do I disable secure mode?](#how-do-i-disable-secure-mode)
-- [Debugging and reporting problems](#debugging-and-reporting-problems)
-- [For Developers writing their own consumers](#for-developers-writing-their-own-consumers)
-    - [How do I talk to it?](#how-do-i-talk-to-it)
-        - [1. Authentication messages](#1-authentication-messages)
-        - [2. Control messages](#2-control-messages)
-            - [2.1 Control message to restrict monitor IDs for events as well as interval durations for reporting](#21-control-message-to-restrict-monitor-ids-for-events-as-well-as-interval-durations-for-reporting)
-            - [2.2 Control message to get Event Server version](#22-control-message-to-get-event-server-version)
-        - [3. Alarm notifications](#3-alarm-notifications)
-        - [4. Push Notifications (for both iOS and Android)](#4-push-notifications-for-both-ios-and-android)
-            - [4.1 Concepts of Push and why it is only for zmNinja](#41-concepts-of-push-and-why-it-is-only-for-zmninja)
-            - [4.2 Registering Push token with the server](#42-registering-push-token-with-the-server)
-            - [4.3 Badge reset](#43-badge-reset)
-            - [4.4 APNS/GCM Howto - only applicable for zmNinja, not for other consumers](#44-apnsgcm-howto---only-applicable-for-zmninja-not-for-other-consumers)
-            - [4.4.1 Push notification via PushProxy](#441-push-notification-via-pushproxy)
-                - [4.4.1.2 What sort of data is transmitted to my server?](#4412-what-sort-of-data-is-transmitted-to-my-server)
-            - [4.4.2 Push notification directly from your event server](#442-push-notification-directly-from-your-event-server)
-        - [Testing from command line](#testing-from-command-line)
-- [How scalable is it?](#how-scalable-is-it)
-- [Brickbats](#brickbats)
+- [0.1. What is it?](#01-what-is-it)
+- [0.2. What can you do with it?](#02-what-can-you-do-with-it)
+- [0.3. Why do we need it?](#03-why-do-we-need-it)
+- [0.4. Is this officially developed by ZM developers?](#04-is-this-officially-developed-by-zm-developers)
+- [0.5. How do I install it?](#05-how-do-i-install-it)
+    - [0.5.1. Installing Dependencies](#051-installing-dependencies)
+    - [0.5.2. SSL certificate](#052-ssl-certificate)
+        - [0.5.2.1. IOS Users](#0521-ios-users)
+    - [0.5.3. Making sure everything is running (in manual mode)](#053-making-sure-everything-is-running-in-manual-mode)
+    - [0.5.4. Running it as a daemon so it starts automatically along with ZoneMinder](#054-running-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
+- [0.6. How do I safely upgrade zmeventserver to new versions?](#06-how-do-i-safely-upgrade-zmeventserver-to-new-versions)
+- [0.7. Troubleshooting common situations](#07-troubleshooting-common-situations)
+    - [0.7.1. The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)](#071-the-server-runs-fine-when-manually-executed-but-fails-when-run-in-daemon-mode-started-by-zmdcpl)
+    - [0.7.2. When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that](#072-when-you-run-zmeventnotifiationpl-manually-you-get-an-error-saying-port-already-in-use-or-cannot-bind-to-port-or-something-like-that)
+    - [0.7.2. Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!](#072-great-krypton-i-just-upgraded-zoneminder-and-im-not-getting-push-anymore)
+- [0.8. How do I disable secure mode?](#08-how-do-i-disable-secure-mode)
+- [0.9. Debugging and reporting problems](#09-debugging-and-reporting-problems)
+- [0.10. For Developers writing their own consumers](#010-for-developers-writing-their-own-consumers)
+    - [0.10.1. How do I talk to it?](#0101-how-do-i-talk-to-it)
+        - [0.10.1.1. Authentication messages](#01011-authentication-messages)
+        - [0.10.1.2. Control messages](#01012-control-messages)
+            - [0.10.1.2.1. Control message to restrict monitor IDs for events as well as interval durations for reporting](#010121-control-message-to-restrict-monitor-ids-for-events-as-well-as-interval-durations-for-reporting)
+            - [0.10.1.2.2. Control message to get Event Server version](#010122-control-message-to-get-event-server-version)
+        - [0.10.1.3. Alarm notifications](#01013-alarm-notifications)
+        - [0.10.1.4. Push Notifications (for both iOS and Android)](#01014-push-notifications-for-both-ios-and-android)
+            - [0.10.1.4.1. Concepts of Push and why it is only for zmNinja](#010141-concepts-of-push-and-why-it-is-only-for-zmninja)
+            - [0.10.1.4.2. Registering Push token with the server](#010142-registering-push-token-with-the-server)
+            - [0.10.1.4.3. Badge reset](#010143-badge-reset)
+            - [0.10.1.4.4. APNS/GCM Howto - only applicable for zmNinja, not for other consumers](#010144-apnsgcm-howto---only-applicable-for-zmninja-not-for-other-consumers)
+            - [0.10.1.4.5. Push notification via PushProxy](#010145-push-notification-via-pushproxy)
+                - [0.10.1.4.5.1. What sort of data is transmitted to my server?](#0101451-what-sort-of-data-is-transmitted-to-my-server)
+            - [0.10.1.4.6. Push notification directly from your event server](#010146-push-notification-directly-from-your-event-server)
+        - [0.10.1.5. Testing from command line](#01015-testing-from-command-line)
+- [0.11. How scalable is it?](#011-how-scalable-is-it)
+- [0.12. Brickbats](#012-brickbats)
 
 <!-- /TOC -->
 
-## What is it?
+## 0.1. What is it?
 A WSS (Secure Web Sockets) based event notification server that broadcasts new events to any authenticated listeners.
 (As of 0.6, it also includes a non secure websocket option, if that's how you want to run it)
 
-## What can you do with it?
+## 0.2. What can you do with it?
 Well, [zmNinja](https://github.com/pliablepixels/zmNinja) uses it to display real time notifications of events.
 Watch a video [HERE](https://www.youtube.com/watch?v=HhLKrDrj7rs)
 You can implement your own receiver to get real time event notification and do whatever your heart desires 
 
-## Why do we need it?
+## 0.3. Why do we need it?
 * The only way ZoneMinder sends out event notifications via event filters - this is too slow
 * People developing extensions to work with ZoneMinder for Home Automation needs will benefit from a clean interface
 * Receivers don't poll. They keep a web socket open and when there are events, they get a notification
 
-## Is this officially developed by ZM developers?
+## 0.4. Is this officially developed by ZM developers?
 No. I developed it for zmNinja, but you can use it with your own consumer.
 
 
-## How do I install it?
+## 0.5. How do I install it?
 
 * Make sure all the dependencies are installed ([see here](https://github.com/pliablepixels/zmeventserver#installing-dependencies))
 * [Download the server](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.pl) (its a simple perl file) and place it in the same place other ZM scripts are stored (example ``/usr/bin``). Make sure you do a `chmod a+x` on it.
 * If you are behind a firewall, make sure you enable port 9000, TCP, bi-directional (unless you changed the port in the code)
-* Either run it manually like ``sudo /usr/bin/zmeventnotification.pl`` or [add it as a daemon](https://github.com/pliablepixels/zmeventserver#how-do-i-run-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder) to ``/usr/bin/zmdc.pl`` (the advantage of the latter is that it gets automatically started when ZM starts
-and restarted if it crashes)
-* Its is HIGHLY RECOMMENDED that you first start the event server manually from terminal, ensure you inspect syslog to validate all logs are correct and THEN make it a daemon in ZoneMinder. If you don't, it will be hard to know what is going wrong. See the [debugging](https://github.com/pliablepixels/zmeventserver#debugging-and-reporting-problems) section later that describes how to make sure its all working fine from command line.
 
-### Installing Dependencies
+### 0.5.1. Installing Dependencies
 The following perl packages need to be added (these are for Ubuntu - if you are on a different OS, you'll have to figure out which packages are needed - I don't know what they might be)
 
 (**General note** - some users may face issues installing dependencies via `perl -MCPAN -e "Module::Name"`. If so, its usually more reliable to get into the CPAN shell and install it from the shell as a 2 step process. You'd do that using `sudo perl -MCPAN -e shell` and then whilst inside the shell, `install Module::Name`)
@@ -102,7 +100,7 @@ Get HTTPS library for LWP:
 perl -MCPAN -e "install LWP::Protocol::https"
 ```
 
-### SSL certificate
+### 0.5.2. SSL certificate
 
 If you are using secure mode (default) you **also need to make sure you generate SSL certificates otherwise the script won't run**
 If you are using SSL for ZoneMinder, simply point this script to the certificates.
@@ -122,13 +120,15 @@ use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';
 use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 ```
 
-#### IOS Users 
+#### 0.5.2.1. IOS Users 
 Starting IOS 10.2, I noticed that zmNinja was not able to register with the event server when it was using WSS (`$useSecure=1`) and self-signed certificates. To solve this, I had to email myself the zoneminder certificate (`zoneminder.crt`) file and install it in the phone. Why that is needed only for WSS and not for HTTPS is a mystery to me. The alternative is to run the eventserver in WS mode (`$useSecure=0`).
 
-### Making sure everything is running
+### 0.5.3. Making sure everything is running (in manual mode)
 * Start the event server manually first using `sudo /usr/bin/zmeventnotification.pl` and make sure you check syslogs to ensure its loaded up and all dependencies are found. If you see errors, fix them. Then exit and follow the steps below to start it along with Zoneminder
 
-### How do I run it as a daemon so it starts automatically along with ZoneMinder?
+* Its is HIGHLY RECOMMENDED that you first start the event server manually from terminal, as described above and not directly dive into daemon mode (described below) and ensure you inspect syslog to validate all logs are correct and THEN make it a daemon in ZoneMinder. If you don't, it will be hard to know what is going wrong. See the [debugging](https://github.com/pliablepixels/zmeventserver#debugging-and-reporting-problems) section later that describes how to make sure its all working fine from command line.
+
+### 0.5.4. Running it as a daemon so it starts automatically along with ZoneMinder
 
 **WARNING: Do NOT do this before you run it manually as I've mentioned above to test. Make sure it works, all packages are present etc. before you 
 add it as  a daemon as if you don't and it crashes you won't know why**
@@ -143,7 +143,7 @@ add it as  a daemon as if you don't and it crashes you won't know why**
 
 You can/should run it manually at first to check if it works 
 
-## How do I safely upgrade zmeventserver to new versions? ###
+## 0.6. How do I safely upgrade zmeventserver to new versions? ###
 
 ```
 sudo zmdc.pl stop zmeventnotification.pl
@@ -158,25 +158,29 @@ sudo zmdc.pl start zmeventnotification.pl
 Make sure you look at the syslogs to make sure its started properly
 
 
-## Troubleshooting common situations
+## 0.7. Troubleshooting common situations
 
-### The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)
+### 0.7.1. The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)
   - Make sure the file where you store tokens (`/etc/private/tokens.txt or whatever you have used`) is not RW Root only. It needs to be RW `www-data` for Ubuntu/Debian or `apache` for Fedora/CentOS
   - Make sure your certificates are readable by `www-data` for Ubuntu/Debian, or `apache` for Fedora/CentOS (thanks to [@jagee](https://github.com/pliablepixels/zmeventserver/issues/8)) 
 
+### 0.7.2. When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that
 
-### Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!###
+The chances are very high that you have another copy of `zmeventnotification.pl` running. You might have run it in daemon mode. Try `sudo zmdc.pl stop zmeventnotification.pl`. Also do `ps -aef | grep zmeventnotification` to check if another copy is not running and if you do find one running, you'll have to kill it before you can start it from command line again.
+
+
+### 0.7.2. Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!###
 
 Fear not. You just need to redo the changes you did to ``zmpkg.pl`` and ``zmdc.pl`` and restart ZM. You see, when you upgrade ZM, it overwrites those files.
 
 
-## How do I disable secure mode?
+## 0.8. How do I disable secure mode?
 
 As of 0.6, I've added an option to run the server using unsecure websockets (WS instead of WSS).
 As it turns out many folks run ZM inside the LAN only and don't want to deal with certificates. Fair enough.
 For that situation, edit zmeventnotification.pl and change $useSecure to 0 (around line 64)
 
-## Debugging and reporting problems
+## 0.9. Debugging and reporting problems
 There could be several reasons why you may not be receiving notifications:
 * Your event server is not running
 * Your app is not able to reach the server
@@ -232,9 +236,9 @@ Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push messa
 
 
 
-## For Developers writing their own consumers
+## 0.10. For Developers writing their own consumers
 
-### How do I talk to it?
+### 0.10.1. How do I talk to it?
 *  ``{"JSON":"everywhere"}``
 * Your client sends messages (authentication) over JSON
 * The server sends auth success/failure over JSON back at you
@@ -250,7 +254,7 @@ Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push messa
  1. alarm (from server to client)
 
 
-#### 1. Authentication messages
+#### 0.10.1.1. Authentication messages
 
 To connect with the server you need to send the following JSON object (replace username/password)
 Note this payload is NOT encrypted. If you are not using SSL, it will be sent in clear.
@@ -282,11 +286,11 @@ No authentication received in time limit:
 {"event":"auth","type":"", "status":"Fail","reason":"NOAUTH"}
 ```
 
-#### 2. Control messages
+#### 0.10.1.2. Control messages
 Control messages manage the nature of notifications received/sent. As of today, Clients send control messages to the Server.
 In future this may be bi-directional
 
-##### 2.1 Control message to restrict monitor IDs for events as well as interval durations for reporting
+##### 0.10.1.2.1. Control message to restrict monitor IDs for events as well as interval durations for reporting
 A client can send a control message to restrict which monitor IDs it is interested in. When received, the server will only
 send it alarms for those specific monitor IDs. You can also specify the reporting interval for events.
 
@@ -314,7 +318,7 @@ No interval received:
 Note that if you don't want to specify intervals, send it a interval list comprising of comma separated 0's, one for each monitor in monitor list.
 
 
-##### 2.2 Control message to get Event Server version
+##### 0.10.1.2.2. Control message to get Event Server version
 A client can send a control message to request Event Server version
 
 **Client-->Server:**
@@ -327,7 +331,7 @@ A client can send a control message to request Event Server version
 {"event":"control", "type:":"version", "version":"0.2","status":"Success","reason":""}
 ```
 
-#### 3. Alarm notifications
+#### 0.10.1.3. Alarm notifications
 Alarms are events sent from the Server to the Client
 
 **Server-->Client:**
@@ -337,17 +341,17 @@ Sample payload of 2 events being reported:
 ```
 
 
-#### 4. Push Notifications (for both iOS and Android)
+#### 0.10.1.4. Push Notifications (for both iOS and Android)
 To make Push Notifications work, please make sure you read the [section on enabling Push](https://github.com/pliablepixels/zmeventserver#44-apnsgcm-howto---only-applicable-for-zmninja-not-for-other-consumers)  for the event server.
 
-##### 4.1 Concepts of Push and why it is only for zmNinja
+##### 0.10.1.4.1. Concepts of Push and why it is only for zmNinja
 
 Both Apple and Google ensure that a "trusted" application server can send push notifications to a specific app running in a device. If they did not require this, anyone could spam apps with messages. So in other words, a "Push" will be routed from a specific server to a specific app. I am currently hosting a push server in my house that has the credentials required to send pushes to "com.pliablepixels.zmninja" which is the ID of my app registered in both Apple and Google. When you enable ``$usePushProxy`` in the script, your locally hosted Event Server will basically send an HTTP POST to my server at my home which will then send a message to APNS or GCM as the case may be and only then will your zmNinja app in your phone get the message. 
 
 Therefore, enabling usePushProxy will only work with zmNinja. If you are writing your own mobile app and want to tie this eventserver with your push server, just change the URL of ``$pushProxyURL`` to yours and change the data format based on what  your push server needs in ``sub sendOverPushProxy`` and that's all.
 
 
-##### 4.2 Registering Push token with the server
+##### 0.10.1.4.2. Registering Push token with the server
 **Client-->Server:**
 
 Registering an iOS device:
@@ -378,7 +382,7 @@ If its successful, there is no response. However, if Push is disabled it will se
 {"event":"push", "type":"", "status":"Fail", "reason": "PUSHDISABLED"}
 ```
 
-##### 4.3 Badge reset
+##### 0.10.1.4.3. Badge reset
 
 Only applies to iOS. Android push notifications don't have a concept of badge notifications, as it turns out.
 
@@ -397,7 +401,7 @@ can use any other number. The next time the server sends a push via APNS, it wil
 value. 0 makes the badge go away.
 
 
-##### 4.4 APNS/GCM Howto - only applicable for zmNinja, not for other consumers###
+##### 0.10.1.4.4. APNS/GCM Howto - only applicable for zmNinja, not for other consumers###
 
 As of version 0.3, APNS and GCM are  fully supported via a Push Proxy Mode (or directly for APNS).
 
@@ -405,7 +409,7 @@ Simply put, "Push Proxy" is what most of you want. When enabled, it will route m
 
 **Please don't overload my server. I've set it up for free for you to use and its running in a VM @ Home. If it brings down my workstation, I'll have to remove it**
 
-##### 4.4.1 Push notification via PushProxy
+##### 0.10.1.4.5. Push notification via PushProxy
 
 Set ``$usePushProxy = 1`` in the event server script (around line 63) 
 Make sure ``PUSH_TOKEN_FILE`` (around line 76) is set to a file and path that is writable by ``www-data`` (the server will create the file if it does not exist)
@@ -416,7 +420,7 @@ sudo perl -MCPAN -e "install LWP::Protocol::https"
 ```
 That's it. Run the server in manual mode and check the logs (syslog) to make sure it works fine
 
-###### 4.4.1.2 What sort of data is transmitted to my server?
+###### 0.10.1.4.5.1. What sort of data is transmitted to my server?
 
 For push to work, your event server will send my push server the following data:
 1. Your IP
@@ -426,7 +430,7 @@ For push to work, your event server will send my push server the following data:
 FYI if you are using _any_ app that does push notifications, you will always need to transmit the data that needs to be pushed
 to a server hosted by that app provider. This is no different
 
-##### 4.4.2 Push notification directly from your event server
+##### 0.10.1.4.6. Push notification directly from your event server
 
 This is currently only implemented for APNS. This allows you to issue push notification directly to your phone from your Event server
 without using my proxy.
@@ -446,7 +450,7 @@ Next up, you need to make the following changes to the Event Server script:
 * make sure ``APNS_TOKEN_FILE`` points to an area that has ``www-data`` write permissions. The server will create the file if its not there. Its important to have ``www-data`` write permission as otherwise it will fail when run as a daemon
 * Restart the Event Server
 
-#### Testing from command line
+#### 0.10.1.5. Testing from command line
 If you are writing your own consumer/client it helps to test the event server commands from command line. 
 The event server uses Secure/WebSockers so you can't just HTTP to it using tools like `curl`. You'll need to
 use a websocket client. While there are examples on the net on how to use `curl` for websockets, I've found it
@@ -462,10 +466,10 @@ In the example above, I used `wscat` to connect to my event server and then sent
 
 
 
-## How scalable is it?
+## 0.11. How scalable is it?
 It's a lightweight single threaded process. I really don't see a need for launching a zillion threads or a process per monitor etc for what it does. I'd argue its simplicity is its scalability. Plus I don't expect more than a handful of consumers to connect to it. I really don't see why it won't be able to scale to for what is does. But if you are facing scalability issues, let me know. There is [Mojolicious](http://mojolicio.us/) I can use to make it more scalable if I am proven wrong about scalability.
 
-## Brickbats
+## 0.12. Brickbats
 
 **Why not just supply the username and password in the URL as a resource? It's over TLS**
 
