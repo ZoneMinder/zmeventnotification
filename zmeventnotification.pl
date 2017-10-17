@@ -59,7 +59,9 @@ my $app_version="0.93";
 #
 # ==========================================================================
 use constant EVENT_NOTIFICATION_PORT=>9000;                 # port for Websockets connection
-my $useSecure = 1;                                          # make this 0 if you don't want SSL
+my $useSecure = 0;                                          # make this 0 if you don't want SSL
+
+my $noAuth = 0;                                              # make 1 to NOT check username/password against zoneminder Database
 
 # ignore if useSecure is 0
 use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';      # Change these to your certs/keys
@@ -400,6 +402,7 @@ sub testProxyURL
 
 sub validateZM
 {
+    return 1 if $noAuth;
     my ($u,$p) = @_;
     return 0 if ( $u eq "" || $p eq "");
     my $sql = 'select Password from Users where Username=?';
@@ -876,7 +879,6 @@ sub checkMessage
         my $uname = $json_string->{'data'}->{'user'};
         my $pwd = $json_string->{'data'}->{'password'};
     
-        return if ($uname eq "" || $pwd eq "");
         foreach (@active_connections)
         {
             if ( (exists $_->{conn}) &&
