@@ -652,8 +652,21 @@ sub checkConnection
     my $ac1 = scalar @active_connections;
     printdbg ("Active connects before purge=$ac1");
     @active_connections = grep { $_->{pending} != INVALID_AUTH   } @active_connections;
-    $ac1 = scalar @active_connections;
-    printdbg ("Active connects after INVALID_AUTH purge=$ac1");
+    my $purged = $ac1 - scalar @active_connections;
+    if ($purged > 0)
+    {
+        $ac1 = $ac1 - $purged;
+        Info ("Active connects after INVALID_AUTH purge=$ac1 ($purged purged)");
+    }
+
+    @active_connections = grep { $_->{pending} != INVALID_WEBSOCKET   } @active_connections;
+    my $purged = $ac1 - scalar @active_connections;
+    if ($purged > 0)
+    {
+        $ac1 = $ac1 - $purged;
+        Info ("Active connects after INVALID_WEBSOCKET purge=$ac1 ($purged purged)");
+    }
+
     if ($usePushAPNSDirect || $usePushProxy)
     {
         #@active_connections = grep { $_->{'pending'} != INVALID_APNS || $_->{'token'} ne ''} @active_connections;
@@ -683,7 +696,7 @@ sub checkMessage
     if ($@)
     {
         
-        Info ("Failed decoding json in checkMessage");
+        Info ("Failed decoding json in checkMessage: $@");
         my $str = encode_json({event=> 'malformed', type=>'', status=>'Fail', reason=>'BADJSON'});
         eval {$conn->send_utf8($str);};
         return;
