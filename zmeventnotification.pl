@@ -51,7 +51,7 @@ use File::Basename;
 use strict;
 use bytes;
 
-my $app_version="0.93";
+my $app_version="0.94";
 
 # ==========================================================================
 #
