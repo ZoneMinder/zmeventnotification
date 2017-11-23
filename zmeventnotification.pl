@@ -59,7 +59,9 @@ my $app_version="0.93";
 #
 # ==========================================================================
 use constant EVENT_NOTIFICATION_PORT=>9000;                 # port for Websockets connection
-my $useSecure = 1;                                          # make this 0 if you don't want SSL
+my $useSecure = 0;                                          # make this 0 if you don't want SSL
+
+my $noAuth = 0;                                              # make 1 to NOT check username/password against zoneminder Database
 
 # ignore if useSecure is 0
 use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';      # Change these to your certs/keys
@@ -400,6 +402,7 @@ sub testProxyURL
 
 sub validateZM
 {
+    return 1 if $noAuth;
     my ($u,$p) = @_;
     return 0 if ( $u eq "" || $p eq "");
     my $sql = 'select Password from Users where Username=?';
@@ -649,8 +652,21 @@ sub checkConnection
     my $ac1 = scalar @active_connections;
     printdbg ("Active connects before purge=$ac1");
     @active_connections = grep { $_->{pending} != INVALID_AUTH   } @active_connections;
-    $ac1 = scalar @active_connections;
-    printdbg ("Active connects after INVALID_AUTH purge=$ac1");
+    my $purged = $ac1 - scalar @active_connections;
+    if ($purged > 0)
+    {
+        $ac1 = $ac1 - $purged;
+        Info ("Active connects after INVALID_AUTH purge=$ac1 ($purged purged)");
+    }
+
+    @active_connections = grep { $_->{pending} != INVALID_WEBSOCKET   } @active_connections;
+    my $purged = $ac1 - scalar @active_connections;
+    if ($purged > 0)
+    {
+        $ac1 = $ac1 - $purged;
+        Info ("Active connects after INVALID_WEBSOCKET purge=$ac1 ($purged purged)");
+    }
+
     if ($usePushAPNSDirect || $usePushProxy)
     {
         #@active_connections = grep { $_->{'pending'} != INVALID_APNS || $_->{'token'} ne ''} @active_connections;
@@ -680,7 +696,7 @@ sub checkMessage
     if ($@)
     {
         
-        Info ("Failed decoding json in checkMessage");
+        Info ("Failed decoding json in checkMessage: $@");
         my $str = encode_json({event=> 'malformed', type=>'', status=>'Fail', reason=>'BADJSON'});
         eval {$conn->send_utf8($str);};
         return;
@@ -876,7 +892,6 @@ sub checkMessage
         my $uname = $json_string->{'data'}->{'user'};
         my $pwd = $json_string->{'data'}->{'password'};
     
-        return if ($uname eq "" || $pwd eq "");
         foreach (@active_connections)
         {
             if ( (exists $_->{conn}) &&
