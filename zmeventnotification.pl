@@ -42,16 +42,23 @@
 #For pushProxy
 #sudo perl -MCPAN -e "install LWP::Protocol::https"
 
-#For iOS APNS:
-#sudo perl -MCPAN -e "install Net::APNS::Persistent"
-
-
 use File::Basename;
 
 use strict;
 use bytes;
 
-my $app_version="0.94";
+# ==========================================================================
+#
+# Starting v0.95, I've moved to FCM which means I no longer need to maintain
+# my own push server. Plus this uses HTTP which is the new recommended
+# way. Note that 0.95 will only work with zmNinja 1.2.510 and beyond
+# Conversely, old versions of the event server will NOT work with zmNinja
+# 1.2.510 and beyond, so make sure you upgrade both
+#
+# ==========================================================================
+
+
+my $app_version="0.95";
 
 # ==========================================================================
 #
@@ -59,8 +66,7 @@ my $app_version="0.94";
 #
 # ==========================================================================
 use constant EVENT_NOTIFICATION_PORT=>9000;                 # port for Websockets connection
-my $useSecure = 0;                                          # make this 0 if you don't want SSL
-
+my $useSecure = 1;                                          # make this 0 if you don't want SSL
 my $noAuth = 0;                                              # make 1 to NOT check username/password against zoneminder Database
 
 # ignore if useSecure is 0
@@ -68,15 +74,7 @@ use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';      # Change the
 use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 
 # if you only want to enable websockets make both of these 0
-my $usePushProxy = 1;               # set this to 1 to use a remote push proxy for APNS that I have set up for zmNinja users
-my $usePushAPNSDirect = 0;          # set this to 1 if you have an APNS SSL certificate/key pair
-                                    # the only way to have this is if you have an apple developer
-                                    # account
-
-my $pushProxyURL = 'https://185.124.74.36:8801';  # This is my proxy URL. Don't change it unless you are hosting your on APNS AS
-
-my $useCustomNotificationSound = 1;     # set to 0 for default sound
-
+my $useFCM = 1;               # set this to 1 to use FCM for messaging (keep this to 1, really)
 # PUSH_TOKEN_FILE is needed for pushProxy mode as well as direct APNS mode
 # change this to a directory and file of your choosing. 
 # This server will create the file if it does not exist
@@ -84,35 +82,13 @@ my $useCustomNotificationSound = 1;     # set to 0 for default sound
 use constant PUSH_TOKEN_FILE=>'/etc/private/tokens.txt'; # MAKE SURE THIS DIRECTORY HAS WWW-DATA PERMISSIONS
 
 my $printDebugToConsole = 0; # set this to OFF unless you are debugging. If 1, make sure its NOT running via zmdc
-#
-# -------- There seems to be an LWP perl bug that fails certifying self signed certs
-# refer to https://bugs.launchpad.net/ubuntu/+source/libwww-perl/+bug/1408331
-# you don't have to make it this drastic, you can also follow other tips in that thread to point to
-# a mozilla cert. I haven't tried
+my %ssl_push_opts = ();
 
-my %ssl_push_opts = ( ssl_opts=>{verify_hostname => 0,SSL_verify_mode => 0,SSL_verifycn_scheme => 'none'} );
-
-
-#----------- Start: Change these only if you have usePushAPNSDirect set to 1 ------------------
-
-my $isSandbox = 1;              # 1 or 0 depending on your APNS certificate
-
-use constant APNS_CERT_FILE=>'/etc/private/apns-dev-cert.pem';  # only used if usePushAPNSDirect is enabled
-use constant APNS_KEY_FILE=>'/etc/private/apns-dev-key.pem';    # only used if usePushAPNSDirect is enabled
-
-use constant APNS_FEEDBACK_CHECK_INTERVAL => 3600;      # only used if usePushAPNSDirect is enabled
-
-#----------- End: only applies to usePushAPNSDirect = 1 --
 
 use constant PUSH_CHECK_REACH_INTERVAL => 3600;             # time in seconds to do a reachability test with push proxt
 use constant SLEEP_DELAY=>5;                                # duration in seconds after which we will check for new events
 use constant MONITOR_RELOAD_INTERVAL => 300;
 use constant WEBSOCKET_AUTH_DELAY => 20;                # max seconds by which authentication must be done
-
-# These are needed for the remote push to work. Don't change these
-use constant PUSHPROXY_APP_NAME => 'zmninjapro';
-use constant PUSHPROXY_APP_ID => 'e10db4ac29d34243f66f15592328fecc';
-
 
 use constant PENDING_WEBSOCKET => '1';
 use constant INVALID_WEBSOCKET => '-1';
@@ -123,6 +99,10 @@ use constant VALID_WEBSOCKET => '0';
 
 my $alarmEventId = 1;           # tags the event id along with the alarm - useful for correlation
                                 # only for geeks though - most people won't give a damn. I do.
+
+# customSound is not used for now starting 0.95 since I moved to FCM
+my $useCustomNotificationSound = 1;     # set to 0 for default sound
+
 
 # This part makes sure we have the righ deps
 if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");exit (-1);}
@@ -136,47 +116,23 @@ if (!try_use ("JSON"))
 } 
 
 # Lets now load all the dependent libraries in a failsafe way
-if ($usePushProxy)
+if ($useFCM)
 {
-    if ($usePushAPNSDirect) # can't have both
-    {
-        $usePushAPNSDirect = 0; 
-        Info ("Disabling direct push as push proxy is enabled");
-    }
     if (!try_use ("LWP::UserAgent") || !try_use ("URI::URL") || !try_use("LWP::Protocol::https"))
     {
-        Error ("Disabling PushProxy. PushProxy mode needs LWP::Protocol::https, LWP::UserAgent and URI::URL perl packages installed");
-        $usePushProxy = 0;
+        Fatal ("PushProxy mode needs LWP::Protocol::https, LWP::UserAgent and URI::URL perl packages installed");
+        exit(-1);
     }
     else
     {
-        Info ("Push enabled via PushProxy");
+        Info ("Push enabled via FCM");
     }
     
 }
 else
 {
-    Info ("Push Proxy disabled");
+    Info ("FCM disabled. Will only send out websocket notifications");
 }
-# These modules are needed only if DirectPush is enabled and PushProxy is disabled
-if ($usePushAPNSDirect )
-{
-    if (!try_use ("Net::APNS::Persistent") || !try_use ("Net::APNS::Feedback"))
-    {
-        Error ("Net::APNS::Feedback and/or Net::APNS::Persistent not present. Disabling direct APNS support");
-        $usePushAPNSDirect = 0;
-
-    }
-    else
-    {
-        Info ("direct APNS support loaded");
-    }
-}
-else
-{
-    Info ("direct APNS disabled");
-}
-
 
 # ==========================================================================
 #
@@ -221,7 +177,7 @@ my $alarm_mid="";
 
 
 printdbg ("******You are running version: $app_version");
-if ($usePushAPNSDirect || $usePushProxy)
+if ($useFCM)
 {
     my $dir = dirname(PUSH_TOKEN_FILE);
     if ( ! -d $dir)
@@ -372,30 +328,7 @@ sub loadMonitors
     %monitors = %new_monitors;
 }
 
-# Does a health check to make sure push proxy is reachable
-sub testProxyURL
-{
-    if ((time() - $proxy_reach_time) > PUSH_CHECK_REACH_INTERVAL)
-    {
-        Info ("Checking $pushProxyURL reachability...");
-        my $ua = LWP::UserAgent->new(%ssl_push_opts);
-        $ua->timeout(10);
-        $ua->env_proxy;
-        my $response = $ua->get($pushProxyURL);
-        if ($response->is_success)
-        {
-            Info ("PushProxy $pushProxyURL is reachable.");
 
-        }
-        else
-        {
-            Error ($response->status_line);
-            Error ("PushProxy $pushProxyURL is NOT reachable. Notifications will not work. Please reach out to the proxy owner if this error persists");
-        }
-        $proxy_reach_time = time();
-
-    }
-}
 
 # This function compares the password provided over websockets
 # to the password stored in the ZM MYSQL DB
@@ -424,34 +357,55 @@ sub validateZM
 
 }
 
-# Passes on device token to the push proxy
-sub registerOverPushProxy
+# Sends a push notification to FCM
+sub sendOverFCM
 {
-    my ($token) = shift;
-    my ($platform) = shift;
-    my $uri = $pushProxyURL."/api/v2/tokens";
-    my $json = '{"device":"'.$platform.'", "token":"'.$token.'", "channel":"default"}';
+    
+    my ($obj, $header, $mid, $str) = @_;
+    $obj->{badge}++;
+    my $uri = "https://fcm.googleapis.com/fcm/send";
+    my $json;
+    my $key="key=AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h";
+
+    $json = encode_json ({
+        to=>$obj->{token},
+        notification=> {
+           badge=>$obj->{badge},
+           sound=>"default",
+           title=>$header,
+        #   body=>"Body"
+        },
+        data=> {
+            title=>$header,
+            #body=>"My text",
+            icon=>"ic_stat_notification",
+            mid=>$mid,
+           
+        }
+    });
+    #print "Sending:$json\n";
+    Debug ("Final JSON being sent is: $json");
     my $req = HTTP::Request->new ('POST', $uri);
-    $req->header( 'Content-Type' => 'application/json', 'X-AN-APP-NAME'=> PUSHPROXY_APP_NAME, 'X-AN-APP-KEY'=> PUSHPROXY_APP_ID
-     );
+    $req->header( 'Content-Type' => 'application/json', 'Authorization'=> $key);
      $req->content($json);
     my $lwp = LWP::UserAgent->new(%ssl_push_opts);
     my $res = $lwp->request( $req );
     if ($res->is_success)
     {
-        Info ("Pushproxy registration success ".$res->content);
+        Info ("FCM push message success ".$res->content);
     }
     else
     {
-        Warning("Push Proxy Token registration Error:".$res->status_line);
+        Info("FCM push message Error:".$res->status_line);
     }
-
 }
 
+# Not used anymore - will remove later
 # Sends a push notification to the remote proxy 
 sub sendOverPushProxy
 {
     
+    my $pushProxyURL="none";
     my ($obj, $header, $mid, $str) = @_;
     $obj->{badge}++;
     my $uri = $pushProxyURL."/api/v2/push";
@@ -514,8 +468,8 @@ sub sendOverPushProxy
     #print "Sending:$json\n";
     Debug ("Final JSON being sent is: $json");
     my $req = HTTP::Request->new ('POST', $uri);
-    $req->header( 'Content-Type' => 'application/json', 'X-AN-APP-NAME'=> PUSHPROXY_APP_NAME, 'X-AN-APP-KEY'=> PUSHPROXY_APP_ID
-     );
+    #$req->header( 'Content-Type' => 'application/json', 'X-AN-APP-NAME'=> PUSHPROXY_APP_NAME, 'X-AN-APP-KEY'=> PUSHPROXY_APP_ID
+    # );
      $req->content($json);
     my $lwp = LWP::UserAgent->new(%ssl_push_opts);
     my $res = $lwp->request( $req );
@@ -530,94 +484,6 @@ sub sendOverPushProxy
 }
 
 
-# This function is called when an alarm
-# needs to be transmitted over APNS
-# called only if direct APNS mode is enabled
-sub sendOverAPNS
-{
-  if (!$usePushAPNSDirect)
-  {
-    Info ("Rejecting APNS request as daemon has APNS disabled");
-    return;
-  }
-
-  my ($obj, $header, $mid, $str) = @_;
-  my (%hash) = %{$str}; 
-      
-    my $apns = Net::APNS::Persistent->new({
-    sandbox => $isSandbox,
-    cert    => APNS_CERT_FILE,
-    key     => APNS_KEY_FILE
-  });
-
-   $obj->{badge}++;
-   $apns->queue_notification(
-        $obj->{token},
-        {
-          aps => {
-          alert => $header,
-          sound => 'default',
-          badge => $obj->{badge},
-          },
-          alarm_details => \%hash
-        });
-
-  $apns->send_queue;
-  $apns->disconnect;
-
-}
-
-
-
-# This function polls APNS Feedback
-# to see if any entries need to be removed
-# only applicable for direct apns mode
-sub apnsFeedbackCheck
-{
-
-    
-    if ((time() - $apns_feedback_time) > APNS_FEEDBACK_CHECK_INTERVAL)
-    {
-        if ($usePushProxy)
-        {
-            Info ("Not checking APNS feedback in PushProxy Mode");
-            return;
-        }
-        if (!$usePushAPNSDirect)
-        {
-            Info ("Rejecting APNS Feedback request as daemon has APNS disabled");
-            return;
-        }
-
-        Info ("Checking APNS Feedback\n");
-        $apns_feedback_time = time();
-        my $apnsfb = Net::APNS::Feedback->new({
-        sandbox => $isSandbox,
-        cert    => APNS_CERT_FILE,
-        key     => APNS_KEY_FILE
-        });
-        my @feedback = $apnsfb->retrieve_feedback;
-
-
-        foreach (@feedback[0]->[0])
-        {
-            my $delete_token = $_->{token};
-            if ($delete_token != "")
-            {
-                deleteToken($delete_token);
-                foreach(@active_connections)
-                {
-                    if ($_->{token} eq $delete_token)
-                    {
-                        printdbg ("FEEDBACK: marking $delete_token as INVALID_APNS with directAPNS= $usePushAPNSDirect");
-                        $_->{pending} = INVALID_APNS;
-                        Info ("Marking entry as invalid apns token: ". $delete_token."\n");
-                    }
-                }
-            }
-        }
-    }
-}
 
 # This runs at each tick to purge connections
 # that are inactive or have had an error
@@ -650,13 +516,12 @@ sub checkConnection
 
     }
     my $ac1 = scalar @active_connections;
-    printdbg ("Active connects before purge=$ac1");
     @active_connections = grep { $_->{pending} != INVALID_AUTH   } @active_connections;
     my $purged = $ac1 - scalar @active_connections;
     if ($purged > 0)
     {
         $ac1 = $ac1 - $purged;
-        Info ("Active connects after INVALID_AUTH purge=$ac1 ($purged purged)");
+        Debug ("Active connects after INVALID_AUTH purge=$ac1 ($purged purged)");
     }
 
     @active_connections = grep { $_->{pending} != INVALID_WEBSOCKET   } @active_connections;
@@ -664,10 +529,10 @@ sub checkConnection
     if ($purged > 0)
     {
         $ac1 = $ac1 - $purged;
-        Info ("Active connects after INVALID_WEBSOCKET purge=$ac1 ($purged purged)");
+        Debug ("Active connects after INVALID_WEBSOCKET purge=$ac1 ($purged purged)");
     }
 
-    if ($usePushAPNSDirect || $usePushProxy)
+    if ($useFCM)
     {
         #@active_connections = grep { $_->{'pending'} != INVALID_APNS || $_->{'token'} ne ''} @active_connections;
         @active_connections = grep { $_->{'pending'} != INVALID_APNS} @active_connections;
@@ -703,7 +568,7 @@ sub checkMessage
     }
 
     # This event type is when a command related to push notification is received
-    if (($json_string->{'event'} eq "push") && !$usePushAPNSDirect && !$usePushProxy)
+    if (($json_string->{'event'} eq "push") && !$useFCM)
     {
         my $str = encode_json({event=>'push', type=>'',status=>'Fail', reason => 'PUSHDISABLED'});
         eval {$conn->send_utf8($str);};
@@ -712,7 +577,7 @@ sub checkMessage
     #-----------------------------------------------------------------------------------
     # "push" event processing
     #-----------------------------------------------------------------------------------
-    elsif (($json_string->{'event'} eq "push") && ($usePushAPNSDirect || $usePushProxy))
+    elsif (($json_string->{'event'} eq "push") && $useFCM)
     {
         # sets the unread event count of events for a specific connection
         # the server keeps a tab of # of events it pushes out per connection
@@ -736,7 +601,7 @@ sub checkMessage
         if ($json_string->{'data'}->{'type'} eq "token")
         {
             
-            # a token must have a platform otherwise I don't know whether to use APNS or GCM
+            # a token must have a platform 
             if (!$json_string->{'data'}->{'platform'})
             {
                 my $str = encode_json({event=>'push', type=>'token',status=>'Fail', reason => 'MISSINGPLATFORM'});
@@ -756,7 +621,7 @@ sub checkMessage
                     if ( (!exists $_->{conn}) || ($_->{conn}->ip() ne $conn->ip() 
                         && $_->{conn}->port() ne $conn->port()))
                     {
-                        printdbg ("REGISTRATION: marking ".$_->{token}." as INVALID_APNS with directAPNS= $usePushAPNSDirect");
+                        printdbg ("REGISTRATION: marking ".$_->{token}." as INVALID_APNS");
                         
                         $_->{pending} = INVALID_APNS;
                         Info ("Duplicate token found, removing old data point");
@@ -940,7 +805,7 @@ sub checkMessage
 
 sub loadTokens
 {
-    return if (!$usePushAPNSDirect && !$usePushProxy);
+    return if (!$useFCM);
     if ( ! -f PUSH_TOKEN_FILE)
     {
         open (my $foh, '>', PUSH_TOKEN_FILE);
@@ -966,7 +831,6 @@ sub loadTokens
         next if ($_ eq "");
         print $fh "$_\n";
         my ($token, $monlist, $intlist, $platform, $pushstate)  = rsplit(qr/:/, $_, 5); # split (":",$_);
-        #print "load: PUSHING $row\n";
         push @active_connections, {
                token => $token,
                pending => VALID_WEBSOCKET,
@@ -983,45 +847,6 @@ sub loadTokens
     close ($fh);
 }
 
-# This is called if the APNS feedback channel
-# reports an invalid token. We also remove it from
-# our token file
-sub deleteToken
-{
-    my $dtoken = shift;
-    printdbg ("DeleteToken called with $dtoken and APNSDirect=$usePushAPNSDirect");
-    return if (!$usePushAPNSDirect && !$usePushProxy);
-    return if ( ! -f PUSH_TOKEN_FILE);
-    
-    open (my $fh, '<', PUSH_TOKEN_FILE);
-    chomp( my @lines = <$fh>);
-    close ($fh);
-    my @uniquetokens = uniq(@lines);
-
-    open ($fh, '>', PUSH_TOKEN_FILE);
-
-    foreach(@uniquetokens)
-    {
-        my ($token, $monlist, $intlist, $platform, $pushstate)  = rsplit(qr/:/, $_, 5); #split (":",$_);
-        next if ($_ eq "" || $token eq $dtoken);
-        print $fh "$_\n";
-        #print "delete: $row\n";
-        push @active_connections, {
-                       token => $token,
-                       pending => VALID_WEBSOCKET,
-                       time=>time(),
-                       badge => 0,
-                       monlist => $monlist,
-                       intlist => $intlist,
-                       last_sent=>{},
-                       platform => $platform,
-                       pushstate => $pushstate
-                      };
-        
-    }
-    close ($fh);
-}
-
 # When a client sends a token id,
 # I store it in the file
 # It can be sent multiple times, with or without
@@ -1032,7 +857,7 @@ sub deleteToken
 
 sub saveTokens
 {
-    return if (!$usePushAPNSDirect && !$usePushProxy);
+    return if (!$useFCM);
     my $stoken = shift;
     if ($stoken eq "") {printdbg ("Not saving, no token. Desktop?"); return};
     my $smonlist = shift;
@@ -1090,7 +915,7 @@ sub saveTokens
     	print $fh "$stoken:$smonlist:$sintlist:$splatform:$spushstate\n";
     }
     close ($fh);
-    registerOverPushProxy($stoken,$splatform) if ($usePushProxy);
+    registerOverPushProxy($stoken,$splatform) if ($useFCM);
     #print "Saved Token $token to file\n";
     return ($smonlist, $sintlist);
     
@@ -1197,7 +1022,6 @@ sub getIdentity
 sub initSocketServer
 {
     checkEvents();
-    testProxyURL() if ($usePushProxy);
 
     my $ssl_server;
     if ($useSecure)
@@ -1225,8 +1049,6 @@ sub initSocketServer
         tick_period => SLEEP_DELAY,
         on_tick => sub {
             checkConnection();
-            apnsFeedbackCheck() if ($usePushAPNSDirect);
-            testProxyURL() if ($usePushProxy);
             my $ac = scalar @active_connections;
             if (checkEvents())
             {
@@ -1294,17 +1116,13 @@ sub initSocketServer
                         # when websockets override is enabled
                         if (($_->{token} ne "") && ($_->{pushstate} ne "disabled" ))
                         {
-                            if ($usePushProxy)
+                            if ($useFCM)
                             {
                                 Info ("Sending notification over PushProxy");
-                                sendOverPushProxy($_,$alarm_header, $alarm_mid, $str) ;     
+                                #sendOverPushProxy($_,$alarm_header, $alarm_mid, $str) ;     
+                                sendOverFCM($_,$alarm_header, $alarm_mid, $str) ;     
                             }
-                            elsif ($usePushAPNSDirect)
-                            {
-
-                                Info ("Sending notification directly via APNS");
-                                sendOverAPNS($_,$alarm_header, $alarm_mid, \%hash_str) ;
-                            }
+                            
                             # send supplementary event data over websocket
                             if ($_->{pending} == VALID_WEBSOCKET)
                             {
