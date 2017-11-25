@@ -1,4 +1,10 @@
-**Latest Version: 0.94**
+
+**Latest Version: 0.95**
+
+**BREAKING CHANGE**
+Starting version 1.2.510 of zmNinja, I've migrated push notifications to use FCM. This makes things much more reliable.
+You will have to update the event server to v0.95 after you intstall/upgrade zmNinja to 1.2.510 or push will stop working.
+Don't use 0.95 if you are running zmNinja v 1.2.509 or below
 
 <!-- TOC -->
 
