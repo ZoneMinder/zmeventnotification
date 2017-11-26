@@ -362,7 +362,6 @@ sub deleteToken
 {
     my $dtoken = shift;
     printdbg ("DeleteToken called with $dtoken");
-    return if (!$usePushProxy);
     return if ( ! -f PUSH_TOKEN_FILE);
     
     open (my $fh, '<', PUSH_TOKEN_FILE);
@@ -438,14 +437,35 @@ sub sendOverFCM
      $req->content($json);
     my $lwp = LWP::UserAgent->new(%ssl_push_opts);
     my $res = $lwp->request( $req );
+	my $msg;
+	my $json_string;
     if ($res->is_success)
     {
-        Info ("FCM push message success ".$res->content);
+        $msg = $res->decoded_content;
+        Info ("FCM push message returned a 200 with body ".$res->content);
+        eval {$json_string = decode_json($msg);};
+        if ($@)
+        {
+            
+            Error ("Failed decoding sendFCM Response: $@");
+            return;
+        }
+        if ($json_string->{'failure'} eq 1) {
+            my $reason =  $json_string->{'results'}[0]->{'error'};
+            Error ("Error sending FCM for token:".$obj->{token});
+            Error ("Error value =".$reason);
+            if ($reason eq "NotRegistered" || $reason eq "InvalidRegistration") {
+                Info ("Removing this token as FCM doesn't recognize it");
+                deleteToken($obj->{token});
+            }
+
+        }
     }
     else
     {
         Info("FCM push message Error:".$res->status_line);
     }
+
 }
 
 # Not used anymore - will remove later
