@@ -53,7 +53,7 @@ If you are an existing user, version 0.95 has breaking changes as follows:
     * Over time, it will allow me to add more push features (like stacked notifications, images etc)
     * Apple push certificates no longer expire, so I don't have to keep a watch on when the push infrastructure suddenly stops working 
     * Google's FCM is much more stable than me running my server that occassionally went down and people stopped receiving pushes. Obviously, Google FCM can also go down, but in general they are more reliable and you can always check the FCM status
-* Direct APNS mode has been removed - it was way too buggy for me to keep maintaining. If you are a developer with your own Apple developer account and were using your own FCM instance, all you really need to do is modify `sendOverFCM` to have your server-id and auth key. It's that simple
+* Direct APNS mode has been removed - it was way too buggy for me to keep maintaining. If you are a developer with your own Apple developer account and were using your own FCM instance, all you really need to do is modify `sendOverFCM` to have your server-id and auth key. It's that simple.
 
 ## What is it?
 A WSS (Secure Web Sockets) based event notification server that broadcasts new events to any authenticated listeners.
