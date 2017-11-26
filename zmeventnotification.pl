@@ -367,22 +367,32 @@ sub sendOverFCM
     my $json;
     my $key="key=AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h";
 
-    $json = encode_json ({
-        to=>$obj->{token},
-        notification=> {
-           badge=>$obj->{badge},
-           sound=>"default",
-           title=>$header,
-        #   body=>"Body"
-        },
-        data=> {
-            title=>$header,
-            #body=>"My text",
-            icon=>"ic_stat_notification",
-            mid=>$mid,
-           
-        }
-    });
+    
+    if ($obj->{platform} eq "ios")
+    {
+        $json = encode_json ({
+            to=>$obj->{token},
+            notification=> {
+               badge=>$obj->{badge},
+               sound=>"default",
+               title=>$header,
+            #   body=>"Body"
+            }
+        });
+    }
+    # if I do both, notification icon in Android gets messed up
+    else  { # android 
+        $json = encode_json ({
+            to=>$obj->{token},
+            data=> {
+                title=>$header,
+                #body=>"My text",
+                icon=>"ic_stat_notification",
+                mid=>$mid,
+            }
+        });
+    }
+
     #print "Sending:$json\n";
     Debug ("Final JSON being sent is: $json");
     my $req = HTTP::Request->new ('POST', $uri);
