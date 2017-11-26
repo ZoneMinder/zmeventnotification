@@ -357,6 +357,44 @@ sub validateZM
 
 }
 
+# deletes a token - invoked if FCM responds with an incorrect token error
+sub deleteToken
+{
+    my $dtoken = shift;
+    printdbg ("DeleteToken called with $dtoken");
+    return if (!$usePushProxy);
+    return if ( ! -f PUSH_TOKEN_FILE);
+    
+    open (my $fh, '<', PUSH_TOKEN_FILE);
+    chomp( my @lines = <$fh>);
+    close ($fh);
+    my @uniquetokens = uniq(@lines);
+
+    open ($fh, '>', PUSH_TOKEN_FILE);
+
+    foreach(@uniquetokens)
+    {
+        my ($token, $monlist, $intlist, $platform, $pushstate)  = rsplit(qr/:/, $_, 5); #split (":",$_);
+        next if ($_ eq "" || $token eq $dtoken);
+        print $fh "$_\n";
+        #print "delete: $row\n";
+        push @active_connections, {
+                       token => $token,
+                       pending => VALID_WEBSOCKET,
+                       time=>time(),
+                       badge => 0,
+                       monlist => $monlist,
+                       intlist => $intlist,
+                       last_sent=>{},
+                       platform => $platform,
+                       pushstate => $pushstate
+                      };
+        
+    }
+    close ($fh);
+}
+
+
 # Sends a push notification to FCM
 sub sendOverFCM
 {
