@@ -8,6 +8,7 @@ Don't use 0.95 if you are running zmNinja v 1.2.509 or below
 
 <!-- TOC -->
 
+- [Breaking changes - version 0.95 onwards](#breaking-changes---version-095-onwards)
 - [What is it?](#what-is-it)
 - [What can you do with it?](#what-can-you-do-with-it)
 - [Why do we need it?](#why-do-we-need-it)
@@ -24,7 +25,7 @@ Don't use 0.95 if you are running zmNinja v 1.2.509 or below
     - [The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)](#the-server-runs-fine-when-manually-executed-but-fails-when-run-in-daemon-mode-started-by-zmdcpl)
     - [When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that](#when-you-run-zmeventnotifiationpl-manually-you-get-an-error-saying-port-already-in-use-or-cannot-bind-to-port-or-something-like-that)
     - [Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!](#great-krypton-i-just-upgraded-zoneminder-and-im-not-getting-push-anymore)
-- [How do I disable secure mode?](#how-do-i-disable-secure-mode)
+- [How do I disable secure (WSS) mode?](#how-do-i-disable-secure-wss-mode)
 - [Debugging and reporting problems](#debugging-and-reporting-problems)
 - [For Developers writing their own consumers](#for-developers-writing-their-own-consumers)
     - [How do I talk to it?](#how-do-i-talk-to-it)
@@ -37,15 +38,22 @@ Don't use 0.95 if you are running zmNinja v 1.2.509 or below
             - [Concepts of Push and why it is only for zmNinja](#concepts-of-push-and-why-it-is-only-for-zmninja)
             - [Registering Push token with the server](#registering-push-token-with-the-server)
             - [Badge reset](#badge-reset)
-            - [APNS/GCM Howto - only applicable for zmNinja, not for other consumers](#apnsgcm-howto---only-applicable-for-zmninja-not-for-other-consumers)
-            - [Push notification via PushProxy](#push-notification-via-pushproxy)
-                - [What sort of data is transmitted to my server?](#what-sort-of-data-is-transmitted-to-my-server)
-            - [Push notification directly from your event server](#push-notification-directly-from-your-event-server)
         - [Testing from command line](#testing-from-command-line)
 - [How scalable is it?](#how-scalable-is-it)
 - [Brickbats](#brickbats)
 
 <!-- /TOC -->
+
+## Breaking changes - version 0.95 onwards
+If you are an existing user, version 0.95 has breaking changes as follows:
+* I've migrated the push infrastructure to Google's [Firebase Cloud Messaging (FCM)](https://firebase.google.com/docs/cloud-messaging/) infrastructure. This allows many benefits:
+    * It uses the newer HTTP/2 push mechanisms offered by Apple and Google which are more reliable
+    * It is easier to detect in real time which tokens need to be deleted in your `tokens.txt` file
+    * I don't need to maintain a server anymore - your eventserver will directly send messages to FCM which in turn will send messages to your device. My personal server is gone. Yay!
+    * Over time, it will allow me to add more push features (like stacked notifications, images etc)
+    * Apple push certificates no longer expire, so I don't have to keep a watch on when the push infrastructure suddenly stops working 
+    * Google's FCM is much more stable than me running my server that occassionally went down and people stopped receiving pushes. Obviously, Google FCM can also go down, but in general they are more reliable and you can always check the FCM status
+* Direct APNS mode has been removed - it was way too buggy for me to keep maintaining. If you are a developer with your own Apple developer account and were using your own FCM instance, all you really need to do is modify `sendOverFCM` to have your server-id and auth key. It's that simple
 
 ## What is it?
 A WSS (Secure Web Sockets) based event notification server that broadcasts new events to any authenticated listeners.
@@ -63,7 +71,6 @@ You can implement your own receiver to get real time event notification and do w
 
 ## Is this officially developed by ZM developers?
 No. I developed it for zmNinja, but you can use it with your own consumer.
-
 
 ## How do I install it?
 
@@ -186,7 +193,7 @@ The chances are very high that you have another copy of `zmeventnotification.pl`
 Fear not. You just need to redo the changes you did to ``zmpkg.pl`` and ``zmdc.pl`` and restart ZM. You see, when you upgrade ZM, it overwrites those files.
 
 
-## How do I disable secure mode?
+## How do I disable secure (WSS) mode?
 
 As of 0.6, I've added an option to run the server using unsecure websockets (WS instead of WSS).
 As it turns out many folks run ZM inside the LAN only and don't want to deal with certificates. Fair enough.
@@ -209,16 +216,16 @@ Here is how to debug and report:
 * Start another terminal and start zmeventserver manually from command line like so `sudo /usr/bin/zmeventnotification.pl`
 * Make sure you see logs like this in the logs window like so:
 ```
-Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [direct APNS disabled]
-Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [Event Notification daemon v 0.91 starting]
-Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [Total event client connections: 11]
-Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [Reloading Monitors...]
-Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [Loading monitors]
-Oct 20 10:02:30 homeserver zmeventnotification[27671]: INF [Checking https://185.124.74.36:8801 reachability...]
-Oct 20 10:02:32 homeserver zmeventnotification[27671]: INF [PushProxy https://185.124.74.36:8801 is reachable.]
-Oct 20 10:02:32 homeserver zmeventnotification[27671]: INF [About to start listening to socket]
-Oct 20 10:02:32 homeserver zmeventnotification[27671]: INF [Secure WS(WSS) is enabled...]
-Oct 20 10:02:32 homeserver zmeventnotification[27671]: INF [Web Socket Event Server listening on port 9000]
+Nov 26 14:27:20 homeserver zmdc[18560]: INF ['zmeventnotification.pl' started at 17/11/26 14:27:20]
+Nov 26 14:27:20 homeserver zmeventnotification[18560]: INF [Push enabled via FCM]
+Nov 26 14:27:20 homeserver zmeventnotification[18560]: INF [Event Notification daemon v 0.95 starting]
+Nov 26 14:27:20 homeserver zmeventnotification[18560]: INF [Total event client connections: 3]
+Nov 26 14:27:20 homeserver zmeventnotification[18560]: INF [Reloading Monitors...]
+Nov 26 14:27:21 homeserver zmeventnotification[18560]: INF [Loading monitors]
+Nov 26 14:27:21 homeserver zmeventnotification[18560]: INF [About to start listening to socket]
+Nov 26 14:27:21 homeserver zmeventnotification[18560]: INF [Secure WS(WSS) is enabled...]
+Nov 26 14:27:21 homeserver zmeventnotification[18560]: INF [Web Socket Event Server listening on port 9000]
+
 ```
 * Open up zmNinja, clear logs
 * Enable event server in zmNinja
@@ -228,9 +235,7 @@ Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [got a websocket conn
 Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [Websockets: New Connection Handshake requested from XX.XX.XX.XX:55189 state=pending auth]
 Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [Correct authentication provided byXX.XX.XX.XX]
 Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [Storing token ...9f665f182b,monlist:-1,intlist:-1,pushstate:enabled]
-Oct 20 10:23:19 homeserver zmeventnotification[27789]: INF [Pushproxy registration success ]
 Oct 20 10:23:19 homeserver zmeventnotification[27789]: INF [Contrl: Storing token ...9f665f182b,monlist:1,2,4,5,6,7,10,intlist:0,0,0,0,0,0,0,pushstate:enabled]
-Oct 20 10:23:19 homeserver zmeventnotification[27789]: INF [Pushproxy registration success ]
 
 ```
 
@@ -414,55 +419,6 @@ In this example, the client requests the server to reset the badge count to 0. N
 can use any other number. The next time the server sends a push via APNS, it will use this 
 value. 0 makes the badge go away.
 
-
-##### APNS/GCM Howto - only applicable for zmNinja, not for other consumers###
-
-As of version 0.3, APNS and GCM are  fully supported via a Push Proxy Mode (or directly for APNS).
-
-Simply put, "Push Proxy" is what most of you want. When enabled, it will route messages from your event server to a push server I have hosted that in turn will send notifications to your devices. This is necessary because both Apple and Google require push notifications coming from a trusted server (that is, a server that has the SSL certificates needed to send push notifications to zmNinja). In other words, it ties into my Google and Apple accounts, so it has to be my server.
-
-**Please don't overload my server. I've set it up for free for you to use and its running in a VM @ Home. If it brings down my workstation, I'll have to remove it**
-
-##### Push notification via PushProxy
-
-Set ``$usePushProxy = 1`` in the event server script (around line 63) 
-Make sure ``PUSH_TOKEN_FILE`` (around line 76) is set to a file and path that is writable by ``www-data`` (the server will create the file if it does not exist)
-
-Make sure you have ``LWP::Protocol::https`` installed. This is typically as simple as
-```
-sudo perl -MCPAN -e "install LWP::Protocol::https"
-```
-That's it. Run the server in manual mode and check the logs (syslog) to make sure it works fine
-
-###### What sort of data is transmitted to my server?
-
-For push to work, your event server will send my push server the following data:
-1. Your IP
-2. Your device token 
-3. The list of alarms (NO images) that need to be pushed to the phone - this consists of the Monitor Name, Monitor ID,Event ID
-
-FYI if you are using _any_ app that does push notifications, you will always need to transmit the data that needs to be pushed
-to a server hosted by that app provider. This is no different
-
-##### Push notification directly from your event server
-
-This is currently only implemented for APNS. This allows you to issue push notification directly to your phone from your Event server
-without using my proxy.
-
-This  will only work if you are able to do the following:
-* You have IOS Developer account and are able to generate APNS certificates. Since I am not hosting my own server, this is the only way. 
-* You will also need to compile zmNinja from source using your certificates. Both certicates and app IDs need to match
-
-If you need to support iOS APNS:
-```
-sudo perl -MCPAN -e "install Net::APNS::Persistent"
-```
-Next up, you need to make the following changes to the Event Server script:
-* make sure ``$usePushAPNSDirect`` is set to 1 (around line 65)
-* make sure ``$usePushProxy`` is set to 0 (around line 63) (If both are enabled, PushProxy overrides direct mode)
-* make sure ``APNS_CERT_FILE`` and ``APNS_KEY_FILE`` point to the downloaded certs
-* make sure ``APNS_TOKEN_FILE`` points to an area that has ``www-data`` write permissions. The server will create the file if its not there. Its important to have ``www-data`` write permission as otherwise it will fail when run as a daemon
-* Restart the Event Server
 
 #### Testing from command line
 If you are writing your own consumer/client it helps to test the event server commands from command line. 
