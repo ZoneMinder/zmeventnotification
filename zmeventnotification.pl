@@ -915,7 +915,7 @@ sub saveTokens
     	print $fh "$stoken:$smonlist:$sintlist:$splatform:$spushstate\n";
     }
     close ($fh);
-    registerOverPushProxy($stoken,$splatform) if ($useFCM);
+    #registerOverPushProxy($stoken,$splatform) if ($useFCM);
     #print "Saved Token $token to file\n";
     return ($smonlist, $sintlist);
     
