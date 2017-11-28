@@ -406,7 +406,7 @@ sub sendOverFCM
     
     my ($obj, $header, $mid, $str) = @_;
     
-    my $now = strftime('%I:%M:%S %p, %b-%d',localtime);
+    my $now = strftime('%I:%M %p, %b-%d',localtime);
     $obj->{badge}++;
     my $uri = "https://fcm.googleapis.com/fcm/send";
     my $json;
