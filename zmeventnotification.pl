@@ -97,11 +97,13 @@ use constant INVALID_AUTH => '-3';
 use constant VALID_WEBSOCKET => '0';
 
 
-my $alarmEventId = 1;           # tags the event id along with the alarm - useful for correlation
+my $alarmEventId = 0;           # tags the event id along with the alarm - useful for correlation
                                 # only for geeks though - most people won't give a damn. I do.
 
 # customSound is not used for now starting 0.95 since I moved to FCM
 my $useCustomNotificationSound = 1;     # set to 0 for default sound
+
+my $notId = 1;
 
 
 # This part makes sure we have the righ deps
@@ -305,7 +307,11 @@ sub loadMonitors
         or Fatal( "Can't execute: ".$sth->errstr() );
     while( my $monitor = $sth->fetchrow_hashref() )
     {
-        next if ( !zmMemVerify( $monitor ) ); # Check shared memory ok
+        if ( !zmMemVerify( $monitor ) ) {
+              zmMemInvalidate( $monitor );
+              next;
+        }
+       # next if ( !zmMemVerify( $monitor ) ); # Check shared memory ok
 
         if ( defined($monitors{$monitor->{Id}}->{LastState}) )
         {
@@ -399,6 +405,8 @@ sub sendOverFCM
 {
     
     my ($obj, $header, $mid, $str) = @_;
+    
+    my $now = strftime('%I:%M:%S %p, %b-%d',localtime);
     $obj->{badge}++;
     my $uri = "https://fcm.googleapis.com/fcm/send";
     my $json;
@@ -422,16 +430,23 @@ sub sendOverFCM
         $json = encode_json ({
             to=>$obj->{token},
             data=> {
-                title=>$header,
+                title=>"Zoneminder Alarm",
+                message=>$header." at ".$now,
+                style=>"inbox",
+                #notId=> $notId,
+                #summaryText=>"Summary",
                 #body=>"My text",
                 icon=>"ic_stat_notification",
+                "content-available"=> "1",
                 mid=>$mid,
             }
         });
+        $notId = ($notId +1) % 100000;
+        
     }
 
     #print "Sending:$json\n";
-    Debug ("Final JSON being sent is: $json");
+    Info ("Final JSON being sent is: $json");
     my $req = HTTP::Request->new ('POST', $uri);
     $req->header( 'Content-Type' => 'application/json', 'Authorization'=> $key);
      $req->content($json);
