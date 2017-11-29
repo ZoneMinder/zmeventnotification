@@ -600,20 +600,25 @@ sub checkConnection
     }
     my $ac1 = scalar @active_connections;
     @active_connections = grep { $_->{pending} != INVALID_AUTH   } @active_connections;
-    my $purged = $ac1 - scalar @active_connections;
-    if ($purged > 0)
-    {
-        $ac1 = $ac1 - $purged;
-        Debug ("Active connects after INVALID_AUTH purge=$ac1 ($purged purged)");
-    }
+    $ac1 = scalar @active_connections;
+    printdbg ("Active connects after INVALID_AUTH purge=$ac1");
 
-    @active_connections = grep { $_->{pending} != INVALID_WEBSOCKET   } @active_connections;
-    my $purged = $ac1 - scalar @active_connections;
-    if ($purged > 0)
-    {
-        $ac1 = $ac1 - $purged;
-        Debug ("Active connects after INVALID_WEBSOCKET purge=$ac1 ($purged purged)");
-    }
+#    commented out - seems like if the app exists and websocket is closed, this code
+#    eventually results in the token being removed from tokens.txt which I don't want
+#    my $purged = $ac1 - scalar @active_connections;
+#    if ($purged > 0)
+#    {
+#        $ac1 = $ac1 - $purged;
+#        Debug ("Active connects after INVALID_AUTH purge=$ac1 ($purged purged)");
+#    }
+#
+#    @active_connections = grep { $_->{pending} != INVALID_WEBSOCKET   } @active_connections;
+#    my $purged = $ac1 - scalar @active_connections;
+#    if ($purged > 0)
+#    {
+#        $ac1 = $ac1 - $purged;
+#        Debug ("Active connects after INVALID_WEBSOCKET purge=$ac1 ($purged purged)");
+#    }
 
     if ($useFCM)
     {
