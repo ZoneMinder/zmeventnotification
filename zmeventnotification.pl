@@ -659,20 +659,22 @@ sub checkConnection
         Info ("Active connects after INVALID_AUTH purge=$ac1 ($purged purged)");
     }
 
-    @active_connections = grep { $_->{pending} != INVALID_WEBSOCKET   } @active_connections;
-    my $purged = $ac1 - scalar @active_connections;
-    if ($purged > 0)
-    {
-        $ac1 = $ac1 - $purged;
-        Info ("Active connects after INVALID_WEBSOCKET purge=$ac1 ($purged purged)");
-    }
-
     if ($usePushAPNSDirect || $usePushProxy)
     {
         #@active_connections = grep { $_->{'pending'} != INVALID_APNS || $_->{'token'} ne ''} @active_connections;
         @active_connections = grep { $_->{'pending'} != INVALID_APNS} @active_connections;
         $ac1 = scalar @active_connections;
         printdbg ("Active connects after INVALID_APNS purge=$ac1");
+    }
+    else
+    {
+        @active_connections = grep { $_->{pending} != INVALID_WEBSOCKET   } @active_connections;
+        my $purged = $ac1 - scalar @active_connections;
+        if ($purged > 0)
+        {
+            $ac1 = $ac1 - $purged;
+            Info ("Active connects after INVALID_WEBSOCKET purge=$ac1 ($purged purged)");
+        }
     }
 }
 
