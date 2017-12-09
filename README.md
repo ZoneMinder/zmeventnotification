@@ -1,4 +1,10 @@
-**Latest Version: 0.94**
+
+**Latest Version: 0.95**
+
+**BREAKING CHANGE**
+Starting version 1.2.510 of zmNinja, I've migrated push notifications to use FCM. This makes things much more reliable.
+You will have to update the event server to v0.95 after you intstall/upgrade zmNinja to 1.2.510 or push will stop working.
+Don't use 0.95 if you are running zmNinja v 1.2.509 or below
 
 <!-- TOC -->
 
@@ -47,7 +53,7 @@ If you are an existing user, version 0.95 has breaking changes as follows:
     * Over time, it will allow me to add more push features (like stacked notifications, images etc)
     * Apple push certificates no longer expire, so I don't have to keep a watch on when the push infrastructure suddenly stops working 
     * Google's FCM is much more stable than me running my server that occassionally went down and people stopped receiving pushes. Obviously, Google FCM can also go down, but in general they are more reliable and you can always check the FCM status
-* Direct APNS mode has been removed - it was way too buggy for me to keep maintaining. If you are a developer with your own Apple developer account and were using your own FCM instance, all you really need to do is modify `sendOverFCM` to have your server-id and auth key. It's that simple
+* Direct APNS mode has been removed - it was way too buggy for me to keep maintaining. If you are a developer with your own Apple developer account and were using your own FCM instance, all you really need to do is modify `sendOverFCM` to have your server-id and auth key. It's that simple.
 
 ## What is it?
 A WSS (Secure Web Sockets) based event notification server that broadcasts new events to any authenticated listeners.
@@ -145,7 +151,7 @@ add it as  a daemon as if you don't and it crashes you won't know why**
 
 * Copy ``zmeventnotification.pl`` to ``/usr/bin``
 * Edit ``/usr/bin/zmdc.pl`` and in the array ``@daemons`` (starting line 80) add ``'zmeventnotification.pl'`` like [this](https://gist.github.com/pliablepixels/18bb68438410d5e4b644)
-* Edit ``/usr/bin/zmpkg.pl`` and around line 260, right after the comment that says ``#this is now started unconditionally`` and right before the line that says ``runCommand( "zmdc.pl start zmfilter.pl" );`` start zmeventnotification.pl by adding ``runCommand( "zmdc.pl start zmeventnotification.pl" );`` like  [this](https://gist.github.com/pliablepixels/0977a77fa100842e25f2)
+* Edit ``/usr/bin/zmpkg.pl`` and around line 270, right after the comment that says ``#this is now started unconditionally`` and right before the line that says ``runCommand( "zmdc.pl start zmfilter.pl" );`` start zmeventnotification.pl by adding ``runCommand( "zmdc.pl start zmeventnotification.pl" );`` like  [this](https://gist.github.com/pliablepixels/0977a77fa100842e25f2)
 * Make sure you restart ZM. Rebooting the server is better - sometimes zmdc hangs around and you'll be wondering why your new daemon hasn't started
 * To check if its running do a ``zmdc.pl status zmeventnotification.pl``
 
