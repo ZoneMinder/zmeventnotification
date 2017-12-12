@@ -446,7 +446,7 @@ sub sendOverFCM
     }
 
     #print "Sending:$json\n";
-    Info ("Final JSON being sent is: $json");
+    Debug ("Final JSON being sent is: $json");
     my $req = HTTP::Request->new ('POST', $uri);
     $req->header( 'Content-Type' => 'application/json', 'Authorization'=> $key);
      $req->content($json);
