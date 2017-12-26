@@ -1202,7 +1202,7 @@ sub initSocketServer
                         # also disabled is a special state which means its registered over push
                         # but it still wants messages over websockets - zmNinja sets this
                         # when websockets override is enabled
-                        if (($_->{token} ne "") && ($_->{pushstate} ne "disabled" ))
+                        if (($_->{token} ne "") && ($_->{pushstate} ne "disabled" ) && ($_->{pending} != PENDING_WEBSOCKET))
                         {
                             if ($useFCM)
                             {
