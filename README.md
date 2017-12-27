@@ -1,5 +1,5 @@
 
-**Latest Version: 0.95**
+**Latest Version: 0.96**
 
 **BREAKING CHANGE**
 Starting version 1.2.510 of zmNinja, I've migrated push notifications to use FCM. This makes things much more reliable.
