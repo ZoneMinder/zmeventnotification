@@ -58,7 +58,7 @@ use bytes;
 # ==========================================================================
 
 
-my $app_version="0.95";
+my $app_version="0.96";
 
 # ==========================================================================
 #
@@ -174,6 +174,7 @@ my @events=();
 my @active_connections=();
 my $alarm_header="";
 my $alarm_mid="";
+my $alarm_eid="";
 
 # MAIN
 
@@ -250,6 +251,7 @@ sub checkEvents()
     @events = ();
     $alarm_header = "";
     $alarm_mid="";
+    $alarm_eid = ""; # only take 1 if several occur
     foreach my $monitor ( values(%monitors) )
     { 
         my ( $state, $last_event )
@@ -273,6 +275,7 @@ sub checkEvents()
                 my $eid = $last_event;
                 Debug ("Creating event object for ".$monitor->{Name}." with $last_event");
                 push @events, {Name => $name, MonitorId => $mid, EventId => $last_event};
+                $alarm_eid = $last_event;
                 $alarm_header = "Alarms: " if (!$alarm_header);
                 $alarm_header = $alarm_header . $name ;
                 $alarm_mid = $alarm_mid.$mid.",";
@@ -404,7 +407,7 @@ sub deleteToken
 sub sendOverFCM
 {
     
-    my ($obj, $header, $mid, $str) = @_;
+    my ($obj, $header, $mid, $eid,  $str) = @_;
     
     my $now = strftime('%I:%M %p, %b-%d',localtime);
     $obj->{badge}++;
@@ -439,6 +442,7 @@ sub sendOverFCM
                 icon=>"ic_stat_notification",
                 "content-available"=> "1",
                 mid=>$mid,
+                eid=>$eid,
             }
         });
         $notId = ($notId +1) % 100000;
@@ -1208,7 +1212,7 @@ sub initSocketServer
                             {
                                 Info ("Sending notification over PushProxy");
                                 #sendOverPushProxy($_,$alarm_header, $alarm_mid, $str) ;     
-                                sendOverFCM($_,$alarm_header, $alarm_mid, $str) ;     
+                                sendOverFCM($_,$alarm_header, $alarm_mid, $alarm_eid,$str) ;     
                             }
                             
                             # send supplementary event data over websocket
