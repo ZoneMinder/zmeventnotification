@@ -58,7 +58,7 @@ use bytes;
 # ==========================================================================
 
 
-my $app_version="0.97";
+my $app_version="0.98";
 
 # ==========================================================================
 #
@@ -796,13 +796,13 @@ sub checkMessage
     {
         if  ($json_string->{'data'}->{'type'} eq "filter")
         {
-            if (!$json_string->{'data'}->{'monlist'})
+            if (!defined $json_string->{'data'}->{'monlist'})
             {
                 my $str = encode_json({event=>'control', type=>'filter',status=>'Fail', reason => 'MISSINGMONITORLIST'});
                 eval {$conn->send_utf8($str);};
                 return;
             }
-            if (!$json_string->{'data'}->{'intlist'})
+            if ( !defined $json_string->{'data'}->{'intlist'})
             {
                 my $str = encode_json({event=>'control', type=>'filter',status=>'Fail', reason => 'MISSINGINTERVALLIST'});
                 eval {$conn->send_utf8($str);};
