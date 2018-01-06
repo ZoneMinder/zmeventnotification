@@ -58,7 +58,7 @@ use bytes;
 # ==========================================================================
 
 
-my $app_version="0.96";
+my $app_version="0.97";
 
 # ==========================================================================
 #
@@ -435,6 +435,7 @@ sub sendOverFCM
             data=> {
                 title=>"Zoneminder Alarm",
                 message=>$header." at ".$now,
+                #"force-start"=>1,
                 style=>"inbox",
                 #notId=> $notId,
                 #summaryText=>"Summary",
@@ -1191,6 +1192,11 @@ sub initSocketServer
                                 }
 
                             }
+                            else 
+                            {
+                                Info ("Not sending alarm as Monitor ".$_->{MonitorId}." is excluded");
+                            }
+                            
 
                         }
                         # if this array is empty that means none of the alarms 
