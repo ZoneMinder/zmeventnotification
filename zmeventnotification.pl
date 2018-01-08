@@ -725,7 +725,7 @@ sub checkMessage
                     {
                         $_->{token} = $json_string->{'data'}->{'token'};
                         $_->{platform} = $json_string->{'data'}->{'platform'};
-                        if (exists($json_string->{'data'}->{'monlist'}))
+                        if (exists($json_string->{'data'}->{'monlist'}) && ($json_string->{'data'}->{'monlist'} ne ""))
                         {
                             $_->{monlist} = $json_string->{'data'}->{'monlist'};
                         }
@@ -733,7 +733,7 @@ sub checkMessage
                         {
                             $_->{monlist} = "-1";
                         }
-                        if (exists($json_string->{'data'}->{'intlist'}))
+                        if (exists($json_string->{'data'}->{'intlist'}) && ($json_string->{'data'}->{'intlist'} ne ""))
                         {
                             $_->{intlist} = $json_string->{'data'}->{'intlist'};
                         }
@@ -759,7 +759,7 @@ sub checkMessage
                     $_->{platform} = $json_string->{'data'}->{'platform'};
                     $_->{monlist} = $json_string->{'data'}->{'monlist'};
                     $_->{intlist} = $json_string->{'data'}->{'intlist'};
-                    if (exists($json_string->{'data'}->{'monlist'}))
+                    if (exists($json_string->{'data'}->{'monlist'}) && ($json_string->{'data'}->{'monlist'} ne ""))
                     {
                         $_->{monlist} = $json_string->{'data'}->{'monlist'};
                     }
@@ -767,7 +767,7 @@ sub checkMessage
                     {
                             $_->{monlist} = "-1";
                     }
-                    if (exists($json_string->{'data'}->{'intlist'}))
+                    if (exists($json_string->{'data'}->{'intlist'}) && ($json_string->{'data'}->{'intlist'} ne ""))
                     {
                         $_->{intlist} = $json_string->{'data'}->{'intlist'};
                     }
@@ -796,13 +796,13 @@ sub checkMessage
     {
         if  ($json_string->{'data'}->{'type'} eq "filter")
         {
-            if (!defined $json_string->{'data'}->{'monlist'})
+            if (!exists($json_string->{'data'}->{'monlist'}))
             {
                 my $str = encode_json({event=>'control', type=>'filter',status=>'Fail', reason => 'MISSINGMONITORLIST'});
                 eval {$conn->send_utf8($str);};
                 return;
             }
-            if ( !defined $json_string->{'data'}->{'intlist'})
+            if ( !exists($json_string->{'data'}->{'intlist'}))
             {
                 my $str = encode_json({event=>'control', type=>'filter',status=>'Fail', reason => 'MISSINGINTERVALLIST'});
                 eval {$conn->send_utf8($str);};
