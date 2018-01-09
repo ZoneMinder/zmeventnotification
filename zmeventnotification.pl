@@ -58,7 +58,7 @@ use bytes;
 # ==========================================================================
 
 
-my $app_version="0.98.1";
+my $app_version="0.98.2";
 
 # ==========================================================================
 #
@@ -81,7 +81,7 @@ my $useFCM = 1;               # set this to 1 to use FCM for messaging (keep thi
 
 use constant PUSH_TOKEN_FILE=>'/etc/private/tokens.txt'; # MAKE SURE THIS DIRECTORY HAS WWW-DATA PERMISSIONS
 
-my $printDebugToConsole = 0; # set this to OFF unless you are debugging. If 1, make sure its NOT running via zmdc
+my $printDebugToConsole = 1; # set this to OFF unless you are debugging. If 1, make sure its NOT running via zmdc
 my %ssl_push_opts = ();
 
 
@@ -424,6 +424,11 @@ sub sendOverFCM
                badge=>$obj->{badge},
                sound=>"default",
                title=>$header,
+               myMessageId=> $notId,
+               #aps=>{
+               # "alert" => $header,
+               # "content-available"=>1
+              # }
             #   body=>"Body"
             }
         });
@@ -437,11 +442,11 @@ sub sendOverFCM
                 message=>$header." at ".$now,
                 #"force-start"=>1,
                 style=>"inbox",
-                #notId=> $notId,
+                myMessageId=> $notId,
                 #summaryText=>"Summary",
                 #body=>"My text",
                 icon=>"ic_stat_notification",
-                "content-available"=> "1",
+              #  "content-available"=> "1",
                 mid=>$mid,
                 eid=>$eid,
             }
