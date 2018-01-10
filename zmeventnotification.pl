@@ -58,7 +58,7 @@ use bytes;
 # ==========================================================================
 
 
-my $app_version="0.98.2";
+my $app_version="0.98.3";
 
 # ==========================================================================
 #
@@ -419,18 +419,19 @@ sub sendOverFCM
     if ($obj->{platform} eq "ios")
     {
         $json = encode_json ({
+            
             to=>$obj->{token},
             notification=> {
-               badge=>$obj->{badge},
+               title=>"ZoneMinder Alarm",
+               body=>$header." at ".$now,
                sound=>"default",
-               title=>$header,
+               badge=>$obj->{badge},
+            },
+           data=> {
                myMessageId=> $notId,
-               #aps=>{
-               # "alert" => $header,
-               # "content-available"=>1
-              # }
-            #   body=>"Body"
-            }
+               mid=>$mid,
+               eid=>$eid,
+          },
         });
     }
     # if I do both, notification icon in Android gets messed up
