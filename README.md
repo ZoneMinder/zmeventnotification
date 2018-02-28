@@ -366,9 +366,7 @@ To make Push Notifications work, please make sure you read the [section on enabl
 
 ##### Concepts of Push and why it is only for zmNinja
 
-Both Apple and Google ensure that a "trusted" application server can send push notifications to a specific app running in a device. If they did not require this, anyone could spam apps with messages. So in other words, a "Push" will be routed from a specific server to a specific app. I am currently hosting a push server in my house that has the credentials required to send pushes to "com.pliablepixels.zmninja" which is the ID of my app registered in both Apple and Google. When you enable ``$usePushProxy`` in the script, your locally hosted Event Server will basically send an HTTP POST to my server at my home which will then send a message to APNS or GCM as the case may be and only then will your zmNinja app in your phone get the message. 
-
-Therefore, enabling usePushProxy will only work with zmNinja. If you are writing your own mobile app and want to tie this eventserver with your push server, just change the URL of ``$pushProxyURL`` to yours and change the data format based on what  your push server needs in ``sub sendOverPushProxy`` and that's all.
+Both Apple and Google ensure that a "trusted" application server can send push notifications to a specific app running in a device. If they did not require this, anyone could spam apps with messages. So in other words, a "Push" will be routed from a specific server to a specific app. Starting Jan 2018, I am hosting my trusted push server on Google's Firebase cloud. This eliminates the need for me to run my own server. 
 
 
 ##### Registering Push token with the server
