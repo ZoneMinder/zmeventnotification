@@ -138,7 +138,7 @@ use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
 Starting IOS 10.2, I noticed that zmNinja was not able to register with the event server when it was using WSS (`$useSecure=1`) and self-signed certificates. To solve this, I had to email myself the zoneminder certificate (`zoneminder.crt`) file and install it in the phone. Why that is needed only for WSS and not for HTTPS is a mystery to me. The alternative is to run the eventserver in WS mode (`$useSecure=0`).
 
 ### Making sure everything is running (in manual mode)
-* Start the event server manually first using `sudo /usr/bin/zmeventnotification.pl` and make sure you check syslogs to ensure its loaded up and all dependencies are found. If you see errors, fix them. Then exit and follow the steps below to start it along with Zoneminder
+* Start the event server manually first using `sudo -u www-data /usr/bin/zmeventnotification.pl` and make sure you check syslogs to ensure its loaded up and all dependencies are found. If you see errors, fix them. Then exit and follow the steps below to start it along with Zoneminder. Note that the `-u www-data` runs this command with the user id that apache uses (in some systems this may be `apache` or similar). It is important to run it using the same user id as your webserver because that is the permission zoneminder will use when run as a daemon mode.
 
 * Its is HIGHLY RECOMMENDED that you first start the event server manually from terminal, as described above and not directly dive into daemon mode (described below) and ensure you inspect syslog to validate all logs are correct and THEN make it a daemon in ZoneMinder. If you don't, it will be hard to know what is going wrong. See the [debugging](https://github.com/pliablepixels/zmeventserver#debugging-and-reporting-problems) section later that describes how to make sure its all working fine from command line.
 
@@ -182,6 +182,7 @@ Make sure you look at the syslogs to make sure its started properly
 ### The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)
   - Make sure the file where you store tokens (`/etc/private/tokens.txt or whatever you have used`) is not RW Root only. It needs to be RW `www-data` for Ubuntu/Debian or `apache` for Fedora/CentOS
   - Make sure your certificates are readable by `www-data` for Ubuntu/Debian, or `apache` for Fedora/CentOS (thanks to [@jagee](https://github.com/pliablepixels/zmeventserver/issues/8)) 
+  - Make sure the _path_ to the certificates are readable by `www-data` for Ubuntu/Debian, or `apache` for Fedora/CentOS
 
 ### When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that
 
