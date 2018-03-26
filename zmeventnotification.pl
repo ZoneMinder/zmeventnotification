@@ -68,7 +68,7 @@ my $app_version="0.98.5";
 use constant EVENT_NOTIFICATION_PORT=>9000;                 # port for Websockets connection
 my $useSecure = 1;                                          # make this 0 if you don't want SSL
 my $noAuth = 0;                                             # make 1 to NOT check username/password against zoneminder Database
-my $readAlarmCause = 1;				            # make this 1 ONLY if you are running ZM >=1.31.2 OR THIS WILL CRASH
+my $readAlarmCause = 0;				            # make this 1 ONLY if you are running ZM >=1.31.2 OR THIS WILL CRASH
 
 
 # ignore if useSecure is 0
