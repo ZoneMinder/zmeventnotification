@@ -58,7 +58,7 @@ use bytes;
 # ==========================================================================
 
 
-my $app_version="0.98.3";
+my $app_version="0.98.5";
 
 # ==========================================================================
 #
@@ -67,7 +67,9 @@ my $app_version="0.98.3";
 # ==========================================================================
 use constant EVENT_NOTIFICATION_PORT=>9000;                 # port for Websockets connection
 my $useSecure = 1;                                          # make this 0 if you don't want SSL
-my $noAuth = 0;                                              # make 1 to NOT check username/password against zoneminder Database
+my $noAuth = 0;                                             # make 1 to NOT check username/password against zoneminder Database
+my $readAlarmCause = 1;				            # make this 1 ONLY if you are running ZM >=1.31.2 OR THIS WILL CRASH
+
 
 # ignore if useSecure is 0
 use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';      # Change these to your certs/keys
@@ -254,30 +256,39 @@ sub checkEvents()
     $alarm_eid = ""; # only take 1 if several occur
     foreach my $monitor ( values(%monitors) )
     { 
-        my ( $state, $last_event )
+         my $alarm_cause="";
+        
+         my ( $state, $last_event, $trigger_cause, $trigger_text)
             = zmMemRead( $monitor,
                  [ "shared_data:state",
-                   "shared_data:last_event"
+                   "shared_data:last_event",
+                   "trigger_data:trigger_cause",
+                   "trigger_data:trigger_text",
                  ]
-        );
-        Debug ("State for ".$monitor->{Name}." reported as:".$state);
+            );
+
         if ($state == STATE_ALARM || $state == STATE_ALERT)
         {
             Debug ("state is STATE_ALARM or ALERT for ".$monitor->{Name});
             if ( !defined($monitor->{LastEvent})
                          || ($last_event != $monitor->{LastEvent}))
             {
-                Info( "New event $last_event reported for ".$monitor->{Name}."\n");
+		$alarm_cause=zmMemRead($monitor,"shared_data:alarm_cause") if ($readAlarmCause);
+		$alarm_cause = $trigger_cause if (defined($trigger_cause) && $alarm_cause eq "" && $trigger_cause ne "");
+		printdbg ("Unified Alarm details: $alarm_cause");
+                Info( "New event $last_event reported for ".$monitor->{Name}." ".$alarm_cause."\n");
                 $monitor->{LastState} = $state;
                 $monitor->{LastEvent} = $last_event;
                 my $name = $monitor->{Name};
                 my $mid = $monitor->{Id};
                 my $eid = $last_event;
                 Debug ("Creating event object for ".$monitor->{Name}." with $last_event");
-                push @events, {Name => $name, MonitorId => $mid, EventId => $last_event};
+                push @events, {Name => $name, MonitorId => $mid, EventId => $last_event, Cause=> $alarm_cause};
                 $alarm_eid = $last_event;
                 $alarm_header = "Alarms: " if (!$alarm_header);
                 $alarm_header = $alarm_header . $name ;
+                $alarm_header = $alarm_header." ".$alarm_cause if (defined $alarm_cause);
+                $alarm_header = $alarm_header." ".$trigger_cause if (defined $trigger_cause);
                 $alarm_mid = $alarm_mid.$mid.",";
                 $alarm_header = $alarm_header . " (".$last_event.") " if ($alarmEventId);
                 $alarm_header = $alarm_header . "," ;
