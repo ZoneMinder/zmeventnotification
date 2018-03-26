@@ -273,9 +273,9 @@ sub checkEvents()
             if ( !defined($monitor->{LastEvent})
                          || ($last_event != $monitor->{LastEvent}))
             {
-		$alarm_cause=zmMemRead($monitor,"shared_data:alarm_cause") if ($readAlarmCause);
-		$alarm_cause = $trigger_cause if (defined($trigger_cause) && $alarm_cause eq "" && $trigger_cause ne "");
-		printdbg ("Unified Alarm details: $alarm_cause");
+                $alarm_cause=zmMemRead($monitor,"shared_data:alarm_cause") if ($readAlarmCause);
+                $alarm_cause = $trigger_cause if (defined($trigger_cause) && $alarm_cause eq "" && $trigger_cause ne "");
+                printdbg ("Unified Alarm details: $alarm_cause");
                 Info( "New event $last_event reported for ".$monitor->{Name}." ".$alarm_cause."\n");
                 $monitor->{LastState} = $state;
                 $monitor->{LastEvent} = $last_event;
@@ -1132,21 +1132,27 @@ sub getIdentity
 sub initSocketServer
 {
     checkEvents();
-
     my $ssl_server;
     if ($useSecure)
     {
         Info ("About to start listening to socket");
-        $ssl_server = IO::Socket::SSL->new(
-              Listen        => 10,
-              LocalPort     => EVENT_NOTIFICATION_PORT,
-              Proto         => 'tcp',
-              Reuse     => 1,
-              ReuseAddr     => 1,
-              SSL_cert_file => SSL_CERT_FILE,
-              SSL_key_file  => SSL_KEY_FILE
-            ) or die "failed to listen: $!";
-        Info ("Secure WS(WSS) is enabled...");
+	eval {
+  	       $ssl_server = IO::Socket::SSL->new(
+		      Listen        => 10,
+		      LocalPort     => EVENT_NOTIFICATION_PORT,
+		      Proto         => 'tcp',
+		      Reuse     => 1,
+		      ReuseAddr     => 1,
+		      SSL_cert_file => SSL_CERT_FILE,
+		      SSL_key_file  => SSL_KEY_FILE
+		    );
+	};
+	if ($@) {
+		printdbg("Failed starting server: $@");
+		Error("Failed starting server: $@");
+		exit(-1);
+	}
+                Info ("Secure WS(WSS) is enabled...");
     }
     else
     {
