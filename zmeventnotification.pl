@@ -85,8 +85,6 @@ if ($config_file_present) {
 }
 
 my $port                    = $config->val("server", "port",                    9000);
-my $event_check_interval    = $config->val("server", "event_check_interval",    5);
-my $monitor_reload_interval = $config->val("server", "monitor_reload_interval", 300);
 
 my $auth_enabled = $config->val("auth", "enabled", 1);
 my $auth_timeout = $config->val("auth", "timeout", 20);
@@ -99,6 +97,8 @@ my $ssl_cert_file = $config->val("ssl", "cert");
 my $ssl_key_file  = $config->val("ssl", "key");
 
 my $log_to_console                = $config->val("customize", "log_to_console",                1);
+my $event_check_interval          = $config->val("customize", "event_check_interval",          5);
+my $monitor_reload_interval       = $config->val("customize", "monitor_reload_interval",       300);
 my $read_alarm_cause              = $config->val("customize", "read_alarm_cause",              0);
 my $tag_alarm_event_id            = $config->val("customize", "tag_alarm_event_id",            0);
 my $use_custom_notification_sound = $config->val("server",    "use_custom_notification_sound", 1);
