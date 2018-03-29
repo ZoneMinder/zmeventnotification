@@ -43,6 +43,7 @@
 
 use File::Basename;
 use Config::IniFiles;
+use Getopt::Long;
 
 use strict;
 use bytes;
@@ -66,8 +67,18 @@ my $app_version="0.98.5";
 #
 # ==========================================================================
 
-my $config_file_path = "/etc/zmeventnotification.ini";
-my $config_file_present = -e $config_file_path;
+my $config_file_path;
+my $config_file_present;
+
+GetOptions("config=s" => \$config_file_path);
+
+if (! $config_file_path) {
+  $config_file_path = "/etc/zmeventnotification.ini";
+  $config_file_present = -e $config_file_path;
+} else {
+  die("$config_file_path does not exist!\n") if ! -e $config_file_path;
+  $config_file_present = 1;
+}
 
 my $config;
 
