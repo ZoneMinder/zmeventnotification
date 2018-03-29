@@ -84,7 +84,7 @@ if ($config_file_present) {
   $config = Config::IniFiles->new;
 }
 
-my $port                    = $config->val("server", "port",                    9000);
+my $port = $config->val("network", "port", 9000);
 
 my $auth_enabled = $config->val("auth", "enabled", 1);
 my $auth_timeout = $config->val("auth", "timeout", 20);
@@ -101,7 +101,7 @@ my $event_check_interval          = $config->val("customize", "event_check_inter
 my $monitor_reload_interval       = $config->val("customize", "monitor_reload_interval",       300);
 my $read_alarm_cause              = $config->val("customize", "read_alarm_cause",              0);
 my $tag_alarm_event_id            = $config->val("customize", "tag_alarm_event_id",            0);
-my $use_custom_notification_sound = $config->val("server",    "use_custom_notification_sound", 1);
+my $use_custom_notification_sound = $config->val("customize", "use_custom_notification_sound", 1);
 
 my %ssl_push_opts = ();
 
