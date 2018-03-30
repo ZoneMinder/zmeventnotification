@@ -1140,6 +1140,7 @@ sub initSocketServer
   	       $ssl_server = IO::Socket::SSL->new(
 		      Listen        => 10,
 		      LocalPort     => EVENT_NOTIFICATION_PORT,
+		      LocalAddr => '[::]',
 		      Proto         => 'tcp',
 		      Reuse     => 1,
 		      ReuseAddr     => 1,
