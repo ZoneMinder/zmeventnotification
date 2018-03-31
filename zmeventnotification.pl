@@ -1311,6 +1311,7 @@ sub initSocketServer
   	       $ssl_server = IO::Socket::SSL->new(
 		      Listen        => 10,
 		      LocalPort     => $port,
+		      LocalAddr => '[::]',
 		      Proto         => 'tcp',
 		      Reuse     => 1,
 		      ReuseAddr     => 1,
