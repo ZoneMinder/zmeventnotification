@@ -88,7 +88,7 @@ my $ssl_enabled;
 my $ssl_cert_file;
 my $ssl_key_file;
 
-my $log_to_console;
+my $verbose;
 my $event_check_interval;
 my $monitor_reload_interval;
 my $read_alarm_cause;
@@ -112,7 +112,7 @@ GetOptions(
   "ssl-cert-file=s"               => \$ssl_cert_file,
   "ssl-key-file=s"                => \$ssl_key_file,
 
-  "log-to-console"                => \$log_to_console,
+  "verbose"                       => \$verbose,
   "event-check-interval=i"        => \$event_check_interval,
   "monitor-reload-interval=i"     => \$monitor_reload_interval,
   "read-alarm-cause"              => \$read_alarm_cause,
@@ -163,7 +163,7 @@ $ssl_enabled   //= $config->val("ssl", "enable", 0);
 $ssl_cert_file //= $config->val("ssl", "cert");
 $ssl_key_file  //= $config->val("ssl", "key");
 
-$log_to_console                //= $config->val("customize", "log_to_console",                1);
+$verbose                       //= $config->val("customize", "verbose",                       1);
 $event_check_interval          //= $config->val("customize", "event_check_interval",          5);
 $monitor_reload_interval       //= $config->val("customize", "monitor_reload_interval",       300);
 $read_alarm_cause              //= $config->val("customize", "read_alarm_cause",              0);
@@ -213,7 +213,7 @@ SSL enabled ................... ${\(true_or_false($ssl_enabled))}
 SSL cert file ................. ${\(value_or_undefined($ssl_cert_file))}
 SSL key file .................. ${\(value_or_undefined($ssl_key_file))}
 
-Log to console ................ ${\(true_or_false($log_to_console))}
+Log to console ................ ${\(true_or_false($verbose))}
 Read alarm cause .............. ${\(true_or_false($read_alarm_cause))}
 Tag alarm event id ............ ${\(true_or_false($tag_alarm_event_id))}
 Use custom notification sound . ${\(true_or_false($use_custom_notification_sound))}
@@ -223,7 +223,7 @@ EOF
 }
 
 exit(print_config()) if $check_config;
-print_config() if $log_to_console;
+print_config() if $verbose;
 
 # This part makes sure we have the righ deps
 if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");exit (-1);}
@@ -335,7 +335,7 @@ sub printdbg
 {
 	my $a = shift;
     my $now = strftime('%Y-%m-%d,%H:%M:%S',localtime);
-    print($now," ",$a, "\n") if $log_to_console;
+    print($now," ",$a, "\n") if $verbose;
 }
 
 # This function uses shared memory polling to check if 
