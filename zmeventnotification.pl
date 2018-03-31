@@ -49,6 +49,9 @@ use bytes;
 
 # ==========================================================================
 #
+# Starting v1.0, configuration has moved to a separate file, please make sure
+# you see README
+#
 # Starting v0.95, I've moved to FCM which means I no longer need to maintain
 # my own push server. Plus this uses HTTP which is the new recommended
 # way. Note that 0.95 will only work with zmNinja 1.2.510 and beyond
