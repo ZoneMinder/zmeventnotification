@@ -151,13 +151,13 @@ if ($config_file_present) {
 
 $port //= $config->val("network", "port", 9000);
 
-$auth_enabled //= $config->val("auth", "enabled", 1);
+$auth_enabled //= $config->val("auth", "enable",  1);
 $auth_timeout //= $config->val("auth", "timeout", 20);
 
-$use_fcm    //= $config->val("fcm", "enabled",    1);
+$use_fcm    //= $config->val("fcm", "enable",     1);
 $token_file //= $config->val("fcm", "token_file", "/var/lib/zmeventnotification/tokens");
 
-$ssl_enabled   //= $config->val("ssl", "enabled", 0);
+$ssl_enabled   //= $config->val("ssl", "enable", 0);
 $ssl_cert_file //= $config->val("ssl", "cert");
 $ssl_key_file  //= $config->val("ssl", "key");
 
