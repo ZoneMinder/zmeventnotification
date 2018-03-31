@@ -122,8 +122,8 @@ Usage: zmeventnotification.pl [OPTION]...
   --ssl-cert-file=FILE                Location to SSL cert file.
   --ssl-key-file=FILE                 Location to SSL key file.
 
-  --verbose                           Display messages to console (default: true).
-  --no-verbose                        Don't display messages to console (default: false).
+  --verbose                           Display messages to console (default: false).
+  --no-verbose                        Don't display messages to console (default: true).
   --event-check-interval=SECONDS      Interval, in seconds, after which we will check for new events (default: 5).
   --monitor-reload-interval=SECONDS   Interval, in seconds, to reload known monitors (default: 300).
   --read-alarm-cause                  Read monitor alarm cause (ZoneMinder >= 1.31.2, default: false).
@@ -205,7 +205,7 @@ $ssl_enabled   //= $config->val("ssl", "enable", 0);
 $ssl_cert_file //= $config->val("ssl", "cert");
 $ssl_key_file  //= $config->val("ssl", "key");
 
-$verbose                       //= $config->val("customize", "verbose",                       1);
+$verbose                       //= $config->val("customize", "verbose",                       0);
 $event_check_interval          //= $config->val("customize", "event_check_interval",          5);
 $monitor_reload_interval       //= $config->val("customize", "monitor_reload_interval",       300);
 $read_alarm_cause              //= $config->val("customize", "read_alarm_cause",              0);
