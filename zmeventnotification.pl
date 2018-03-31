@@ -213,7 +213,7 @@ SSL enabled ................... ${\(true_or_false($ssl_enabled))}
 SSL cert file ................. ${\(value_or_undefined($ssl_cert_file))}
 SSL key file .................. ${\(value_or_undefined($ssl_key_file))}
 
-Log to console ................ ${\(true_or_false($verbose))}
+Verbose ....................... ${\(true_or_false($verbose))}
 Read alarm cause .............. ${\(true_or_false($read_alarm_cause))}
 Tag alarm event id ............ ${\(true_or_false($tag_alarm_event_id))}
 Use custom notification sound . ${\(true_or_false($use_custom_notification_sound))}
