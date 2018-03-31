@@ -96,6 +96,9 @@ my $read_alarm_cause;
 my $tag_alarm_event_id;
 my $use_custom_notification_sound;
 
+#default key. Please don't change this
+use constant NINJA_API_KEY => "AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h";
+
 # This part makes sure we have the right deps
 if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");exit (-1);}
 if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL  missing");exit (-1);}
@@ -197,6 +200,7 @@ if (! $config_file) {
 my $config;
 
 if ($config_file_present) {
+  Info ("using config file: $config_file");
   $config = Config::IniFiles->new(-file => $config_file);
 
   unless ($config) {
@@ -208,41 +212,35 @@ if ($config_file_present) {
   }
 } else {
   $config = Config::IniFiles->new;
+  Info ("No config file found, using inbuilt defaults");
 }
 
 # If an option set a value, leave it.  If there's a value in the config, use
 # it.  Otherwise, use a default value if it's available.
 
-$port //= $config->val("network", "port", 9000);
+$port = $config->val("network", "port") || 9000 if (!$port);
+$auth_enabled = $config->val("auth", "enable") || 1 if (!$auth_enabled);
+$auth_timeout = $config->val("auth", "timeout") || 20 if (!$auth_timeout);
 
-$auth_enabled //= $config->val("auth", "enable",  1);
-$auth_timeout //= $config->val("auth", "timeout", 20);
+$use_fcm    = $config->val("fcm", "enable") || 1 if (!$use_fcm);
+$fcm_api_key = $config->val("fcm", "api_key") || NINJA_API_KEY if (!$fcm_api_key);
+$token_file  = $config->val("fcm", "token_file") ||  "/etc/private/tokens.txt" if (!$token_file);
+$ssl_enabled   = $config->val("ssl", "enable") || 0 if (!$ssl_enabled); # don't assume SSL if CLI
+$ssl_cert_file = $config->val("ssl", "cert") if (!$ssl_cert_file);
+$ssl_key_file  = $config->val("ssl", "key") if (!$ssl_key_file);
 
-$use_fcm     //= $config->val("fcm", "enable",     1);
-$fcm_api_key //= $config->val("fcm", "api_key");
-$token_file  //= $config->val("fcm", "token_file", "/etc/private/tokens.txt");
-$ssl_enabled   //= $config->val("ssl", "enable", 1);
-$ssl_cert_file //= $config->val("ssl", "cert");
-$ssl_key_file  //= $config->val("ssl", "key");
-
-$verbose                       //= $config->val("customize", "verbose",                       0);
-$event_check_interval          //= $config->val("customize", "event_check_interval",          5);
-$monitor_reload_interval       //= $config->val("customize", "monitor_reload_interval",       300);
-$read_alarm_cause              //= $config->val("customize", "read_alarm_cause",              0);
-$tag_alarm_event_id            //= $config->val("customize", "tag_alarm_event_id",            0);
-$use_custom_notification_sound //= $config->val("customize", "use_custom_notification_sound", 0);
+$verbose                       = $config->val("customize", "verbose") || 0 if (!$verbose);
+$event_check_interval          = $config->val("customize", "event_check_interval") || 5 if (!$event_check_interval);
+$monitor_reload_interval       = $config->val("customize", "monitor_reload_interval") || 300 if (!$monitor_reload_interval);
+$read_alarm_cause              = $config->val("customize", "read_alarm_cause") || 0 if (!$read_alarm_cause);
+$tag_alarm_event_id            = $config->val("customize", "tag_alarm_event_id") || 0 if (!$tag_alarm_event_id);
+$use_custom_notification_sound = $config->val("customize", "use_custom_notification_sound") if (!$use_custom_notification_sound);
 
 my %ssl_push_opts = ();
 
 if ($ssl_enabled && (!$ssl_cert_file || !$ssl_key_file)) {
     Fatal ("SSL is enabled, but key or certificate file is missing");
     exit(-1);
-}
-
-# If user did not override FCM Key (usually the case), lets use the zmNinja key
-if (!$fcm_api_key) {
-    $fcm_api_key = "AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h";
-    Info ("Using default zmNinja FCM Push API key");
 }
 
 my $notId = 1;
@@ -284,7 +282,7 @@ Auth enabled .................. ${\(true_or_false($auth_enabled))}
 Auth timeout .................. ${\(value_or_undefined($auth_timeout))}
 
 Use FCM ....................... ${\(true_or_false($use_fcm))}
-FCM API key ................... ${\(present_or_not($fcm_api_key))}
+FCM API key ................... ${\(value_or_undefined($fcm_api_key))}
 Token file .................... ${\(value_or_undefined($token_file))}
 
 SSL enabled ................... ${\(true_or_false($ssl_enabled))}
@@ -1325,7 +1323,6 @@ sub initSocketServer
     my $ssl_server;
     if ($ssl_enabled)
     {
-        print $ssl_cert_file." ".$ssl_key_file;
         Info ("About to start listening to socket");
 	eval {
   	       $ssl_server = IO::Socket::SSL->new(
