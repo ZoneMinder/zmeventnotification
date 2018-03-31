@@ -42,6 +42,7 @@
 #sudo perl -MCPAN -e "install LWP::Protocol::https"
 
 use File::Basename;
+use File::Spec;
 use Config::IniFiles;
 use Getopt::Long;
 
@@ -67,13 +68,63 @@ my $app_version="0.98.5";
 #
 # ==========================================================================
 
+use constant DEFAULT_CONFIG_FILE_PATH => "/etc/zmeventnotification.ini";
+
+# Declare options.
+
 my $config_file_path;
 my $config_file_present;
 
-GetOptions("config=s" => \$config_file_path);
+my $port;
+
+my $auth_enabled;
+my $auth_timeout;
+
+my $use_fcm;
+my $token_file;
+
+my $ssl_enabled;
+my $ssl_cert_file;
+my $ssl_key_file;
+
+my $log_to_console;
+my $event_check_interval;
+my $monitor_reload_interval;
+my $read_alarm_cause;
+my $tag_alarm_event_id;
+my $use_custom_notification_sound;
+
+# Fetch whatever options are available from CLI arguments.
+
+GetOptions(
+  "config=s"                      => \$config_file_path,
+
+  "port=i"                        => \$port,
+
+  "enable-auth!"                  => \$auth_enabled,
+
+  "enable-fcm!"                   => \$use_fcm,
+  "token-file=s"                  => \$token_file,
+
+  "enable-ssl!"                   => \$ssl_enabled,
+  "ssl-cert-file=s"               => \$ssl_cert_file,
+  "ssl-key-file=s"                => \$ssl_key_file,
+
+  "log-to-console"                => \$log_to_console,
+  "event-check-interval=i"        => \$event_check_interval,
+  "monitor-reload-interval=i"     => \$monitor_reload_interval,
+  "read-alarm-cause"              => \$read_alarm_cause,
+  "tag-alarm-event-id"            => \$tag_alarm_event_id,
+  "use-custom-notification-sound" => \$use_custom_notification_sound
+);
+
+# Read options from a configuration file.  If --config is specified, try to
+# read it and fail if it can't be read.  Otherwise, try the default
+# configuration path, and if it doesn't exist, take all the default values by
+# loading a blank Config::IniFiles object.
 
 if (! $config_file_path) {
-  $config_file_path = "/etc/zmeventnotification.ini";
+  $config_file_path = DEFAULT_CONFIG_FILE_PATH;
   $config_file_present = -e $config_file_path;
 } else {
   die("$config_file_path does not exist!\n") if ! -e $config_file_path;
@@ -95,24 +146,27 @@ if ($config_file_present) {
   $config = Config::IniFiles->new;
 }
 
-my $port = $config->val("network", "port", 9000);
+# If an option set a value, leave it.  If there's a value in the config, use
+# it.  Otherwise, use a default value if it's available.
 
-my $auth_enabled = $config->val("auth", "enabled", 1);
-my $auth_timeout = $config->val("auth", "timeout", 20);
+$port //= $config->val("network", "port", 9000);
 
-my $use_fcm    = $config->val("fcm", "enabled",    1);
-my $token_file = $config->val("fcm", "token_file", "/var/lib/zmeventnotification/tokens");
+$auth_enabled //= $config->val("auth", "enabled", 1);
+$auth_timeout //= $config->val("auth", "timeout", 20);
 
-my $ssl_enabled   = $config->val("ssl", "enabled", 0);
-my $ssl_cert_file = $config->val("ssl", "cert");
-my $ssl_key_file  = $config->val("ssl", "key");
+$use_fcm    //= $config->val("fcm", "enabled",    1);
+$token_file //= $config->val("fcm", "token_file", "/var/lib/zmeventnotification/tokens");
 
-my $log_to_console                = $config->val("customize", "log_to_console",                1);
-my $event_check_interval          = $config->val("customize", "event_check_interval",          5);
-my $monitor_reload_interval       = $config->val("customize", "monitor_reload_interval",       300);
-my $read_alarm_cause              = $config->val("customize", "read_alarm_cause",              0);
-my $tag_alarm_event_id            = $config->val("customize", "tag_alarm_event_id",            0);
-my $use_custom_notification_sound = $config->val("customize", "use_custom_notification_sound", 1);
+$ssl_enabled   //= $config->val("ssl", "enabled", 0);
+$ssl_cert_file //= $config->val("ssl", "cert");
+$ssl_key_file  //= $config->val("ssl", "key");
+
+$log_to_console                //= $config->val("customize", "log_to_console",                1);
+$event_check_interval          //= $config->val("customize", "event_check_interval",          5);
+$monitor_reload_interval       //= $config->val("customize", "monitor_reload_interval",       300);
+$read_alarm_cause              //= $config->val("customize", "read_alarm_cause",              0);
+$tag_alarm_event_id            //= $config->val("customize", "tag_alarm_event_id",            0);
+$use_custom_notification_sound //= $config->val("customize", "use_custom_notification_sound", 1);
 
 my %ssl_push_opts = ();
 
@@ -133,9 +187,15 @@ sub value_or_undefined {
 }
 
 if ($log_to_console) {
+  my $abs_config_file_path = File::Spec->rel2abs($config_file_path);
+
   print(<<"EOF"
 
-${\($config_file_present ? "Configuration (read $config_file_path)" : "Default configuration ($config_file_path doesn't exist)")}:
+${\(
+  $config_file_present ?
+  "Configuration (read $abs_config_file_path)" :
+  "Default configuration ($abs_config_file_path doesn't exist)"
+)}:
 
 Port .......................... ${\(value_or_undefined($port))}
 Event check interval .......... ${\(value_or_undefined($event_check_interval))}
