@@ -74,6 +74,7 @@ use constant DEFAULT_CONFIG_FILE_PATH => "/etc/zmeventnotification.ini";
 
 my $config_file_path;
 my $config_file_present;
+my $check_config;
 
 my $port;
 
@@ -98,6 +99,7 @@ my $use_custom_notification_sound;
 
 GetOptions(
   "config=s"                      => \$config_file_path,
+  "check-config"                  => \$check_config,
 
   "port=i"                        => \$port,
 
@@ -186,7 +188,7 @@ sub value_or_undefined {
   return $_[0] || "(undefined)";
 }
 
-if ($log_to_console) {
+sub print_config {
   my $abs_config_file_path = File::Spec->rel2abs($config_file_path);
 
   print(<<"EOF"
@@ -219,6 +221,9 @@ Use custom notification sound . ${\(true_or_false($use_custom_notification_sound
 EOF
   )
 }
+
+exit(print_config()) if $check_config;
+print_config() if $log_to_console;
 
 # This part makes sure we have the righ deps
 if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");exit (-1);}
