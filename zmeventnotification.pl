@@ -84,6 +84,7 @@ my $auth_enabled;
 my $auth_timeout;
 
 my $use_fcm;
+my $fcm_api_key;
 my $token_file;
 
 my $ssl_enabled;
@@ -115,6 +116,7 @@ Usage: zmeventnotification.pl [OPTION]...
 
   --enable-fcm                        Use FCM for messaging (default: true).
   --no-enable-fcm                     Don't use FCM for messaging (default: false).
+  --fcm-api-key=KEY                   API key for FCM.
   --token-file=FILE                   Auth token store location (default: /var/lib/zmeventnotification/tokens).
 
   --enable-ssl                        Enable SSL (default: false).
@@ -146,6 +148,7 @@ GetOptions(
   "enable-auth!"                   => \$auth_enabled,
 
   "enable-fcm!"                    => \$use_fcm,
+  "fcm-api-key=s"                  => \$fcm_api_key,
   "token-file=s"                   => \$token_file,
 
   "enable-ssl!"                    => \$ssl_enabled,
@@ -198,8 +201,9 @@ $port //= $config->val("network", "port", 9000);
 $auth_enabled //= $config->val("auth", "enable",  1);
 $auth_timeout //= $config->val("auth", "timeout", 20);
 
-$use_fcm    //= $config->val("fcm", "enable",     1);
-$token_file //= $config->val("fcm", "token_file", "/var/lib/zmeventnotification/tokens");
+$use_fcm     //= $config->val("fcm", "enable",     1);
+$fcm_api_key //= $config->val("fcm", "api_key");
+$token_file  //= $config->val("fcm", "token_file", "/var/lib/zmeventnotification/tokens");
 
 $ssl_enabled   //= $config->val("ssl", "enable", 0);
 $ssl_cert_file //= $config->val("ssl", "cert");
@@ -230,6 +234,10 @@ sub value_or_undefined {
   return $_[0] || "(undefined)";
 }
 
+sub present_or_not {
+  return $_[0] ? "(defined)" : "(undefined)";
+}
+
 sub print_config {
   my $abs_config_file_path = File::Spec->rel2abs($config_file_path);
 
@@ -249,6 +257,7 @@ Auth enabled .................. ${\(true_or_false($auth_enabled))}
 Auth timeout .................. ${\(value_or_undefined($auth_timeout))}
 
 Use FCM ....................... ${\(true_or_false($use_fcm))}
+FCM API key ................... ${\(present_or_not($fcm_api_key))}
 Token file .................... ${\(value_or_undefined($token_file))}
 
 SSL enabled ................... ${\(true_or_false($ssl_enabled))}
@@ -586,7 +595,7 @@ sub sendOverFCM
     $obj->{badge}++;
     my $uri = "https://fcm.googleapis.com/fcm/send";
     my $json;
-    my $key="key=AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h";
+    my $key="key=" . $fcm_api_key;
 
     
     if ($obj->{platform} eq "ios")
