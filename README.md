@@ -15,7 +15,7 @@ You will have to update the event server to v0.95 after you intstall/upgrade zmN
 - [Is this officially developed by ZM developers?](#is-this-officially-developed-by-zm-developers)
 - [How do I install it?](#how-do-i-install-it)
     - [Installing Dependencies](#installing-dependencies)
-    - [SSL certificate ($useSecure=1)](#ssl-certificate-usesecure1)
+    - [SSL certificate](#ssl-certificate)
         - [IOS Users](#ios-users)
     - [Making sure everything is running (in manual mode)](#making-sure-everything-is-running-in-manual-mode)
     - [Running it as a daemon so it starts automatically along with ZoneMinder](#running-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
@@ -48,12 +48,12 @@ You will have to update the event server to v0.95 after you intstall/upgrade zmN
 If you are an existing user, version 0.95 has breaking changes as follows:
 * I've migrated the push infrastructure to Google's [Firebase Cloud Messaging (FCM)](https://firebase.google.com/docs/cloud-messaging/) infrastructure. This allows many benefits:
     * It uses the newer HTTP/2 push mechanisms offered by Apple and Google which are more reliable
-    * It is easier to detect in real time which tokens need to be deleted in your `tokens.txt` file
+    * It is easier to detect in real time which tokens need to be deleted in your token file
     * I don't need to maintain a server anymore - your eventserver will directly send messages to FCM which in turn will send messages to your device. My personal server is gone. Yay!
     * Over time, it will allow me to add more push features (like stacked notifications, images etc)
     * Apple push certificates no longer expire, so I don't have to keep a watch on when the push infrastructure suddenly stops working 
     * Google's FCM is much more stable than me running my server that occassionally went down and people stopped receiving pushes. Obviously, Google FCM can also go down, but in general they are more reliable and you can always check the FCM status
-* Direct APNS mode has been removed - it was way too buggy for me to keep maintaining. If you are a developer with your own Apple developer account and were using your own FCM instance, all you really need to do is modify `sendOverFCM` to have your server-id and auth key. It's that simple.
+* Direct APNS mode has been removed - it was way too buggy for me to keep maintaining. If you are a developer with your own Apple developer account and were using your own FCM instance, all you really need to do is use `api_key = ...` with your FCM key in the `[fcm]` section of the configuration file. It's that simple.
 
 ## What is it?
 A WSS (Secure Web Sockets) based event notification server that broadcasts new events to any authenticated listeners.
@@ -75,6 +75,7 @@ No. I developed it for zmNinja, but you can use it with your own consumer.
 ## How do I install it?
 
 * [Download the server](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.pl) (its a simple perl file) and place it in the same place other ZM scripts are stored (example ``/usr/bin``). Make sure you do a `chmod a+x` on it.
+* Copy [`zmeventnotification.ini`](zmeventnotification.ini) to `/etc/zmeventnotification.ini` and edit the file to your liking.  More details about various parts of the configuration will be throughout this document.
 * If you are behind a firewall, make sure you enable port `9000`, TCP, bi-directional (unless you changed the port in the code)
 * We now need to install a bunch of dependencies (as described below)
 
@@ -114,7 +115,7 @@ Get HTTPS library for LWP:
 perl -MCPAN -e "install LWP::Protocol::https"
 ```
 
-### SSL certificate ($useSecure=1)
+### SSL certificate
 
 If you are using secure mode (default) you **also need to make sure you generate SSL certificates otherwise the script won't run**
 If you are using SSL for ZoneMinder, simply point this script to the certificates.
@@ -128,14 +129,15 @@ sudo openssl req -x509 -nodes -days 4096 -newkey rsa:2048 -keyout /etc/apache2/s
 ```
 It's **very important** to ensure the `Common Name` selected while generating the certificate is the same as the hostname or IP of the server. For example if you plan to access the server as `myserver.ddns.net` Please make sure you use `myserver.ddns.net` as the common name. If you are planning to access it via IP, please make sure you use the same IP.
 
-Once you do that please change the following lines in the perl server to point to your SSL certs/keys:
+Once you do that please change the following options in the config file to point to your SSL certs/keys:
 ```
-use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';	 
-use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
+[ssl]
+cert = /etc/apache2/ssl/zoneminder.crt
+key = /etc/apache2/ssl/zoneminder.key
 ```
 
 #### IOS Users 
-Starting IOS 10.2, I noticed that zmNinja was not able to register with the event server when it was using WSS (`$useSecure=1`) and self-signed certificates. To solve this, I had to email myself the zoneminder certificate (`zoneminder.crt`) file and install it in the phone. Why that is needed only for WSS and not for HTTPS is a mystery to me. The alternative is to run the eventserver in WS mode (`$useSecure=0`).
+Starting IOS 10.2, I noticed that zmNinja was not able to register with the event server when it was using WSS (SSL enabled) and self-signed certificates. To solve this, I had to email myself the zoneminder certificate (`zoneminder.crt`) file and install it in the phone. Why that is needed only for WSS and not for HTTPS is a mystery to me. The alternative is to run the eventserver in WS mode by disabling SSL.
 
 ### Making sure everything is running (in manual mode)
 * Start the event server manually first using `sudo -u www-data /usr/bin/zmeventnotification.pl` and make sure you check syslogs to ensure its loaded up and all dependencies are found. If you see errors, fix them. Then exit and follow the steps below to start it along with Zoneminder. Note that the `-u www-data` runs this command with the user id that apache uses (in some systems this may be `apache` or similar). It is important to run it using the same user id as your webserver because that is the permission zoneminder will use when run as a daemon mode.
@@ -159,8 +161,8 @@ You can/should run it manually at first to check if it works
 
 ## Disabling security
 While I don't recommend either, several users seem to be interested in the following
-* To run the eventserver on Websockets and not Secure Websockets, set `$useSecure` to `0`
-* To disable ZM Auth checking (be careful, anyone can get all your data INCLUDING passwords for ZoneMinder monitors if you open it up to the Internet) set `$noAuth` to `1`
+* To run the eventserver on Websockets and not Secure Websockets, use `enable = 0` in the `[ssl]` section of the configuration file.
+* To disable ZM Auth checking (be careful, anyone can get all your data INCLUDING passwords for ZoneMinder monitors if you open it up to the Internet) use `enable = 0` in the `[auth]` section of the configuration file.
 
 ## How do I safely upgrade zmeventserver to new versions? 
 
@@ -198,7 +200,7 @@ Fear not. You just need to redo the changes you did to ``zmpkg.pl`` and ``zmdc.p
 
 As of 0.6, I've added an option to run the server using unsecure websockets (WS instead of WSS).
 As it turns out many folks run ZM inside the LAN only and don't want to deal with certificates. Fair enough.
-For that situation, edit zmeventnotification.pl and change $useSecure to 0 (around line 64)
+For that situation, edit zmeventnotification.pl and use `enable = 0` in the `[ssl]` section of the configuration file.
 
 ## Debugging and reporting problems
 STOP. Before you shoot me an email, **please** make sure you have read the [common problems](#07-troubleshooting-common-situations) and have followed _every step_ of the [install guide](#05-how-do-i-install-it) and in sequence. I can't emphasize how important it is.
@@ -452,7 +454,7 @@ Plus it may get passed along from the source when accessing another URL via the 
 **Why WSS and not WS?**
 
 Not secure. Easy to snoop.
-Updated: As of 0.6, I've also added a non secure version - change $useSecure to 0 arund line 64.
+Updated: As of 0.6, I've also added a non secure version - use `enable = 0` in the `[ssl]` section of the configuration file.
 As it turns out many folks don't expose ZM to the WAN and for that, I guess WS instead of WSS is ok.
 
 **Why ZM auth in addition to WSS?**
