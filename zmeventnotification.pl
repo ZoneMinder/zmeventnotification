@@ -119,8 +119,8 @@ Usage: zmeventnotification.pl [OPTION]...
   --fcm-api-key=KEY                   API key for FCM.
   --token-file=FILE                   Auth token store location (default: /var/lib/zmeventnotification/tokens).
 
-  --enable-ssl                        Enable SSL (default: false).
-  --no-enable-ssl                     Disable SSL (default: true).
+  --enable-ssl                        Enable SSL (default: true).
+  --no-enable-ssl                     Disable SSL (default: false).
   --ssl-cert-file=FILE                Location to SSL cert file.
   --ssl-key-file=FILE                 Location to SSL key file.
 
@@ -205,7 +205,7 @@ $use_fcm     //= $config->val("fcm", "enable",     1);
 $fcm_api_key //= $config->val("fcm", "api_key");
 $token_file  //= $config->val("fcm", "token_file", "/var/lib/zmeventnotification/tokens");
 
-$ssl_enabled   //= $config->val("ssl", "enable", 0);
+$ssl_enabled   //= $config->val("ssl", "enable", 1);
 $ssl_cert_file //= $config->val("ssl", "cert");
 $ssl_key_file  //= $config->val("ssl", "key");
 
