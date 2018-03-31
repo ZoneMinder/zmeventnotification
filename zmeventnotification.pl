@@ -98,26 +98,26 @@ my $use_custom_notification_sound;
 # Fetch whatever options are available from CLI arguments.
 
 GetOptions(
-  "config=s"                      => \$config_file_path,
-  "check-config"                  => \$check_config,
+  "config=s"                       => \$config_file_path,
+  "check-config"                   => \$check_config,
 
-  "port=i"                        => \$port,
+  "port=i"                         => \$port,
 
-  "enable-auth!"                  => \$auth_enabled,
+  "enable-auth!"                   => \$auth_enabled,
 
-  "enable-fcm!"                   => \$use_fcm,
-  "token-file=s"                  => \$token_file,
+  "enable-fcm!"                    => \$use_fcm,
+  "token-file=s"                   => \$token_file,
 
-  "enable-ssl!"                   => \$ssl_enabled,
-  "ssl-cert-file=s"               => \$ssl_cert_file,
-  "ssl-key-file=s"                => \$ssl_key_file,
+  "enable-ssl!"                    => \$ssl_enabled,
+  "ssl-cert-file=s"                => \$ssl_cert_file,
+  "ssl-key-file=s"                 => \$ssl_key_file,
 
-  "verbose"                       => \$verbose,
-  "event-check-interval=i"        => \$event_check_interval,
-  "monitor-reload-interval=i"     => \$monitor_reload_interval,
-  "read-alarm-cause"              => \$read_alarm_cause,
-  "tag-alarm-event-id"            => \$tag_alarm_event_id,
-  "use-custom-notification-sound" => \$use_custom_notification_sound
+  "verbose!"                       => \$verbose,
+  "event-check-interval=i"         => \$event_check_interval,
+  "monitor-reload-interval=i"      => \$monitor_reload_interval,
+  "read-alarm-cause!"              => \$read_alarm_cause,
+  "tag-alarm-event-id!"            => \$tag_alarm_event_id,
+  "use-custom-notification-sound!" => \$use_custom_notification_sound
 );
 
 # Read options from a configuration file.  If --config is specified, try to
