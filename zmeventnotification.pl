@@ -66,13 +66,13 @@ my $app_version="1.0";
 #
 # ==========================================================================
 
-use constant DEFAULT_CONFIG_FILE_PATH => "/etc/zmeventnotification.ini";
+use constant DEFAULT_CONFIG_FILE => "/etc/zmeventnotification.ini";
 
 # Declare options.
 
 my $help;
 
-my $config_file_path;
+my $config_file;
 my $config_file_present;
 my $check_config;
 
@@ -153,7 +153,7 @@ USAGE
 GetOptions(
   "help"                           => \$help,
 
-  "config=s"                       => \$config_file_path,
+  "config=s"                       => \$config_file,
   "check-config"                   => \$check_config,
 
   "port=i"                         => \$port,
@@ -183,24 +183,28 @@ exit(print(USAGE)) if $help;
 # configuration path, and if it doesn't exist, take all the default values by
 # loading a blank Config::IniFiles object.
 
-if (! $config_file_path) {
-  $config_file_path = DEFAULT_CONFIG_FILE_PATH;
-  $config_file_present = -e $config_file_path;
+if (! $config_file) {
+  $config_file = DEFAULT_CONFIG_FILE;
+  $config_file_present = -e $config_file;
 } else {
-  die("$config_file_path does not exist!\n") if ! -e $config_file_path;
+  if ( ! -e $config_file) {
+    Fatal ("$config_file does not exist!"); 
+    exit(-1);
+  }
   $config_file_present = 1;
 }
 
 my $config;
 
 if ($config_file_present) {
-  $config = Config::IniFiles->new(-file => $config_file_path);
+  $config = Config::IniFiles->new(-file => $config_file);
 
   unless ($config) {
-    die(
-      "Encountered errors while reading $config_file_path:\n" .
+    Fatal(
+      "Encountered errors while reading $config_file:\n" .
       join("\n", @Config::IniFiles::errors)
     );
+    exit(-1);
   }
 } else {
   $config = Config::IniFiles->new;
@@ -262,14 +266,14 @@ sub present_or_not {
 }
 
 sub print_config {
-  my $abs_config_file_path = File::Spec->rel2abs($config_file_path);
+  my $abs_config_file = File::Spec->rel2abs($config_file);
 
   print(<<"EOF"
 
 ${\(
   $config_file_present ?
-  "Configuration (read $abs_config_file_path)" :
-  "Default configuration ($abs_config_file_path doesn't exist)"
+  "Configuration (read $abs_config_file)" :
+  "Default configuration ($abs_config_file doesn't exist)"
 )}:
 
 Port .......................... ${\(value_or_undefined($port))}
