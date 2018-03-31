@@ -198,9 +198,9 @@ Make sure you look at the syslogs to make sure its started properly
 
 ## Understanding zmeventnotification configuration
 
-Starting v1.0, @synthead reworked the configuration as follows:
+Starting v1.0, [@synthead](https://github.com/synthead) reworked the configuration as follows:
 - If you just run `zmeventnotification.pl` it will try and load `/etc/zmeventnotification.ini`. If it doesn't find it, it will use internal defaults
-- If you want to override this with another configuration file, use `zmeventnotification.pl --config /path/to/your/config/filename.ini`. If you do choose to do this, please make sure you add `--config path/file` to `zmdc.pl` and `zmpkg.pl` when you add the daemons as per the [daemon] section (#running-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
+- If you want to override this with another configuration file, use `zmeventnotification.pl --config /path/to/your/config/filename.ini`. If you do choose to do this, please make sure you add `--config path/file` to `zmdc.pl` and `zmpkg.pl` when you add the daemons as per the [daemon section](#running-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
 - If you run `zmeventnotification` you can also choose to use command line arguments to override specific variables. This may be helpful when debugging. Do a `zmeventnotification.pl --help` for all options
 - Its always a good idea to validate you config settings. For example:
 ```
