@@ -72,6 +72,8 @@ use constant DEFAULT_CONFIG_FILE_PATH => "/etc/zmeventnotification.ini";
 
 # Declare options.
 
+my $help;
+
 my $config_file_path;
 my $config_file_present;
 my $check_config;
@@ -97,7 +99,45 @@ my $use_custom_notification_sound;
 
 # Fetch whatever options are available from CLI arguments.
 
+use constant USAGE => <<'USAGE';
+
+Usage: zmeventnotification.pl [OPTION]...
+
+  --help                              Print this page.
+
+  --config=FILE                       Read options from configuration file (default: /etc/zmeventnotification.pl).
+  --check-config                      Print configuration and exit.
+
+  --port=PORT                         Port for Websockets connection (default: 9000).
+
+  --enable-auth                       Check username/password against ZoneMinder database (default: true).
+  --no-enable-auth                    Don't check username/password against ZoneMinder database (default: false).
+
+  --enable-fcm                        Use FCM for messaging (default: true).
+  --no-enable-fcm                     Don't use FCM for messaging (default: false).
+  --token-file=FILE                   Auth token store location (default: /var/lib/zmeventnotification/tokens).
+
+  --enable-ssl                        Enable SSL (default: false).
+  --no-enable-ssl                     Disable SSL (default: true).
+  --ssl-cert-file=FILE                Location to SSL cert file.
+  --ssl-key-file=FILE                 Location to SSL key file.
+
+  --verbose                           Display messages to console (default: true).
+  --no-verbose                        Don't display messages to console (default: false).
+  --event-check-interval=SECONDS      Interval, in seconds, after which we will check for new events (default: 5).
+  --monitor-reload-interval=SECONDS   Interval, in seconds, to reload known monitors (default: 300).
+  --read-alarm-cause                  Read monitor alarm cause (ZoneMinder >= 1.31.2, default: false).
+  --no-read-alarm-cause               Don't read monitor alarm cause (default: true).
+  --tag-alarm-event-id                Tag event IDs with the alarm (default: false).
+  --no-tag-alarm-event-id             Don't tag event IDs with the alarm (default: true).
+  --use-custom-notification-sound     Use custom notification sound (default: true).
+  --no-use-custom-notification-sound  Don't use custom notification sound (default: false).
+
+USAGE
+
 GetOptions(
+  "help"                           => \$help,
+
   "config=s"                       => \$config_file_path,
   "check-config"                   => \$check_config,
 
@@ -119,6 +159,8 @@ GetOptions(
   "tag-alarm-event-id!"            => \$tag_alarm_event_id,
   "use-custom-notification-sound!" => \$use_custom_notification_sound
 );
+
+exit(print(USAGE)) if $help;
 
 # Read options from a configuration file.  If --config is specified, try to
 # read it and fail if it can't be read.  Otherwise, try the default
