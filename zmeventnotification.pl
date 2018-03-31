@@ -43,8 +43,6 @@
 
 use File::Basename;
 use File::Spec;
-use Config::IniFiles;
-use Getopt::Long;
 
 use strict;
 use bytes;
@@ -60,7 +58,7 @@ use bytes;
 # ==========================================================================
 
 
-my $app_version="0.98.5";
+my $app_version="1.0";
 
 # ==========================================================================
 #
@@ -98,6 +96,18 @@ my $read_alarm_cause;
 my $tag_alarm_event_id;
 my $use_custom_notification_sound;
 
+# This part makes sure we have the right deps
+if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");exit (-1);}
+if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL  missing");exit (-1);}
+if (!try_use ("Config::IniFiles")) {Fatal ("Config::Inifiles  missing");exit (-1);}
+if (!try_use ("Getopt::Long")) {Fatal ("Getopt::Long  missing");exit (-1);}
+if (!try_use ("Crypt::MySQL qw(password password41)")) {Fatal ("Crypt::MySQL  missing");exit (-1);}
+
+if (!try_use ("JSON")) 
+{ 
+    if (!try_use ("JSON::XS")) 
+    { Fatal ("JSON or JSON::XS  missing");exit (-1);}
+}
 # Fetch whatever options are available from CLI arguments.
 
 use constant USAGE => <<'USAGE';
@@ -106,7 +116,10 @@ Usage: zmeventnotification.pl [OPTION]...
 
   --help                              Print this page.
 
-  --config=FILE                       Read options from configuration file (default: /etc/zmeventnotification.pl).
+  --config=FILE                       Read options from configuration file (default: /etc/zmeventnotification.ini).
+
+  Using --config is preferred. You can however override individual parameters from command line if you prefer:
+
   --check-config                      Print configuration and exit.
 
   --port=PORT                         Port for Websockets connection (default: 9000).
@@ -117,7 +130,7 @@ Usage: zmeventnotification.pl [OPTION]...
   --enable-fcm                        Use FCM for messaging (default: true).
   --no-enable-fcm                     Don't use FCM for messaging (default: false).
   --fcm-api-key=KEY                   API key for FCM.
-  --token-file=FILE                   Auth token store location (default: /var/lib/zmeventnotification/tokens).
+  --token-file=FILE                   Auth token store location (default: /etc/private/tokens.txt).
 
   --enable-ssl                        Enable SSL (default: true).
   --no-enable-ssl                     Disable SSL (default: false).
@@ -128,7 +141,7 @@ Usage: zmeventnotification.pl [OPTION]...
   --no-verbose                        Don't display messages to console (default: true).
   --event-check-interval=SECONDS      Interval, in seconds, after which we will check for new events (default: 5).
   --monitor-reload-interval=SECONDS   Interval, in seconds, to reload known monitors (default: 300).
-  --read-alarm-cause                  Read monitor alarm cause (ZoneMinder >= 1.31.2, default: false).
+  --read-alarm-cause                  Read monitor alarm cause (Requires ZoneMinder >= 1.31.2, default: false).
   --no-read-alarm-cause               Don't read monitor alarm cause (default: true).
   --tag-alarm-event-id                Tag event IDs with the alarm (default: false).
   --no-tag-alarm-event-id             Don't tag event IDs with the alarm (default: true).
@@ -203,8 +216,7 @@ $auth_timeout //= $config->val("auth", "timeout", 20);
 
 $use_fcm     //= $config->val("fcm", "enable",     1);
 $fcm_api_key //= $config->val("fcm", "api_key");
-$token_file  //= $config->val("fcm", "token_file", "/var/lib/zmeventnotification/tokens");
-
+$token_file  //= $config->val("fcm", "token_file", "/etc/private/tokens.txt");
 $ssl_enabled   //= $config->val("ssl", "enable", 1);
 $ssl_cert_file //= $config->val("ssl", "cert");
 $ssl_key_file  //= $config->val("ssl", "key");
@@ -214,9 +226,20 @@ $event_check_interval          //= $config->val("customize", "event_check_interv
 $monitor_reload_interval       //= $config->val("customize", "monitor_reload_interval",       300);
 $read_alarm_cause              //= $config->val("customize", "read_alarm_cause",              0);
 $tag_alarm_event_id            //= $config->val("customize", "tag_alarm_event_id",            0);
-$use_custom_notification_sound //= $config->val("customize", "use_custom_notification_sound", 1);
+$use_custom_notification_sound //= $config->val("customize", "use_custom_notification_sound", 0);
 
 my %ssl_push_opts = ();
+
+if ($ssl_enabled && (!$ssl_cert_file || !$ssl_key_file)) {
+    Fatal ("SSL is enabled, but key or certificate file is missing");
+    exit(-1);
+}
+
+# If user did not override FCM Key (usually the case), lets use the zmNinja key
+if (!$fcm_api_key) {
+    $fcm_api_key = "AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h";
+    Info ("Using default zmNinja FCM Push API key");
+}
 
 my $notId = 1;
 
@@ -276,16 +299,7 @@ EOF
 exit(print_config()) if $check_config;
 print_config() if $verbose;
 
-# This part makes sure we have the righ deps
-if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");exit (-1);}
-if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL  missing");exit (-1);}
-if (!try_use ("Crypt::MySQL qw(password password41)")) {Fatal ("Crypt::MySQL  missing");exit (-1);}
-
-if (!try_use ("JSON")) 
-{ 
-    if (!try_use ("JSON::XS")) 
-    { Fatal ("JSON or JSON::XS  missing");exit (-1);}
-} 
+ 
 
 # Lets now load all the dependent libraries in a failsafe way
 if ($use_fcm)
@@ -595,6 +609,7 @@ sub sendOverFCM
     $obj->{badge}++;
     my $uri = "https://fcm.googleapis.com/fcm/send";
     my $json;
+    # use zmNinja FCM key if the user did not override
     my $key="key=" . $fcm_api_key;
 
     
@@ -1306,6 +1321,7 @@ sub initSocketServer
     my $ssl_server;
     if ($ssl_enabled)
     {
+        print $ssl_cert_file." ".$ssl_key_file;
         Info ("About to start listening to socket");
 	eval {
   	       $ssl_server = IO::Socket::SSL->new(
