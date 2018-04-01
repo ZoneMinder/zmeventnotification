@@ -55,11 +55,31 @@ my $app_version="1.0";
 
 # ==========================================================================
 #
-# These are the elements you can edit to suit your installation
-#
+# These are app defaults
+# Note that you  really should not have to to change these values. 
+# It is better you change them inside the ini file.
+# These values are used ONLY if the server cannot find its ini file
+# The only one you may want to change is DEFAULT_CONFIG_FILE to point
+# to your custom ini file if you don't use --config. The rest should
+# go into that config file.
 # ==========================================================================
 
 use constant DEFAULT_CONFIG_FILE => "/etc/zmeventnotification.ini";
+
+use constant DEFAULT_PORT => 9000;
+use constant DEFAULT_AUTH_ENABLE => 1;
+use constant DEFAULT_AUTH_TIMEOUT => 20;
+use constant DEFAULT_FCM_ENABLE => 1;
+use constant DEFAULT_FCM_TOKEN_FILE => '/etc/private/tokens.txt';
+use constant DEFAULT_SSL_ENABLE => 1;
+
+use constant DEFAULT_CUSTOMIZE_VERBOSE => 0;
+use constant DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL => 5;
+use constant DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL => 300;
+use constant DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE => 0;
+use constant DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID => 0;
+use constant DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND => 0;
+
 
 # Declare options.
 
@@ -211,25 +231,25 @@ if ($config_file_present) {
 # it.  Otherwise, use a default value if it's available.
 
 
-$port //= config_get_val($config, "network", "port", 9000);
+$port //= config_get_val($config, "network", "port", DEFAULT_PORT);
 
-$auth_enabled //= config_get_val($config, "auth", "enable",  1);
-$auth_timeout //= config_get_val($config, "auth", "timeout", 20);
+$auth_enabled //= config_get_val($config, "auth", "enable",  DEFAULT_AUTH_ENABLE);
+$auth_timeout //= config_get_val($config, "auth", "timeout", DEFAULT_AUTH_TIMEOUT);
 
-$use_fcm     //= config_get_val($config, "fcm", "enable",     1);
+$use_fcm     //= config_get_val($config, "fcm", "enable",     DEFAULT_FCM_ENABLE);
 $fcm_api_key //= config_get_val($config, "fcm", "api_key", NINJA_API_KEY);
-$token_file  //= config_get_val($config, "fcm", "token_file", "/etc/private/tokens.txt");
+$token_file  //= config_get_val($config, "fcm", "token_file", DEFAULT_FCM_TOKEN_FILE);
 
-$ssl_enabled   //= config_get_val($config, "ssl", "enable", 1);
+$ssl_enabled   //= config_get_val($config, "ssl", "enable", DEFAULT_SSL_ENABLE);
 $ssl_cert_file //= config_get_val($config, "ssl", "cert");
 $ssl_key_file  //= config_get_val($config, "ssl", "key");
 
-$verbose                       //= config_get_val($config, "customize", "verbose",                       0);
-$event_check_interval          //= config_get_val($config, "customize", "event_check_interval",          5);
-$monitor_reload_interval       //= config_get_val($config, "customize", "monitor_reload_interval",       300);
-$read_alarm_cause              //= config_get_val($config, "customize", "read_alarm_cause",              0);
-$tag_alarm_event_id            //= config_get_val($config, "customize", "tag_alarm_event_id",            0);
-$use_custom_notification_sound //= config_get_val($config, "customize", "use_custom_notification_sound", 1);
+$verbose                       //= config_get_val($config, "customize", "verbose",                       DEFAULT_CUSTOMIZE_VERBOSE);
+$event_check_interval          //= config_get_val($config, "customize", "event_check_interval",          DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL);
+$monitor_reload_interval       //= config_get_val($config, "customize", "monitor_reload_interval",       DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL);
+$read_alarm_cause              //= config_get_val($config, "customize", "read_alarm_cause",              DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE);
+$tag_alarm_event_id            //= config_get_val($config, "customize", "tag_alarm_event_id",            DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID);
+$use_custom_notification_sound //= config_get_val($config, "customize", "use_custom_notification_sound", DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND);
 
 my %ssl_push_opts = ();
 
