@@ -551,7 +551,7 @@ sub loadMonitors
 
 sub validateZM
 {
-    return 1 if ! $auth_enabled;
+    return 1 unless $auth_enabled;
     my ($u,$p) = @_;
     return 0 if ( $u eq "" || $p eq "");
     my $sql = 'select Password from Users where Username=?';
