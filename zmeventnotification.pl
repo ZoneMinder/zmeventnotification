@@ -34,16 +34,6 @@
 #
 # ==========================================================================
 
-
-#sudo perl -MCPAN -e "install Crypt::MySQL"
-#sudo perl -MCPAN -e "install Net::WebSocket::Server"
-
-#For pushProxy
-#sudo perl -MCPAN -e "install LWP::Protocol::https"
-
-use File::Basename;
-use File::Spec;
-
 use strict;
 use bytes;
 
@@ -104,9 +94,11 @@ use constant NINJA_API_KEY => "AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bA
 
 # This part makes sure we have the right deps
 if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");}
-if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL  missing");}
-if (!try_use ("Config::IniFiles")) {Fatal ("Config::Inifiles  missing");}
-if (!try_use ("Getopt::Long")) {Fatal ("Getopt::Long  missing");}
+if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL missing");}
+if (!try_use ("Config::IniFiles")) {Fatal ("Config::Inifiles missing");}
+if (!try_use ("Getopt::Long")) {Fatal ("Getopt::Long missing");}
+if (!try_use ("File::Basename")) {Fatal ("File::Basename missing");}
+if (!try_use ("File::Spec")) {Fatal ("File::Spec missing");}
 if (!try_use ("Crypt::MySQL qw(password password41)")) {Fatal ("Crypt::MySQL  missing");}
 
 if (!try_use ("JSON")) 
