@@ -103,11 +103,11 @@ my $use_custom_notification_sound;
 use constant NINJA_API_KEY => "AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h";
 
 # This part makes sure we have the right deps
-if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");exit (-1);}
-if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL  missing");exit (-1);}
-if (!try_use ("Config::IniFiles")) {Fatal ("Config::Inifiles  missing");exit (-1);}
-if (!try_use ("Getopt::Long")) {Fatal ("Getopt::Long  missing");exit (-1);}
-if (!try_use ("Crypt::MySQL qw(password password41)")) {Fatal ("Crypt::MySQL  missing");exit (-1);}
+if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");}
+if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL  missing");}
+if (!try_use ("Config::IniFiles")) {Fatal ("Config::Inifiles  missing");}
+if (!try_use ("Getopt::Long")) {Fatal ("Getopt::Long  missing");}
+if (!try_use ("Crypt::MySQL qw(password password41)")) {Fatal ("Crypt::MySQL  missing");}
 
 if (!try_use ("JSON")) 
 { 
@@ -123,8 +123,7 @@ Usage: zmeventnotification.pl [OPTION]...
   --help                              Print this page.
 
   --config=FILE                       Read options from configuration file (default: /etc/zmeventnotification.ini).
-
-  Using --config is preferred. You can however override individual parameters from command line if you prefer:
+                                      Any CLI options used below will override config settings.
 
   --check-config                      Print configuration and exit.
 
@@ -135,7 +134,7 @@ Usage: zmeventnotification.pl [OPTION]...
 
   --enable-fcm                        Use FCM for messaging (default: true).
   --no-enable-fcm                     Don't use FCM for messaging (default: false).
-  --fcm-api-key=KEY                   API key for FCM.
+  --fcm-api-key=KEY                   API key for FCM (default: zmNinja FCM key).
   --token-file=FILE                   Auth token store location (default: /etc/private/tokens.txt).
 
   --enable-ssl                        Enable SSL (default: true).
@@ -195,7 +194,6 @@ if (! $config_file) {
 } else {
   if ( ! -e $config_file) {
     Fatal ("$config_file does not exist!"); 
-    exit(-1);
   }
   $config_file_present = 1;
 }
@@ -211,7 +209,6 @@ if ($config_file_present) {
       "Encountered errors while reading $config_file:\n" .
       join("\n", @Config::IniFiles::errors)
     );
-    exit(-1);
   }
 } else {
   $config = Config::IniFiles->new;
@@ -221,29 +218,31 @@ if ($config_file_present) {
 # If an option set a value, leave it.  If there's a value in the config, use
 # it.  Otherwise, use a default value if it's available.
 
-$port = $config->val("network", "port") || 9000 if (!$port);
-$auth_enabled = $config->val("auth", "enable") || 1 if (!$auth_enabled);
-$auth_timeout = $config->val("auth", "timeout") || 20 if (!$auth_timeout);
 
-$use_fcm    = $config->val("fcm", "enable") || 1 if (!$use_fcm);
-$fcm_api_key = $config->val("fcm", "api_key") || NINJA_API_KEY if (!$fcm_api_key);
-$token_file  = $config->val("fcm", "token_file") ||  "/etc/private/tokens.txt" if (!$token_file);
-$ssl_enabled   = $config->val("ssl", "enable") || 0 if (!$ssl_enabled); # don't assume SSL if CLI
-$ssl_cert_file = $config->val("ssl", "cert") if (!$ssl_cert_file);
-$ssl_key_file  = $config->val("ssl", "key") if (!$ssl_key_file);
+$port //= config_get_val($config, "network", "port", 9000);
 
-$verbose                       = $config->val("customize", "verbose") || 0 if (!$verbose);
-$event_check_interval          = $config->val("customize", "event_check_interval") || 5 if (!$event_check_interval);
-$monitor_reload_interval       = $config->val("customize", "monitor_reload_interval") || 300 if (!$monitor_reload_interval);
-$read_alarm_cause              = $config->val("customize", "read_alarm_cause") || 0 if (!$read_alarm_cause);
-$tag_alarm_event_id            = $config->val("customize", "tag_alarm_event_id") || 0 if (!$tag_alarm_event_id);
-$use_custom_notification_sound = $config->val("customize", "use_custom_notification_sound") if (!$use_custom_notification_sound);
+$auth_enabled //= config_get_val($config, "auth", "enable",  1);
+$auth_timeout //= config_get_val($config, "auth", "timeout", 20);
+
+$use_fcm     //= config_get_val($config, "fcm", "enable",     1);
+$fcm_api_key //= config_get_val($config, "fcm", "api_key", NINJA_API_KEY);
+$token_file  //= config_get_val($config, "fcm", "token_file", "/etc/private/tokens.txt");
+
+$ssl_enabled   //= config_get_val($config, "ssl", "enable", 1);
+$ssl_cert_file //= config_get_val($config, "ssl", "cert");
+$ssl_key_file  //= config_get_val($config, "ssl", "key");
+
+$verbose                       //= config_get_val($config, "customize", "verbose",                       0);
+$event_check_interval          //= config_get_val($config, "customize", "event_check_interval",          5);
+$monitor_reload_interval       //= config_get_val($config, "customize", "monitor_reload_interval",       300);
+$read_alarm_cause              //= config_get_val($config, "customize", "read_alarm_cause",              0);
+$tag_alarm_event_id            //= config_get_val($config, "customize", "tag_alarm_event_id",            0);
+$use_custom_notification_sound //= config_get_val($config, "customize", "use_custom_notification_sound", 1);
 
 my %ssl_push_opts = ();
 
 if ($ssl_enabled && (!$ssl_cert_file || !$ssl_key_file)) {
     Fatal ("SSL is enabled, but key or certificate file is missing");
-    exit(-1);
 }
 
 my $notId = 1;
@@ -253,6 +252,14 @@ use constant INVALID_WEBSOCKET => '-1';
 use constant INVALID_APNS      => '-2';
 use constant INVALID_AUTH      => '-3';
 use constant VALID_WEBSOCKET   => '0';
+
+# this is just a wrapper around Config::IniFiles val
+# older versions don't support a default parameter
+sub config_get_val {
+    my ( $config, $sect, $parm, $def ) = @_;
+    my $val = $config->val($sect, $parm);
+    return defined($val)? $val:$def;
+}
 
 sub true_or_false {
   return $_[0] ? "true" : "false";
@@ -285,7 +292,7 @@ Auth enabled .................. ${\(true_or_false($auth_enabled))}
 Auth timeout .................. ${\(value_or_undefined($auth_timeout))}
 
 Use FCM ....................... ${\(true_or_false($use_fcm))}
-FCM API key ................... ${\(value_or_undefined($fcm_api_key))}
+FCM API key ................... ${\(present_or_not($fcm_api_key))}
 Token file .................... ${\(value_or_undefined($token_file))}
 
 SSL enabled ................... ${\(true_or_false($ssl_enabled))}
@@ -312,7 +319,6 @@ if ($use_fcm)
     if (!try_use ("LWP::UserAgent") || !try_use ("URI::URL") || !try_use("LWP::Protocol::https"))
     {
         Fatal ("PushProxy mode needs LWP::Protocol::https, LWP::UserAgent and URI::URL perl packages installed");
-        exit(-1);
     }
     else
     {

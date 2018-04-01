@@ -43,7 +43,7 @@
 <!-- /TOC -->
 
 ## Breaking changes - version 1.0 onwards
-version 1.0 moves configuration to a separate `zmeventnotification.ini` file that makes it easier to re-configure. If you are already
+Version 1.0 moves configuration to a separate `zmeventnotification.ini` file that makes it easier to re-configure. If you are already
 a user of previous versions and want to migrate to 1.0, please make sure you copy `zmeventnotification.ini` to `/etc`. You will need
 to re-configure the params to your liking in the ini file.
 
@@ -217,7 +217,7 @@ Auth enabled .................. true
 Auth timeout .................. 20
 
 Use FCM ....................... true
-FCM API key ................... <sequence of characters>
+FCM API key ................... (defined)
 Token file .................... /etc/private/tokens.txt
 
 SSL enabled ................... true
