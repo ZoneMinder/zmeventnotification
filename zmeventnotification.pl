@@ -34,20 +34,13 @@
 #
 # ==========================================================================
 
-
-
-#sudo perl -MCPAN -e "install Crypt::MySQL"
-#sudo perl -MCPAN -e "install Net::WebSocket::Server"
-
-#For pushProxy
-#sudo perl -MCPAN -e "install LWP::Protocol::https"
-
-use File::Basename;
-
 use strict;
 use bytes;
 
 # ==========================================================================
+#
+# Starting v1.0, configuration has moved to a separate file, please make sure
+# you see README
 #
 # Starting v0.95, I've moved to FCM which means I no longer need to maintain
 # my own push server. Plus this uses HTTP which is the new recommended
@@ -58,74 +51,286 @@ use bytes;
 # ==========================================================================
 
 
-my $app_version="0.98.5";
+my $app_version="1.0";
 
 # ==========================================================================
 #
-# These are the elements you can edit to suit your installation
-#
+# These are app defaults
+# Note that you  really should not have to to change these values. 
+# It is better you change them inside the ini file.
+# These values are used ONLY if the server cannot find its ini file
+# The only one you may want to change is DEFAULT_CONFIG_FILE to point
+# to your custom ini file if you don't use --config. The rest should
+# go into that config file.
 # ==========================================================================
-use constant EVENT_NOTIFICATION_PORT=>9000;                 # port for Websockets connection
-my $useSecure = 1;                                          # make this 0 if you don't want SSL
-my $noAuth = 0;                                             # make 1 to NOT check username/password against zoneminder Database
-my $readAlarmCause = 0;				            # make this 1 ONLY if you are running ZM >=1.31.2 OR THIS WILL CRASH
+
+use constant DEFAULT_CONFIG_FILE => "/etc/zmeventnotification.ini";
+
+use constant DEFAULT_PORT => 9000;
+use constant DEFAULT_AUTH_ENABLE => 1;
+use constant DEFAULT_AUTH_TIMEOUT => 20;
+use constant DEFAULT_FCM_ENABLE => 1;
+use constant DEFAULT_FCM_TOKEN_FILE => '/etc/private/tokens.txt';
+use constant DEFAULT_SSL_ENABLE => 1;
+
+use constant DEFAULT_CUSTOMIZE_VERBOSE => 0;
+use constant DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL => 5;
+use constant DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL => 300;
+use constant DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE => 0;
+use constant DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID => 0;
+use constant DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND => 0;
 
 
-# ignore if useSecure is 0
-use constant SSL_CERT_FILE=>'/etc/apache2/ssl/zoneminder.crt';      # Change these to your certs/keys
-use constant SSL_KEY_FILE=>'/etc/apache2/ssl/zoneminder.key';
+# Declare options.
 
-# if you only want to enable websockets make both of these 0
-my $useFCM = 1;               # set this to 1 to use FCM for messaging (keep this to 1, really)
-# PUSH_TOKEN_FILE is needed for pushProxy mode as well as direct APNS mode
-# change this to a directory and file of your choosing. 
-# This server will create the file if it does not exist
+my $help;
 
-use constant PUSH_TOKEN_FILE=>'/etc/private/tokens.txt'; # MAKE SURE THIS DIRECTORY HAS WWW-DATA PERMISSIONS
+my $config_file;
+my $config_file_present;
+my $check_config;
 
-my $printDebugToConsole = 0; # set this to OFF unless you are debugging. If 1, make sure its NOT running via zmdc
-my %ssl_push_opts = ();
+my $port;
 
+my $auth_enabled;
+my $auth_timeout;
 
-use constant PUSH_CHECK_REACH_INTERVAL => 3600;             # time in seconds to do a reachability test with push proxt
-use constant SLEEP_DELAY=>5;                                # duration in seconds after which we will check for new events
-use constant MONITOR_RELOAD_INTERVAL => 300;
-use constant WEBSOCKET_AUTH_DELAY => 20;                # max seconds by which authentication must be done
+my $use_fcm;
+my $fcm_api_key;
+my $token_file;
 
-use constant PENDING_WEBSOCKET => '1';
-use constant INVALID_WEBSOCKET => '-1';
-use constant INVALID_APNS => '-2';
-use constant INVALID_AUTH => '-3';
-use constant VALID_WEBSOCKET => '0';
+my $ssl_enabled;
+my $ssl_cert_file;
+my $ssl_key_file;
 
+my $verbose;
+my $event_check_interval;
+my $monitor_reload_interval;
+my $read_alarm_cause;
+my $tag_alarm_event_id;
+my $use_custom_notification_sound;
 
-my $alarmEventId = 0;           # tags the event id along with the alarm - useful for correlation
-                                # only for geeks though - most people won't give a damn. I do.
+#default key. Please don't change this
+use constant NINJA_API_KEY => "AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h";
 
-# customSound is not used for now starting 0.95 since I moved to FCM
-my $useCustomNotificationSound = 1;     # set to 0 for default sound
-
-my $notId = 1;
-
-
-# This part makes sure we have the righ deps
-if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");exit (-1);}
-if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL  missing");exit (-1);}
-if (!try_use ("Crypt::MySQL qw(password password41)")) {Fatal ("Crypt::MySQL  missing");exit (-1);}
+# This part makes sure we have the right deps
+if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");}
+if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL missing");}
+if (!try_use ("Config::IniFiles")) {Fatal ("Config::Inifiles missing");}
+if (!try_use ("Getopt::Long")) {Fatal ("Getopt::Long missing");}
+if (!try_use ("File::Basename")) {Fatal ("File::Basename missing");}
+if (!try_use ("File::Spec")) {Fatal ("File::Spec missing");}
+if (!try_use ("Crypt::MySQL qw(password password41)")) {Fatal ("Crypt::MySQL  missing");}
 
 if (!try_use ("JSON")) 
 { 
     if (!try_use ("JSON::XS")) 
     { Fatal ("JSON or JSON::XS  missing");exit (-1);}
-} 
+}
+# Fetch whatever options are available from CLI arguments.
+
+use constant USAGE => <<'USAGE';
+
+Usage: zmeventnotification.pl [OPTION]...
+
+  --help                              Print this page.
+
+  --config=FILE                       Read options from configuration file (default: /etc/zmeventnotification.ini).
+                                      Any CLI options used below will override config settings.
+
+  --check-config                      Print configuration and exit.
+
+  --port=PORT                         Port for Websockets connection (default: 9000).
+
+  --enable-auth                       Check username/password against ZoneMinder database (default: true).
+  --no-enable-auth                    Don't check username/password against ZoneMinder database (default: false).
+
+  --enable-fcm                        Use FCM for messaging (default: true).
+  --no-enable-fcm                     Don't use FCM for messaging (default: false).
+  --fcm-api-key=KEY                   API key for FCM (default: zmNinja FCM key).
+  --token-file=FILE                   Auth token store location (default: /etc/private/tokens.txt).
+
+  --enable-ssl                        Enable SSL (default: true).
+  --no-enable-ssl                     Disable SSL (default: false).
+  --ssl-cert-file=FILE                Location to SSL cert file.
+  --ssl-key-file=FILE                 Location to SSL key file.
+
+  --verbose                           Display messages to console (default: false).
+  --no-verbose                        Don't display messages to console (default: true).
+  --event-check-interval=SECONDS      Interval, in seconds, after which we will check for new events (default: 5).
+  --monitor-reload-interval=SECONDS   Interval, in seconds, to reload known monitors (default: 300).
+  --read-alarm-cause                  Read monitor alarm cause (Requires ZoneMinder >= 1.31.2, default: false).
+  --no-read-alarm-cause               Don't read monitor alarm cause (default: true).
+  --tag-alarm-event-id                Tag event IDs with the alarm (default: false).
+  --no-tag-alarm-event-id             Don't tag event IDs with the alarm (default: true).
+  --use-custom-notification-sound     Use custom notification sound (default: true).
+  --no-use-custom-notification-sound  Don't use custom notification sound (default: false).
+
+USAGE
+
+GetOptions(
+  "help"                           => \$help,
+
+  "config=s"                       => \$config_file,
+  "check-config"                   => \$check_config,
+
+  "port=i"                         => \$port,
+
+  "enable-auth!"                   => \$auth_enabled,
+
+  "enable-fcm!"                    => \$use_fcm,
+  "fcm-api-key=s"                  => \$fcm_api_key,
+  "token-file=s"                   => \$token_file,
+
+  "enable-ssl!"                    => \$ssl_enabled,
+  "ssl-cert-file=s"                => \$ssl_cert_file,
+  "ssl-key-file=s"                 => \$ssl_key_file,
+
+  "verbose!"                       => \$verbose,
+  "event-check-interval=i"         => \$event_check_interval,
+  "monitor-reload-interval=i"      => \$monitor_reload_interval,
+  "read-alarm-cause!"              => \$read_alarm_cause,
+  "tag-alarm-event-id!"            => \$tag_alarm_event_id,
+  "use-custom-notification-sound!" => \$use_custom_notification_sound
+);
+
+exit(print(USAGE)) if $help;
+
+# Read options from a configuration file.  If --config is specified, try to
+# read it and fail if it can't be read.  Otherwise, try the default
+# configuration path, and if it doesn't exist, take all the default values by
+# loading a blank Config::IniFiles object.
+
+if (! $config_file) {
+  $config_file = DEFAULT_CONFIG_FILE;
+  $config_file_present = -e $config_file;
+} else {
+  if ( ! -e $config_file) {
+    Fatal ("$config_file does not exist!"); 
+  }
+  $config_file_present = 1;
+}
+
+my $config;
+
+if ($config_file_present) {
+  Info ("using config file: $config_file");
+  $config = Config::IniFiles->new(-file => $config_file);
+
+  unless ($config) {
+    Fatal(
+      "Encountered errors while reading $config_file:\n" .
+      join("\n", @Config::IniFiles::errors)
+    );
+  }
+} else {
+  $config = Config::IniFiles->new;
+  Info ("No config file found, using inbuilt defaults");
+}
+
+# If an option set a value, leave it.  If there's a value in the config, use
+# it.  Otherwise, use a default value if it's available.
+
+
+$port //= config_get_val($config, "network", "port", DEFAULT_PORT);
+
+$auth_enabled //= config_get_val($config, "auth", "enable",  DEFAULT_AUTH_ENABLE);
+$auth_timeout //= config_get_val($config, "auth", "timeout", DEFAULT_AUTH_TIMEOUT);
+
+$use_fcm     //= config_get_val($config, "fcm", "enable",     DEFAULT_FCM_ENABLE);
+$fcm_api_key //= config_get_val($config, "fcm", "api_key", NINJA_API_KEY);
+$token_file  //= config_get_val($config, "fcm", "token_file", DEFAULT_FCM_TOKEN_FILE);
+
+$ssl_enabled   //= config_get_val($config, "ssl", "enable", DEFAULT_SSL_ENABLE);
+$ssl_cert_file //= config_get_val($config, "ssl", "cert");
+$ssl_key_file  //= config_get_val($config, "ssl", "key");
+
+$verbose                       //= config_get_val($config, "customize", "verbose",                       DEFAULT_CUSTOMIZE_VERBOSE);
+$event_check_interval          //= config_get_val($config, "customize", "event_check_interval",          DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL);
+$monitor_reload_interval       //= config_get_val($config, "customize", "monitor_reload_interval",       DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL);
+$read_alarm_cause              //= config_get_val($config, "customize", "read_alarm_cause",              DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE);
+$tag_alarm_event_id            //= config_get_val($config, "customize", "tag_alarm_event_id",            DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID);
+$use_custom_notification_sound //= config_get_val($config, "customize", "use_custom_notification_sound", DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND);
+
+my %ssl_push_opts = ();
+
+if ($ssl_enabled && (!$ssl_cert_file || !$ssl_key_file)) {
+    Fatal ("SSL is enabled, but key or certificate file is missing");
+}
+
+my $notId = 1;
+
+use constant PENDING_WEBSOCKET => '1';
+use constant INVALID_WEBSOCKET => '-1';
+use constant INVALID_APNS      => '-2';
+use constant INVALID_AUTH      => '-3';
+use constant VALID_WEBSOCKET   => '0';
+
+# this is just a wrapper around Config::IniFiles val
+# older versions don't support a default parameter
+sub config_get_val {
+    my ( $config, $sect, $parm, $def ) = @_;
+    my $val = $config->val($sect, $parm);
+    return defined($val)? $val:$def;
+}
+
+sub true_or_false {
+  return $_[0] ? "true" : "false";
+}
+
+sub value_or_undefined {
+  return $_[0] || "(undefined)";
+}
+
+sub present_or_not {
+  return $_[0] ? "(defined)" : "(undefined)";
+}
+
+sub print_config {
+  my $abs_config_file = File::Spec->rel2abs($config_file);
+
+  print(<<"EOF"
+
+${\(
+  $config_file_present ?
+  "Configuration (read $abs_config_file)" :
+  "Default configuration ($abs_config_file doesn't exist)"
+)}:
+
+Port .......................... ${\(value_or_undefined($port))}
+Event check interval .......... ${\(value_or_undefined($event_check_interval))}
+Monitor reload interval ....... ${\(value_or_undefined($monitor_reload_interval))}
+
+Auth enabled .................. ${\(true_or_false($auth_enabled))}
+Auth timeout .................. ${\(value_or_undefined($auth_timeout))}
+
+Use FCM ....................... ${\(true_or_false($use_fcm))}
+FCM API key ................... ${\(present_or_not($fcm_api_key))}
+Token file .................... ${\(value_or_undefined($token_file))}
+
+SSL enabled ................... ${\(true_or_false($ssl_enabled))}
+SSL cert file ................. ${\(value_or_undefined($ssl_cert_file))}
+SSL key file .................. ${\(value_or_undefined($ssl_key_file))}
+
+Verbose ....................... ${\(true_or_false($verbose))}
+Read alarm cause .............. ${\(true_or_false($read_alarm_cause))}
+Tag alarm event id ............ ${\(true_or_false($tag_alarm_event_id))}
+Use custom notification sound . ${\(true_or_false($use_custom_notification_sound))}
+
+EOF
+  )
+}
+
+exit(print_config()) if $check_config;
+print_config() if $verbose;
+
+ 
 
 # Lets now load all the dependent libraries in a failsafe way
-if ($useFCM)
+if ($use_fcm)
 {
     if (!try_use ("LWP::UserAgent") || !try_use ("URI::URL") || !try_use("LWP::Protocol::https"))
     {
         Fatal ("PushProxy mode needs LWP::Protocol::https, LWP::UserAgent and URI::URL perl packages installed");
-        exit(-1);
     }
     else
     {
@@ -182,9 +387,12 @@ my $alarm_eid="";
 
 
 printdbg ("******You are running version: $app_version");
-if ($useFCM)
+
+printdbg("WARNING: SSL is disabled, which means all traffic will be unencrypted!") unless $ssl_enabled;
+
+if ($use_fcm)
 {
-    my $dir = dirname(PUSH_TOKEN_FILE);
+    my $dir = dirname($token_file);
     if ( ! -d $dir)
     {
 
@@ -215,7 +423,7 @@ sub printdbg
 {
 	my $a = shift;
     my $now = strftime('%Y-%m-%d,%H:%M:%S',localtime);
-    print($now," ",$a, "\n") if $printDebugToConsole;
+    print($now," ",$a, "\n") if $verbose;
 }
 
 # This function uses shared memory polling to check if 
@@ -226,7 +434,7 @@ sub checkEvents()
 {
     
     my $eventFound = 0;
-    if ( (time() - $monitor_reload_time) > MONITOR_RELOAD_INTERVAL )
+    if ( (time() - $monitor_reload_time) > $monitor_reload_interval )
     {
         my $len = scalar @active_connections;
         Info ("Total event client connections: ".$len."\n");
@@ -273,7 +481,7 @@ sub checkEvents()
             if ( !defined($monitor->{LastEvent})
                          || ($last_event != $monitor->{LastEvent}))
             {
-                $alarm_cause=zmMemRead($monitor,"shared_data:alarm_cause") if ($readAlarmCause);
+                $alarm_cause=zmMemRead($monitor,"shared_data:alarm_cause") if ($read_alarm_cause);
                 $alarm_cause = $trigger_cause if (defined($trigger_cause) && $alarm_cause eq "" && $trigger_cause ne "");
                 printdbg ("Unified Alarm details: $alarm_cause");
                 Info( "New event $last_event reported for ".$monitor->{Name}." ".$alarm_cause."\n");
@@ -290,7 +498,7 @@ sub checkEvents()
                 $alarm_header = $alarm_header." ".$alarm_cause if (defined $alarm_cause);
                 $alarm_header = $alarm_header." ".$trigger_cause if (defined $trigger_cause);
                 $alarm_mid = $alarm_mid.$mid.",";
-                $alarm_header = $alarm_header . " (".$last_event.") " if ($alarmEventId);
+                $alarm_header = $alarm_header . " (".$last_event.") " if ($tag_alarm_event_id);
                 $alarm_header = $alarm_header . "," ;
                 $eventFound = 1;
             }
@@ -355,7 +563,7 @@ sub loadMonitors
 
 sub validateZM
 {
-    return 1 if $noAuth;
+    return 1 unless $auth_enabled;
     my ($u,$p) = @_;
     return 0 if ( $u eq "" || $p eq "");
     my $sql = 'select Password from Users where Username=?';
@@ -382,14 +590,14 @@ sub deleteToken
 {
     my $dtoken = shift;
     printdbg ("DeleteToken called with $dtoken");
-    return if ( ! -f PUSH_TOKEN_FILE);
+    return if ( ! -f $token_file);
     
-    open (my $fh, '<', PUSH_TOKEN_FILE);
+    open (my $fh, '<', $token_file);
     chomp( my @lines = <$fh>);
     close ($fh);
     my @uniquetokens = uniq(@lines);
 
-    open ($fh, '>', PUSH_TOKEN_FILE);
+    open ($fh, '>', $token_file);
 
     foreach(@uniquetokens)
     {
@@ -424,7 +632,8 @@ sub sendOverFCM
     $obj->{badge}++;
     my $uri = "https://fcm.googleapis.com/fcm/send";
     my $json;
-    my $key="key=AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h";
+    # use zmNinja FCM key if the user did not override
+    my $key="key=" . $fcm_api_key;
 
     
     if ($obj->{platform} eq "ios")
@@ -519,7 +728,7 @@ sub sendOverPushProxy
     # Not passing full JSON object - so that payload is limited for now
     if ($obj->{platform} eq "ios")
     {
-        if ($useCustomNotificationSound)
+        if ($use_custom_notification_sound)
         {
             $json = encode_json ({
                 device=>$obj->{platform},
@@ -548,7 +757,7 @@ sub sendOverPushProxy
     }
     else # android
     {
-        if ($useCustomNotificationSound)
+        if ($use_custom_notification_sound)
         {
             $json = encode_json ({
                 device=>$obj->{platform},
@@ -602,7 +811,7 @@ sub checkConnection
         if ($_->{pending} == PENDING_WEBSOCKET)
         {
             # This takes care of purging connections that have not authenticated
-            if ($curtime - $_->{time} > WEBSOCKET_AUTH_DELAY)
+            if ($curtime - $_->{time} > $auth_timeout)
             {
             # What happens if auth is not provided but device token is registered?
             # It may still be a bogus token, so don't risk keeping connection stored
@@ -642,7 +851,7 @@ sub checkConnection
 #        Debug ("Active connects after INVALID_WEBSOCKET purge=$ac1 ($purged purged)");
 #    }
 
-    if ($useFCM)
+    if ($use_fcm)
     {
         #@active_connections = grep { $_->{'pending'} != INVALID_APNS || $_->{'token'} ne ''} @active_connections;
         @active_connections = grep { $_->{'pending'} != INVALID_APNS} @active_connections;
@@ -678,7 +887,7 @@ sub checkMessage
     }
 
     # This event type is when a command related to push notification is received
-    if (($json_string->{'event'} eq "push") && !$useFCM)
+    if (($json_string->{'event'} eq "push") && !$use_fcm)
     {
         my $str = encode_json({event=>'push', type=>'',status=>'Fail', reason => 'PUSHDISABLED'});
         eval {$conn->send_utf8($str);};
@@ -687,7 +896,7 @@ sub checkMessage
     #-----------------------------------------------------------------------------------
     # "push" event processing
     #-----------------------------------------------------------------------------------
-    elsif (($json_string->{'event'} eq "push") && $useFCM)
+    elsif (($json_string->{'event'} eq "push") && $use_fcm)
     {
         # sets the unread event count of events for a specific connection
         # the server keeps a tab of # of events it pushes out per connection
@@ -915,16 +1124,16 @@ sub checkMessage
 
 sub loadTokens
 {
-    return if (!$useFCM);
-    if ( ! -f PUSH_TOKEN_FILE)
+    return if (!$use_fcm);
+    if ( ! -f $token_file)
     {
-        open (my $foh, '>', PUSH_TOKEN_FILE);
-        Info ("Creating ".PUSH_TOKEN_FILE);
+        open (my $foh, '>', $token_file);
+        Info ("Creating ".$token_file);
         print $foh "";
         close ($foh);
     }
     
-    open (my $fh, '<', PUSH_TOKEN_FILE);
+    open (my $fh, '<', $token_file);
     chomp( my @lines = <$fh>);
     close ($fh);
 
@@ -933,7 +1142,7 @@ sub loadTokens
     printdbg ("Calling uniq from loadTokens");
     my @uniquetokens = uniq(@lines);
 
-    open ($fh, '>', PUSH_TOKEN_FILE);
+    open ($fh, '>', $token_file);
     # This makes sure we rewrite the file with
     # unique tokens
     foreach(@uniquetokens)
@@ -967,7 +1176,7 @@ sub loadTokens
 
 sub saveTokens
 {
-    return if (!$useFCM);
+    return if (!$use_fcm);
     my $stoken = shift;
     if ($stoken eq "") {printdbg ("Not saving, no token. Desktop?"); return};
     my $smonlist = shift;
@@ -985,12 +1194,12 @@ sub saveTokens
     Info ("SaveTokens called with:monlist=$smonlist, intlist=$sintlist, platform=$splatform, push=$spushstate");
     
     return if ($stoken eq "");
-    open (my $fh, '<', PUSH_TOKEN_FILE) || Fatal ("Cannot open for read ".PUSH_TOKEN_FILE);
+    open (my $fh, '<', $token_file) || Fatal ("Cannot open for read ".$token_file);
     chomp( my @lines = <$fh>);
     close ($fh);
     my @uniquetokens = uniq(@lines);
     my $found = 0;
-    open (my $fh, '>', PUSH_TOKEN_FILE) || Fatal ("Cannot open for write ".PUSH_TOKEN_FILE);
+    open (my $fh, '>', $token_file) || Fatal ("Cannot open for write ".$token_file);
     foreach (@uniquetokens)
     {
         next if ($_ eq "");
@@ -1025,7 +1234,7 @@ sub saveTokens
     	print $fh "$stoken:$smonlist:$sintlist:$splatform:$spushstate\n";
     }
     close ($fh);
-    #registerOverPushProxy($stoken,$splatform) if ($useFCM);
+    #registerOverPushProxy($stoken,$splatform) if ($use_fcm);
     #print "Saved Token $token to file\n";
     return ($smonlist, $sintlist);
     
@@ -1133,19 +1342,19 @@ sub initSocketServer
 {
     checkEvents();
     my $ssl_server;
-    if ($useSecure)
+    if ($ssl_enabled)
     {
         Info ("About to start listening to socket");
 	eval {
   	       $ssl_server = IO::Socket::SSL->new(
 		      Listen        => 10,
-		      LocalPort     => EVENT_NOTIFICATION_PORT,
+		      LocalPort     => $port,
 		      LocalAddr => '[::]',
 		      Proto         => 'tcp',
 		      Reuse     => 1,
 		      ReuseAddr     => 1,
-		      SSL_cert_file => SSL_CERT_FILE,
-		      SSL_key_file  => SSL_KEY_FILE
+		      SSL_cert_file => $ssl_cert_file,
+		      SSL_key_file  => $ssl_key_file
 		    );
 	};
 	if ($@) {
@@ -1159,11 +1368,11 @@ sub initSocketServer
     {
         Info ("Secure WS is disabled...");
     }
-    Info ("Web Socket Event Server listening on port ".EVENT_NOTIFICATION_PORT."\n");
+    Info ("Web Socket Event Server listening on port ".$port."\n");
 
     $wss = Net::WebSocket::Server->new(
-        listen => $useSecure ? $ssl_server : EVENT_NOTIFICATION_PORT,
-        tick_period => SLEEP_DELAY,
+        listen => $ssl_enabled ? $ssl_server : $port,
+        tick_period => $event_check_interval,
         on_tick => sub {
             checkConnection();
             my $ac = scalar @active_connections;
@@ -1238,7 +1447,7 @@ sub initSocketServer
                         # when websockets override is enabled
                         if (($_->{token} ne "") && ($_->{pushstate} ne "disabled" ) && ($_->{pending} != PENDING_WEBSOCKET))
                         {
-                            if ($useFCM)
+                            if ($use_fcm)
                             {
                                 Info ("Sending notification over PushProxy");
                                 #sendOverPushProxy($_,$alarm_header, $alarm_mid, $str) ;     
