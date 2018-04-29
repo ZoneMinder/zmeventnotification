@@ -3,8 +3,9 @@
 
 <!-- TOC -->
 
-- [Breaking changes - version 1.0 onwards](#breaking-changes---version-10-onwards)
-- [Breaking changes - version 0.95 onwards](#breaking-changes---version-095-onwards)
+- [Breaking Changes](#breaking-changes)
+    - [Breaking changes - version 1.0 onwards](#breaking-changes---version-10-onwards)
+    - [Breaking changes - version 0.95 onwards](#breaking-changes---version-095-onwards)
 - [What is it?](#what-is-it)
 - [What can you do with it?](#what-can-you-do-with-it)
 - [Why do we need it?](#why-do-we-need-it)
@@ -20,6 +21,7 @@
 - [How do I safely upgrade zmeventserver to new versions?](#how-do-i-safely-upgrade-zmeventserver-to-new-versions)
 - [Understanding zmeventnotification configuration](#understanding-zmeventnotification-configuration)
 - [Troubleshooting common situations](#troubleshooting-common-situations)
+    - [Secure mode just doesn't work (WSS) - WS works](#secure-mode-just-doesnt-work-wss---ws-works)
     - [The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)](#the-server-runs-fine-when-manually-executed-but-fails-when-run-in-daemon-mode-started-by-zmdcpl)
     - [When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that](#when-you-run-zmeventnotifiationpl-manually-you-get-an-error-saying-port-already-in-use-or-cannot-bind-to-port-or-something-like-that)
     - [Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!](#great-krypton-i-just-upgraded-zoneminder-and-im-not-getting-push-anymore)
@@ -42,14 +44,15 @@
 
 <!-- /TOC -->
 
-## Breaking changes - version 1.0 onwards
+## Breaking Changes
+### Breaking changes - version 1.0 onwards
 Version 1.0 moves configuration to a separate `zmeventnotification.ini` file that makes it easier to re-configure. If you are already
 a user of previous versions and want to migrate to 1.0, please make sure you copy `zmeventnotification.ini` to `/etc`. You will need
 to re-configure the params to your liking in the ini file.
 
 If you are installing `zmeventnotification` for the first time, just read the [How do I install it?](#how-do-i-install-it) section.
 
-## Breaking changes - version 0.95 onwards
+### Breaking changes - version 0.95 onwards
 If you are an existing user, version 0.95 has breaking changes as follows:
 * I've migrated the push infrastructure to Google's [Firebase Cloud Messaging (FCM)](https://firebase.google.com/docs/cloud-messaging/) infrastructure. This allows many benefits:
     * It uses the newer HTTP/2 push mechanisms offered by Apple and Google which are more reliable
@@ -162,6 +165,9 @@ Starting IOS 10.2, I noticed that zmNinja was not able to register with the even
 
 ### Running it as a daemon so it starts automatically along with ZoneMinder
 
+**NOTE: Starting version 1.32.0 of ZoneMinder, you now have an option to directly enable this daemon as an option directly in the settings of Options->Systems. Just enable "OPT_USE_EVENTNOTIFICATION" and you are all set.
+The rest of this section is NOT NEEDED for 1.32.0 and above!
+
 **WARNING: Do NOT do this before you run it manually as I've mentioned above to test. Make sure it works, all packages are present etc. before you 
 add it as  a daemon as if you don't and it crashes you won't know why**
 
@@ -232,6 +238,10 @@ Use custom notification sound . false
 ```
 
 ## Troubleshooting common situations
+
+### Secure mode just doesn't work (WSS) - WS works
+
+I was recently told that the `LocalAddr => [::]` line [here](https://github.com/pliablepixels/zmeventserver/blob/master/zmeventnotification.pl#L1352) might cause issues on some systems. Try replacing it with the IP address of your machine, like  `LocalAddr => '10.6.1.1'`, and see if that helps (Thanks Patrice)
 
 ### The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)
   - Make sure the file where you store tokens (`/etc/private/tokens.txt or whatever you have used`) is not RW Root only. It needs to be RW `www-data` for Ubuntu/Debian or `apache` for Fedora/CentOS
