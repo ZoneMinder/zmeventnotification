@@ -112,6 +112,10 @@ my $use_custom_notification_sound;
 #default key. Please don't change this
 use constant NINJA_API_KEY => "AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h";
 
+my $dummyEventTest = 0; # if on, will generate dummy events. Not in config for a reason. Only dev testing
+my $dummyEventInterval = 30; # timespan to generate events in seconds
+my $dummyEventTimeLastSent = time();
+
 # This part makes sure we have the right deps
 if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");}
 if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL missing");}
@@ -507,6 +511,19 @@ sub checkEvents()
     }
     chop($alarm_header) if ($alarm_header);
     chop ($alarm_mid) if ($alarm_mid);
+
+    # Send out dummy events for testing
+    if (!$eventFound && $dummyEventTest && (time() - $dummyEventTimeLastSent) >= $dummyEventInterval ) {
+        $dummyEventTimeLastSent = time();
+        my $random_mon = $monitors{(keys %monitors)[rand keys %monitors]};
+        Info ("Sending dummy event to: ".$random_mon->{Name});
+        push @events, {Name => $random_mon->{Name}, MonitorId => $random_mon->{Id}, EventId => $random_mon->{LastEvent}, Cause=> "Dummy"};
+        $alarm_header = "Alarms: Dummy alarm at ".$random_mon->{Name};
+        $alarm_mid = $random_mon->{Id};
+        $eventFound = 1;
+
+    }
+
     return ($eventFound);
 }
 
