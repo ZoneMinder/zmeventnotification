@@ -67,6 +67,7 @@ my $app_version="1.0";
 use constant DEFAULT_CONFIG_FILE => "/etc/zmeventnotification.ini";
 
 use constant DEFAULT_PORT => 9000;
+use constant DEFAULT_ADDRESS => '[::]';
 use constant DEFAULT_AUTH_ENABLE => 1;
 use constant DEFAULT_AUTH_TIMEOUT => 20;
 use constant DEFAULT_FCM_ENABLE => 1;
@@ -90,6 +91,7 @@ my $config_file_present;
 my $check_config;
 
 my $port;
+my $address;
 
 my $auth_enabled;
 my $auth_timeout;
@@ -144,6 +146,7 @@ Usage: zmeventnotification.pl [OPTION]...
   --check-config                      Print configuration and exit.
 
   --port=PORT                         Port for Websockets connection (default: 9000).
+  --address=ADDRESS                   Address for Websockets server (default: [::]).
 
   --enable-auth                       Check username/password against ZoneMinder database (default: true).
   --no-enable-auth                    Don't check username/password against ZoneMinder database (default: false).
@@ -178,6 +181,7 @@ GetOptions(
   "check-config"                   => \$check_config,
 
   "port=i"                         => \$port,
+  "address=s"                      => \$address,
 
   "enable-auth!"                   => \$auth_enabled,
 
@@ -236,6 +240,7 @@ if ($config_file_present) {
 
 
 $port //= config_get_val($config, "network", "port", DEFAULT_PORT);
+$address //= config_get_val($config, "network", "address", DEFAULT_ADDRESS);
 
 $auth_enabled //= config_get_val($config, "auth", "enable",  DEFAULT_AUTH_ENABLE);
 $auth_timeout //= config_get_val($config, "auth", "timeout", DEFAULT_AUTH_TIMEOUT);
@@ -301,6 +306,7 @@ ${\(
 )}:
 
 Port .......................... ${\(value_or_undefined($port))}
+Address ....................... ${\(value_or_undefined($address))}
 Event check interval .......... ${\(value_or_undefined($event_check_interval))}
 Monitor reload interval ....... ${\(value_or_undefined($monitor_reload_interval))}
 
@@ -1366,7 +1372,7 @@ sub initSocketServer
   	       $ssl_server = IO::Socket::SSL->new(
 		      Listen        => 10,
 		      LocalPort     => $port,
-		      LocalAddr => '[::]',
+		      LocalAddr => $address,
 		      Proto         => 'tcp',
 		      Reuse     => 1,
 		      ReuseAddr     => 1,
