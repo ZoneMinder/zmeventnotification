@@ -241,7 +241,7 @@ Use custom notification sound . false
 
 ### Secure mode just doesn't work (WSS) - WS works
 
-Try to put in your event server IP in the `address` token in `[network]` section of `zmeventnotification.pl`
+Try to put in your event server IP in the `address` token in `[network]` section of `zmeventnotification.ini`
 
 I was recently told that the `LocalAddr => [::]` line [here](https://github.com/pliablepixels/zmeventserver/blob/master/zmeventnotification.pl#L1352) might cause issues on some systems. 
 
