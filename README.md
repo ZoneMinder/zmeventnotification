@@ -241,7 +241,9 @@ Use custom notification sound . false
 
 ### Secure mode just doesn't work (WSS) - WS works
 
-I was recently told that the `LocalAddr => [::]` line [here](https://github.com/pliablepixels/zmeventserver/blob/master/zmeventnotification.pl#L1352) might cause issues on some systems. Try replacing it with the IP address of your machine, like  `LocalAddr => '10.6.1.1'`, and see if that helps (Thanks Patrice)
+Try to put in your event server IP in the `address` token in `[network]` section of `zmeventnotification.pl`
+
+I was recently told that the `LocalAddr => [::]` line [here](https://github.com/pliablepixels/zmeventserver/blob/master/zmeventnotification.pl#L1352) might cause issues on some systems. 
 
 ### The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)
   - Make sure the file where you store tokens (`/etc/private/tokens.txt or whatever you have used`) is not RW Root only. It needs to be RW `www-data` for Ubuntu/Debian or `apache` for Fedora/CentOS
