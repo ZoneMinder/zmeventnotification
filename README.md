@@ -48,7 +48,7 @@
 ### Breaking changes - version 1.0 onwards
 Version 1.0 moves configuration to a separate `zmeventnotification.ini` file that makes it easier to re-configure. If you are already
 a user of previous versions and want to migrate to 1.0, please make sure you copy `zmeventnotification.ini` to `/etc`. You will need
-to re-configure the params to your liking in the ini file.
+to re-configure the params to your liking in the ini file. Note that you may need to install some additional packages like `Config::IniFiles` if it complains of missing libraries.
 
 If you are installing `zmeventnotification` for the first time, just read the [How do I install it?](#how-do-i-install-it) section.
 
@@ -125,7 +125,7 @@ perl -MCPAN -e "install LWP::Protocol::https"
 ```
 
 Note that starting 1.0, we also use `File::Spec`, `Getopt::Long` and `Config::IniFiles` as  additional libraries. My ubuntu
-installation seemed to include all of this by default (event though `Config::IniFiles` is not part of base perl).
+installation seemed to include all of this by default (even though `Config::IniFiles` is not part of base perl).
 
 If you get errors about missing libraries, you'll need to install the missing ones like so:
 
