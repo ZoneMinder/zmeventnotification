@@ -95,11 +95,14 @@ The following perl packages need to be added (these are for Ubuntu - if you are 
  
 * Crypt::MySQL
 * Net::WebSocket::Server
+* Config::IniFiles (you may already have this installed)
 
 Installing these dependencies is as simple as:
 ```
 perl -MCPAN -e "install Crypt::MySQL"
+perl -MCPAN -e "install Config::IniFiles"
 ```
+If after installing them you still see errors about these libraries missing, please launch a CPAN shell - see General Note above.
 
 If you face issues installing Crypt::MySQL try this instead: (Thanks to aaronl)
 ```
