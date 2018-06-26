@@ -178,7 +178,7 @@ Starting IOS 10.2, I noticed that zmNinja was not able to register with the even
 **The rest of this section is NOT NEEDED for 1.32.0 and above!**
 
 **WARNING** : Do NOT do this before you run it manually as I've mentioned above to test. Make sure it works, all packages are present etc. before you 
-add it as  a daemon as if you don't and it crashes you won't know why**
+add it as  a daemon as if you don't and it crashes you won't know why
 
 (Note if you have compiled from source using cmake, the paths may be ``/usr/local/bin`` not `/usr/bin`)
 
