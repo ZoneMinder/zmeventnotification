@@ -182,8 +182,8 @@ add it as  a daemon as if you don't and it crashes you won't know why**
 
 (Note if you have compiled from source using cmake, the paths may be ``/usr/local/bin`` not `/usr/bin`)
 
-* Edit ``/usr/bin/zmdc.pl`` and in the array `@daemons` (starting line 80) add `'zmeventnotification.pl'` like [this](https://gist.github.com/pliablepixels/18bb68438410d5e4b644)
-* Edit ``/usr/bin/zmpkg.pl`` and around line 270, right after the comment that says ``#this is now started unconditionally`` and right before the line that says `runCommand( "zmdc.pl start zmfilter.pl" );` start zmeventnotification.pl by adding ``runCommand( "zmdc.pl start zmeventnotification.pl" );`` like  [this](https://gist.github.com/pliablepixels/0977a77fa100842e25f2)
+* Edit ``/usr/bin/zmdc.pl`` and in the array `@daemons` (starting line 89 or so, may change depending on ZM version) add `'zmeventnotification.pl'` like [this](https://gist.github.com/pliablepixels/18bb68438410d5e4b644)
+* Edit ``/usr/bin/zmpkg.pl`` and around line 275 (exact line # may change depending on ZM version), right after the comment that says ``#this is now started unconditionally`` and right before the line that says `runCommand( "zmdc.pl start zmfilter.pl" );` start zmeventnotification.pl by adding ``runCommand( "zmdc.pl start zmeventnotification.pl" );`` like  [this](https://gist.github.com/pliablepixels/b4e4fd38ac526c5c881ee55da05195ff)
 * Make sure you restart ZM. Rebooting the server is better - sometimes zmdc hangs around and you'll be wondering why your new daemon hasn't started
 * To check if its running do a `zmdc.pl status zmeventnotification.pl`
 
