@@ -83,12 +83,14 @@ No. I developed it for zmNinja, but you can use it with your own consumer.
 ## How do I install it?
 
 ### Download the server script and its config file
-* [Download `zmeventnotification.pl`](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.pl) (its a simple perl file) and place it in the same place other ZM scripts are stored (example `/usr/bin`). Make sure you do a `chmod a+x` on it.
-* [Download `zmeventnotification.ini`](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.ini) and edit the file to your liking.  More details about various parts of the configuration will be throughout this document.
+* [Download `zmeventnotification.pl`](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.pl) (its a simple perl file). Make sure you do a `chmod a+x` on it.
+* [Download `zmeventnotification.ini`](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.ini) and place it in a folder of your choice (typically `/etc/`) and edit the file to your liking.  More details about various parts of the configuration will be throughout this document.
 * If you are behind a firewall, make sure you enable port `9000`, TCP, bi-directional (unless you changed the port in the code)
 * We now need to install a bunch of dependencies (as described below)
 
 ### Install Dependencies
+
+Note that I assume you have other development packages already installed like `make`, `gcc` etc as the plugins may require them. 
 The following perl packages need to be added (these are for Ubuntu - if you are on a different OS, you'll have to figure out which packages are needed - I don't know what they might be)
 
 (**General note** - some users may face issues installing dependencies via `perl -MCPAN -e "Module::Name"`. If so, its usually more reliable to get into the CPAN shell and install it from the shell as a 2 step process. You'd do that using `sudo perl -MCPAN -e shell` and then whilst inside the shell, `install Module::Name`)
@@ -113,13 +115,13 @@ Next up install WebSockets
 ```
 sudo apt-get install libyaml-perl
 sudo apt-get install make
-perl -MCPAN -e "install Net::WebSocket::Server"
+sudo perl -MCPAN -e "install Net::WebSocket::Server"
 ```
 
 Then, you need JSON.pm installed. It's there on some systems and not on others
 In ubuntu, do this to install JSON:
 ```
-apt-get install libjson-perl
+sudo apt-get install libjson-perl
 ```
 
 Get HTTPS library for LWP:
