@@ -84,7 +84,8 @@ No. I developed it for zmNinja, but you can use it with your own consumer.
 
 ### Download the server script and its config file
 * [Download `zmeventnotification.pl`](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.pl) (its a simple perl file). Make sure you do a `chmod a+x` on it.
-* [Download `zmeventnotification.ini`](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.ini) and place it in a folder of your choice (typically `/etc/`) and edit the file to your liking.  More details about various parts of the configuration will be throughout this document.
+* [Download `zmeventnotification.ini`](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.ini) 
+and edit the file to your liking.  More details about various parts of the configuration will be throughout this document.
 * If you are behind a firewall, make sure you enable port `9000`, TCP, bi-directional (unless you changed the port in the code)
 * We now need to install a bunch of dependencies (as described below)
 
@@ -170,6 +171,9 @@ Starting IOS 10.2, I noticed that zmNinja was not able to register with the even
 
 ### Running it as a daemon so it starts automatically along with ZoneMinder
 
+* Move `zmeventnotification.pl` to `/usr/bin` (or `/usr/local/bin` or whichever directory your other ZM perl scripts are installed)
+* Move  `zmeventnotification.ini` to `/etc`
+
 **NOTE** : Starting version 1.32.0 of ZoneMinder, you now have an option to directly enable this daemon as an option directly in the settings of Options->Systems. Just enable "OPT_USE_EVENTNOTIFICATION" and you are all set.
 **The rest of this section is NOT NEEDED for 1.32.0 and above!**
 
@@ -178,8 +182,6 @@ add it as  a daemon as if you don't and it crashes you won't know why**
 
 (Note if you have compiled from source using cmake, the paths may be ``/usr/local/bin`` not `/usr/bin`)
 
-* Copy `zmeventnotification.pl` to `/usr/bin`
-* Copy  `zmeventnotification.ini` to `/etc`
 * Edit ``/usr/bin/zmdc.pl`` and in the array `@daemons` (starting line 80) add `'zmeventnotification.pl'` like [this](https://gist.github.com/pliablepixels/18bb68438410d5e4b644)
 * Edit ``/usr/bin/zmpkg.pl`` and around line 270, right after the comment that says ``#this is now started unconditionally`` and right before the line that says `runCommand( "zmdc.pl start zmfilter.pl" );` start zmeventnotification.pl by adding ``runCommand( "zmdc.pl start zmeventnotification.pl" );`` like  [this](https://gist.github.com/pliablepixels/0977a77fa100842e25f2)
 * Make sure you restart ZM. Rebooting the server is better - sometimes zmdc hangs around and you'll be wondering why your new daemon hasn't started
