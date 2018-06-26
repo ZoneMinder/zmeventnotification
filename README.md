@@ -332,6 +332,7 @@ Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push messa
 
 <details>
     <summary>Click to see more details</summary>
+    
 ### How do I talk to it?
 *  `{"JSON":"everywhere"}`
 * Your client sends messages (authentication) over JSON
