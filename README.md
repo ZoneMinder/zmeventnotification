@@ -223,6 +223,7 @@ sudo /usr/bin/zmeventnotification.pl --check-config
 Configuration (read /etc/zmeventnotification.ini):
 
 Port .......................... 9000
+Address ....................... XX.XX.XX.XX
 Event check interval .......... 5
 Monitor reload interval ....... 300
 
