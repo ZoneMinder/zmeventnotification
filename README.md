@@ -22,6 +22,7 @@
 - [Understanding zmeventnotification configuration](#understanding-zmeventnotification-configuration)
 - [Troubleshooting common situations](#troubleshooting-common-situations)
     - [Secure mode just doesn't work (WSS) - WS works](#secure-mode-just-doesnt-work-wss---ws-works)
+    - [I'm not receiving push notifications in zmNinja](#im-not-receiving-push-notifications-in-zmninja)
     - [The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)](#the-server-runs-fine-when-manually-executed-but-fails-when-run-in-daemon-mode-started-by-zmdcpl)
     - [When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that](#when-you-run-zmeventnotifiationpl-manually-you-get-an-error-saying-port-already-in-use-or-cannot-bind-to-port-or-something-like-that)
     - [Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!](#great-krypton-i-just-upgraded-zoneminder-and-im-not-getting-push-anymore)
@@ -251,6 +252,21 @@ Use custom notification sound . false
 
 Try to put in your event server IP in the `address` token in `[network]` section of `zmeventnotification.ini`
 
+### I'm not receiving push notifications in zmNinja
+
+There could be many reasons. Here are the top few:
+
+* Make sure zmeventserver is running, and ONLY ONE INSTANCE is running. Do a `ps -aef | grep zmevent` - if you see multiple processes, kill them and start again
+
+* If you don't see an entry in `tokens.txt` (typically in `/etc/private`) then your phone is not registered to get push. Kill zmNinja,
+start the app, make sure the event server receives the registration and check `tokens.txt`
+
+* Sometimes, Google's FCM server goes down, or Apple's APNS server goes down for a while. Things automagically work in 24 hrs. 
+
+* _Always_ send me logs of both zmNinja and zmeventserver - I need them to understand what is going on.
+
+* I'd strongly recommend you run the event server in "manual mode" and stop daemon mode while debugging. 
+
 
 ### The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)
   - Make sure the file where you store tokens (`/etc/private/tokens.txt or whatever you have used`) is not RW Root only. It needs to be RW `www-data` for Ubuntu/Debian or `apache` for Fedora/CentOS
@@ -274,7 +290,7 @@ As it turns out many folks run ZM inside the LAN only and don't want to deal wit
 For that situation, edit zmeventnotification.pl and use `enable = 0` in the `[ssl]` section of the configuration file.
 
 ## Debugging and reporting problems
-STOP. Before you shoot me an email, **please** make sure you have read the [common problems](#07-troubleshooting-common-situations) and have followed _every step_ of the [install guide](#05-how-do-i-install-it) and in sequence. I can't emphasize how important it is.
+STOP. Before you shoot me an email, **please** make sure you have read the [common problems](#troubleshooting-common-situations) and have followed _every step_ of the [install guide](#how-do-i-install-it) and in sequence. I can't emphasize how important it is.
 
 There could be several reasons why you may not be receiving notifications:
 * Your event server is not running
@@ -325,8 +341,6 @@ Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push messa
 ```
 
 * If you have issues, please send me a copy of your zmeventserver logs generated above from Terminal-Log, as well as zmNinja debug logs
-
-
 
 
 ## For Developers writing their own consumers
