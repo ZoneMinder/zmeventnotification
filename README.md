@@ -302,7 +302,9 @@ Here is how to debug and report:
 * Enable Debug logs in zmNinja (Setting->Developer Options->Enable Debug Log)
 * telnet/ssh into your zoneminder server
 * Stop the zmeventnotification doing `sudo zmdc.pl status zmeventnotification.pl`
+* Make sure there are no stale processes running of zmeventnotification by doing `ps -aef | grep zmeventnotification` and making sure it doesn't show existing processes
 * Start a terminal (lets call it Terminal-Log)  to tail logs like so `tail -f /var/log/syslog | grep zmeventnotification`
+* Edit `zmeventnotification.ini` (typically in `/etc/`) and make sure `verbose = 1` is set. This will print more logs on the console. Make sure you turn this off again before switching back to daemon mode.
 * Start another terminal and start zmeventserver manually from command line like so `sudo /usr/bin/zmeventnotification.pl`
 * Make sure you see logs like this in the logs window like so:
 ```
@@ -339,6 +341,18 @@ Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Monitor 1 event: las
 Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Sending notification over PushProxy]
 Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push message success ]
 ```
+
+* If you are debugging problems with receiving push notifications on zmNinja mobile, then replicate the following scenario:
+    * Kill zmNinja
+    * Start zmNinja
+    * At this point, in the `zmeventnotification` logs you should registration messages (refer to logs example above). If you don't you've either not configured zmNinja to use the eventserver, or it can't reach the eventserver (very common problem)
+    * Next up, make sure you are not running zmNinja in the foreground (move it to background or kill it). When zmNinja is in the foreground, it uses websockets to get notifications
+    * Force an alarm like I described above. If you don't see logs in `zmeventnotification` saying "Sending notification over PushProxy" then the eventserver, for some reason, does not have your app token. Inspeced `tokens.txt` (typically in `/etc/`) to make sure an entry for your phone exists
+    * If you see that message, but your mobile phone is not receiving a push notification:
+        * Make sure you haven't disable push notifications on your phone (lots of people do this by mistake and wonder why)
+        * Make sure you haven't muted notifications (again, lots of people...)
+        * Sometimes, the push servers of Apple and Google stop forwarding messages for a day or two. I have no idea why. Give it a day or two?
+        * Open up zmNinja, go right to logs and send it to me 
 
 * If you have issues, please send me a copy of your zmeventserver logs generated above from Terminal-Log, as well as zmNinja debug logs
 
