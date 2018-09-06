@@ -190,7 +190,7 @@ add it as  a daemon as if you don't and it crashes you won't know why
 
 You can/should run it manually at first to check if it works 
 
-### How can use this with Node-Red or Home Assistant?
+### How can I use this with Node-Red or Home Assistant?
 
 You can enable the zmevent server to broadcast the JSON messages specified below on a topic called /zoneminder/1 (or monitor_id), this can then be consumed by Home Assistant or Node-Red for some neat automation tasks and can then send out different kinds of notifications etc.
 
