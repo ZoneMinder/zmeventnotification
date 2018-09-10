@@ -71,6 +71,8 @@ use constant DEFAULT_ADDRESS => '[::]';
 use constant DEFAULT_AUTH_ENABLE => 1;
 use constant DEFAULT_AUTH_TIMEOUT => 20;
 use constant DEFAULT_FCM_ENABLE => 1;
+use constant DEFAULT_MQTT_ENABLE => 0;
+use constant DEFAULT_MQTT_SERVER => '127.0.0.1';
 use constant DEFAULT_FCM_TOKEN_FILE => '/etc/private/tokens.txt';
 use constant DEFAULT_SSL_ENABLE => 1;
 
@@ -95,6 +97,9 @@ my $address;
 
 my $auth_enabled;
 my $auth_timeout;
+
+my $use_mqtt;
+my $mqtt_server; 
 
 my $use_fcm;
 my $fcm_api_key;
@@ -184,6 +189,9 @@ GetOptions(
   "address=s"                      => \$address,
 
   "enable-auth!"                   => \$auth_enabled,
+  
+  "enable-mqtt!"                    => \$use_mqtt,
+  "mqtt-server=s"                  => \$mqtt_server,
 
   "enable-fcm!"                    => \$use_fcm,
   "fcm-api-key=s"                  => \$fcm_api_key,
@@ -244,6 +252,9 @@ $address //= config_get_val($config, "network", "address", DEFAULT_ADDRESS);
 
 $auth_enabled //= config_get_val($config, "auth", "enable",  DEFAULT_AUTH_ENABLE);
 $auth_timeout //= config_get_val($config, "auth", "timeout", DEFAULT_AUTH_TIMEOUT);
+
+$use_mqtt    //= config_get_val($config, "mqtt", "enable",     DEFAULT_MQTT_ENABLE);
+$mqtt_server  //= config_get_val($config, "mqtt", "server",    DEFAULT_MQTT_SERVER);
 
 $use_fcm     //= config_get_val($config, "fcm", "enable",     DEFAULT_FCM_ENABLE);
 $fcm_api_key //= config_get_val($config, "fcm", "api_key", NINJA_API_KEY);
@@ -410,6 +421,14 @@ if ($use_fcm)
         mkdir $dir;
     }
 }
+
+if ($use_mqtt)
+{
+    if (!try_use ("Net::MQTT::Simple")) {Fatal ("Net::MQTT::Simple  missing");exit (-1);}
+    Info ("Broadcasting Events to MQTT");
+
+}
+
 
 Info( "Event Notification daemon v $app_version starting\n" );
 loadTokens();
@@ -643,6 +662,29 @@ sub deleteToken
     }
     close ($fh);
 }
+
+
+# Sends a push notification to the mqtt Broker
+sub sendOverMQTTBroker
+{
+
+    my ($header, $mid) = @_;
+    my $json;
+
+    $json = encode_json ({
+                monitor=> $mid,
+                name=>$header,
+                state => 'alarm',
+            });
+
+    Debug ("Final JSON being sent is: $json");
+
+    my $mqtt = Net::MQTT::Simple->new($mqtt_server);
+
+    $mqtt->publish(join('/','zoneminder',$mid) => $json);
+}
+
+
 
 
 # Sends a push notification to FCM
@@ -1401,6 +1443,11 @@ sub initSocketServer
             my $ac = scalar @active_connections;
             if (checkEvents())
             {
+		if ($use_mqtt) {
+                    Info ("Sending notification over MQTT");
+                    sendOverMQTTBroker($alarm_header, $alarm_mid);
+                }
+
                 Info ("Broadcasting new events to all $ac websocket clients\n");
                     my ($serv) = @_;
                     my $i = 0;

@@ -190,6 +190,19 @@ add it as  a daemon as if you don't and it crashes you won't know why
 
 You can/should run it manually at first to check if it works 
 
+### How can I use this with Node-Red or Home Assistant?
+
+You can enable the zmevent server to broadcast the JSON messages specified below on a topic called /zoneminder/1 (or monitor_id), this can then be consumed by Home Assistant or Node-Red for some neat automation tasks and can then send out different kinds of notifications etc.
+
+Do this enable the settings under the `[mqtt]` seciton and specifying the `server` to use
+
+You will also need to enable the following dependeices for this work
+
+```
+perl -MCPAN -e "install Net::MQTT::Simple"
+```
+
+
 ## Disabling security
 While I don't recommend either, several users seem to be interested in the following
 * To run the eventserver on Websockets and not Secure Websockets, use `enable = 0` in the `[ssl]` section of the configuration file.
