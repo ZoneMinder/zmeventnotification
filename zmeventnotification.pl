@@ -158,6 +158,8 @@ Usage: zmeventnotification.pl [OPTION]...
 
   --enable-fcm                        Use FCM for messaging (default: true).
   --no-enable-fcm                     Don't use FCM for messaging (default: false).
+  --enable-mqtt                       Use MQTT for messaging (default: false).
+  --no-enable-mqtt                    Disable MQTT for messaging (default: true).
   --fcm-api-key=KEY                   API key for FCM (default: zmNinja FCM key).
   --token-file=FILE                   Auth token store location (default: /etc/private/tokens.txt).
 
@@ -327,6 +329,9 @@ Auth timeout .................. ${\(value_or_undefined($auth_timeout))}
 Use FCM ....................... ${\(true_or_false($use_fcm))}
 FCM API key ................... ${\(present_or_not($fcm_api_key))}
 Token file .................... ${\(value_or_undefined($token_file))}
+
+Use MQTT .......................${\(true_or_false($use_mqtt))}
+MQTT Server ....................${\(value_or_undefined($mqtt_server))}
 
 SSL enabled ................... ${\(true_or_false($ssl_enabled))}
 SSL cert file ................. ${\(value_or_undefined($ssl_cert_file))}
