@@ -3,20 +3,50 @@
 
 <!-- TOC -->
 
-- [Breaking Changes](#breaking-changes)
-    - [Breaking changes - version 1.0 onwards](#breaking-changes---version-10-onwards)
-- [What is it?](#what-is-it)
-- [What can you do with it?](#what-can-you-do-with-it)
-- [Why do we need it?](#why-do-we-need-it)
-- [Is this officially developed by ZM developers?](#is-this-officially-developed-by-zm-developers)
-- [How do I install it?](#how-do-i-install-it)
-    - [Download the server script and its config file](#download-the-server-script-and-its-config-file)
-    - [Install Dependencies](#install-dependencies)
+- [0.1. Breaking Changes](#01-breaking-changes)
+    - [0.1.1. Breaking changes - version 1.0 onwards](#011-breaking-changes---version-10-onwards)
+- [0.2. What is it?](#02-what-is-it)
+- [0.3. What can you do with it?](#03-what-can-you-do-with-it)
+- [0.4. Why do we need it?](#04-why-do-we-need-it)
+- [0.5. Is this officially developed by ZM developers?](#05-is-this-officially-developed-by-zm-developers)
+- [0.6. How do I install it?](#06-how-do-i-install-it)
+    - [0.6.1. Download the server script and its config file](#061-download-the-server-script-and-its-config-file)
+    - [0.6.2. Install Dependencies](#062-install-dependencies)
+    - [0.6.3. SSL certificate (Generate new, or use ZoneMinder certs if you are already using HTTPS)](#063-ssl-certificate-generate-new-or-use-zoneminder-certs-if-you-are-already-using-https)
+        - [0.6.3.1. IOS Users](#0631-ios-users)
+    - [0.6.4. Making sure everything is running (in manual mode)](#064-making-sure-everything-is-running-in-manual-mode)
+    - [0.6.5. Running it as a daemon so it starts automatically along with ZoneMinder](#065-running-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
+    - [0.6.6. How can I use this with Node-Red or Home Assistant?](#066-how-can-i-use-this-with-node-red-or-home-assistant)
+- [0.7. Disabling security](#07-disabling-security)
+- [0.8. How do I safely upgrade zmeventserver to new versions?](#08-how-do-i-safely-upgrade-zmeventserver-to-new-versions)
+- [0.9. Understanding zmeventnotification configuration](#09-understanding-zmeventnotification-configuration)
+- [0.10. Troubleshooting common situations](#010-troubleshooting-common-situations)
+    - [0.10.1. Secure mode just doesn't work (WSS) - WS works](#0101-secure-mode-just-doesnt-work-wss---ws-works)
+    - [0.10.2. I'm not receiving push notifications in zmNinja](#0102-im-not-receiving-push-notifications-in-zmninja)
+    - [0.10.3. The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)](#0103-the-server-runs-fine-when-manually-executed-but-fails-when-run-in-daemon-mode-started-by-zmdcpl)
+    - [0.10.4. When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that](#0104-when-you-run-zmeventnotifiationpl-manually-you-get-an-error-saying-port-already-in-use-or-cannot-bind-to-port-or-something-like-that)
+    - [0.10.5. Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!](#0105-great-krypton-i-just-upgraded-zoneminder-and-im-not-getting-push-anymore)
+- [0.11. How do I disable secure (WSS) mode?](#011-how-do-i-disable-secure-wss-mode)
+- [0.12. Debugging and reporting problems](#012-debugging-and-reporting-problems)
+- [0.13. For Developers writing their own consumers](#013-for-developers-writing-their-own-consumers)
+    - [0.13.1. How do I talk to it?](#0131-how-do-i-talk-to-it)
+        - [0.13.1.1. Authentication messages](#01311-authentication-messages)
+        - [0.13.1.2. Control messages](#01312-control-messages)
+            - [0.13.1.2.1. Control message to restrict monitor IDs for events as well as interval durations for reporting](#013121-control-message-to-restrict-monitor-ids-for-events-as-well-as-interval-durations-for-reporting)
+            - [0.13.1.2.2. Control message to get Event Server version](#013122-control-message-to-get-event-server-version)
+        - [0.13.1.3. Alarm notifications](#01313-alarm-notifications)
+        - [0.13.1.4. Push Notifications (for both iOS and Android)](#01314-push-notifications-for-both-ios-and-android)
+            - [0.13.1.4.1. Concepts of Push and why it is only for zmNinja](#013141-concepts-of-push-and-why-it-is-only-for-zmninja)
+            - [0.13.1.4.2. Registering Push token with the server](#013142-registering-push-token-with-the-server)
+            - [0.13.1.4.3. Badge reset](#013143-badge-reset)
+        - [0.13.1.5. Testing from command line](#01315-testing-from-command-line)
+- [0.14. How scalable is it?](#014-how-scalable-is-it)
+- [0.15. Brickbats](#015-brickbats)
 
 <!-- /TOC -->
 
-## Breaking Changes
-### Breaking changes - version 1.0 onwards
+## 0.1. Breaking Changes
+### 0.1.1. Breaking changes - version 1.0 onwards
 Version 1.0 moves configuration to a separate `zmeventnotification.ini` file that makes it easier to re-configure. If you are already
 a user of previous versions and want to migrate to 1.0, please make sure you copy `zmeventnotification.ini` to `/etc`. You will need
 to re-configure the params to your liking in the ini file. Note that you may need to install some additional packages like `Config::IniFiles` if it complains of missing libraries.
@@ -24,33 +54,33 @@ to re-configure the params to your liking in the ini file. Note that you may nee
 If you are installing `zmeventnotification` for the first time, just read the [How do I install it?](#how-do-i-install-it) section.
 
 
-## What is it?
+## 0.2. What is it?
 A WSS (Secure Web Sockets) and/or MQTT  based event notification server that broadcasts new events to any authenticated listeners.
 (As of 0.6, it also includes a non secure websocket option, if that's how you want to run it)
 
-## What can you do with it?
+## 0.3. What can you do with it?
 Well, [zmNinja](https://github.com/pliablepixels/zmNinja) uses it to display real time notifications of events.
 Watch a video [HERE](https://www.youtube.com/watch?v=HhLKrDrj7rs)
 You can implement your own receiver to get real time event notification and do whatever your heart desires 
 
-## Why do we need it?
+## 0.4. Why do we need it?
 * The only way ZoneMinder sends out event notifications via event filters - this is too slow
 * People developing extensions to work with ZoneMinder for Home Automation needs will benefit from a clean interface
 * Receivers don't poll. They keep a web socket open and when there are events, they get a notification
 
-## Is this officially developed by ZM developers?
+## 0.5. Is this officially developed by ZM developers?
 No. I developed it for zmNinja, but you can use it with your own consumer.
 
-## How do I install it?
+## 0.6. How do I install it?
 
-### Download the server script and its config file
+### 0.6.1. Download the server script and its config file
 * [Download `zmeventnotification.pl`](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.pl) (its a simple perl file). Make sure you do a `chmod a+x` on it.
 * [Download `zmeventnotification.ini`](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.ini) 
 and edit the file to your liking.  More details about various parts of the configuration will be throughout this document.
 * If you are behind a firewall, make sure you enable port `9000`, TCP, bi-directional (unless you changed the port in the code)
 * We now need to install a bunch of dependencies (as described below)
 
-### Install Dependencies
+### 0.6.2. Install Dependencies
 
 Note that I assume you have other development packages already installed like `make`, `gcc` etc as the plugins may require them. 
 The following perl packages need to be added (these are for Ubuntu - if you are on a different OS, you'll have to figure out which packages are needed - I don't know what they might be)
@@ -93,8 +123,6 @@ perl -MCPAN -e "install LWP::Protocol::https"
 
 If you want to enable MQTT:
 ```
-
-```
 perl -MCPAN -e "install Net::MQTT::Simple"
 ```
 
@@ -107,7 +135,7 @@ If you get errors about missing libraries, you'll need to install the missing on
 perl -MCPAN -e "install XXXX" # where XXX is Config::IniFiles, for example
 ```
 
-### SSL certificate (Generate new, or use ZoneMinder certs if you are already using HTTPS)
+### 0.6.3. SSL certificate (Generate new, or use ZoneMinder certs if you are already using HTTPS)
 
 If you are using secure mode (default) you **also need to make sure you generate SSL certificates otherwise the script won't run**
 If you are using SSL for ZoneMinder, simply point this script to the certificates.
@@ -128,16 +156,16 @@ cert = /etc/apache2/ssl/zoneminder.crt
 key = /etc/apache2/ssl/zoneminder.key
 ```
 
-#### IOS Users 
+#### 0.6.3.1. IOS Users 
 Starting IOS 10.2, I noticed that zmNinja was not able to register with the event server when it was using WSS (SSL enabled) and self-signed certificates. To solve this, I had to email myself the zoneminder certificate (`zoneminder.crt`) file and install it in the phone. Why that is needed only for WSS and not for HTTPS is a mystery to me. The alternative is to run the eventserver in WS mode by disabling SSL.
 
-### Making sure everything is running (in manual mode)
+### 0.6.4. Making sure everything is running (in manual mode)
 * I am assuming you have downloaded the 2 files to your current directory in the step below
 * Start the event server manually first using `sudo -u www-data ./zmeventnotification.pl --config ./zmeventnotification.ini` (Note that if you omit `--config` it will look for `/etc/zmeventnotification.ini` and if that doesn't exist, it will use default values) and make sure you check syslogs to ensure its loaded up and all dependencies are found. If you see errors, fix them. Then exit and follow the steps below to start it along with Zoneminder. Note that the `-u www-data` runs this command with the user id that apache uses (in some systems this may be `apache` or similar). It is important to run it using the same user id as your webserver because that is the permission zoneminder will use when run as a daemon mode.
 
 * Its is HIGHLY RECOMMENDED that you first start the event server manually from terminal, as described above and not directly dive into daemon mode (described below) and ensure you inspect syslog to validate all logs are correct and THEN make it a daemon in ZoneMinder. If you don't, it will be hard to know what is going wrong. See the [debugging](https://github.com/pliablepixels/zmeventserver#debugging-and-reporting-problems) section later that describes how to make sure its all working fine from command line.
 
-### Running it as a daemon so it starts automatically along with ZoneMinder
+### 0.6.5. Running it as a daemon so it starts automatically along with ZoneMinder
 
 * Move `zmeventnotification.pl` to `/usr/bin` (or `/usr/local/bin` or whichever directory your other ZM perl scripts are installed)
 * Move  `zmeventnotification.ini` to `/etc`
@@ -157,7 +185,7 @@ add it as  a daemon as if you don't and it crashes you won't know why
 
 You can/should run it manually at first to check if it works 
 
-### How can I use this with Node-Red or Home Assistant?
+### 0.6.6. How can I use this with Node-Red or Home Assistant?
 
 As of version 1.1, this also supports  (Contributed by [@vajonam](https://github.com/vajonam)).
 zmeventnotification server can be configured to broadcast on a topic called `/zoneminder/<monitor-id>` which can then be consumed by Home Assistant or Node-Red.
@@ -171,12 +199,12 @@ perl -MCPAN -e "install Net::MQTT::Simple"
 ```
 
 
-## Disabling security
+## 0.7. Disabling security
 While I don't recommend either, several users seem to be interested in the following
 * To run the eventserver on Websockets and not Secure Websockets, use `enable = 0` in the `[ssl]` section of the configuration file.
 * To disable ZM Auth checking (be careful, anyone can get all your data INCLUDING passwords for ZoneMinder monitors if you open it up to the Internet) use `enable = 0` in the `[auth]` section of the configuration file.
 
-## How do I safely upgrade zmeventserver to new versions? 
+## 0.8. How do I safely upgrade zmeventserver to new versions? 
 
 ```
 sudo zmdc.pl stop zmeventnotification.pl
@@ -191,7 +219,7 @@ sudo zmdc.pl start zmeventnotification.pl
 
 Make sure you look at the syslogs to make sure its started properly
 
-## Understanding zmeventnotification configuration
+## 0.9. Understanding zmeventnotification configuration
 
 Starting v1.0, [@synthead](https://github.com/synthead) reworked the configuration as follows:
 - If you just run `zmeventnotification.pl` it will try and load `/etc/zmeventnotification.ini`. If it doesn't find it, it will use internal defaults
@@ -227,13 +255,13 @@ Use custom notification sound . false
 
 ```
 
-## Troubleshooting common situations
+## 0.10. Troubleshooting common situations
 
-### Secure mode just doesn't work (WSS) - WS works
+### 0.10.1. Secure mode just doesn't work (WSS) - WS works
 
 Try to put in your event server IP in the `address` token in `[network]` section of `zmeventnotification.ini`
 
-### I'm not receiving push notifications in zmNinja
+### 0.10.2. I'm not receiving push notifications in zmNinja
 
 There could be many reasons. Here are the top few:
 
@@ -249,28 +277,28 @@ start the app, make sure the event server receives the registration and check `t
 * I'd strongly recommend you run the event server in "manual mode" and stop daemon mode while debugging. 
 
 
-### The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)
+### 0.10.3. The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)
   - Make sure the file where you store tokens (`/etc/private/tokens.txt or whatever you have used`) is not RW Root only. It needs to be RW `www-data` for Ubuntu/Debian or `apache` for Fedora/CentOS
   - Make sure your certificates are readable by `www-data` for Ubuntu/Debian, or `apache` for Fedora/CentOS (thanks to [@jagee](https://github.com/pliablepixels/zmeventserver/issues/8)) 
   - Make sure the _path_ to the certificates are readable by `www-data` for Ubuntu/Debian, or `apache` for Fedora/CentOS
 
-### When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that
+### 0.10.4. When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that
 
 The chances are very high that you have another copy of `zmeventnotification.pl` running. You might have run it in daemon mode. Try `sudo zmdc.pl stop zmeventnotification.pl`. Also do `ps -aef | grep zmeventnotification` to check if another copy is not running and if you do find one running, you'll have to kill it before you can start it from command line again.
 
 
-### Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!
+### 0.10.5. Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!
 
 Fear not. You just need to redo the changes you did to `zmpkg.pl` and `zmdc.pl` and restart ZM. You see, when you upgrade ZM, it overwrites those files.
 
 
-## How do I disable secure (WSS) mode?
+## 0.11. How do I disable secure (WSS) mode?
 
 As of 0.6, I've added an option to run the server using unsecure websockets (WS instead of WSS).
 As it turns out many folks run ZM inside the LAN only and don't want to deal with certificates. Fair enough.
 For that situation, edit zmeventnotification.pl and use `enable = 0` in the `[ssl]` section of the configuration file.
 
-## Debugging and reporting problems
+## 0.12. Debugging and reporting problems
 STOP. Before you shoot me an email, **please** make sure you have read the [common problems](#troubleshooting-common-situations) and have followed _every step_ of the [install guide](#how-do-i-install-it) and in sequence. I can't emphasize how important it is.
 
 There could be several reasons why you may not be receiving notifications:
@@ -339,12 +367,12 @@ Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push messa
 * If you have issues, please send me a copy of your zmeventserver logs generated above from Terminal-Log, as well as zmNinja debug logs
 
 
-## For Developers writing their own consumers
+## 0.13. For Developers writing their own consumers
 
 <details>
     <summary>Click to see more details</summary>
     
-### How do I talk to it?
+### 0.13.1. How do I talk to it?
 *  `{"JSON":"everywhere"}`
 * Your client sends messages (authentication) over JSON
 * The server sends auth success/failure over JSON back at you
@@ -360,7 +388,7 @@ Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push messa
  1. alarm (from server to client)
 
 
-#### Authentication messages
+#### 0.13.1.1. Authentication messages
 
 To connect with the server you need to send the following JSON object (replace username/password)
 Note this payload is NOT encrypted. If you are not using SSL, it will be sent in clear.
@@ -392,11 +420,11 @@ No authentication received in time limit:
 {"event":"auth","type":"", "status":"Fail","reason":"NOAUTH"}
 ```
 
-#### Control messages
+#### 0.13.1.2. Control messages
 Control messages manage the nature of notifications received/sent. As of today, Clients send control messages to the Server.
 In future this may be bi-directional
 
-##### Control message to restrict monitor IDs for events as well as interval durations for reporting
+##### 0.13.1.2.1. Control message to restrict monitor IDs for events as well as interval durations for reporting
 A client can send a control message to restrict which monitor IDs it is interested in. When received, the server will only
 send it alarms for those specific monitor IDs. You can also specify the reporting interval for events.
 
@@ -424,7 +452,7 @@ No interval received:
 Note that if you don't want to specify intervals, send it a interval list comprising of comma separated 0's, one for each monitor in monitor list.
 
 
-##### Control message to get Event Server version
+##### 0.13.1.2.2. Control message to get Event Server version
 A client can send a control message to request Event Server version
 
 **Client-->Server:**
@@ -437,7 +465,7 @@ A client can send a control message to request Event Server version
 {"event":"control", "type:":"version", "version":"0.2","status":"Success","reason":""}
 ```
 
-#### Alarm notifications
+#### 0.13.1.3. Alarm notifications
 Alarms are events sent from the Server to the Client
 
 **Server-->Client:**
@@ -447,15 +475,15 @@ Sample payload of 2 events being reported:
 ```
 
 
-#### Push Notifications (for both iOS and Android)
+#### 0.13.1.4. Push Notifications (for both iOS and Android)
 To make Push Notifications work, please make sure you read the [section on enabling Push](https://github.com/pliablepixels/zmeventserver#44-apnsgcm-howto---only-applicable-for-zmninja-not-for-other-consumers)  for the event server.
 
-##### Concepts of Push and why it is only for zmNinja
+##### 0.13.1.4.1. Concepts of Push and why it is only for zmNinja
 
 Both Apple and Google ensure that a "trusted" application server can send push notifications to a specific app running in a device. If they did not require this, anyone could spam apps with messages. So in other words, a "Push" will be routed from a specific server to a specific app. Starting Jan 2018, I am hosting my trusted push server on Google's Firebase cloud. This eliminates the need for me to run my own server. 
 
 
-##### Registering Push token with the server
+##### 0.13.1.4.2. Registering Push token with the server
 **Client-->Server:**
 
 Registering an iOS device:
@@ -486,7 +514,7 @@ If its successful, there is no response. However, if Push is disabled it will se
 {"event":"push", "type":"", "status":"Fail", "reason": "PUSHDISABLED"}
 ```
 
-##### Badge reset
+##### 0.13.1.4.3. Badge reset
 
 Only applies to iOS. Android push notifications don't have a concept of badge notifications, as it turns out.
 
@@ -505,7 +533,7 @@ can use any other number. The next time the server sends a push via APNS, it wil
 value. 0 makes the badge go away.
 
 
-#### Testing from command line
+#### 0.13.1.5. Testing from command line
 If you are writing your own consumer/client it helps to test the event server commands from command line. 
 The event server uses Secure/WebSockers so you can't just HTTP to it using tools like `curl`. You'll need to
 use a websocket client. While there are examples on the net on how to use `curl` for websockets, I've found it
@@ -521,10 +549,10 @@ In the example above, I used `wscat` to connect to my event server and then sent
 
 
 
-## How scalable is it?
+## 0.14. How scalable is it?
 It's a lightweight single threaded process. I really don't see a need for launching a zillion threads or a process per monitor etc for what it does. I'd argue its simplicity is its scalability. Plus I don't expect more than a handful of consumers to connect to it. I really don't see why it won't be able to scale to for what is does. But if you are facing scalability issues, let me know. There is [Mojolicious](http://mojolicio.us/) I can use to make it more scalable if I am proven wrong about scalability.
 
-## Brickbats
+## 0.15. Brickbats
 
 **Why not just supply the username and password in the URL as a resource? It's over TLS**
 
