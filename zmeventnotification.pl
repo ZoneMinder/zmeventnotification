@@ -51,7 +51,7 @@ use bytes;
 # ==========================================================================
 
 
-my $app_version="1.0";
+my $app_version="1.1";
 
 # ==========================================================================
 #
@@ -1443,7 +1443,8 @@ sub initSocketServer
             my $ac = scalar @active_connections;
             if (checkEvents())
             {
-		if ($use_mqtt) {
+                if ($use_mqtt) 
+                {
                     Info ("Sending notification over MQTT");
                     sendOverMQTTBroker($alarm_header, $alarm_mid);
                 }

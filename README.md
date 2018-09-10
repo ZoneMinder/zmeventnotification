@@ -1,11 +1,10 @@
 
-**Latest Version: 1.0**
+**Latest Version: 1.1**
 
 <!-- TOC -->
 
 - [Breaking Changes](#breaking-changes)
     - [Breaking changes - version 1.0 onwards](#breaking-changes---version-10-onwards)
-    - [Breaking changes - version 0.95 onwards](#breaking-changes---version-095-onwards)
 - [What is it?](#what-is-it)
 - [What can you do with it?](#what-can-you-do-with-it)
 - [Why do we need it?](#why-do-we-need-it)
@@ -13,35 +12,6 @@
 - [How do I install it?](#how-do-i-install-it)
     - [Download the server script and its config file](#download-the-server-script-and-its-config-file)
     - [Install Dependencies](#install-dependencies)
-    - [SSL certificate (Generate new, or use ZoneMinder certs if you are already using HTTPS)](#ssl-certificate-generate-new-or-use-zoneminder-certs-if-you-are-already-using-https)
-        - [IOS Users](#ios-users)
-    - [Making sure everything is running (in manual mode)](#making-sure-everything-is-running-in-manual-mode)
-    - [Running it as a daemon so it starts automatically along with ZoneMinder](#running-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
-- [Disabling security](#disabling-security)
-- [How do I safely upgrade zmeventserver to new versions?](#how-do-i-safely-upgrade-zmeventserver-to-new-versions)
-- [Understanding zmeventnotification configuration](#understanding-zmeventnotification-configuration)
-- [Troubleshooting common situations](#troubleshooting-common-situations)
-    - [Secure mode just doesn't work (WSS) - WS works](#secure-mode-just-doesnt-work-wss---ws-works)
-    - [I'm not receiving push notifications in zmNinja](#im-not-receiving-push-notifications-in-zmninja)
-    - [The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)](#the-server-runs-fine-when-manually-executed-but-fails-when-run-in-daemon-mode-started-by-zmdcpl)
-    - [When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that](#when-you-run-zmeventnotifiationpl-manually-you-get-an-error-saying-port-already-in-use-or-cannot-bind-to-port-or-something-like-that)
-    - [Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!](#great-krypton-i-just-upgraded-zoneminder-and-im-not-getting-push-anymore)
-- [How do I disable secure (WSS) mode?](#how-do-i-disable-secure-wss-mode)
-- [Debugging and reporting problems](#debugging-and-reporting-problems)
-- [For Developers writing their own consumers](#for-developers-writing-their-own-consumers)
-    - [How do I talk to it?](#how-do-i-talk-to-it)
-        - [Authentication messages](#authentication-messages)
-        - [Control messages](#control-messages)
-            - [Control message to restrict monitor IDs for events as well as interval durations for reporting](#control-message-to-restrict-monitor-ids-for-events-as-well-as-interval-durations-for-reporting)
-            - [Control message to get Event Server version](#control-message-to-get-event-server-version)
-        - [Alarm notifications](#alarm-notifications)
-        - [Push Notifications (for both iOS and Android)](#push-notifications-for-both-ios-and-android)
-            - [Concepts of Push and why it is only for zmNinja](#concepts-of-push-and-why-it-is-only-for-zmninja)
-            - [Registering Push token with the server](#registering-push-token-with-the-server)
-            - [Badge reset](#badge-reset)
-        - [Testing from command line](#testing-from-command-line)
-- [How scalable is it?](#how-scalable-is-it)
-- [Brickbats](#brickbats)
 
 <!-- /TOC -->
 
@@ -53,19 +23,9 @@ to re-configure the params to your liking in the ini file. Note that you may nee
 
 If you are installing `zmeventnotification` for the first time, just read the [How do I install it?](#how-do-i-install-it) section.
 
-### Breaking changes - version 0.95 onwards
-If you are an existing user, version 0.95 has breaking changes as follows:
-* I've migrated the push infrastructure to Google's [Firebase Cloud Messaging (FCM)](https://firebase.google.com/docs/cloud-messaging/) infrastructure. This allows many benefits:
-    * It uses the newer HTTP/2 push mechanisms offered by Apple and Google which are more reliable
-    * It is easier to detect in real time which tokens need to be deleted in your token file
-    * I don't need to maintain a server anymore - your eventserver will directly send messages to FCM which in turn will send messages to your device. My personal server is gone. Yay!
-    * Over time, it will allow me to add more push features (like stacked notifications, images etc)
-    * Apple push certificates no longer expire, so I don't have to keep a watch on when the push infrastructure suddenly stops working 
-    * Google's FCM is much more stable than me running my server that occassionally went down and people stopped receiving pushes. Obviously, Google FCM can also go down, but in general they are more reliable and you can always check the FCM status
-* If you are a developer with your own FCM instance, all you really need to do is use `api_key = ...` with your FCM key in the `[fcm]` section of the configuration file. 
 
 ## What is it?
-A WSS (Secure Web Sockets) based event notification server that broadcasts new events to any authenticated listeners.
+A WSS (Secure Web Sockets) and/or MQTT  based event notification server that broadcasts new events to any authenticated listeners.
 (As of 0.6, it also includes a non secure websocket option, if that's how you want to run it)
 
 ## What can you do with it?
@@ -131,6 +91,13 @@ Get HTTPS library for LWP:
 perl -MCPAN -e "install LWP::Protocol::https"
 ```
 
+If you want to enable MQTT:
+```
+
+```
+perl -MCPAN -e "install Net::MQTT::Simple"
+```
+
 Note that starting 1.0, we also use `File::Spec`, `Getopt::Long` and `Config::IniFiles` as  additional libraries. My ubuntu
 installation seemed to include all of this by default (even though `Config::IniFiles` is not part of base perl).
 
@@ -192,11 +159,12 @@ You can/should run it manually at first to check if it works
 
 ### How can I use this with Node-Red or Home Assistant?
 
-You can enable the zmevent server to broadcast the JSON messages specified below on a topic called /zoneminder/1 (or monitor_id), this can then be consumed by Home Assistant or Node-Red for some neat automation tasks and can then send out different kinds of notifications etc.
+As of version 1.1, this also supports  (Contributed by [@vajonam](https://github.com/vajonam)).
+zmeventnotification server can be configured to broadcast on a topic called `/zoneminder/<monitor-id>` which can then be consumed by Home Assistant or Node-Red.
 
-Do this enable the settings under the `[mqtt]` seciton and specifying the `server` to use
+To  enable this,  set `enable = 1` under the `[mqtt]` section and  specify the `server` to broadcast to.
 
-You will also need to enable the following dependeices for this work
+You will also need to install the following module for this work
 
 ```
 perl -MCPAN -e "install Net::MQTT::Simple"
