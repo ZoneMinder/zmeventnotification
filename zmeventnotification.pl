@@ -51,7 +51,7 @@ use bytes;
 # ==========================================================================
 
 
-my $app_version="1.1";
+my $app_version="1.2";
 
 # ==========================================================================
 #
@@ -408,6 +408,7 @@ my @active_connections=();
 my $alarm_header="";
 my $alarm_mid="";
 my $alarm_eid="";
+my $needsReload = 0;
 
 # MAIN
 
@@ -468,7 +469,7 @@ sub checkEvents()
 {
     
     my $eventFound = 0;
-    if ( (time() - $monitor_reload_time) > $monitor_reload_interval )
+    if ( $needsReload || ((time() - $monitor_reload_time) > $monitor_reload_interval ))
     {
         my $len = scalar @active_connections;
         Info ("Total event client connections: ".$len."\n");
@@ -491,6 +492,7 @@ sub checkEvents()
             zmMemInvalidate( $monitor );
         }
         loadMonitors();
+        $needsReload = 0;
     }
     @events = ();
     $alarm_header = "";
@@ -499,7 +501,13 @@ sub checkEvents()
     foreach my $monitor ( values(%monitors) )
     { 
          my $alarm_cause="";
-        
+
+         if ( ! zmMemVerify($monitor) ) {
+          # Our attempt to verify the memory handle failed. We should reload the monitors.
+          # Don't need to zmMemInvalidate because the monitor reload will do it.
+          $needsReload = 1;
+          next;
+          }
          my ( $state, $last_event, $trigger_cause, $trigger_text)
             = zmMemRead( $monitor,
                  [ "shared_data:state",
