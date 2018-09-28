@@ -100,6 +100,8 @@ my $auth_timeout;
 
 my $use_mqtt;
 my $mqtt_server; 
+my $mqtt_username;
+my $mqtt_password;
 
 my $use_fcm;
 my $fcm_api_key;
@@ -159,6 +161,9 @@ Usage: zmeventnotification.pl [OPTION]...
   --enable-fcm                        Use FCM for messaging (default: true).
   --no-enable-fcm                     Don't use FCM for messaging (default: false).
   --enable-mqtt                       Use MQTT for messaging (default: false).
+  --mqtt-server=SERVER                MQTT messaging server (default: 127.0.0.1). 
+  --mqtt-username=USERNAME            MQTT username (default: unset)
+  --mqtt-password=PASSWORD            MQTT password (default: unset)   
   --no-enable-mqtt                    Disable MQTT for messaging (default: true).
   --fcm-api-key=KEY                   API key for FCM (default: zmNinja FCM key).
   --token-file=FILE                   Auth token store location (default: /etc/private/tokens.txt).
@@ -194,6 +199,8 @@ GetOptions(
   
   "enable-mqtt!"                    => \$use_mqtt,
   "mqtt-server=s"                  => \$mqtt_server,
+  "mqtt-username=s"                  => \$mqtt_username,
+  "mqtt-password=s"                  => \$mqtt_password,
 
   "enable-fcm!"                    => \$use_fcm,
   "fcm-api-key=s"                  => \$fcm_api_key,
@@ -257,6 +264,8 @@ $auth_timeout //= config_get_val($config, "auth", "timeout", DEFAULT_AUTH_TIMEOU
 
 $use_mqtt    //= config_get_val($config, "mqtt", "enable",     DEFAULT_MQTT_ENABLE);
 $mqtt_server  //= config_get_val($config, "mqtt", "server",    DEFAULT_MQTT_SERVER);
+$mqtt_username //= config_get_val($config, "mqtt", "username");
+$mqtt_password //= config_get_val($config, "mqtt", "password");
 
 $use_fcm     //= config_get_val($config, "fcm", "enable",     DEFAULT_FCM_ENABLE);
 $fcm_api_key //= config_get_val($config, "fcm", "api_key", NINJA_API_KEY);
@@ -303,6 +312,10 @@ sub value_or_undefined {
   return $_[0] || "(undefined)";
 }
 
+sub redacted_or_undefined {
+  return $_[0] ? "(redacted)" : "(undefined)";
+}
+
 sub present_or_not {
   return $_[0] ? "(defined)" : "(undefined)";
 }
@@ -332,6 +345,8 @@ Token file .................... ${\(value_or_undefined($token_file))}
 
 Use MQTT .......................${\(true_or_false($use_mqtt))}
 MQTT Server ....................${\(value_or_undefined($mqtt_server))}
+MQTT Username ..................${\(value_or_undefined($mqtt_username))}
+MQTT Password ..................${\(redacted_or_undefined($mqtt_password))}
 
 SSL enabled ................... ${\(true_or_false($ssl_enabled))}
 SSL cert file ................. ${\(value_or_undefined($ssl_cert_file))}
@@ -431,6 +446,10 @@ if ($use_fcm)
 if ($use_mqtt)
 {
     if (!try_use ("Net::MQTT::Simple")) {Fatal ("Net::MQTT::Simple  missing");exit (-1);}
+    if (defined $mqtt_username)
+    {
+        if (!try_use ("Net::MQTT::Simple::Auth")) {Fatal ("Net::MQTT::Simple::Auth  missing");exit (-1);}
+    }
     Info ("Broadcasting Events to MQTT");
 
 }
@@ -683,6 +702,7 @@ sub sendOverMQTTBroker
 
     my ($header, $mid) = @_;
     my $json;
+    my $mqtt;
 
     $json = encode_json ({
                 monitor=> $mid,
@@ -692,7 +712,14 @@ sub sendOverMQTTBroker
 
     Debug ("Final JSON being sent is: $json");
 
-    my $mqtt = Net::MQTT::Simple->new($mqtt_server);
+    if (defined $mqtt_username && defined $mqtt_password)
+    {
+        $mqtt = Net::MQTT::Simple::Auth->new($mqtt_server, $mqtt_username, $mqtt_password);
+    }
+    else 
+    {
+        $mqtt = Net::MQTT::Simple->new($mqtt_server);
+    }
 
     $mqtt->publish(join('/','zoneminder',$mid) => $json);
 }
