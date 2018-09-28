@@ -312,9 +312,6 @@ sub value_or_undefined {
   return $_[0] || "(undefined)";
 }
 
-sub redacted_or_undefined {
-  return $_[0] ? "(redacted)" : "(undefined)";
-}
 
 sub present_or_not {
   return $_[0] ? "(defined)" : "(undefined)";
@@ -346,7 +343,7 @@ Token file .................... ${\(value_or_undefined($token_file))}
 Use MQTT .......................${\(true_or_false($use_mqtt))}
 MQTT Server ....................${\(value_or_undefined($mqtt_server))}
 MQTT Username ..................${\(value_or_undefined($mqtt_username))}
-MQTT Password ..................${\(redacted_or_undefined($mqtt_password))}
+MQTT Password ..................${\(present_or_not($mqtt_password))}
 
 SSL enabled ................... ${\(true_or_false($ssl_enabled))}
 SSL cert file ................. ${\(value_or_undefined($ssl_cert_file))}
