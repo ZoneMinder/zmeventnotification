@@ -51,7 +51,7 @@ use bytes;
 # ==========================================================================
 
 
-my $app_version="1.3";
+my $app_version="1.4";
 
 # ==========================================================================
 #
@@ -522,7 +522,7 @@ sub checkEvents()
           # Our attempt to verify the memory handle failed. We should reload the monitors.
           # Don't need to zmMemInvalidate because the monitor reload will do it.
           $needsReload = 1;
-          Info ("** Memory verify failed for ".$monitor->{Name}."(id:".$monitor->{Id}. ") so forcing reload");
+          Error ("** Memory verify failed for ".$monitor->{Name}."(id:".$monitor->{Id}. ") so forcing reload");
           next;
           }
          my ( $state, $last_event, $trigger_cause, $trigger_text)
@@ -586,46 +586,27 @@ sub checkEvents()
 # 
 sub loadMonitors
 {
-    Info( "Loading monitors\n" );
-    $monitor_reload_time = time();
+      Info( "Loading monitors\n" );
+      $monitor_reload_time = time();
 
-    my %new_monitors = ();
+      my %new_monitors = ();
 
-    my $sql = "SELECT * FROM Monitors
-               WHERE find_in_set( Function, 'Modect,Mocord,Nodect' )".
-               ( $Config{ZM_SERVER_ID} ? 'AND ServerId=?' : '' );
-    Debug ("SQL to be executed is :$sql");
-     my $sth = $dbh->prepare_cached( $sql )
+      my $sql = "SELECT * FROM Monitors
+        WHERE find_in_set( Function, 'Modect,Mocord,Nodect' )".
+        ( $Config{ZM_SERVER_ID} ? 'AND ServerId=?' : '' )
+        ;
+      my $sth = $dbh->prepare_cached( $sql )
         or Fatal( "Can't prepare '$sql': ".$dbh->errstr() );
-    my $res = $sth->execute( $Config{ZM_SERVER_ID} ? $Config{ZM_SERVER_ID} : () )
+      my $res = $sth->execute( $Config{ZM_SERVER_ID} ? $Config{ZM_SERVER_ID} : () )
         or Fatal( "Can't execute: ".$sth->errstr() );
-    while( my $monitor = $sth->fetchrow_hashref() )
-    {
-        if ( !zmMemVerify( $monitor ) ) {
-              zmMemInvalidate( $monitor );
-              next;
-        }
-       # next if ( !zmMemVerify( $monitor ) ); # Check shared memory ok
-
-        if ( defined($monitors{$monitor->{Id}}->{LastState}) )
-        {
-            $monitor->{LastState} = $monitors{$monitor->{Id}}->{LastState};
-        }
-        else
-        {
+      while( my $monitor = $sth->fetchrow_hashref() ) {
+        if ( zmMemVerify( $monitor ) ) {
             $monitor->{LastState} = zmGetMonitorState( $monitor );
-        }
-        if ( defined($monitors{$monitor->{Id}}->{LastEvent}) )
-        {
-            $monitor->{LastEvent} = $monitors{$monitor->{Id}}->{LastEvent};
-        }
-        else
-        {
             $monitor->{LastEvent} = zmGetLastEvent( $monitor );
         }
         $new_monitors{$monitor->{Id}} = $monitor;
-    }
-    %monitors = %new_monitors;
+      } # end while fetchrow
+      %monitors = %new_monitors;
 }
 
 
