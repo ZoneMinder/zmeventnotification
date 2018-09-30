@@ -51,7 +51,7 @@ use bytes;
 # ==========================================================================
 
 
-my $app_version="1.2";
+my $app_version="1.3";
 
 # ==========================================================================
 #
@@ -518,10 +518,11 @@ sub checkEvents()
     { 
          my $alarm_cause="";
 
-         if ( ! zmMemVerify($monitor) ) {
+         if (  !zmMemVerify($monitor) ) {
           # Our attempt to verify the memory handle failed. We should reload the monitors.
           # Don't need to zmMemInvalidate because the monitor reload will do it.
           $needsReload = 1;
+          Info ("** Memory verify failed for ".$monitor->{Name}."(id:".$monitor->{Id}. ") so forcing reload");
           next;
           }
          my ( $state, $last_event, $trigger_cause, $trigger_text)
