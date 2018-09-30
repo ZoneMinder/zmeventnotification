@@ -125,21 +125,6 @@ my $dummyEventTest = 0; # if on, will generate dummy events. Not in config for a
 my $dummyEventInterval = 30; # timespan to generate events in seconds
 my $dummyEventTimeLastSent = time();
 
-# This part makes sure we have the right deps
-if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");}
-if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL missing");}
-if (!try_use ("Config::IniFiles")) {Fatal ("Config::Inifiles missing");}
-if (!try_use ("Getopt::Long")) {Fatal ("Getopt::Long missing");}
-if (!try_use ("File::Basename")) {Fatal ("File::Basename missing");}
-if (!try_use ("File::Spec")) {Fatal ("File::Spec missing");}
-if (!try_use ("Crypt::MySQL qw(password password41)")) {Fatal ("Crypt::MySQL  missing");}
-
-if (!try_use ("JSON")) 
-{ 
-    if (!try_use ("JSON::XS")) 
-    { Fatal ("JSON or JSON::XS  missing");exit (-1);}
-}
-# Fetch whatever options are available from CLI arguments.
 
 use constant USAGE => <<'USAGE';
 
@@ -275,12 +260,12 @@ $ssl_enabled   //= config_get_val($config, "ssl", "enable", DEFAULT_SSL_ENABLE);
 $ssl_cert_file //= config_get_val($config, "ssl", "cert");
 $ssl_key_file  //= config_get_val($config, "ssl", "key");
 
-$verbose                       //= config_get_val($config, "customize", "verbose",                       DEFAULT_CUSTOMIZE_VERBOSE);
-$event_check_interval          //= config_get_val($config, "customize", "event_check_interval",          DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL);
-$monitor_reload_interval       //= config_get_val($config, "customize", "monitor_reload_interval",       DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL);
-$read_alarm_cause              //= config_get_val($config, "customize", "read_alarm_cause",              DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE);
-$tag_alarm_event_id            //= config_get_val($config, "customize", "tag_alarm_event_id",            DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID);
-$use_custom_notification_sound //= config_get_val($config, "customize", "use_custom_notification_sound", DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND);
+$verbose                       //= config_get_val($config, "customize", "verbose", DEFAULT_CUSTOMIZE_VERBOSE);
+$event_check_interval          //= config_get_val($config, "customize", "event_check_interval", DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL);
+$monitor_reload_interval       //= config_get_val($config, "customize", "monitor_reload_interval", DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL);
+$read_alarm_cause              //= config_get_val($config, "customize", "read_alarm_cause", DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE);
+$tag_alarm_event_id            //= config_get_val($config, "customize", "tag_alarm_event_id", DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID);
+$use_custom_notification_sound //= config_get_val($config, "customize", "use_custom_notification_sound" DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND);
 
 my %ssl_push_opts = ();
 
@@ -304,6 +289,7 @@ sub config_get_val {
     return defined($val)? $val:$def;
 }
 
+# helper routines to print config status in help
 sub true_or_false {
   return $_[0] ? "true" : "false";
 }
@@ -362,13 +348,29 @@ exit(print_config()) if $check_config;
 print_config() if $verbose;
 
  
-
 # Lets now load all the dependent libraries in a failsafe way
+
+# This part makes sure we have the right deps
+if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");}
+if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL missing");}
+if (!try_use ("Config::IniFiles")) {Fatal ("Config::Inifiles missing");}
+if (!try_use ("Getopt::Long")) {Fatal ("Getopt::Long missing");}
+if (!try_use ("File::Basename")) {Fatal ("File::Basename missing");}
+if (!try_use ("File::Spec")) {Fatal ("File::Spec missing");}
+if (!try_use ("Crypt::MySQL qw(password password41)")) {Fatal ("Crypt::MySQL  missing");}
+
+if (!try_use ("JSON")) 
+{ 
+    if (!try_use ("JSON::XS")) 
+    { Fatal ("JSON or JSON::XS  missing");exit (-1);}
+}
+# Fetch whatever options are available from CLI arguments.
+
 if ($use_fcm)
 {
     if (!try_use ("LWP::UserAgent") || !try_use ("URI::URL") || !try_use("LWP::Protocol::https"))
     {
-        Fatal ("PushProxy mode needs LWP::Protocol::https, LWP::UserAgent and URI::URL perl packages installed");
+        Fatal ("FCM push mode needs LWP::Protocol::https, LWP::UserAgent and URI::URL perl packages installed");
     }
     else
     {
@@ -379,6 +381,21 @@ if ($use_fcm)
 else
 {
     Info ("FCM disabled. Will only send out websocket notifications");
+}
+
+if ($use_mqtt)
+{
+    if (!try_use ("Net::MQTT::Simple")) {Fatal ("Net::MQTT::Simple  missing");exit (-1);}
+    if (defined $mqtt_username)
+    {
+        if (!try_use ("Net::MQTT::Simple::Auth")) {Fatal ("Net::MQTT::Simple::Auth  missing");exit (-1);}
+    }
+    Info ("Broadcasting Events to MQTT");
+
+}
+else 
+{
+    Info ("MQTT Disabled");
 }
 
 # ==========================================================================
@@ -422,12 +439,10 @@ my $alarm_mid="";
 my $alarm_eid="";
 my $needsReload = 0;
 
-# MAIN
-
+# Main entry point
 
 printdbg ("******You are running version: $app_version");
-
-printdbg("WARNING: SSL is disabled, which means all traffic will be unencrypted!") unless $ssl_enabled;
+printdbg ("WARNING: SSL is disabled, which means all traffic will be unencrypted!") unless $ssl_enabled;
 
 if ($use_fcm)
 {
@@ -435,21 +450,12 @@ if ($use_fcm)
     if ( ! -d $dir)
     {
 
-        Info ("Creating $dir to store APNS tokens");
+        Info ("Creating $dir to store FCM tokens");
         mkdir $dir;
     }
 }
 
-if ($use_mqtt)
-{
-    if (!try_use ("Net::MQTT::Simple")) {Fatal ("Net::MQTT::Simple  missing");exit (-1);}
-    if (defined $mqtt_username)
-    {
-        if (!try_use ("Net::MQTT::Simple::Auth")) {Fatal ("Net::MQTT::Simple::Auth  missing");exit (-1);}
-    }
-    Info ("Broadcasting Events to MQTT");
 
-}
 
 
 Info( "Event Notification daemon v $app_version starting\n" );
@@ -797,90 +803,6 @@ sub sendOverFCM
     }
 
 }
-
-# Not used anymore - will remove later
-# Sends a push notification to the remote proxy 
-sub sendOverPushProxy
-{
-    
-    my $pushProxyURL="none";
-    my ($obj, $header, $mid, $str) = @_;
-    $obj->{badge}++;
-    my $uri = $pushProxyURL."/api/v2/push";
-    my $json;
-
-    # Not passing full JSON object - so that payload is limited for now
-    if ($obj->{platform} eq "ios")
-    {
-        if ($use_custom_notification_sound)
-        {
-            $json = encode_json ({
-                device=>$obj->{platform},
-                token=>$obj->{token},
-                alert=>$header,
-                sound=>'blop.caf',
-                custom=> { mid=>$mid},
-                badge=>$obj->{badge}
-
-            });
-
-        }
-        else
-        {
-            $json = encode_json ({
-                device=>$obj->{platform},
-                token=>$obj->{token},
-                alert=>$header,
-                sound=>'true',
-                custom=> { mid=>$mid},
-                badge=>$obj->{badge}
-
-            });
-
-        }
-    }
-    else # android
-    {
-        if ($use_custom_notification_sound)
-        {
-            $json = encode_json ({
-                device=>$obj->{platform},
-                token=>$obj->{token},
-                alert=>$header,
-                sound=>'blop',
-                extra=> { mid=>$mid}
-
-            });
-        }
-        else
-        {
-            $json = encode_json ({
-                device=>$obj->{platform},
-                token=>$obj->{token},
-                extra=> { mid=>$mid},
-                alert=>$header
-
-            });
-}
-    }
-    #print "Sending:$json\n";
-    Debug ("Final JSON being sent is: $json");
-    my $req = HTTP::Request->new ('POST', $uri);
-    #$req->header( 'Content-Type' => 'application/json', 'X-AN-APP-NAME'=> PUSHPROXY_APP_NAME, 'X-AN-APP-KEY'=> PUSHPROXY_APP_ID
-    # );
-     $req->content($json);
-    my $lwp = LWP::UserAgent->new(%ssl_push_opts);
-    my $res = $lwp->request( $req );
-    if ($res->is_success)
-    {
-        Info ("Pushproxy push message success ".$res->content);
-    }
-    else
-    {
-        Info("Push Proxy push message Error:".$res->status_line);
-    }
-}
-
 
 
 # This runs at each tick to purge connections
@@ -1318,8 +1240,7 @@ sub saveTokens
     	print $fh "$stoken:$smonlist:$sintlist:$splatform:$spushstate\n";
     }
     close ($fh);
-    #registerOverPushProxy($stoken,$splatform) if ($use_fcm);
-    #print "Saved Token $token to file\n";
+
     return ($smonlist, $sintlist);
     
 }
@@ -1539,8 +1460,7 @@ sub initSocketServer
                         {
                             if ($use_fcm)
                             {
-                                Info ("Sending notification over PushProxy");
-                                #sendOverPushProxy($_,$alarm_header, $alarm_mid, $str) ;     
+                                Info ("Sending notification over FCM");  
                                 sendOverFCM($_,$alarm_header, $alarm_mid, $alarm_eid,$str) ;     
                             }
                             
