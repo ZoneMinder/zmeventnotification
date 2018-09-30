@@ -1,5 +1,5 @@
 
-**Latest Version: 1.1**
+**Latest Version: 1.3**
 
 <!-- TOC -->
 
