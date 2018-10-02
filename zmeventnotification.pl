@@ -126,7 +126,7 @@ my $use_hook_description;
 #default key. Please don't change this
 use constant NINJA_API_KEY => "AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h";
 
-my $dummyEventTest = 1; # if on, will generate dummy events. Not in config for a reason. Only dev testing
+my $dummyEventTest = 0; # if on, will generate dummy events. Not in config for a reason. Only dev testing
 my $dummyEventInterval = 10; # timespan to generate events in seconds
 my $dummyEventTimeLastSent = time();
 
