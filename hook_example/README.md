@@ -10,4 +10,10 @@ Please don't expect this to work out of the box. You will need to read, change p
 and make sure you have all the python modules installed. Please don't ask me for help unless you show me
 you've tried hard enough
 
+As always, if you are trying to figure out how this works, run zmeventnotification in MANUAL mode:
+
+* `sudo zmdc.pl start zmeventnotification.pl`
+*  change verbose to 1 in `zmeventnotification.ini`
+*  `sudo -u www-data ./zmeventnotification.pl  --config ./zmeventnotification.ini`
+
 
