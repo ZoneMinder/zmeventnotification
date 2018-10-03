@@ -5,7 +5,7 @@
 # $2 = monitor ID of monitor that triggered an alarm
 # $3 = monitor Name of monitor that triggered an alarm
 
-# This will only work with the changes committed to master index.php on Oct 3, 2018
+# This will only work with the changes committed to index.php in this PR: https://github.com/ZoneMinder/zoneminder/pull/2231
 # Given an event ID, it fetches a frame with maximum score so far (can also be used for in progress recordings
 
 # Logic:
