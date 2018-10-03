@@ -1369,9 +1369,11 @@ sub processAlarms {
         Info ("Invoking hook:".$cmd);
         my $resTxt = `$cmd`;
         my $resCode = $? >> 8;
-        printdbg("custom script returned with text:".$resTxt." exit:".$resCode);
-        $alarm_header = $resTxt if ($use_hook_description);
+        Info("hook script returned with text:".$resTxt." exit:".$resCode);
         return if ($resCode !=0);
+
+        $alarm_header = $resTxt if ($use_hook_description);
+        
     }
 
     my $ac = scalar @active_connections;
