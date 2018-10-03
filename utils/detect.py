@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 # Please don't ask me questions about this script
 # its a simple OpenCV person detection script I've proved as a sample "hook" you can add to the notification server
 
@@ -12,10 +14,12 @@ import argparse
 import imutils
 import cv2
 import datetime
+import os
  
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-i", "--images", required=True, help="path to images directory")
+ap.add_argument("-d", "--delete", action="store_true",  help="delete image after processing")
+ap.add_argument("-i", "--image", required=True, help="image with path")
 ap.add_argument("-w", "--win-stride", type=str, default="(4, 4)",
 	help="window stride")
 ap.add_argument("-p", "--padding", type=str, default="(8, 8)",
@@ -36,7 +40,7 @@ meanShift = True if args["mean_shift"] > 0 else False
 # initialize the HOG descriptor/person detector
 hog = cv2.HOGDescriptor()
 hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
-image = cv2.imread(args["images"])
+image = cv2.imread(args["image"])
 image = imutils.resize(image, width=min(400, image.shape[1]))
 # detect people in the image
 start = datetime.datetime.now()
@@ -45,9 +49,9 @@ r,w = hog.detectMultiScale(image, winStride=winStride,
 
 if len(r) > 0:
     print ("person detected")
-#result = hog.detectMultiScale(image)
-#print (len(r) > 0 ? "Person detected": "")
 
+if (args["delete"]):
+    os.remove(args["image"])
 #print("[INFO] detection took: {}s".format(
 #	(datetime.datetime.now() - start).total_seconds()))
 

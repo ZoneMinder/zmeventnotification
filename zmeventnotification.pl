@@ -454,6 +454,7 @@ my $proxy_reach_time=0;
 my $wss;
 my @events=();
 my @active_connections=();
+my $alarm_monitor_name="";
 my $alarm_header="";
 my $alarm_mid="";
 my $alarm_eid="";
@@ -585,6 +586,7 @@ sub checkEvents()
                 $alarm_mid = $alarm_mid.$mid.",";
                 $alarm_header = $alarm_header . " (".$last_event.") " if ($tag_alarm_event_id);
                 $alarm_header = $alarm_header . "," ;
+                $alarm_monitor_name = $monitor->{Name};
                 $eventFound = 1;
             }
             
@@ -1363,7 +1365,8 @@ sub getIdentity
 sub processAlarms {
 
     if ($hook) {
-        my $cmd = $hook." ".$alarm_eid." ".$alarm_mid;
+        my $cmd = $hook." ".$alarm_eid." ".$alarm_mid." \"".$alarm_monitor_name."\"";
+        Info ("Invoking hook:".$cmd);
         my $resTxt = `$cmd`;
         my $resCode = $? >> 8;
         printdbg("custom script returned with text:".$resTxt." exit:".$resCode);
