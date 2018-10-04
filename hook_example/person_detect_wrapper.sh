@@ -44,6 +44,7 @@ ${WGET} "${_URL}" --no-check-certificate -O "${IMAGE_PATH}/$1.jpg"  >/dev/null 2
 
 RESULTS=`${PERSON_DETECTION_SCRIPT}  --image ${IMAGE_PATH}/$1.jpg | grep "person detected"`
 
+_RETVAL=1
 # The script needs  to return a 0 for success (person detected) or 1 for failure (no person)
 if [ "${RESULTS}" = "person detected" ]; then
     #echo "$3:${RESULTS}"
