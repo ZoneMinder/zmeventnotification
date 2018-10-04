@@ -46,6 +46,7 @@ RESULTS=`${PERSON_DETECTION_SCRIPT}  --image ${IMAGE_PATH}/$1.jpg | grep "person
 
 # The script needs  to return a 0 for success (person detected) or 1 for failure (no person)
 if [ "${RESULTS}" = "person detected" ]; then
+    #echo "$3:${RESULTS}"
     echo "${RESULTS}"
    _RETVAL=0 
 fi
