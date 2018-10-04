@@ -738,7 +738,7 @@ sub sendOverMQTTBroker
 sub sendOverFCM
 {
     
-    my ($obj, $header, $mid, $eid,  $str) = @_;
+    my ($obj, $header, $mid, $eid,  $str, $mname) = @_;
     
     my $now = strftime('%I:%M %p, %b-%d',localtime);
     $obj->{badge}++;
@@ -755,7 +755,7 @@ sub sendOverFCM
             to=>$obj->{token},
             notification=> {
                title=>"ZoneMinder Alarm",
-               body=>$header." at ".$now,
+               body=>$mname.":".$header." at ".$now,
                sound=>"default",
                badge=>$obj->{badge},
             },
@@ -772,7 +772,7 @@ sub sendOverFCM
             to=>$obj->{token},
             data=> {
                 title=>"Zoneminder Alarm",
-                message=>$header." at ".$now,
+                message=>$mname.":".$header." at ".$now,
                 #"force-start"=>1,
                 style=>"inbox",
                 myMessageId=> $notId,
@@ -1457,7 +1457,7 @@ sub processAlarms {
             if ($use_fcm)
             {
                 Info ("Sending notification over FCM");  
-                sendOverFCM($_,$alarm_header, $alarm_mid, $alarm_eid,$str) ;     
+                sendOverFCM($_,$alarm_header, $alarm_mid, $alarm_eid,$str, $alarm_monitor_name) ;     
             }
             
             # send supplementary event data over websocket
