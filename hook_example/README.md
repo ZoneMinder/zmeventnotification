@@ -10,10 +10,20 @@ Please don't expect this to work out of the box. You will need to read, change p
 and make sure you have all the python modules installed. Please don't ask me for help unless you show me
 you've tried hard enough
 
-As always, if you are trying to figure out how this works, run zmeventnotification in MANUAL mode:
+As always, if you are trying to figure out how this works, do this in 3 steps:
+
+**STEP 1: Make sure the scripts work**
+- `./person_detect_wrapper.sh <eid>` --> make sure it downloads a proper image for that eid. If not, fix it.
+- `./detect.py --image <eid>.jpg` --> make sure it doesn't show any errors
+- Make sure the `IMAGE_PATH` you've chosen in `./person_detect_wrapper.sh` is WRITABLE by www-data (or apache) before you move to step 2
+
+**STEP 2: run zmeventnotification in MANUAL mode**
 
 * `sudo zmdc.pl start zmeventnotification.pl`
 *  change verbose to 1 in `zmeventnotification.ini`
 *  `sudo -u www-data ./zmeventnotification.pl  --config ./zmeventnotification.ini`
+*  Force an alarm, look at logs
 
+**STEP 3: integrate with the actual daemon**
 
+* You should know how to do this already
