@@ -754,8 +754,8 @@ sub sendOverFCM
             
             to=>$obj->{token},
             notification=> {
-               title=>"ZoneMinder Alarm",
-               body=>$mname.":".$header." at ".$now,
+               title=>$mname." Alarm",
+               body=>$header." at ".$now,
                sound=>"default",
                badge=>$obj->{badge},
             },
@@ -771,8 +771,8 @@ sub sendOverFCM
         $json = encode_json ({
             to=>$obj->{token},
             data=> {
-                title=>"Zoneminder Alarm",
-                message=>$mname.":".$header." at ".$now,
+                title=>$mname." Alarm",
+                message=>$header." at ".$now,
                 #"force-start"=>1,
                 style=>"inbox",
                 myMessageId=> $notId,
