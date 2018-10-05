@@ -127,7 +127,7 @@ my $use_hook_description;
 use constant NINJA_API_KEY => "AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h";
 
 my $dummyEventTest = 0; # if on, will generate dummy events. Not in config for a reason. Only dev testing
-my $dummyEventInterval = 10; # timespan to generate events in seconds
+my $dummyEventInterval = 20; # timespan to generate events in seconds
 my $dummyEventTimeLastSent = time();
 
 
@@ -305,6 +305,7 @@ use constant PENDING_WEBSOCKET => '1';
 use constant INVALID_WEBSOCKET => '-1';
 use constant INVALID_APNS      => '-2';
 use constant INVALID_AUTH      => '-3';
+use constant INVALID_REMOTE    => '-4';
 use constant VALID_WEBSOCKET   => '0';
 
 # this is just a wrapper around Config::IniFiles val
@@ -861,6 +862,8 @@ sub checkConnection
     @active_connections = grep { $_->{pending} != INVALID_AUTH   } @active_connections;
     $ac1 = scalar @active_connections;
     #printdbg ("Active connects after INVALID_AUTH purge=$ac1");
+    @active_connections = grep { $_->{pending} != INVALID_REMOTE   } @active_connections;
+    $ac1 = scalar @active_connections;
 
 #    commented out - seems like if the app exists and websocket is closed, this code
 #    eventually results in the token being removed from tokens.txt which I don't want
@@ -1368,6 +1371,7 @@ sub processAlarms {
         my $cmd = $hook." ".$alarm_eid." ".$alarm_mid." \"".$alarm_monitor_name."\"";
         Info ("Invoking hook:".$cmd);
         my $resTxt = `$cmd`;
+        chomp($resTxt);
         my $resCode = $? >> 8;
         Info("hook script returned with text:".$resTxt." exit:".$resCode);
         return if ($resCode !=0);
@@ -1543,19 +1547,23 @@ sub initSocketServer
             if (checkEvents())
             {
             
-                my $pid = fork;
-                if (!defined $pid) {
-                    die "Cannot fork: $!";
+                # disable forking for now
+                # as child exit kills the socket
 
-                }
-                elsif ($pid == 0) {
-                    # client
-                    local $SIG{'CHLD'} = 'DEFAULT';
-                    printdbg ("Forking process to handle alarm for:".$alarm_eid." monitor:".$alarm_mid);
-                    processAlarms();
-                    printdbg ("Ending process to handle alarm for:".$alarm_eid." monitor:".$alarm_mid);
-                    exit 0;
-                }
+                processAlarms();
+                #my $pid = fork;
+                #if (!defined $pid) {
+                #    die "Cannot fork: $!";
+
+                #}
+                #elsif ($pid == 0) {
+                #    # client
+                #    local $SIG{'CHLD'} = 'DEFAULT';
+                #    printdbg ("Forking process to handle alarm for:".$alarm_eid." monitor:".$alarm_mid);
+                #    processAlarms();
+                #    printdbg ("Ending process to handle alarm for:".$alarm_eid." monitor:".$alarm_mid);
+                #    exit 0; 
+                #}
                 
 
             }
@@ -1601,7 +1609,7 @@ sub initSocketServer
                             # not present
                             if ( $_->{token} eq '')
                             {
-                                $_->{pending}=INVALID_WEBSOCKET; 
+                                $_->{pending}=INVALID_REMOTE;
                                 Info( "Marking ".$conn->ip()." for deletion as websocket closed remotely\n");
                             }
                             else
