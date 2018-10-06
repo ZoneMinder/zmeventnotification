@@ -48,7 +48,7 @@ r,w = hog.detectMultiScale(image, winStride=winStride,
 	padding=padding, scale=args["scale"], useMeanshiftGrouping=meanShift)
 
 if len(r) > 0:
-    print ("person detected")
+    print ("detected: person")
 
 if (args["delete"]):
     os.remove(args["image"])

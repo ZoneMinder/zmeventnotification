@@ -6,7 +6,7 @@
 # $3 = monitor Name of monitor that triggered an alarm
 
 # This will only work with the changes committed to index.php in this PR: https://github.com/ZoneMinder/zoneminder/pull/2231
-# Given an event ID, it fetches a frame with maximum score so far (can also be used for in progress recordings
+# Given an event ID, it fetches a frame with maximum score so far (can also be used for in progress recordings)
 
 # Logic:
 # This script is invoked by zmeventnotification is you've specified its location in the hook= variable of zmeventnotification.pl
@@ -20,8 +20,25 @@
 PORTAL="https://yourserver/zm"
 USERNAME=admin
 PASSWORD=yourpassword
-PERSON_DETECTION_SCRIPT="/usr/bin/detect.py" # path to detection script 
-IMAGE_PATH="/tmp/person" # make sure this exists and WRITEABLE by www-data (or apache)
+
+# Enable this if you want fast but inaccurate HOG
+#DETECTION_SCRIPT="/usr/bin/detect_hog.py" # path to detection script 
+
+# Enable these if you want slower but more accurate DNN
+# If you use YOLOv3, you will need to modify these too
+YOLOV3_CONFIG="/var/detect/models/yolov3/yolov3.cfg"
+YOLOV3_WEIGHTS="/var/detect/models/yolov3/yolov3.weights"
+YOLOV3_LABELS="/var/detect/models/yolov3/yolov3_classes.txt"
+DETECTION_SCRIPT="/usr/bin/detect_yolo.py -c ${YOLOV3_CONFIG} -w ${YOLOV3_WEIGHTS} -l ${YOLOV3_LABELS} " # path to detection script 
+
+IMAGE_PATH="/var/detect/images" # make sure this exists and WRITEABLE by www-data (or apache)
+
+# If you only want to detect persons, put in "person:" here. If you are using detect_yolo, 
+# just making it "detected:" will detect all categories in https://github.com/arunponnusamy/object-detection-opencv/blob/master/yolov3.txt
+
+# If you only want persons, make this person (or any other label class)
+#DETECT_PATTERN="detected:" # all  detections
+DETECT_PATTERN="person"   # only person
 
 # --------- You *may* need to change these ------------
 WGET="/usr/bin/wget"
@@ -32,6 +49,7 @@ WILL_SNOOZE=0 # if 1 will wait for SNOOZE_DURATION seconds before it grabs a fra
 SNOOZE_DURATION=2
 
 
+# --------- You should not have to change any of these -----------------
 _URL="${PORTAL}/index.php?view=image&eid=$1&fid=${FID}&width=800&username=${USERNAME}&password=${PASSWORD}"
 
 if [ "${WILL_SNOOZE}" = "1" ]; then
@@ -42,13 +60,12 @@ fi
 #get the actual image
 ${WGET} "${_URL}" --no-check-certificate -O "${IMAGE_PATH}/$1.jpg"  >/dev/null 2>&1
 
-RESULTS=`${PERSON_DETECTION_SCRIPT}  --image ${IMAGE_PATH}/$1.jpg | grep "person detected"`
+RESULTS=`${DETECTION_SCRIPT}  --image ${IMAGE_PATH}/$1.jpg | grep "detected:"`
 
 _RETVAL=1
-# The script needs  to return a 0 for success (person detected) or 1 for failure (no person)
-if [ "${RESULTS}" = "person detected" ]; then
-    #echo "$3:${RESULTS}"
-    echo "${RESULTS}"
+# The script needs  to return a 0 for success ( detected) or 1 for failure (not detected)
+if [[ ${RESULTS} == *"${DETECT_PATTERN}"* ]]; then
    _RETVAL=0 
 fi
+echo ${RESULTS}
 exit ${_RETVAL}
