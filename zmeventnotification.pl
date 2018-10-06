@@ -432,7 +432,7 @@ use ZoneMinder;
 use POSIX;
 use DBI;
 
-$SIG{CHLD}='IGNORE';
+#$SIG{CHLD}='IGNORE';
 $| = 1;
 
 $ENV{PATH}  = '/bin:/usr/bin';
