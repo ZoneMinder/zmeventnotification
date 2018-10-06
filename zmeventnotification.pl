@@ -141,6 +141,8 @@ if (!try_use ("File::Basename")) {Fatal ("File::Basename missing");}
 if (!try_use ("File::Spec")) {Fatal ("File::Spec missing");}
 if (!try_use ("Crypt::MySQL qw(password password41)")) {Fatal ("Crypt::MySQL  missing");}
 
+#if (!try_use ("threads")) {Fatal ("threads library/support  missing");}
+
 
 use constant USAGE => <<'USAGE';
 
@@ -1371,8 +1373,8 @@ sub processAlarms {
         my $cmd = $hook." ".$alarm_eid." ".$alarm_mid." \"".$alarm_monitor_name."\"";
         Info ("Invoking hook:".$cmd);
         my $resTxt = `$cmd`;
-        chomp($resTxt);
         my $resCode = $? >> 8;
+        chomp($resTxt);
         Info("hook script returned with text:".$resTxt." exit:".$resCode);
         return if ($resCode !=0);
 
@@ -1547,10 +1549,17 @@ sub initSocketServer
             if (checkEvents())
             {
             
+                Info ("Launching thread to handle alarm for:".$alarm_eid." monitor:".$alarm_mid);
+                processAlarms();
+                #threads->create ( sub {
+                #   processAlarms();
+                #    Info ("Terminating thread to handle alarm for:".$alarm_eid." monitor:".$alarm_mid);
+                #   threads->detach();
+                #});
                 # disable forking for now
                 # as child exit kills the socket
 
-                processAlarms();
+                #processAlarms();
                 #my $pid = fork;
                 #if (!defined $pid) {
                 #    die "Cannot fork: $!";
