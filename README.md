@@ -322,7 +322,8 @@ There could be many reasons. Here are the top few:
 
 ### The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)
 
-- Make sure the file where you store tokens (`/etc/private/tokens.txt or whatever you have used`) is not RW Root only. It needs to be RW `www-data` for Ubuntu/Debian or `apache` for Fedora/CentOS
+- Make sure the file where you store tokens (`/etc/private/tokens.txt or whatever you have used`) is not RW Root only. It needs to be RW `www-data` for Ubuntu/Debian or `apache` for Fedora/CentOS. You also need to make sure the directory is accessible. Something like `chown -R www-data:www-data /etc/private`
+
 - Make sure your certificates are readable by `www-data` for Ubuntu/Debian, or `apache` for Fedora/CentOS (thanks to [@jagee](https://github.com/pliablepixels/zmeventserver/issues/8))
 - Make sure the _path_ to the certificates are readable by `www-data` for Ubuntu/Debian, or `apache` for Fedora/CentOS
 
