@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Only tested on ZM 1.32
+# Depends on this PR which you need to apply: https://github.com/ZoneMinder/zoneminder/pull/2231
+
+
 # When invoked by zmeventnotification.pl it will be passed:
 # $1 = eventId that triggered an alarm
 # $2 = monitor ID of monitor that triggered an alarm
