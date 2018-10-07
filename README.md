@@ -289,10 +289,12 @@ its listeners. This is useful to implement any custom logic you may want to perf
 
 Related to `hook` we also have a `hook_description` attribute. When set to 1, the text returned by the hook script will overwrite the alarm text that is notified.
 
+Note that hooks are currently executed in the main loop, so the notification server will wait till the hook returns before processing other alarms, so please make sure your hook scripts are as fast as possible. Given that I handle SSL connections, I can't `fork()` and let a child manage the hook as well as send out a message. I'll have to rework the code to allow for this. In other words "no plans as of now, but some talented perl coder can PR"
+
 Here is an example:
 (Note: just an example, please don't ask me for support for person detection)
 
-- You will find a sample `person_detect_wrapper.sh` hook in the `hook_example` directory. This script is invoked by the notification server when an event occurs.
+- You will find a sample `detect_wrapper.sh` hook in the `hook_example` directory. This script is invoked by the notification server when an event occurs.
 - This script in turn invokes a python OpenCV based script that grabs an image with maximum score from the current event so far and runs a fast person detection routine.
 - It returns the value "person detected" if a person is found and none if not
 - The wrapper script then checks for this value and exits with either 0 (send alarm) or 1 (don't send alarm)
