@@ -62,7 +62,7 @@ As always, if you are trying to figure out how this works, do this in 3 steps:
 
 **STEP 1: Make sure the scripts(s) work**
 - Run the python script manually with `--image <path/to/image/image.jpg>` to see if it works
-- `./detect_wrapper.sh <eid>` --> make sure it downloads a proper image for that eid. Make sure it correctly invokes detect.py If not, fix it.
+- `./detect_wrapper.sh <eid>` --> make sure it downloads a proper image for that eid. Make sure it correctly invokes detect.py If not, fix it. Note that by default the wrapper script passed the `--delete` option to remove the downloaded image. While testing, remove the `--delete` option
 - Make sure the `IMAGE_PATH` you've chosen in `detect_wrapper.sh` is WRITABLE by www-data (or apache) before you move to step 2
 
 **STEP 2: run zmeventnotification in MANUAL mode**
