@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+# License: "Yo, I don't know" (aka please figure out issues yourself and please don't ask me)
+
 # Alternate detection script using neural nets and YoloV3. 
 # slower than openCV HOG but much more accurate
 # also capable of detecting many more objects
