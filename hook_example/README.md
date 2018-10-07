@@ -1,5 +1,7 @@
 ### Note
 
+** I don't plan to provide support for these hooks. They are for reference only and require setup and some degree of know how **
+
 This is just an example of how you can use the new `hook` feature of the notification server
 to invoke a custom script on the event before it generates an alarm. This implements a hook script that detects
 for persons in an image that raised an alarm before sending out a notification. 
