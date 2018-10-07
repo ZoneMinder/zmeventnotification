@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 # License: "Yo, I don't know" (aka please figure out issues yourself and please don't ask me)
+# Real license: MIT (as the code is almost completely borrowed from https://github.com/arunponnusamy/cvlib/blob/master/cvlib/object_detection.py)
 
 # Alternate detection script using neural nets and YoloV3. 
 # slower than openCV HOG but much more accurate
