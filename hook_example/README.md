@@ -46,7 +46,7 @@ You can manually invoke it to test:
 ```
 
 
-If you are using YOLO models, download the data files from:
+If you are using YOLO models, you will need the following data files:
 * weights: https://pjreddie.com/media/files/yolov3.weights
 * config: https://raw.githubusercontent.com/arunponnusamy/object-detection-opencv/master/yolov3.cfg
 * labels: https://raw.githubusercontent.com/arunponnusamy/object-detection-opencv/master/yolov3.txt
