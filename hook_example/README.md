@@ -52,7 +52,7 @@ If you are using YOLO models, download the data files from:
 * labels: https://raw.githubusercontent.com/arunponnusamy/object-detection-opencv/master/yolov3.txt
 
 
-### performance comparison
+### Performance comparison
 
 DNNs perform very well on a GPU. My ZM server doesn't have a GPU. 
 On a Intel Xeon 3.16GHz 4Core machine, `detect.py` takes 0.2s while `detect_yolo.py` takes 2.4s. 
