@@ -36,6 +36,7 @@
 
 use strict;
 use bytes;
+use POSIX ':sys_wait_h';
 
 # ==========================================================================
 #
@@ -140,6 +141,7 @@ my $dummyEventTimeLastSent = time();
 
 if (!try_use ("Net::WebSocket::Server")) {Fatal ("Net::WebSocket::Server missing");}
 if (!try_use ("IO::Socket::SSL")) {Fatal ("IO::Socket::SSL missing");}
+if (!try_use ("IO::Handle")) {Fatal ("IO::Handle");}
 if (!try_use ("Config::IniFiles")) {Fatal ("Config::Inifiles missing");}
 if (!try_use ("Getopt::Long")) {Fatal ("Getopt::Long missing");}
 if (!try_use ("File::Basename")) {Fatal ("File::Basename missing");}
@@ -449,7 +451,7 @@ use ZoneMinder;
 use POSIX;
 use DBI;
 
-#$SIG{CHLD}='IGNORE';
+$SIG{CHLD}='IGNORE';
 $| = 1;
 
 $ENV{PATH}  = '/bin:/usr/bin';
@@ -485,6 +487,12 @@ my $needsReload = 0;
 
 printInfo ("You are running version: $app_version");
 printWarning ("WARNING: SSL is disabled, which means all traffic will be unencrypted!") unless $ssl_enabled;
+
+pipe(READER,WRITER) || die "pipe failed: $!";
+WRITER->autoflush(1);
+my ($rin,$rout) = ('');
+vec($rin,fileno(READER),1) = 1;
+printDebug ("Parent<--Child pipe ready");
 
 if ($use_fcm)
 {
@@ -757,7 +765,7 @@ sub sendOverMQTTBroker
                 state => 'alarm',
             });
 
-    Debug ("Final JSON being sent is: $json");
+   
 
     if (defined $mqtt_username && defined $mqtt_password)
     {
@@ -824,7 +832,7 @@ sub sendOverFCM
         $android_message->{'data'}->{'style'} = 'picture';
         $android_message->{'data'}->{'picture'} = $pic;
         $android_message->{'data'}->{'summaryText'} = 'alarmed image';
-        printDebug ("Alarm image for android will be: $pic");
+        #printDebug ("Alarm image for android will be: $pic");
     } 
 
 
@@ -840,7 +848,7 @@ sub sendOverFCM
         
     }
 
-    printDebug ("Final JSON being sent is: $json");
+    #printDebug ("Final JSON being sent is: $json");
     my $req = HTTP::Request->new ('POST', $uri);
     $req->header( 'Content-Type' => 'application/json', 'Authorization'=> $key);
      $req->content($json);
@@ -875,6 +883,44 @@ sub sendOverFCM
         printInfo("FCM push message Error:".$res->status_line);
     }
 
+}
+
+# credit: https://stackoverflow.com/a/52724546/1361529
+sub processJobs
+{
+    my $read_avail = select($rout=$rin, undef, undef, 0.0);
+     if ($read_avail < 0) {
+         if (!$!{EINTR}) {
+             printError("Pipe read error: $read_avail $!");
+         }
+     } elsif ($read_avail > 0) {
+         chomp(my $msg = <READER>);
+         
+         my ($tip, $tport, $tmsg) = split("--SPLIT--",$msg);
+         printDebug ("JOB==>To: $tip:$tport, message: $tmsg");
+         foreach (@active_connections) {
+             if (exists $_->{conn} ) {
+                  my $cip = $_->{conn}->ip();
+                  my $cport = $_->{conn}->port();
+                  if (($tip eq $cip) && ($tport eq $cport)) {
+                      printInfo ("Sending child message to $tip:$tport...");
+                    eval {$_->{conn}->send_utf8($tmsg);};
+                    if ($@)
+                    { 
+
+                        printInfo ("Marking ".$_->{conn}->ip()." as bad socket");     
+                        $_->{state} = INVALID_WEBSOCKET;
+
+                    }
+                  }
+             }
+         }
+
+         
+
+     } else {
+         printDebug ("No jobs, continuing...");
+     }
 }
 
 
@@ -1488,15 +1534,9 @@ sub processAlarms {
             {
                 if (exists $_->{conn})
                 {
-                    printInfo ($_->{conn}->ip()."-sending supplementary data over websockets\n");
-                    eval {$_->{conn}->send_utf8($sup_str);};
-                    if ($@)
-                    {
-            
-                        printInfo ("Marking ".$_->{conn}->ip()." as bad socket, as websocket send error with token:",$_->{token});     
-                        $_->{state} = INVALID_WEBSOCKET;
-
-                    }
+                    #printInfo ($_->{conn}->ip()."-sending supplementary data over websockets\n");
+                    print WRITER $_->{conn}->ip()."--SPLIT--".$_->{conn}->port()."--SPLIT--".$sup_str."\n";
+                   
                 }
             }
 
@@ -1507,13 +1547,9 @@ sub processAlarms {
         {
             if (exists $_->{conn})
             {
-                printInfo ($_->{conn}->ip()."-sending over websockets\n");
-                eval {$_->{conn}->send_utf8($str);};
-                if ($@)
-                {
-                    printInfo ("Marking ".$_->{conn}->ip()." for deletion, as websocket send error");     
-                    $_->{state} = PENDING_DELETE;
-                }
+                #printInfo ($_->{conn}->ip()."-sending over websockets\n");
+                print WRITER $_->{conn}->ip()."--SPLIT--".$_->{conn}->port()."--SPLIT--".$str."\n";
+               
             }
          }
     } # foreach
@@ -1558,32 +1594,24 @@ sub initSocketServer
         on_tick => sub {
             printDebug("---------->Tick START<--------------");
             checkConnection();
+            processJobs();
             if (checkEvents())
             {
             
-                processAlarms();
-                #threads->create ( sub {
-                #   processAlarms();
-                #    printInfo ("Terminating thread to handle alarm for:".$alarm_eid." monitor:".$alarm_mid);
-                #   threads->detach();
-                #});
-                # disable forking for now
-                # as child exit kills the socket
+              
+                my $pid = fork;
+                if (!defined $pid) {
+                    die "Cannot fork: $!";
 
-                #processAlarms();
-                #my $pid = fork;
-                #if (!defined $pid) {
-                #    die "Cannot fork: $!";
-
-                #}
-                #elsif ($pid == 0) {
-                #    # client
-                #    local $SIG{'CHLD'} = 'DEFAULT';
-                #    printInfo ("Forking process to handle alarm for:".$alarm_eid." monitor:".$alarm_mid);
-                #    processAlarms();
-                #    printInfo ("Ending process to handle alarm for:".$alarm_eid." monitor:".$alarm_mid);
-                #    exit 0; 
-                #}
+                }
+                elsif ($pid == 0) {
+                    # client
+                    local $SIG{'CHLD'} = 'DEFAULT';
+                    printInfo ("Forking process:$$ to handle alarm for:".$alarm_eid." monitor:".$alarm_monitor_name);
+                    processAlarms();
+                    printInfo ("Ending process to handle alarm for:".$alarm_eid." monitor:".$alarm_monitor_name);
+                    exit 0; 
+                }
                 
 
             }
