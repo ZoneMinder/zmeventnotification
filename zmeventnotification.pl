@@ -468,6 +468,7 @@ logSetSignal();
 
 my $dbh = zmDbConnect();
 my %monitors;
+my %last_event_for_monitors;
 my $monitor_reload_time = 0;
 my $apns_feedback_time = 0;
 my $proxy_reach_time=0;
@@ -602,15 +603,16 @@ sub checkEvents()
 
         if ($state == STATE_ALARM || $state == STATE_ALERT)
         {
-            Debug ("state is STATE_ALARM or ALERT for ".$monitor->{Name});
+            
             if ( !defined($monitor->{LastEvent})
-                         || ($last_event != $monitor->{LastEvent}))
+                         || ($last_event != $last_event_for_monitors{$monitor->{Id}}))
             {
                 $alarm_cause=zmMemRead($monitor,"shared_data:alarm_cause") if ($read_alarm_cause);
                 $alarm_cause = $trigger_cause if (defined($trigger_cause) && $alarm_cause eq "" && $trigger_cause ne "");
                 printInfo( "New event $last_event reported for ".$monitor->{Name}." ".$alarm_cause."\n");
                 $monitor->{LastState} = $state;
                 $monitor->{LastEvent} = $last_event;
+                $last_event_for_monitors{$monitor->{Id}}= $last_event;
                 my $name = $monitor->{Name};
                 my $mid = $monitor->{Id};
                 my $eid = $last_event;
