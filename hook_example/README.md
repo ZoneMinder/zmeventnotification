@@ -5,7 +5,7 @@
 
 ### Limitations
  * Only tested with ZM 1.32. May or may not work with older versions
- * Needs [this PR](https://github.com/ZoneMinder/zoneminder/pull/2231) to fetch images which is not yet merged
+ * Needs [this updated file](https://github.com/ZoneMinder/zoneminder/blob/master/web/index.php) to pull images
 
 ### What
 This is just an example of how you can use the new `hook` feature of the notification server

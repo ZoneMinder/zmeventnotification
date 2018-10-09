@@ -1,8 +1,5 @@
 #!/usr/bin/python
 
-# License: "Yo, I don't know" (aka please figure out issues yourself and please don't ask me)
-# Real license: MIT (as the code is almost completely borrowed from https://github.com/arunponnusamy/cvlib/blob/master/cvlib/object_detection.py)
-
 # Alternate detection script using neural nets and YoloV3. 
 # slower than openCV HOG but much more accurate
 # also capable of detecting many more objects
@@ -14,11 +11,6 @@
 # https://github.com/arunponnusamy/object-detection-opencv/blob/master/yolov3.txt
 
 # core code credit: https://github.com/arunponnusamy/cvlib
-
-# If you are using YOLO models, download the data files from:
-# weights: https://pjreddie.com/media/files/yolov3.weights
-# config: https://raw.githubusercontent.com/arunponnusamy/object-detection-opencv/master/yolov3.cfg
-# labels: https://raw.githubusercontent.com/arunponnusamy/object-detection-opencv/master/yolov3.txt
 
 import sys
 import cv2
