@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
-# License: "Yo, I don't know" (aka please figure out issues yourself and please don't ask me)
-
+# Please don't ask me questions about this script
 # its a simple OpenCV person detection script I've proved as a sample "hook" you can add to the notification server
 
 # credit: https://www.pyimagesearch.com/2015/11/16/hog-detectmultiscale-parameters-explained/

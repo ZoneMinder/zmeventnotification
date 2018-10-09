@@ -1,4 +1,4 @@
-**Latest Version: 1.5**
+**Latest Version: 2.0**
 
 <!-- TOC -->
 

@@ -5,7 +5,12 @@
 # $2 = monitor ID of monitor that triggered an alarm
 # $3 = monitor Name of monitor that triggered an alarm
 
-# This will only work with the changes committed to index.php in this PR: https://github.com/ZoneMinder/zoneminder/pull/2231
+
+s
+# Only tested with ZM 1.32. May or may not work with older versions
+# Needs [this updated file](https://github.com/ZoneMinder/zoneminder/blob/master/web/index.php) 
+# to pull images (merged on Oct 9, 2018 so you may need to pull manually if your build is older)
+
 # Given an event ID, it fetches a frame with maximum score so far (can also be used for in progress recordings
 
 # Logic:
@@ -17,12 +22,12 @@
 
 
 # --------- You will need to change these ------------
-PORTAL="https://server/zm"
+PORTAL="https://yourserver/zm"
 USERNAME=admin
 PASSWORD=yourpassword
 
 # Enable this if you want fast but inaccurate HOG
-#DETECTION_SCRIPT="/usr/bin/detect.py" # path to detection script 
+#DETECTION_SCRIPT="/usr/bin/detect_hog.py" # path to detection script 
 
 # Enable these if you want slower but more accurate DNN
 # If you use YOLOv3, you will need to modify these too
@@ -38,7 +43,7 @@ IMAGE_PATH="/var/detect/images" # make sure this exists and WRITEABLE by www-dat
 
 # If you only want persons, make this person (or any other label class)
 #DETECT_PATTERN="detected:"
-DETECT_PATTERN="person\|car"
+DETECT_PATTERN="(person|car)"
 
 # --------- You *may* need to change these ------------
 WGET="/usr/bin/wget"
@@ -63,7 +68,7 @@ RESULTS=`${DETECTION_SCRIPT}  --image ${IMAGE_PATH}/$1.jpg | grep "detected:"`
 
 _RETVAL=1
 # The script needs  to return a 0 for success ( detected) or 1 for failure (not detected)
-if [[ "${RESULTS}" =~ "${DETECT_PATTERN}" ]]; then
+if [[ "${RESULTS}" =~ ${DETECT_PATTERN} ]]; then
    _RETVAL=0 
 fi
 echo ${RESULTS}
