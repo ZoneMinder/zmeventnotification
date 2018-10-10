@@ -64,7 +64,7 @@ fi
 #get the actual image
 ${WGET} "${_URL}" --no-check-certificate -O "${IMAGE_PATH}/$1.jpg"  >/dev/null 2>&1
 
-RESULTS=`${DETECTION_SCRIPT}  --image ${IMAGE_PATH}/$1.jpg | grep "detected:"`
+RESULTS=`${DETECTION_SCRIPT}  --delete --image ${IMAGE_PATH}/$1.jpg | grep "detected:"`
 
 _RETVAL=1
 # The script needs  to return a 0 for success ( detected) or 1 for failure (not detected)
