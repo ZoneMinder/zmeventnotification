@@ -19,6 +19,7 @@ import os
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-d", "--delete", action="store_true",  help="delete image after processing")
+ap.add_argument("-t", "--time", action="store_true",  help="print time to detect")
 ap.add_argument("-i", "--image", required=True, help="image with path")
 ap.add_argument("-w", "--win-stride", type=str, default="(4, 4)",
 	help="window stride")
@@ -47,11 +48,11 @@ start = datetime.datetime.now()
 r,w = hog.detectMultiScale(image, winStride=winStride,
 	padding=padding, scale=args["scale"], useMeanshiftGrouping=meanShift)
 
+if (args["time"]):
+    print("[INFO] detection took: {}s".format((datetime.datetime.now() - start).total_seconds()))
 if len(r) > 0:
     print ("detected: person")
 
 if (args["delete"]):
     os.remove(args["image"])
-#print("[INFO] detection took: {}s".format(
-#	(datetime.datetime.now() - start).total_seconds()))
 

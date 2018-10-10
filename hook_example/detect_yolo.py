@@ -30,6 +30,7 @@ ap.add_argument("-i", "--image", required=True, help="image with path")
 ap.add_argument("-c", "--config", required=True, help="config file with path")
 ap.add_argument("-w", "--weight", required=True, help="weight file with path")
 ap.add_argument("-l", "--label", required=True, help="label file with path")
+ap.add_argument("-t", "--time", action="store_true", help="print time")
 args = vars(ap.parse_args())
 
 def populate_class_labels():
@@ -117,8 +118,9 @@ image = cv2.imread(args["image"])
 
 start = datetime.datetime.now()
 bbox, label, conf = detect_common_objects(image)
-#print("[INFO] detection took: {}s".format(
-#   (datetime.datetime.now() - start).total_seconds()))
+
+if (args["time"]):
+    print("[INFO] detection took: {}s".format((datetime.datetime.now() - start).total_seconds()))
 
 pred=""
 for l,c in zip (label,conf):

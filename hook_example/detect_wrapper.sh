@@ -22,7 +22,7 @@
 
 
 # --------- You will need to change these ------------
-PORTAL="https://yourserver/zm"
+PORTAL="https:/yourportal/zm"
 USERNAME=admin
 PASSWORD=yourpassword
 
@@ -30,10 +30,20 @@ PASSWORD=yourpassword
 #DETECTION_SCRIPT="/usr/bin/detect_hog.py" # path to detection script 
 
 # Enable these if you want slower but more accurate DNN
+
 # If you use YOLOv3, you will need to modify these too
-YOLOV3_CONFIG="/var/detect/models/yolov3/yolov3.cfg"
-YOLOV3_WEIGHTS="/var/detect/models/yolov3/yolov3.weights"
-YOLOV3_LABELS="/var/detect/models/yolov3/yolov3_classes.txt"
+#takes around 4GB to load in memory
+#YOLOV3_CONFIG="/var/detect/models/yolov3/yolov3.cfg"
+#YOLOV3_WEIGHTS="/var/detect/models/yolov3/yolov3.weights"
+#YOLOV3_LABELS="/var/detect/models/yolov3/yolov3_classes.txt"
+
+#Instead of the above config files, you can also use Tiny YOLOv3
+#better than HOG, worse than YoloV3 as far as accuracy, but almost as fast as HOG
+#takes around 1GB to load in memory
+YOLOV3_CONFIG="/var/detect/models/tinyyolo/yolov3-tiny.cfg"
+YOLOV3_WEIGHTS="/var/detect/models/tinyyolo/yolov3-tiny.weights"
+YOLOV3_LABELS="/var/detect/models/tinyyolo/yolov3-tiny.txt"
+
 DETECTION_SCRIPT="/usr/bin/detect_yolo.py -c ${YOLOV3_CONFIG} -w ${YOLOV3_WEIGHTS} -l ${YOLOV3_LABELS} " # path to detection script 
 
 IMAGE_PATH="/var/detect/images" # make sure this exists and WRITEABLE by www-data (or apache)
@@ -63,6 +73,7 @@ fi
 
 #get the actual image
 ${WGET} "${_URL}" --no-check-certificate -O "${IMAGE_PATH}/$1.jpg"  >/dev/null 2>&1
+
 
 RESULTS=`${DETECTION_SCRIPT}  --delete --image ${IMAGE_PATH}/$1.jpg | grep "detected:"`
 

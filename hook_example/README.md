@@ -35,6 +35,25 @@ The detection uses a very fast, but not very accurate OpenCV model (hog.detectMu
 The good part is that it is extremely fast can can be used for realtime needs. 
 Fiddle with the settings in detect.py (stride/scale) to get more accuracy at the cost of speed.
 
+### detect_yolo.py:  using OpenCV DNN with Tiny YoloV3 (almost comparable with HOG in speed, more accurate)
+
+The detection uses OpenCV's DNN module and Tiny YoloV3 to predict multiple labels with score.
+
+You can manually invoke it to test:
+
+```
+./detect_yolo.py --image image.jpg --config path/to/config/file --weight path/to/weights/file --label path/to/label/file
+```
+
+
+If you are using YOLO models, you will need the following data files:
+* weights: https://pjreddie.com/media/files/yolov3-tiny.weights
+* config:  https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg
+* labels:  https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names
+
+
+
+
 ### detect_yolo.py:  using OpenCV DNN with YoloV3 (much slower, accurate)
 
 The detection uses OpenCV's DNN module and YoloV3 to predict multiple labels with score.
@@ -48,14 +67,17 @@ You can manually invoke it to test:
 
 If you are using YOLO models, you will need the following data files:
 * weights: https://pjreddie.com/media/files/yolov3.weights
-* config: https://raw.githubusercontent.com/arunponnusamy/object-detection-opencv/master/yolov3.cfg
-* labels: https://raw.githubusercontent.com/arunponnusamy/object-detection-opencv/master/yolov3.txt
+* config: https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg
+* labels: https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names
 
 
 ### Performance comparison
 
 DNNs perform very well on a GPU. My ZM server doesn't have a GPU. 
-On a Intel Xeon 3.16GHz 4Core machine, `detect.py` takes 0.2s while `detect_yolo.py` takes 2.4s. 
+On a Intel Xeon 3.16GHz 4Core machine:
+- HOG takes 0.24s
+- YOLOv3 with tiny-yolo takes 0.32s
+- YOLOv3 takes 2.4s
 
 
 As always, if you are trying to figure out how this works, do this in 3 steps:
