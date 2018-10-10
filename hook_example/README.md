@@ -70,6 +70,8 @@ If you are using YOLO models, you will need the following data files:
 * config: https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg
 * labels: https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names
 
+(Note: `coco.names` is the label file the script needs. It is common for both tiny or regular yolo)
+
 
 ### Performance comparison
 
