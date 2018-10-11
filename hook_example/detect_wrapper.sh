@@ -8,8 +8,9 @@
 
 
 # Only tested with ZM 1.32. May or may not work with older versions
-# Needs [this updated file](https://github.com/ZoneMinder/zoneminder/blob/master/web/index.php) 
-# to pull images (merged on Oct 9, 2018 so you may need to pull manually if your build is older)
+# Needs 2 files from master that were updated on Oct 11. If your build is older, you may need to pull them
+# https://github.com/ZoneMinder/zoneminder/blob/master/web/index.php 
+# https://github.com/ZoneMinder/zoneminder/blob/master/web/views/image.php
 
 # Given an event ID, it fetches a frame with maximum score so far (can also be used for in progress recordings
 
@@ -57,8 +58,10 @@ DETECT_PATTERN="(person|car)"
 
 # --------- You *may* need to change these ------------
 WGET="/usr/bin/wget"
-#FID=26   # Set this to pre-event image count + 1 if you want the actual frame that triggered the alarm
-FID="snapshot" # Use this if you want to analyze the frame with the maximum score
+
+FID='alarm' # get first alarmed frame
+#FID=26   # specific frame id
+#FID="snapshot" # Use this if you want to analyze the frame with the maximum score
 
 WILL_SNOOZE=0 # if 1 will wait for SNOOZE_DURATION seconds before it grabs a frame. 
 SNOOZE_DURATION=2

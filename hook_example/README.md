@@ -4,8 +4,11 @@
 
 
 ### Limitations
- * Only tested with ZM 1.32. May or may not work with older versions
- * Needs [this updated file](https://github.com/ZoneMinder/zoneminder/blob/master/web/index.php) to pull images (merged on Oct 9, 2018 so you may need to pull manually if your build is older)
+
+* Only tested with ZM 1.32. May or may not work with older versions
+*  Needs 2 files from master that were updated on Oct 11. If your build is older, you may need to pull them
+  * https://github.com/ZoneMinder/zoneminder/blob/master/web/index.php 
+  * https://github.com/ZoneMinder/zoneminder/blob/master/web/views/image.php
 
 ### What
 This is just an example of how you can use the new `hook` feature of the notification server
