@@ -15,12 +15,14 @@
         - [IOS Users](#ios-users)
     - [Making sure everything is running (in manual mode)](#making-sure-everything-is-running-in-manual-mode)
     - [Running it as a daemon so it starts automatically along with ZoneMinder](#running-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
-    - [How can I use this with Node-Red or Home Assistant?](#how-can-i-use-this-with-node-red-or-home-assistant)
+- [How can I use this with Node-Red or Home Assistant?](#how-can-i-use-this-with-node-red-or-home-assistant)
 - [Disabling security](#disabling-security)
 - [How do I safely upgrade zmeventserver to new versions?](#how-do-i-safely-upgrade-zmeventserver-to-new-versions)
-- [Understanding zmeventnotification configuration](#understanding-zmeventnotification-configuration)
+- [Configuring the notification server](#configuring-the-notification-server)
+    - [Understanding zmeventnotification configuration](#understanding-zmeventnotification-configuration)
 - [What is the hook attribute ?](#what-is-the-hook-attribute-)
 - [Troubleshooting common situations](#troubleshooting-common-situations)
+    - [Picture notifications don't show images](#picture-notifications-dont-show-images)
     - [Secure mode just doesn't work (WSS) - WS works](#secure-mode-just-doesnt-work-wss---ws-works)
     - [I'm not receiving push notifications in zmNinja](#im-not-receiving-push-notifications-in-zmninja)
     - [The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)](#the-server-runs-fine-when-manually-executed-but-fails-when-run-in-daemon-mode-started-by-zmdcpl)
@@ -206,7 +208,7 @@ add it as a daemon as if you don't and it crashes you won't know why
 
 You can/should run it manually at first to check if it works
 
-### How can I use this with Node-Red or Home Assistant?
+## How can I use this with Node-Red or Home Assistant?
 
 As of version 1.1, this also supports (Contributed by [@vajonam](https://github.com/vajonam)).
 zmeventnotification server can be configured to broadcast on a topic called `/zoneminder/<monitor-id>` which can then be consumed by Home Assistant or Node-Red.
@@ -241,7 +243,9 @@ sudo zmdc.pl start zmeventnotification.pl
 
 Make sure you look at the syslogs to make sure its started properly
 
-## Understanding zmeventnotification configuration
+## Configuring the notification server
+
+### Understanding zmeventnotification configuration
 
 Starting v1.0, [@synthead](https://github.com/synthead) reworked the configuration as follows:
 
@@ -302,6 +306,13 @@ Here is an example:
 
 
 ## Troubleshooting common situations
+
+### Picture notifications don't show images
+
+Starting v2.0, I support images in alarms. However, there are several conditions to be met:
+* Works only on Android for now
+* You can't use self signed certs
+* You need patches to ZM unless you are using a package that is later than Oct 11, 2018. Please read the notes in the INI file 
 
 ### Secure mode just doesn't work (WSS) - WS works
 
