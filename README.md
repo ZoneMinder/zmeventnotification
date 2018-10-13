@@ -20,7 +20,7 @@
 - [How do I safely upgrade zmeventserver to new versions?](#how-do-i-safely-upgrade-zmeventserver-to-new-versions)
 - [Configuring the notification server](#configuring-the-notification-server)
     - [Understanding zmeventnotification configuration](#understanding-zmeventnotification-configuration)
-- [What is the hook attribute ?](#what-is-the-hook-attribute-)
+    - [What is the hook attribute ?](#what-is-the-hook-attribute-)
 - [Troubleshooting common situations](#troubleshooting-common-situations)
     - [Picture notifications don't show images](#picture-notifications-dont-show-images)
     - [Secure mode just doesn't work (WSS) - WS works](#secure-mode-just-doesnt-work-wss---ws-works)
@@ -285,7 +285,7 @@ Hook .......................... '/usr/bin/person_detect_wrapper.sh'
 Use Hook Description........... true
 ```
 
-## What is the hook attribute ?
+### What is the hook attribute ?
 
 The `hook` attribute allows you to invoke a custom script when an alarm is triggered by ZM. 
 If the script returns success (exit value of 0) then the notification server will send out an alarm notification. If not, it will not send a notification to 
