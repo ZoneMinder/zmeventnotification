@@ -613,14 +613,15 @@ sub checkEvents()
         {
             
             if ( !defined($monitor->{LastEvent})
-                         || ($last_event != $last_event_for_monitors{$monitor->{Id}}))
+                         || ($last_event != $last_event_for_monitors{$monitor->{Id}}{"eid"}))
             {
                 $alarm_cause=zmMemRead($monitor,"shared_data:alarm_cause") if ($read_alarm_cause);
                 $alarm_cause = $trigger_cause if (defined($trigger_cause) && $alarm_cause eq "" && $trigger_cause ne "");
                 printInfo( "New event $last_event reported for ".$monitor->{Name}." ".$alarm_cause."\n");
                 $monitor->{LastState} = $state;
                 $monitor->{LastEvent} = $last_event;
-                $last_event_for_monitors{$monitor->{Id}}= $last_event;
+                $last_event_for_monitors{$monitor->{Id}}{"eid"}= $last_event;
+                $last_event_for_monitors{$monitor->{Id}}{"state"}= "recording";
                 my $name = $monitor->{Name};
                 my $mid = $monitor->{Id};
                 my $eid = $last_event;
@@ -638,6 +639,16 @@ sub checkEvents()
                 $eventFound = 1;
             }
             
+        }
+        elsif ($state == STATE_IDLE &&  $last_event_for_monitors{$monitor->{Id}}{"state"} eq "recording") 
+        {
+                my $hooktext = $last_event_for_monitors{$monitor->{Id}}{"hook_text"};
+                printDebug ("Alarm ".$monitor->{LastEvent}." for monitor:".$monitor->{Id}." has ended ".$hooktext);
+                updateEvent($monitor->{LastEvent},$hooktext) if $hooktext;
+                 
+                $last_event_for_monitors{$monitor->{Id}}{"state"}="idle";
+                $last_event_for_monitors{$monitor->{Id}}{"hook_text"}=undef;
+                
         }
     }
     chop($alarm_header) if ($alarm_header);
@@ -683,6 +694,18 @@ sub loadMonitors
         $new_monitors{$monitor->{Id}} = $monitor;
       } # end while fetchrow
       %monitors = %new_monitors;
+}
+
+sub updateEvent
+{
+    my ($eid,$notes) = @_;
+    $notes =$notes." /";
+    printDebug ("updating Notes clause for Event:".$eid. " with:".$notes);
+    my $sql = "UPDATE Events set Notes=CONCAT(?,Notes) where Id=?";
+    my $sth = $dbh->prepare_cached( $sql )
+        or Fatal( "Can't prepare '$sql': ".$dbh->errstr() );
+      my $res = $sth->execute( $notes, $eid  )
+        or Fatal( "Can't execute: ".$sth->errstr() );
 }
 
 
@@ -894,33 +917,41 @@ sub processJobs
              printError("Pipe read error: $read_avail $!");
          }
      } elsif ($read_avail > 0) {
-         chomp(my $msg = <READER>);
+         chomp(my $txt = <READER>);
          
-         my ($tip, $tport, $tmsg) = split("--SPLIT--",$msg);
-         printDebug ("JOB==>To: $tip:$tport, message: $tmsg");
-         foreach (@active_connections) {
-             if (exists $_->{conn} ) {
-                  my $cip = $_->{conn}->ip();
-                  my $cport = $_->{conn}->port();
-                  if (($tip eq $cip) && ($tport eq $cport)) {
-                      printInfo ("Sending child message to $tip:$tport...");
-                    eval {$_->{conn}->send_utf8($tmsg);};
-                    if ($@)
-                    { 
+         my ($job,$msg) = split("--TYPE--",$txt);
+        
+        if ( $job eq "message") {
+            my ($tip, $tport, $tmsg) = split("--SPLIT--",$msg);
+             printDebug ("JOB==>To: $tip:$tport, message: $tmsg");
+             foreach (@active_connections) {
+                 if (exists $_->{conn} ) {
+                      my $cip = $_->{conn}->ip();
+                      my $cport = $_->{conn}->port();
+                      if (($tip eq $cip) && ($tport eq $cport)) {
+                          printInfo ("Sending child message to $tip:$tport...");
+                        eval {$_->{conn}->send_utf8($tmsg);};
+                        if ($@)
+                        { 
 
-                        printInfo ("Marking ".$_->{conn}->ip()." as bad socket");     
-                        $_->{state} = INVALID_WEBSOCKET;
+                            printInfo ("Marking ".$_->{conn}->ip()." as bad socket");     
+                            $_->{state} = INVALID_WEBSOCKET;
 
-                    }
-                  }
+                        }
+                      }
+                 }
              }
-         }
 
-         
-
-     } else {
+        }
+        elsif ($job eq "event_description") {
+            my ($mid, $desc) = split("--SPLIT--",$msg);
+            printDebug("JOB==> Update monitor ".$mid." description:".$desc);
+            $last_event_for_monitors{$mid}{"hook_text"}= $desc;
+            
+        } else {
          printDebug ("No jobs, continuing...");
      }
+    }
 }
 
 
@@ -1442,6 +1473,7 @@ sub processAlarms {
         return if ($resCode !=0);
 
         $alarm_header = $resTxt if ($use_hook_description);
+        print WRITER "event_description--TYPE--".$alarm_mid."--SPLIT--".$resTxt."\n";
         
     }
 
@@ -1535,7 +1567,7 @@ sub processAlarms {
                 if (exists $_->{conn})
                 {
                     #printInfo ($_->{conn}->ip()."-sending supplementary data over websockets\n");
-                    print WRITER $_->{conn}->ip()."--SPLIT--".$_->{conn}->port()."--SPLIT--".$sup_str."\n";
+                    print WRITER "message--TYPE--".$_->{conn}->ip()."--SPLIT--".$_->{conn}->port()."--SPLIT--".$sup_str."\n";
                    
                 }
             }
