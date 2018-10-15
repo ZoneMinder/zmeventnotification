@@ -701,7 +701,7 @@ sub loadMonitors
 sub updateEvent
 {
     my ($eid,$notes) = @_;
-    $notes =$notes." /";
+    $notes =$notes." ";
     printDebug ("updating Notes clause for Event:".$eid. " with:".$notes);
     my $sql = "UPDATE Events set Notes=CONCAT(?,Notes) where Id=?";
     my $sth = $dbh->prepare_cached( $sql )
