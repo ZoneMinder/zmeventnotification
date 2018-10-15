@@ -696,6 +696,8 @@ sub loadMonitors
       %monitors = %new_monitors;
 }
 
+# Updated Notes DB of events with detection text
+# if available (hook enabled)
 sub updateEvent
 {
     my ($eid,$notes) = @_;
