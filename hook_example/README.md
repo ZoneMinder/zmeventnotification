@@ -93,7 +93,7 @@ As always, if you are trying to figure out how this works, do this in 3 steps:
 - Make sure the `IMAGE_PATH` you've chosen in `detect_wrapper.sh` is WRITABLE by www-data (or apache) before you move to step 2
 
 **STEP 2: run zmeventnotification in MANUAL mode**
-* `sudo zmdc.pl start zmeventnotification.pl`
+* `sudo zmdc.pl stop zmeventnotification.pl`
 *  change verbose to 1 in `zmeventnotification.ini`
 *  `sudo -u www-data ./zmeventnotification.pl  --config ./zmeventnotification.ini`
 *  Force an alarm, look at logs
