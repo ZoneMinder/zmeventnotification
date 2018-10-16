@@ -1582,7 +1582,8 @@ sub processAlarms {
             if (exists $_->{conn})
             {
                 #printInfo ($_->{conn}->ip()."-sending over websockets\n");
-                print WRITER $_->{conn}->ip()."--SPLIT--".$_->{conn}->port()."--SPLIT--".$str."\n";
+                printDebug ("Child: posting job to send out message to".$_->{conn}->ip().":".$_->{conn}->port());
+                print WRITER "message--TYPE--".$_->{conn}->ip()."--SPLIT--".$_->{conn}->port()."--SPLIT--".$str."\n";
                
             }
          }
