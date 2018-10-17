@@ -123,8 +123,13 @@ if (args["time"]):
     print("[INFO] detection took: {}s".format((datetime.datetime.now() - start).total_seconds()))
 
 pred=""
+
+seen = {}
 for l,c in zip (label,conf):
-    pred = pred +l+':{:.0%}'.format(c)+' '
+    if l not in seen:
+        pred = pred +l+':{:.0%}'.format(c)+' '
+        seen[l] = 1
+
 if pred !="":
     pred = "detected:"+pred
 print pred
