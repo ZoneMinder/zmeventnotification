@@ -430,9 +430,6 @@ Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push messa
 - If you have issues, please send me a copy of your zmeventserver logs generated above from Terminal-Log, as well as zmNinja debug logs
 
 ## For Developers writing their own consumers
-
-<details>
-    <summary>Click to see more details</summary>
     
 ### How do I talk to it?
 *  `{"JSON":"everywhere"}`
@@ -656,4 +653,3 @@ As it turns out many folks don't expose ZM to the WAN and for that, I guess WS i
 
 WSS offers encryption. We also want to make sure connections are authorized. Reusing ZM authentication credentials is the easiest. You can change it to some other credential match (modify `validateZM` function)
 
-</details>
