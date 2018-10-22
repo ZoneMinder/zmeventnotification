@@ -842,6 +842,7 @@ sub sendOverFCM
 
     my $android_message = {
             to=>$obj->{token},
+            priority=>'high',
             data=> {
                 title=>$title,
                 message=>$header." at ".$now,
