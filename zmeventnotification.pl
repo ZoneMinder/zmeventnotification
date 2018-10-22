@@ -801,7 +801,6 @@ sub sendOverMQTTBroker
         $mqtt = Net::MQTT::Simple->new($mqtt_server);
     }
 
-    printDebug("Sending message over MQTT:".$json);
     $mqtt->publish(join('/','zoneminder',$mid) => $json);
 }
 
@@ -851,6 +850,7 @@ sub sendOverFCM
                 mid=>$mid,
                 eid=>$eid,
                 badge=>$obj->{badge},
+                priority=>1
             }
         };
 
