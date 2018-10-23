@@ -52,7 +52,7 @@ use POSIX ':sys_wait_h';
 # ==========================================================================
 
 
-my $app_version="2.0";
+my $app_version="2.1";
 
 # ==========================================================================
 #
@@ -481,7 +481,7 @@ my $alarm_monitor_name="";
 my $alarm_header="";
 my $alarm_mid="";
 my $alarm_eid="";
-my $needsReload = 0;
+my @needsReload = 0;
 
 # Main entry point
 
@@ -561,7 +561,7 @@ sub checkEvents()
 {
     
     my $eventFound = 0;
-    if ( $needsReload || ((time() - $monitor_reload_time) > $monitor_reload_interval ))
+    if (  (time() - $monitor_reload_time) > $monitor_reload_interval )
     {
         my $len = scalar @active_connections;
         printInfo ("Total event client connections: ".$len."\n");
@@ -583,7 +583,12 @@ sub checkEvents()
             zmMemInvalidate( $monitor );
         }
         loadMonitors();
-        $needsReload = 0;
+        @needsReload = ();
+    } elsif (@needsReload) {
+        foreach my $monitor (@needsReload) {
+            loadMonitor($monitor);
+        }
+        @needsReload = ();
     }
     @events = ();
     $alarm_header = "";
@@ -596,8 +601,8 @@ sub checkEvents()
          if (  !zmMemVerify($monitor) ) {
           # Our attempt to verify the memory handle failed. We should reload the monitors.
           # Don't need to zmMemInvalidate because the monitor reload will do it.
-          $needsReload = 1;
-          Error ("** Memory verify failed for ".$monitor->{Name}."(id:".$monitor->{Id}. ") so forcing reload");
+          push @needsReload, $monitor;
+          Warning (" Memory verify failed for ".$monitor->{Name}."(id:".$monitor->{Id}.")" );
           next;
           }
          my ( $state, $last_event, $trigger_cause, $trigger_text)
@@ -669,6 +674,15 @@ sub checkEvents()
     return ($eventFound);
 }
 
+sub loadMonitor {
+  my $monitor = shift;
+  printInfo( "re-loading monitor ".$monitor->{Name} );
+  zmMemInvalidate( $monitor );
+  if ( zmMemVerify( $monitor ) ) { # This will re-init shared memory
+    $monitor->{LastState} = zmGetMonitorState( $monitor );
+    $monitor->{LastEvent} = zmGetLastEvent( $monitor );
+  }
+}
 # Refreshes list of monitors from DB
 # 
 sub loadMonitors
