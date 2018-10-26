@@ -3,7 +3,8 @@
 <!-- TOC -->
 
 - [Breaking Changes](#breaking-changes)
-    - [Breaking changes - version 1.0 onwards](#breaking-changes---version-10-onwards)
+    - [version 2.0 onwards](#version-20-onwards)
+    - [version 1.0 onwards](#version-10-onwards)
 - [What is it?](#what-is-it)
 - [What can you do with it?](#what-can-you-do-with-it)
 - [Why do we need it?](#why-do-we-need-it)
@@ -49,13 +50,20 @@
 
 ## Breaking Changes
 
-### Breaking changes - version 1.0 onwards
+
+### version 2.0 onwards
+
+The notification now supports hooks and machine learning powered detection. Check the hook_examples directory
+
+### version 1.0 onwards
 
 Version 1.0 moves configuration to a separate `zmeventnotification.ini` file that makes it easier to re-configure. If you are already
 a user of previous versions and want to migrate to 1.0, please make sure you copy `zmeventnotification.ini` to `/etc`. You will need
 to re-configure the params to your liking in the ini file. Note that you may need to install some additional packages like `Config::IniFiles` if it complains of missing libraries.
 
 If you are installing `zmeventnotification` for the first time, just read the [How do I install it?](#how-do-i-install-it) section.
+
+
 
 ## What is it?
 
