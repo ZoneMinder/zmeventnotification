@@ -6,7 +6,6 @@
     - [version 2.0 onwards](#version-20-onwards)
     - [version 1.0 onwards](#version-10-onwards)
 - [What is it?](#what-is-it)
-- [What can you do with it?](#what-can-you-do-with-it)
 - [Why do we need it?](#why-do-we-need-it)
 - [Is this officially developed by ZM developers?](#is-this-officially-developed-by-zm-developers)
 - [How do I install it?](#how-do-i-install-it)
@@ -26,6 +25,7 @@
     - [Picture notifications don't show images](#picture-notifications-dont-show-images)
     - [Secure mode just doesn't work (WSS) - WS works](#secure-mode-just-doesnt-work-wss---ws-works)
     - [I'm not receiving push notifications in zmNinja](#im-not-receiving-push-notifications-in-zmninja)
+    - [I'm getting multiple notifications for the same event](#im-getting-multiple-notifications-for-the-same-event)
     - [The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)](#the-server-runs-fine-when-manually-executed-but-fails-when-run-in-daemon-mode-started-by-zmdcpl)
     - [When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that](#when-you-run-zmeventnotifiationpl-manually-you-get-an-error-saying-port-already-in-use-or-cannot-bind-to-port-or-something-like-that)
     - [Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!](#great-krypton-i-just-upgraded-zoneminder-and-im-not-getting-push-anymore)
@@ -64,20 +64,12 @@ to re-configure the params to your liking in the ini file. Note that you may nee
 If you are installing `zmeventnotification` for the first time, just read the [How do I install it?](#how-do-i-install-it) section.
 
 
-
 ## What is it?
 
 A WSS (Secure Web Sockets) and/or MQTT based event notification server that broadcasts new events to any authenticated listeners.
 (As of 0.6, it also includes a non secure websocket option, if that's how you want to run it)
 
-## What can you do with it?
-
-Well, [zmNinja](https://github.com/pliablepixels/zmNinja) uses it to display real time notifications of events.
-Watch a video [HERE](https://www.youtube.com/watch?v=HhLKrDrj7rs)
-You can implement your own receiver to get real time event notification and do whatever your heart desires
-
 ## Why do we need it?
-
 - The only way ZoneMinder sends out event notifications via event filters - this is too slow
 - People developing extensions to work with ZoneMinder for Home Automation needs will benefit from a clean interface
 - Receivers don't poll. They keep a web socket open and when there are events, they get a notification
@@ -93,9 +85,8 @@ No. I developed it for zmNinja, but you can use it with your own consumer.
 
 ### Download the server script and its config file
 
-- [Download `zmeventnotification.pl`](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.pl) (its a simple perl file). Make sure you do a `chmod a+x` on it.
-- [Download `zmeventnotification.ini`](https://raw.githubusercontent.com/pliablepixels/zmeventserver/master/zmeventnotification.ini)
-  and edit the file to your liking. More details about various parts of the configuration will be throughout this document.
+- Clone the project to some directory `git clone https://github.com/pliablepixels/zmeventserver.git`
+- Edit `zmeventnotification.ini` to your liking. More details about various parts of the configuration are explained later in this readme
 - If you are behind a firewall, make sure you enable port `9000`, TCP, bi-directional (unless you changed the port in the code)
 - We now need to install a bunch of dependencies (as described below)
 
@@ -191,15 +182,17 @@ Starting IOS 10.2, I noticed that zmNinja was not able to register with the even
 
 ### Making sure everything is running (in manual mode)
 
-- I am assuming you have downloaded the 2 files to your current directory in the step below
+- I am assuming you have downloaded the  files to your current directory in the step below
+- Make sure you do a `chmod a+x ./zmeventnotification.pl`
 - Start the event server manually first using `sudo -u www-data ./zmeventnotification.pl --config ./zmeventnotification.ini` (Note that if you omit `--config` it will look for `/etc/zmeventnotification.ini` and if that doesn't exist, it will use default values) and make sure you check syslogs to ensure its loaded up and all dependencies are found. If you see errors, fix them. Then exit and follow the steps below to start it along with Zoneminder. Note that the `-u www-data` runs this command with the user id that apache uses (in some systems this may be `apache` or similar). It is important to run it using the same user id as your webserver because that is the permission zoneminder will use when run as a daemon mode.
 
 - Its is HIGHLY RECOMMENDED that you first start the event server manually from terminal, as described above and not directly dive into daemon mode (described below) and ensure you inspect syslog to validate all logs are correct and THEN make it a daemon in ZoneMinder. If you don't, it will be hard to know what is going wrong. See the [debugging](https://github.com/pliablepixels/zmeventserver#debugging-and-reporting-problems) section later that describes how to make sure its all working fine from command line.
 
 ### Running it as a daemon so it starts automatically along with ZoneMinder
 
-- Move `zmeventnotification.pl` to `/usr/bin` (or `/usr/local/bin` or whichever directory your other ZM perl scripts are installed)
+- Move `zmeventnotification.pl` to `/usr/bin` (or `/usr/local/bin` or whichever directory your other ZM perl scripts are installed).
 - Move `zmeventnotification.ini` to `/etc`
+- If you are using hook scripts, move the hook scripts to the path you specified in your ini file. Make sure they are executable.
 
 **NOTE** : Starting version 1.32.0 of ZoneMinder, you now have an option to directly enable this daemon as an option directly in the settings of Options->Systems. Just enable "OPT_USE_EVENTNOTIFICATION" and you are all set.
 **The rest of this section is NOT NEEDED for 1.32.0 and above!**
@@ -301,8 +294,6 @@ its listeners. This is useful to implement any custom logic you may want to perf
 
 Related to `hook` we also have a `hook_description` attribute. When set to 1, the text returned by the hook script will overwrite the alarm text that is notified.
 
-Note that hooks are currently executed in the main loop, so the notification server will wait till the hook returns before processing other alarms, so please make sure your hook scripts are as fast as possible. Given that I handle SSL connections, I can't `fork()` and let a child manage the hook as well as send out a message. I'll have to rework the code to allow for this. In other words "no plans as of now, but some talented perl coder can PR"
-
 Here is an example:
 (Note: just an example, please don't ask me for support for person detection)
 
@@ -312,8 +303,13 @@ Here is an example:
 - The wrapper script then checks for this value and exits with either 0 (send alarm) or 1 (don't send alarm)
 - the notification server then sends out a "<Monitor Name>: person detected" notification to the clients listening
 
+Those who want to know more:
+- Read the detailed notes [here](https://github.com/pliablepixels/zmeventserver/tree/master/hook_example)
+- Read [this](https://medium.com/zmninja/inside-the-hood-machine-learning-enhanced-real-time-alarms-with-zoneminder-e26c34fe354c) for an explanation of how this works
 
 ## Troubleshooting common situations
+
+
 
 ### Picture notifications don't show images
 
@@ -341,6 +337,16 @@ There could be many reasons. Here are the top few:
 
 - I'd strongly recommend you run the event server in "manual mode" and stop daemon mode while debugging.
 
+### I'm getting multiple notifications for the same event
+
+99.9% of times, its because you have multiple copies of the eventserver running and you don't know it. Maybe you were manually testing it, and forgot
+to quit it and terminated the window. Do `sudo zmdc.pl stop zmeventnotification.pl` and then  `ps -aef | grep zme`, kill everything, and start again. 
+Monitor the logs to see how many times a message is sent out. 
+
+The other 0.1% is at times Google's FCM servers send out multiple notifications. Why? I don't know. But it sorts itself out very quickly, and if you think
+this must be the reason, I'll wager that you are actually in the 99.9% lot and haven't checked properly.
+
+
 ### The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)
 
 - Make sure the file where you store tokens (`/etc/private/tokens.txt or whatever you have used`) is not RW Root only. It needs to be RW `www-data` for Ubuntu/Debian or `apache` for Fedora/CentOS. You also need to make sure the directory is accessible. Something like `chown -R www-data:www-data /etc/private`
@@ -354,13 +360,13 @@ The chances are very high that you have another copy of `zmeventnotification.pl`
 
 ### Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!
 
-Fear not. You just need to redo the changes you did to `zmpkg.pl` and `zmdc.pl` and restart ZM. You see, when you upgrade ZM, it overwrites those files.
+Make sure your eventserver is running: `sudo zmdc.pl status zmeventnotification.pl`
 
 ## How do I disable secure (WSS) mode?
 
-As of 0.6, I've added an option to run the server using unsecure websockets (WS instead of WSS).
 As it turns out many folks run ZM inside the LAN only and don't want to deal with certificates. Fair enough.
 For that situation, edit zmeventnotification.pl and use `enable = 0` in the `[ssl]` section of the configuration file.
+**Remember to ensure that your EventServer URL in zmNinja does NOT use wss too - change it to ws**
 
 ## Debugging and reporting problems
 
@@ -377,7 +383,7 @@ Here is how to debug and report:
 
 - Enable Debug logs in zmNinja (Setting->Developer Options->Enable Debug Log)
 - telnet/ssh into your zoneminder server
-- Stop the zmeventnotification doing `sudo zmdc.pl status zmeventnotification.pl`
+- Stop the zmeventnotification doing `sudo zmdc.pl stop zmeventnotification.pl`
 - Make sure there are no stale processes running of zmeventnotification by doing `ps -aef | grep zmeventnotification` and making sure it doesn't show existing processes (ignore the one that says `grep <something>`)
 - Start a terminal (lets call it Terminal-Log) to tail logs like so `tail -f /var/log/syslog | grep zmeventnotification`
 - Edit `zmeventnotification.ini` (typically in `/etc/`) and make sure `verbose = 1` is set. This will print more logs on the console. Make sure you turn this off again before switching back to daemon mode.
