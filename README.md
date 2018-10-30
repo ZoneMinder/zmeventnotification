@@ -337,7 +337,7 @@ There could be many reasons. Here are the top few:
 
 - Kill the app. Then empty the contents of `tokens.txt` in the event server (don't delete it). Then restart the event server. Start the app again. If you don't see a new registration token, you have a connection problem
 
-- _Always_ send me logs of both zmNinja and zmeventserver - I need them to understand what is going on.
+- _Always_ send me logs of both zmNinja and zmeventserver - I need them to understand what is going on. Don't send me one line. You may think you are sending what is relevant, but you are not. One line logs are mostly useless.
 
 - I'd strongly recommend you run the event server in "manual mode" and stop daemon mode while debugging.
 
