@@ -333,6 +333,10 @@ There could be many reasons. Here are the top few:
 
 - Sometimes, Google's FCM server goes down, or Apple's APNS server goes down for a while. Things automagically work in 24 hrs.
 
+- Is your phone able to reach the event server? When the app starts, you should see registration messages being sent to the event server. If not, you have a connection problem (from phone to event server)
+
+- Kill the app. Then empty the contents of `tokens.txt` in the event server (don't delete it). Then restart the event server. Start the app again. If you don't see a new registration token, you have a connection problem
+
 - _Always_ send me logs of both zmNinja and zmeventserver - I need them to understand what is going on.
 
 - I'd strongly recommend you run the event server in "manual mode" and stop daemon mode while debugging.
