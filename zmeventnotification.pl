@@ -37,7 +37,11 @@
 use strict;
 use bytes;
 use POSIX ':sys_wait_h';
+use Time::HiRes qw/gettimeofday/;
+use Symbol qw(qualify_to_ref);
+use IO::Select;
 
+use Data::Dump qw(dump);
 # ==========================================================================
 #
 # Starting v1.0, configuration has moved to a separate file, please make sure
@@ -52,7 +56,7 @@ use POSIX ':sys_wait_h';
 # ==========================================================================
 
 
-my $app_version="2.1";
+my $app_version="2.2";
 
 # ==========================================================================
 #
@@ -320,10 +324,10 @@ if ($ssl_enabled && (!$ssl_cert_file || !$ssl_key_file)) {
 
 my $notId = 1;
 
-use constant PENDING_AUTH      =>  '1';
-use constant VALID_WEBSOCKET   =>  '0';
-use constant INVALID_WEBSOCKET =>  '-1'; # only when token is true but websocket is bad for supp data
-use constant PENDING_DELETE    =>  '-2';
+use constant PENDING_AUTH      =>  1;
+use constant VALID_WEBSOCKET   =>  2;
+use constant INVALID_WEBSOCKET =>  3; # only when token is true but websocket is bad for supp data
+use constant PENDING_DELETE    =>  4;
 
 
 # this is just a wrapper around Config::IniFiles val
@@ -464,6 +468,40 @@ sub Usage
     exit( -1 );
 }
 
+# https://docstore.mik.ua/orelly/perl4/cook/ch07_24.htm
+sub sysreadline(*;$) {
+    my($handle, $timeout) = @_;
+    $handle = qualify_to_ref($handle, caller( ));
+    my $infinitely_patient = (@_ == 1 || $timeout < 0);
+    my $start_time = time( );
+    my $selector = IO::Select->new( );
+    $selector->add($handle);
+    my $line = "";
+SLEEP:
+    until (at_eol($line)) {
+        unless ($infinitely_patient) {
+            return $line if time( ) > ($start_time + $timeout);
+        }
+        # sleep only 1 second before checking again
+        next SLEEP unless $selector->can_read(1.0);
+INPUT_READY:
+        while ($selector->can_read(0.0)) {
+            my $was_blocking = $handle->blocking(0);
+CHAR:       while (sysread($handle, my $nextbyte, 1)) {
+                $line .= $nextbyte;
+                last CHAR if $nextbyte eq "\n";
+            }
+            $handle->blocking($was_blocking);
+            # if incomplete line, keep trying
+            next SLEEP unless at_eol($line);
+            last INPUT_READY;
+        }
+    }
+    return $line;
+}
+sub at_eol($) { $_[0] =~ /\n\z/ }
+
+
 logInit();
 logSetSignal();
 
@@ -574,7 +612,7 @@ sub checkEvents()
           {
               $cip = $_->{conn}->ip();
           }
-          printDebug ("-->Connection $ndx: IP->".$cip." Token->:...".substr($_->{token},-10)." Plat:".$_->{platform}." Push:".$_->{pushstate}); 
+          printDebug ("-->checkEvents: Connection $ndx: ID->".$_->{id}." IP->".$cip." Token->:...".substr($_->{token},-10)." Plat:".$_->{platform}." Push:".$_->{pushstate}); 
           $ndx++;
         }
         printInfo ("Reloading Monitors...\n");
@@ -773,9 +811,11 @@ sub deleteToken
         next if ($_ eq "" || $token eq $dtoken);
         print $fh "$_\n";
         #print "delete: $row\n";
+        my $tod = gettimeofday;
         push @active_connections, {
+                       id=> $tod,
                        token => $token,
-                       state => VALID_WEBSOCKET,
+                       state => INVALID_WEBSOCKET,
                        time=>time(),
                        badge => 0,
                        monlist => $monlist,
@@ -930,47 +970,65 @@ sub sendOverFCM
 # credit: https://stackoverflow.com/a/52724546/1361529
 sub processJobs
 {
-    my $read_avail = select($rout=$rin, undef, undef, 0.0);
-     if ($read_avail < 0) {
-         if (!$!{EINTR}) {
-             printError("Pipe read error: $read_avail $!");
-         }
-     } elsif ($read_avail > 0) {
-         chomp(my $txt = <READER>);
-         
-         my ($job,$msg) = split("--TYPE--",$txt);
-        
-        if ( $job eq "message") {
-            my ($tip, $tport, $tmsg) = split("--SPLIT--",$msg);
-             printDebug ("JOB==>To: $tip:$tport, message: $tmsg");
-             foreach (@active_connections) {
-                 if (exists $_->{conn} ) {
-                      my $cip = $_->{conn}->ip();
-                      my $cport = $_->{conn}->port();
-                      if (($tip eq $cip) && ($tport eq $cport)) {
-                          printInfo ("Sending child message to $tip:$tport...");
-                        eval {$_->{conn}->send_utf8($tmsg);};
-                        if ($@)
-                        { 
+    while ((my $read_avail = select($rout=$rin, undef, undef, 0.0)) !=0)
+   {
 
-                            printInfo ("Marking ".$_->{conn}->ip()." as bad socket");     
-                            $_->{state} = INVALID_WEBSOCKET;
-
-                        }
-                      }
-                 }
-             }
-
-        }
-        elsif ($job eq "event_description") {
-            my ($mid, $desc) = split("--SPLIT--",$msg);
-            printDebug("JOB==> Update monitor ".$mid." description:".$desc);
-            $last_event_for_monitors{$mid}{"hook_text"}= $desc;
+   
+        if ($read_avail < 0) {
+            if (!$!{EINTR}) {
+                printError("Pipe read error: $read_avail $!");
+            }
+        } elsif ($read_avail > 0) {
+            chomp(my $txt = sysreadline(READER));
+            printDebug ("PARENT GOT RAW TEXT-->$txt");
+            my ($job,$msg) = split("--TYPE--",$txt);
             
-        } else {
-         printDebug ("No jobs, continuing...");
-     }
+            if ( $job eq "message") {
+                my ($id, $tmsg) = split("--SPLIT--",$msg);
+                printDebug ("GOT JOB==>To: $id, message: $tmsg");
+                foreach (@active_connections) {
+                    if (($_->{id} eq $id) && exists $_->{conn} ) {
+                            my $tip = $_->{conn}->ip();
+                            my $tport = $_->{conn}->port();
+                            printInfo ("Sending child message to $tip:$tport...");
+                            eval {$_->{conn}->send_utf8($tmsg);};
+                            if ($@)
+                            { 
+
+                                printInfo ("Marking ".$_->{conn}->ip()." as bad socket");     
+                                $_->{state} = INVALID_WEBSOCKET;
+
+                            }
+                        }
+                    }
+
+            }
+            elsif ($job eq "event_description") {
+                my ($mid, $desc) = split("--SPLIT--",$msg);
+                printDebug("GOT JOB==> Update monitor ".$mid." description:".$desc);
+                $last_event_for_monitors{$mid}{"hook_text"}= $desc;
+                
+            } 
+            elsif ($job eq "timestamp") {
+                my ($id, $mid, $timeval) = split ("--SPLIT--",$msg);
+                printDebug ("GOT JOB==> Update last sent timestamp of monitor:".$mid." to ".$timeval. " for id:".$id);
+                foreach (@active_connections) {
+                    if ( $_->{id} eq $id ) {
+                        $_->{last_sent}->{$mid} = $timeval; 
+
+                    }
+                    
+                }
+                #dump(@active_connections);
+            }
+            else {
+            printDebug ("Job message not recognized!");
+        }
+        }
     }
+      
+    printDebug ("Empty job queue");
+       
 }
 
 
@@ -1007,7 +1065,7 @@ sub checkConnection
     my $ac = scalar @active_connections;
     my $ac1 = scalar grep  {$_->{state} ==  VALID_WEBSOCKET} @active_connections;
     my $ac2 = scalar grep  {$_->{state} ==  INVALID_WEBSOCKET} @active_connections;
-    my $ac3 = scalar grep  {$_->{state} ==  PENDING_AUTH} @active_connections;
+    my $ac3 = scalar grep  {$_->{state} == PENDING_AUTH} @active_connections;
     printDebug ("After tick: TOTAL: $ac, VALID_WEBSOCKET: $ac1, INVALID_WEBSOCKET: $ac2, PENDING_AUTH: $ac3");
     
 
@@ -1231,6 +1289,10 @@ sub checkMessage
     {
         my $uname = $json_string->{'data'}->{'user'};
         my $pwd = $json_string->{'data'}->{'password'};
+        my $monlist = "";
+        my $intlist = "";
+        $monlist = $json_string->{'data'}->{'monlist'} if (exists($json_string->{'data'}->{'monlist'}) );
+        $intlist = $json_string->{'data'}->{'intlist'} if (exists($json_string->{'data'}->{'intlist'}) );
     
         foreach (@active_connections)
         {
@@ -1253,6 +1315,8 @@ sub checkMessage
 
                     # all good, connection auth was valid
                     $_->{state}=VALID_WEBSOCKET;
+                    $_->{monlist} = $monlist;
+                    $_->{intlist} = $intlist;
                     $_->{token}='';
                     my $str = encode_json({event=>'auth', type=>'', status=>'Success', reason => '', version => $app_version});
                     eval {$_->{conn}->send_utf8($str);};
@@ -1301,7 +1365,9 @@ sub loadTokens
         next if ($_ eq "");
         print $fh "$_\n";
         my ($token, $monlist, $intlist, $platform, $pushstate)  = rsplit(qr/:/, $_, 5); # split (":",$_);
+        my $tod = gettimeofday;
         push @active_connections, {
+               id => $tod,
                token => $token,
                state => INVALID_WEBSOCKET,
                time=>time(),
@@ -1493,6 +1559,7 @@ sub processAlarms {
 
         $alarm_header = $resTxt if ($use_hook_description);
         print WRITER "event_description--TYPE--".$alarm_mid."--SPLIT--".$resTxt."\n";
+        $| = 1;
         
     }
 
@@ -1512,9 +1579,11 @@ sub processAlarms {
         my $monlist = $_->{monlist};
         my $intlist = $_->{intlist};
         my $last_sent = $_->{last_sent};
+        
         my $obj = $_;
-        my $connid = getIdentity($obj);
-        printInfo ("Checking alarm rules for $connid");
+        my $id = getIdentity($obj);
+        my $connId = $_->{id};
+        printInfo ("Checking alarm rules for $id");
         # we need to create a per connection array which will be
         # a subset of main events with the ones that are not in its
         # monlist left out
@@ -1525,6 +1594,7 @@ sub processAlarms {
             {
                 my $mint = getInterval($intlist, $monlist, $_->{MonitorId});
                 my $elapsed;
+                my $t = time();
                 if ($last_sent->{$_->{MonitorId}})
                 {
                     $elapsed = time() -  $last_sent->{$_->{MonitorId}};
@@ -1533,7 +1603,9 @@ sub processAlarms {
                         printInfo("Monitor ".$_->{MonitorId}." event: sending this out as $elapsed is >= interval of $mint");
                         $_->{Cause} = $alarm_header if ($hook && $use_hook_description);
                         push (@localevents, $_);
-                        $last_sent->{$_->{MonitorId}} = time();
+                        #$last_sent->{$_->{MonitorId}} = time();
+                        print WRITER "timestamp--TYPE--".$connId."--SPLIT--".$_->{MonitorId}."--SPLIT--".$t."\n";
+                        $| = 1;
                     }
                     else
                     {
@@ -1545,10 +1617,12 @@ sub processAlarms {
                 else
                 {
                     # This means we have no record of sending any event to this monitor
-                    $last_sent->{$_->{MonitorId}} = time();
+                    #$last_sent->{$_->{MonitorId}} = time();
                     printInfo("Monitor ".$_->{MonitorId}." event: last time not found, so sending");
                     $_->{Cause} = $alarm_header if ($hook && $use_hook_description);
                     push (@localevents, $_);
+                    print WRITER "timestamp--TYPE--".$connId."--SPLIT--".$_->{MonitorId}."--SPLIT--".$t."\n";
+                    $| = 1;
                 }
 
             }
@@ -1586,7 +1660,8 @@ sub processAlarms {
                 if (exists $_->{conn})
                 {
                     #printInfo ($_->{conn}->ip()."-sending supplementary data over websockets\n");
-                    print WRITER "message--TYPE--".$_->{conn}->ip()."--SPLIT--".$_->{conn}->port()."--SPLIT--".$sup_str."\n";
+                    print WRITER "message--TYPE--".$_->{id}."--SPLIT--".$sup_str."\n";
+                    $| = 1;
                    
                 }
             }
@@ -1599,9 +1674,9 @@ sub processAlarms {
             if (exists $_->{conn})
             {
                 #printInfo ($_->{conn}->ip()."-sending over websockets\n");
-                printDebug ("Child: posting job to send out message to".$_->{conn}->ip().":".$_->{conn}->port());
-                print WRITER "message--TYPE--".$_->{conn}->ip()."--SPLIT--".$_->{conn}->port()."--SPLIT--".$str."\n";
-               
+                printDebug ("Child: posting job to send out message to id:".$_->{id}."->".$_->{conn}->ip().":".$_->{conn}->port());
+                print WRITER "message--TYPE--".$_->{id}."--SPLIT--".$str."\n";
+                $| = 1; 
             }
          }
     } # foreach
@@ -1667,6 +1742,12 @@ sub initSocketServer
                 
 
             }
+
+  
+            #foreach (@active_connections) {
+            #    print $_->{id}.": monlist=".$_->{monlist}." :intlist=".$_->{intlist}."\n";
+            #}
+
             printDebug("---------->Tick END<--------------");
         },
         # called when a new connection comes in
@@ -1686,9 +1767,11 @@ sub initSocketServer
                 handshake => sub {
                     my ($conn, $handshake) = @_;
                     printDebug("---------->onConnect:handshake START<--------------");
-                    printInfo ("Websockets: New Connection Handshake requested from ".$conn->ip().":".$conn->port()." state=pending auth");
+                    my $id = gettimeofday;
+                    printInfo ("Websockets: New Connection Handshake requested from ".$conn->ip().":".$conn->port()." state=pending auth, id=".$id);
                     my $connect_time = time();
                     push @active_connections, {conn => $conn, 
+                                   id => $id,
                                    state => PENDING_AUTH, 
                                    time=>$connect_time, 
                                    monlist => "",
