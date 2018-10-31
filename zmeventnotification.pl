@@ -456,7 +456,6 @@ use POSIX;
 use DBI;
 
 $SIG{CHLD}='IGNORE';
-$| = 1;
 
 $ENV{PATH}  = '/bin:/usr/bin';
 $ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
@@ -1559,7 +1558,7 @@ sub processAlarms {
 
         $alarm_header = $resTxt if ($use_hook_description);
         print WRITER "event_description--TYPE--".$alarm_mid."--SPLIT--".$resTxt."\n";
-        $| = 1;
+     
         
     }
 
@@ -1605,7 +1604,7 @@ sub processAlarms {
                         push (@localevents, $_);
                         #$last_sent->{$_->{MonitorId}} = time();
                         print WRITER "timestamp--TYPE--".$connId."--SPLIT--".$_->{MonitorId}."--SPLIT--".$t."\n";
-                        $| = 1;
+                      
                     }
                     else
                     {
@@ -1622,7 +1621,7 @@ sub processAlarms {
                     $_->{Cause} = $alarm_header if ($hook && $use_hook_description);
                     push (@localevents, $_);
                     print WRITER "timestamp--TYPE--".$connId."--SPLIT--".$_->{MonitorId}."--SPLIT--".$t."\n";
-                    $| = 1;
+                   
                 }
 
             }
@@ -1661,7 +1660,7 @@ sub processAlarms {
                 {
                     #printInfo ($_->{conn}->ip()."-sending supplementary data over websockets\n");
                     print WRITER "message--TYPE--".$_->{id}."--SPLIT--".$sup_str."\n";
-                    $| = 1;
+                   
                    
                 }
             }
@@ -1676,7 +1675,7 @@ sub processAlarms {
                 #printInfo ($_->{conn}->ip()."-sending over websockets\n");
                 printDebug ("Child: posting job to send out message to id:".$_->{id}."->".$_->{conn}->ip().":".$_->{conn}->port());
                 print WRITER "message--TYPE--".$_->{id}."--SPLIT--".$str."\n";
-                $| = 1; 
+             
             }
          }
     } # foreach
