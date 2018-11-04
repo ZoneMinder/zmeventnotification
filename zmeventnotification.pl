@@ -41,7 +41,7 @@ use Time::HiRes qw/gettimeofday/;
 use Symbol qw(qualify_to_ref);
 use IO::Select;
 
-use Data::Dump qw(dump);
+#use Data::Dump qw(dump);
 # ==========================================================================
 #
 # Starting v1.0, configuration has moved to a separate file, please make sure
@@ -103,9 +103,9 @@ use constant {
 
 # connection types
 use constant {
-    FCM     =>'fcm',
-    MQTT    =>'mqtt',
-    WEB     =>'web'
+    FCM    => 1000,
+    MQTT   => 1001,
+    WEB    => 1002
 };
 
 # Declare options.
@@ -1119,14 +1119,14 @@ sub checkConnection
     @active_connections = grep { $_->{state} != PENDING_DELETE} @active_connections;
 
     my $ac = scalar @active_connections;
-    my $fcm_conn = scalar grep  {$_->{state} ==  VALID_CONNECTION && $_->{type} eq FCM} @active_connections;
-    my $fcm_no_conn = scalar grep  {$_->{state} ==  INVALID_CONNECTION && $_->{type} eq FCM} @active_connections;
+    my $fcm_conn = scalar grep  {$_->{state} ==  VALID_CONNECTION && $_->{type} == FCM} @active_connections;
+    my $fcm_no_conn = scalar grep  {$_->{state} ==  INVALID_CONNECTION && $_->{type} == FCM} @active_connections;
     my $pend_conn = scalar grep  {$_->{state} == PENDING_AUTH} @active_connections;
     my $mqtt_conn = scalar grep {$_->{type} == MQTT} @active_connections;
-    my $web_conn = scalar grep  {$_->{state} ==  VALID_CONNECTION && $_->{type} eq WEB} @active_connections;
-    my $web_no_conn = scalar grep { $_->{state} ==  INVALID_CONNECTION && $_->{type} eq WEB} @active_connections;
+    my $web_conn = scalar grep  {$_->{state} ==  VALID_CONNECTION && $_->{type} == WEB} @active_connections;
+    my $web_no_conn = scalar grep { $_->{state} ==  INVALID_CONNECTION && $_->{type} == WEB} @active_connections;
 
-    printDebug ("After tick: TOTAL: $ac, FCM+WEB: $fcm_conn, FCM ONLY: $fcm_no_conn, WEB: $web_conn, invalid WEB: $web_no_conn, PENDING_AUTH: $pend_conn");
+    printDebug ("After tick: TOTAL: $ac, FCM+WEB: $fcm_conn, FCM: $fcm_no_conn, WEB: $web_conn, MQTT:$mqtt_conn, invalid WEB: $web_no_conn, PENDING: $pend_conn");
     
 
   }
@@ -1415,15 +1415,6 @@ sub initMQTT {
     # Not creating a persistent connection
     # we will do it per event. If you want to do it persistently
     # do it here
-
-    #if (defined $mqtt_username && defined $mqtt_password)
-    #{
-    #    $mqtt = Net::MQTT::Simple::Auth->new($mqtt_server, $mqtt_username, $mqtt_password);
-    #}
-    #else 
-    #{
-    #    $mqtt = Net::MQTT::Simple->new($mqtt_server);
-    #}
 
 }
 
@@ -1787,7 +1778,6 @@ sub processAlarms {
 
         printInfo ("Matching alarm to connection rules...");
         my ($serv) = @_;
-        my $i = 0;
         foreach (@active_connections)
         {
 
