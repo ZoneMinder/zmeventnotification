@@ -913,8 +913,10 @@ sub sendOverFCM
     
     my $now = strftime('%I:%M %p, %b-%d',localtime);
 
-    # TBD - fix this
-    $obj->{badge}++;
+   
+    my $badge = $obj->{badge}+1;
+
+    print WRITER "badge--TYPE--".$obj->{id}."--SPLIT--".$badge."\n";
     my $uri = "https://fcm.googleapis.com/fcm/send";
     my $json;
     # use zmNinja FCM key if the user did not override
@@ -1056,6 +1058,17 @@ sub processJobs
                             }
                         }
                     }
+
+            }
+            elseif ($job eq "badge") {
+                my ($id, $badge) = split ("--SPLIT--", $msg);
+                printDebug ("GOT JOB==> Update badge to:".$badge." for id:".$id);
+                 foreach (@active_connections) {
+                    if ( $_->{id} eq $id ) {
+                        $_->{badge} = $badge; 
+                    }
+                    
+                }
 
             }
             elsif ($job eq "event_description") {
@@ -1672,7 +1685,7 @@ sub sendEvent{
          sendOverMQTTBroker($alarm, $ac);
     }
 
-    print WRITER "timestamp--TYPE--".$$ac->{id}."--SPLIT--".$alarm->{MonitorId}."--SPLIT--".$t."\n";
+    print WRITER "timestamp--TYPE--".$ac->{id}."--SPLIT--".$alarm->{MonitorId}."--SPLIT--".$t."\n";
 
 }
 
@@ -1755,7 +1768,7 @@ sub processAlarms {
         # if you want to use hook, lets first call the hook
         # if the hook returns an exit value of 0 (yes/success), we process it, else we skip it
         if ($hook) {
-            my $cmd = $hook." ".$$alarm->{EventId}." ".$alarm->{MonitorId}." \"".$alarm->{Name}."\"";
+            my $cmd = $hook." ".$alarm->{EventId}." ".$alarm->{MonitorId}." \"".$alarm->{Name}."\"";
             printInfo ("Invoking hook:".$cmd);
             my $resTxt = `$cmd`;
             my $resCode = $? >> 8;
