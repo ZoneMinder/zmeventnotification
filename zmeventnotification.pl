@@ -1218,6 +1218,7 @@ sub processIncomingMessage
                     else # token matches and connection matches, so it may be an update
                     {
                         printDebug ("token and connection matched");
+                        $_->{type} = FCM;
                         $_->{token} = $json_string->{'data'}->{'token'};
                         $_->{platform} = $json_string->{'data'}->{'platform'};
                         if (exists($json_string->{'data'}->{'monlist'}) && ($json_string->{'data'}->{'monlist'} ne ""))
@@ -1253,6 +1254,7 @@ sub processIncomingMessage
                        )  
                 {
                     printDebug ("connection matched but token did not. first registration?");
+                    $_->{type} = FCM;
                     $_->{token} = $json_string->{'data'}->{'token'};
                     $_->{platform} = $json_string->{'data'}->{'platform'};
                     $_->{monlist} = $json_string->{'data'}->{'monlist'};
@@ -1694,14 +1696,14 @@ sub shouldSendEventToConn {
                 $elapsed = time() -  $last_sent->{$alarm->{MonitorId}};
                 if ($elapsed >= $mint)
                 {
-                    printInfo("Monitor ".$alarm->{MonitorId}." event: sending this out as $elapsed is >= interval of $mint");
+                    printInfo("Monitor ".$alarm->{MonitorId}." event: should send out as  $elapsed is >= interval of $mint");
                     $retVal = 1;
                 
                 }
                 else
                 {
                     
-                        printInfo("Monitor ".$alarm->{MonitorId}." event: NOT sending this out as $elapsed is less than interval of $mint");
+                        printInfo("Monitor ".$alarm->{MonitorId}." event: should NOT send this out as $elapsed is less than interval of $mint");
                         $retVal = 0;
                 }
 
@@ -1710,13 +1712,13 @@ sub shouldSendEventToConn {
             {
                 # This means we have no record of sending any event to this monitor
                 #$last_sent->{$_->{MonitorId}} = time();
-                printInfo("Monitor ".$alarm->{MonitorId}." event: last time not found, so sending");
+                printInfo("Monitor ".$alarm->{MonitorId}." event: last time not found, so should send");
                 $retVal = 1;
             }
         } 
         else # monitorId not in list 
         {
-            printInfo ("Not sending alarm as Monitor ".$alarm->{MonitorId}." is excluded");
+            printInfo ("should NOT sending alarm as Monitor ".$alarm->{MonitorId}." is excluded");
             $retVal = 0;
         }
         
@@ -1764,6 +1766,7 @@ sub processAlarms {
         {
 
             if (shouldSendEventToConn($alarm, $_)) {
+                printDebug ("shouldSendEventToConn returned true, so calling sendEvent");
                 sendEvent($alarm, $_);
          
             }
