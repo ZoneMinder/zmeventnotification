@@ -71,24 +71,24 @@ my $app_version="2.3";
 
 # configuration constants
 use constant {
-    DEFAULT_CONFIG_FILE => "/etc/zmeventnotification.ini",
-    DEFAULT_PORT => 9000,
-    DEFAULT_ADDRESS => '[::]',
-    DEFAULT_AUTH_ENABLE => 1,
-    DEFAULT_AUTH_TIMEOUT => 20,
-    DEFAULT_FCM_ENABLE => 1,
-    DEFAULT_MQTT_ENABLE => 0,
-    DEFAULT_MQTT_SERVER => '127.0.0.1',
-    DEFAULT_FCM_TOKEN_FILE => '/etc/private/tokens.txt',
-    DEFAULT_SSL_ENABLE => 1,
-    DEFAULT_CUSTOMIZE_VERBOSE => 0,
-    DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL => 5,
-    DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL => 300,
-    DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE => 0,
-    DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID => 0,
+    DEFAULT_CONFIG_FILE                             => "/etc/zmeventnotification.ini",
+    DEFAULT_PORT                                    => 9000,
+    DEFAULT_ADDRESS                                 => '[::]',
+    DEFAULT_AUTH_ENABLE                             => 1,
+    DEFAULT_AUTH_TIMEOUT                            => 20,
+    DEFAULT_FCM_ENABLE                              => 1,
+    DEFAULT_MQTT_ENABLE                             => 0,
+    DEFAULT_MQTT_SERVER                             => '127.0.0.1',
+    DEFAULT_FCM_TOKEN_FILE                          => '/etc/private/tokens.txt',
+    DEFAULT_SSL_ENABLE                              => 1,
+    DEFAULT_CUSTOMIZE_VERBOSE                       => 0,
+    DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL          => 5,
+    DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL       => 300,
+    DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE              => 0,
+    DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID            => 0,
     DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND => 0,
-    DEFAULT_CUSTOMIZE_USE_HOOK_DESCRIPTION => 0,
-    DEFAULT_CUSTOMIZE_INCLUDE_PICTURE => 0
+    DEFAULT_CUSTOMIZE_USE_HOOK_DESCRIPTION          => 0,
+    DEFAULT_CUSTOMIZE_INCLUDE_PICTURE               => 0
 };
 
 
@@ -299,7 +299,6 @@ if ($config_file_present) {
 
 # If an option set a value, leave it.  If there's a value in the config, use
 # it.  Otherwise, use a default value if it's available.
-
 
 $port //= config_get_val($config, "network", "port", DEFAULT_PORT);
 $address //= config_get_val($config, "network", "address", DEFAULT_ADDRESS);
