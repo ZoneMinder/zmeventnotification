@@ -681,7 +681,7 @@ sub checkEvents()
                 my $name = $monitor->{Name};
                 my $mid = $monitor->{Id};
                 my $eid = $last_event;
-                Debug ("Creating event object for ".$monitor->{Name}." with $last_event");
+                printDebug ("Creating event object for ".$monitor->{Name}." with $last_event");
                 push @events, {Name => $name, MonitorId => $mid, EventId => $last_event, Cause=> $alarm_cause};
                 $eventFound = 1;
             }
