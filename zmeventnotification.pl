@@ -526,10 +526,6 @@ my $proxy_reach_time=0;
 my $wss;
 my @events=();
 my @active_connections=();
-my $alarm_monitor_name="";
-my $alarm_header_display="";
-my $alarm_mid="";
-my $alarm_eid="";
 my @needsReload = 0;
 
 # Main entry point
@@ -647,9 +643,7 @@ sub checkEvents()
         @needsReload = ();
     }
     @events = ();
-    $alarm_header_display = "";
-    $alarm_mid="";
-    $alarm_eid = ""; # only take 1 if several occur
+
     foreach my $monitor ( values(%monitors) )
     { 
          my $alarm_cause="";
@@ -688,15 +682,6 @@ sub checkEvents()
                 my $eid = $last_event;
                 Debug ("Creating event object for ".$monitor->{Name}." with $last_event");
                 push @events, {Name => $name, MonitorId => $mid, EventId => $last_event, Cause=> $alarm_cause};
-                $alarm_eid = $last_event;
-                $alarm_header_display = "Alarms: " if (!$alarm_header_display);
-                $alarm_header_display = $alarm_header_display . $name ;
-                $alarm_header_display = $alarm_header_display." ".$alarm_cause if (defined $alarm_cause);
-                $alarm_header_display = $alarm_header_display." ".$trigger_cause if (defined $trigger_cause);
-                $alarm_mid = $alarm_mid.$mid.",";
-                $alarm_header_display = $alarm_header_display . " (".$last_event.") " if ($tag_alarm_event_id);
-                $alarm_header_display = $alarm_header_display . "," ;
-                $alarm_monitor_name = $monitor->{Name};
                 $eventFound = 1;
             }
             
@@ -712,17 +697,14 @@ sub checkEvents()
                 
         }
     }
-    chop($alarm_header_display) if ($alarm_header_display);
-    chop ($alarm_mid) if ($alarm_mid);
-
+    
     # Send out dummy events for testing
     if (!$eventFound && $dummyEventTest && (time() - $dummyEventTimeLastSent) >= $dummyEventInterval ) {
         $dummyEventTimeLastSent = time();
         my $random_mon = $monitors{(keys %monitors)[rand keys %monitors]};
         printInfo ("Sending dummy event to: ".$random_mon->{Name});
         push @events, {Name => $random_mon->{Name}, MonitorId => $random_mon->{Id}, EventId => $random_mon->{LastEvent}, Cause=> "Dummy"};
-        $alarm_header_display = "Alarms: Dummy alarm at ".$random_mon->{Name};
-        $alarm_mid = $random_mon->{Id};
+      
         $eventFound = 1;
 
     }
@@ -1060,7 +1042,7 @@ sub processJobs
                     }
 
             }
-            elseif ($job eq "badge") {
+            elsif ($job eq "badge") {
                 my ($id, $badge) = split ("--SPLIT--", $msg);
                 printDebug ("GOT JOB==> Update badge to:".$badge." for id:".$id);
                  foreach (@active_connections) {
@@ -1731,7 +1713,7 @@ sub shouldSendEventToConn {
                 # This means we have no record of sending any event to this monitor
                 #$last_sent->{$_->{MonitorId}} = time();
                 printInfo("Monitor ".$alarm->{MonitorId}." event: last time not found, so sending");
-                $alarm->{Cause} = $alarm_header_display if ($hook && $use_hook_description);
+              
 
                 $retVal = 1;
             
@@ -1776,7 +1758,7 @@ sub processAlarms {
             printInfo("hook script returned with text:".$resTxt." exit:".$resCode);
             next if ($resCode !=0);
             if ($use_hook_description) {
-                $alarm_header_display = $resTxt ;
+              
                 $alarm->{Cause} = $resTxt;
                 # This updated the ZM DB with the detected description
                 print WRITER "event_description--TYPE--".alarm->{MonitorId}."--SPLIT--".$resTxt."\n";
