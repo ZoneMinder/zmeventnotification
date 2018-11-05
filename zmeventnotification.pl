@@ -531,7 +531,7 @@ my @needsReload = 0;
 # Main entry point
 
 printInfo ("You are running version: $app_version");
-printWarning ("WARNING: SSL is disabled, which means all traffic will be unencrypted!") unless $ssl_enabled;
+printWarning ("WARNING: SSL is disabled, which means all traffic will be unencrypted") unless $ssl_enabled;
 
 pipe(READER,WRITER) || die "pipe failed: $!";
 WRITER->autoflush(1);
@@ -580,7 +580,7 @@ sub printInfo
 {
 	my $str = shift;
     my $now = strftime('%Y-%m-%d,%H:%M:%S',localtime);
-     print($now," ",$str, "\n") if $verbose;
+    print($now," ",$str, "\n") if $verbose;
     Info($str);
 }
 sub printWarning
@@ -648,14 +648,14 @@ sub checkEvents()
     foreach my $monitor ( values(%monitors) )
     { 
          my $alarm_cause="";
-
          if (  !zmMemVerify($monitor) ) {
           # Our attempt to verify the memory handle failed. We should reload the monitors.
           # Don't need to zmMemInvalidate because the monitor reload will do it.
           push @needsReload, $monitor;
           Warning (" Memory verify failed for ".$monitor->{Name}."(id:".$monitor->{Id}.")" );
           next;
-          }
+        }
+
          my ( $state, $last_event, $trigger_cause, $trigger_text)
             = zmMemRead( $monitor,
                  [ "shared_data:state",
@@ -667,9 +667,8 @@ sub checkEvents()
 
         if ($state == STATE_ALARM || $state == STATE_ALERT)
         {
-            
             if ( !defined($monitor->{LastEvent})
-                         || ($last_event != $last_event_for_monitors{$monitor->{Id}}{"eid"}))
+                 || ($last_event != $last_event_for_monitors{$monitor->{Id}}{"eid"}))
             {
                 $alarm_cause=zmMemRead($monitor,"shared_data:alarm_cause") if ($read_alarm_cause);
                 $alarm_cause = $trigger_cause if (defined($trigger_cause) && $alarm_cause eq "" && $trigger_cause ne "");
@@ -692,7 +691,6 @@ sub checkEvents()
                 my $hooktext = $last_event_for_monitors{$monitor->{Id}}{"hook_text"};
                 printDebug ("Alarm ".$monitor->{LastEvent}." for monitor:".$monitor->{Id}." has ended ".$hooktext);
                 updateEvent($monitor->{LastEvent},$hooktext) if $hooktext;
-                 
                 $last_event_for_monitors{$monitor->{Id}}{"state"}="idle";
                 $last_event_for_monitors{$monitor->{Id}}{"hook_text"}=undef;
                 
@@ -703,11 +701,11 @@ sub checkEvents()
     if (!$eventFound && $dummyEventTest && (time() - $dummyEventTimeLastSent) >= $dummyEventInterval ) {
         $dummyEventTimeLastSent = time();
         my $random_mon1 = $monitors{(keys %monitors)[rand keys %monitors]};
-        #my $random_mon2 = $monitors{(keys %monitors)[rand keys %monitors]};
+        my $random_mon2 = $monitors{(keys %monitors)[rand keys %monitors]};
         printInfo ("Sending dummy event to: ".$random_mon1->{Name});
         #printInfo ("Sending dummy event to: ".$random_mon2->{Name});
         push @events, {Name => $random_mon1->{Name}, MonitorId => $random_mon1->{Id}, EventId => $random_mon1->{LastEvent}, Cause=> "Dummy1"};
-        #push @events, {Name => $random_mon2->{Name}, MonitorId => $random_mon2->{Id}, EventId => $random_mon2->{LastEvent}, Cause=> "Dummy2"};
+        push @events, {Name => $random_mon2->{Name}, MonitorId => $random_mon2->{Id}, EventId => $random_mon2->{LastEvent}, Cause=> "Dummy2"};
       
         $eventFound = 1;
 
@@ -844,7 +842,7 @@ sub sendOverMQTTBroker
     my $json;
     my $mqtt;
 
-    my $description = $alarm->{Name}.":(".$alarm->{EventId}.")-"+$alarm->{Cause};
+    my $description = $alarm->{Name}.":(".$alarm->{EventId}.")-".$alarm->{Cause};
 
     if (defined $mqtt_username && defined $mqtt_password)
     {
@@ -882,11 +880,11 @@ sub sendOverWebSocket {
 # Sends a push notification to FCM
 sub sendOverFCM
 {
-    
+
     my $alarm = shift;
     my $obj = shift;
 
-    my $header = $alarm->{Name}.":(".$alarm->{EventId}.") "+$alarm->{Cause};
+    my $header = $alarm->{Name}.":(".$alarm->{EventId}.") ".$alarm->{Cause};
     my $mid = $alarm->{MonitorId};
     my $eid = $alarm->{EventId};
 
@@ -1619,9 +1617,9 @@ sub getIdentity
     if ($obj->{type} == FCM) {
         if (exists $obj->{conn} )
         {
-            $identity = $obj->{conn}->ip().":".$obj->{conn}->port();
+            $identity = $obj->{conn}->ip().":".$obj->{conn}->port().", ";
         }
-         $identity=$identity.", token ending in:...". substr($obj->{token},-10);
+         $identity=$identity."token ending in:...". substr($obj->{token},-10);
     }
     elsif ($obj->{type} == WEB) {
         if (exists $obj->{conn} )
@@ -1647,15 +1645,12 @@ sub sendEvent{
     my $alarm = shift;
     my $ac = shift;
     my $t = gettimeofday;
-
      my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => [$alarm]});
-    
     
     if ($ac->{type}==FCM && $ac->{pushstate} ne "disabled" && $ac->{state} != PENDING_AUTH) {
         printInfo ("Sending notification over FCM");  
         sendOverFCM($alarm, $ac) ;     
 
-          
         
     }
     elsif ($ac->{type}==WEB && $ac->{state} == VALID_CONNECTION && exists $ac->{conn})
