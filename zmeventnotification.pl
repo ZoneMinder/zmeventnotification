@@ -1753,7 +1753,7 @@ sub processAlarms {
               
                 $alarm->{Cause} = $resTxt;
                 # This updated the ZM DB with the detected description
-                print WRITER "event_description--TYPE--".alarm->{MonitorId}."--SPLIT--".$resTxt."\n";
+                print WRITER "event_description--TYPE--".$alarm->{MonitorId}."--SPLIT--".$resTxt."\n";
             }
             
         }
