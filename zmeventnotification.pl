@@ -702,9 +702,12 @@ sub checkEvents()
     # Send out dummy events for testing
     if (!$eventFound && $dummyEventTest && (time() - $dummyEventTimeLastSent) >= $dummyEventInterval ) {
         $dummyEventTimeLastSent = time();
-        my $random_mon = $monitors{(keys %monitors)[rand keys %monitors]};
-        printInfo ("Sending dummy event to: ".$random_mon->{Name});
-        push @events, {Name => $random_mon->{Name}, MonitorId => $random_mon->{Id}, EventId => $random_mon->{LastEvent}, Cause=> "Dummy"};
+        my $random_mon1 = $monitors{(keys %monitors)[rand keys %monitors]};
+        #my $random_mon2 = $monitors{(keys %monitors)[rand keys %monitors]};
+        printInfo ("Sending dummy event to: ".$random_mon1->{Name});
+        #printInfo ("Sending dummy event to: ".$random_mon2->{Name});
+        push @events, {Name => $random_mon1->{Name}, MonitorId => $random_mon1->{Id}, EventId => $random_mon1->{LastEvent}, Cause=> "Dummy1"};
+        #push @events, {Name => $random_mon2->{Name}, MonitorId => $random_mon2->{Id}, EventId => $random_mon2->{LastEvent}, Cause=> "Dummy2"};
       
         $eventFound = 1;
 
