@@ -870,7 +870,7 @@ sub sendOverMQTTBroker
 sub sendOverWebSocket {
     my $alarm = shift;
     my $ac = shift;
-    my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => $alarm});
+    my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => [$alarm]});
      printDebug ("Child: posting job to send out message to id:".$ac->{id}."->".$ac->{conn}->ip().":".$ac->{conn}->port());
     print WRITER "message--TYPE--".$ac->{id}."--SPLIT--".$str."\n";
 
@@ -887,7 +887,7 @@ sub sendOverFCM
     my $mid = $alarm->{MonitorId};
     my $eid = $alarm->{EventId};
 
-     my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => $alarm});
+     my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => [$alarm]});
 
      my $mname = $alarm->{Name};
 
@@ -998,7 +998,7 @@ sub sendOverFCM
     # send supplementary event data over websocket
         if ($obj->{state} == VALID_CONNECTION  && exists $obj->{conn})
         {
-            my $sup_str = encode_json({event => 'alarm', type=>'', status=>'Success', supplementary=>'true', events => $alarm});
+            my $sup_str = encode_json({event => 'alarm', type=>'', status=>'Success', supplementary=>'true', events => [$alarm]});
             #printInfo ($_->{conn}->ip()."-sending supplementary data over websockets\n");
             print WRITER "message--TYPE--".$obj->{id}."--SPLIT--".$sup_str."\n";
        
@@ -1645,7 +1645,7 @@ sub sendEvent{
     my $ac = shift;
     my $t = gettimeofday;
 
-     my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => $alarm});
+     my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => $[alarm]});
     
     
     if ($ac->{type}==FCM && $ac->{pushstate} ne "disabled" && $ac->{state} != PENDING_AUTH) {
