@@ -844,7 +844,7 @@ sub sendOverMQTTBroker
     my $json;
     my $mqtt;
 
-    my $description = $alarm->{Name}.":(".$alarm->{EventId}.")-"+$alarm->{Cause};
+    my $description = $alarm->{Name}.":(".$alarm->{EventId}.") ".$alarm->{Cause};
 
     if (defined $mqtt_username && defined $mqtt_password)
     {
