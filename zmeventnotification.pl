@@ -695,7 +695,7 @@ sub checkNewEvents()
                 
         }
     }
-    
+    printDebug ("checkEvents() events found=$eventFound");
     # Send out dummy events for testing
     if (!$eventFound && $dummyEventTest && (time() - $dummyEventTimeLastSent) >= $dummyEventInterval ) {
         $dummyEventTimeLastSent = time();
@@ -1659,7 +1659,7 @@ sub sendEvent{
          
                 sendOverWebSocket($alarm, $ac);        
     }
-    elsif ($ac->{type}=MQTT) {
+    elsif ($ac->{type}==MQTT) {
          printInfo ("Sending notification over MQTT");
          sendOverMQTTBroker($alarm, $ac);
     }
