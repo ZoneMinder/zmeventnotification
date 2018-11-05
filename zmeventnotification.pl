@@ -609,7 +609,7 @@ sub printError
 # b) A CONCATENATED list of events in $alarm_header_display for convenience
 # c) A CONCATENATED list of monitor IDs in $alarm_mid
 
-sub checkEvents()
+sub checkNewEvents()
 {
     
     my $eventFound = 0;
@@ -626,7 +626,7 @@ sub checkEvents()
           {
               $cip = $_->{conn}->ip();
           }
-          printDebug ("-->checkEvents: Connection $ndx: ID->".$_->{id}." IP->".$cip." Token->:...".substr($_->{token},-10)." Plat:".$_->{platform}." Push:".$_->{pushstate}); 
+          printDebug ("-->checkNewEvents: Connection $ndx: ID->".$_->{id}." IP->".$cip." Token->:...".substr($_->{token},-10)." Plat:".$_->{platform}." Push:".$_->{pushstate}); 
           $ndx++;
         }
         printInfo ("Reloading Monitors...\n");
@@ -690,7 +690,7 @@ sub checkEvents()
         {
                 my $hooktext = $last_event_for_monitors{$monitor->{Id}}{"hook_text"};
                 printDebug ("Alarm ".$monitor->{LastEvent}." for monitor:".$monitor->{Id}." has ended ".$hooktext);
-                updateEvent($monitor->{LastEvent},$hooktext) if $hooktext;
+                updateEventinZmDB($monitor->{LastEvent},$hooktext) if $hooktext;
                 $last_event_for_monitors{$monitor->{Id}}{"state"}="idle";
                 $last_event_for_monitors{$monitor->{Id}}{"hook_text"}=undef;
                 
@@ -752,7 +752,7 @@ sub loadMonitors
 
 # Updated Notes DB of events with detection text
 # if available (hook enabled)
-sub updateEvent
+sub updateEventinZmDB
 {
     my ($eid,$notes) = @_;
     $notes =$notes." ";
@@ -769,7 +769,7 @@ sub updateEvent
 # This function compares the password provided over websockets
 # to the password stored in the ZM MYSQL DB
 
-sub validateZM
+sub validateZmAuth
 {
     return 1 unless $auth_enabled;
     my ($u,$p) = @_;
@@ -794,7 +794,7 @@ sub validateZM
 }
 
 # deletes a token - invoked if FCM responds with an incorrect token error
-sub deleteToken
+sub deleteFCMToken
 {
     my $dtoken = shift;
     printDebug ("DeleteToken called with ...".substr($dtoken,-10));
@@ -869,6 +869,8 @@ sub sendOverMQTTBroker
 
 
 sub sendOverWebSocket {
+    # We can't send websocket data in a fork. WSS contains user space crypt data that
+    # goes out of sync with the parent. So we use a parent pipe
     my $alarm = shift;
     my $ac = shift;
     my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => [$alarm]});
@@ -986,7 +988,7 @@ sub sendOverFCM
             Error ("Error value =".$reason);
             if ($reason eq "NotRegistered" || $reason eq "InvalidRegistration") {
                 printInfo ("Removing this token as FCM doesn't recognize it");
-                deleteToken($obj->{token});
+                deleteFCMToken($obj->{token});
             }
 
         }
@@ -996,11 +998,11 @@ sub sendOverFCM
         printInfo("FCM push message Error:".$res->status_line);
     }
 
-    # send supplementary event data over websocket
+        # send supplementary event data over websocket, same SSL state issue
+        # so use a parent pipe
         if ($obj->{state} == VALID_CONNECTION  && exists $obj->{conn})
         {
             my $sup_str = encode_json({event => 'alarm', type=>'', status=>'Success', supplementary=>'true', events => [$alarm]});
-            #printInfo ($_->{conn}->ip()."-sending supplementary data over websockets\n");
             print WRITER "message--TYPE--".$obj->{id}."--SPLIT--".$sup_str."\n";
        
         }
@@ -1013,8 +1015,6 @@ sub processJobs
 {
     while ((my $read_avail = select($rout=$rin, undef, undef, 0.0)) !=0)
    {
-
-   
         if ($read_avail < 0) {
             if (!$!{EINTR}) {
                 printError("Pipe read error: $read_avail $!");
@@ -1044,6 +1044,7 @@ sub processJobs
                     }
 
             }
+            # Update badge count of active connection
             elsif ($job eq "badge") {
                 my ($id, $badge) = split ("--SPLIT--", $msg);
                 printDebug ("GOT JOB==> Update badge to:".$badge." for id:".$id);
@@ -1055,12 +1056,15 @@ sub processJobs
                 }
 
             }
+            # hook script result will be updated in ZM DB
             elsif ($job eq "event_description") {
                 my ($mid, $desc) = split("--SPLIT--",$msg);
                 printDebug("GOT JOB==> Update monitor ".$mid." description:".$desc);
                 $last_event_for_monitors{$mid}{"hook_text"}= $desc;
                 
             } 
+
+            # marks the latest time an event was sent out. Needed for interval mgmt.
             elsif ($job eq "timestamp") {
                 my ($id, $mid, $timeval) = split ("--SPLIT--",$msg);
                 printDebug ("GOT JOB==> Update last sent timestamp of monitor:".$mid." to ".$timeval. " for id:".$id);
@@ -1078,9 +1082,7 @@ sub processJobs
         }
         }
     }
-      
     printDebug ("Empty job queue");
-       
 }
 
 
@@ -1138,8 +1140,7 @@ sub rsplit {
 }
 
 # This function  is called whenever we receive a message from a client
-
-sub checkMessage
+sub processIncomingMessage
 {
     my ($conn, $msg) = @_;  
     
@@ -1148,7 +1149,7 @@ sub checkMessage
     if ($@)
     {
         
-        printInfo ("Failed decoding json in checkMessage: $@");
+        printInfo ("Failed decoding json in processIncomingMessage: $@");
         my $str = encode_json({event=> 'malformed', type=>'', status=>'Fail', reason=>'BADJSON'});
         eval {$conn->send_utf8($str);};
         return;
@@ -1238,7 +1239,7 @@ sub checkMessage
                         }
                         $_->{pushstate} = $json_string->{'data'}->{'state'};
                         printInfo ("Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}.",pushstate:".$_->{pushstate}."\n");
-                        my ($emonlist,$eintlist) = saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate});
+                        my ($emonlist,$eintlist) = saveFCMTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate});
                         $_->{monlist} = $emonlist;
                         $_->{intlist} = $eintlist;
                     } # token and conn. matches
@@ -1275,7 +1276,7 @@ sub checkMessage
                     }
                             $_->{pushstate} = $json_string->{'data'}->{'state'};
                             printInfo ("Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}.",pushstate:".$_->{pushstate}."\n");
-                            my ($emonlist,$eintlist) = saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate});
+                            my ($emonlist,$eintlist) = saveFCMTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate});
                             $_->{monlist} = $emonlist;
                             $_->{intlist} = $eintlist;
 
@@ -1317,7 +1318,7 @@ sub checkMessage
                     $_->{monlist} = $monlist;
                     $_->{intlist} = $intlist;
                     printInfo ("Contrl: Storing token ...".substr($_->{token},-10).",monlist:".$_->{monlist}.",intlist:".$_->{intlist}.",pushstate:".$_->{pushstate}."\n");
-                    saveTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate}); 
+                    saveFCMTokens($_->{token}, $_->{monlist}, $_->{intlist}, $_->{platform}, $_->{pushstate}); 
                 }
             }
         }   
@@ -1358,7 +1359,7 @@ sub checkMessage
                 ($_->{conn}->port() eq $conn->port())  &&
                 ($_->{state}==PENDING_AUTH))
             {
-                if (!validateZM($uname,$pwd))
+                if (!validateZmAuth($uname,$pwd))
                 {
                     # bad username or password, so reject and mark for deletion
                     my $str = encode_json({event=>'auth', type=>'', status=>'Fail', reason => 'BADAUTH'});
@@ -1390,12 +1391,18 @@ sub checkMessage
     }
 }
 
+# Master loader for predefined connections
+# As of now, its FCM tokens and MQTT server
 sub loadPredefinedConnections {
     # init FCM tokens
-    initTokens() if ($use_fcm);
+    initFCMTokens() if ($use_fcm);
     initMQTT() if ($use_mqtt);
 }
 
+# MQTT init
+# currently just a dummy connection for the sake of consistency
+# If it makes sense to keep this persistent, we can do the init here instead
+# of sendOverMQTTBroker
 sub initMQTT {
     printInfo ("Initializing MQTT connection...");
     my $id = gettimeofday;
@@ -1408,16 +1415,10 @@ sub initMQTT {
         intlist => "",
         last_sent=>{},
     };
-
-    # Not creating a persistent connection
-    # we will do it per event. If you want to do it persistently
-    # do it here
-
 }
 
 # loads FCM tokens from file
-
-sub initTokens
+sub initFCMTokens
 {
     printInfo ("Initializing FCM tokens...");
     if ( ! -f $token_file)
@@ -1468,7 +1469,7 @@ sub initTokens
 # tokens are sent without monitor list when the registration
 # id is received from apple, so we handle that situation
 
-sub saveTokens
+sub saveFCMTokens
 {
     return if (!$use_fcm);
     my $stoken = shift;
@@ -1607,8 +1608,8 @@ sub isInList
     
 }
 
-
-sub getIdentity
+# Returns an identity string for a connection for display purposes
+sub getConnectionIdentity
 {
     my $obj=shift;
 
@@ -1641,6 +1642,7 @@ sub getIdentity
 }
 
 
+# Master event send routine. Will invoke different transport APIs as needed based on connection details
 sub sendEvent{
     my $alarm = shift;
     my $ac = shift;
@@ -1656,10 +1658,7 @@ sub sendEvent{
     elsif ($ac->{type}==WEB && $ac->{state} == VALID_CONNECTION && exists $ac->{conn})
     {
          
-                sendOverWebSocket($alarm, $ac);
-        
-             
-       
+                sendOverWebSocket($alarm, $ac);        
     }
     elsif ($ac->{type}=MQTT) {
          printInfo ("Sending notification over MQTT");
@@ -1670,7 +1669,8 @@ sub sendEvent{
 
 }
 
-
+# Compares connection rules (monList/interval). Returns 1 if event should be send to this connection,
+# 0 if not. 
 sub shouldSendEventToConn {
     my $alarm = shift;
     my $ac = shift;
@@ -1681,7 +1681,7 @@ sub shouldSendEventToConn {
     my $last_sent = $ac->{last_sent};
     
   
-    my $id = getIdentity($ac);
+    my $id = getConnectionIdentity($ac);
     my $connId = $ac->{id};
     printInfo ("Checking alarm rules for $id");
     
@@ -1712,12 +1712,8 @@ sub shouldSendEventToConn {
                 # This means we have no record of sending any event to this monitor
                 #$last_sent->{$_->{MonitorId}} = time();
                 printInfo("Monitor ".$alarm->{MonitorId}." event: last time not found, so sending");
-              
-
                 $retVal = 1;
-            
             }
-
         } 
         else # monitorId not in list 
         {
@@ -1726,12 +1722,10 @@ sub shouldSendEventToConn {
         }
         
         return $retVal;
-           
-
 }
     
 
-# If there are events reported in checkEvents, processAlarms is called to 
+# If there are events reported in checkNewEvents, processAlarms is called to 
 # 1. Apply hooks if applicable
 # 2. Send them out
 # IMPORTANT: processAlarms is called as a forked child
@@ -1764,12 +1758,7 @@ sub processAlarms {
             }
             
         }
-
         # coming here means the alarm needs to be sent out to listerens who are interested
-
-        my $ac = scalar @active_connections;
-    
-
         printInfo ("Matching alarm to connection rules...");
         my ($serv) = @_;
         foreach (@active_connections)
@@ -1789,7 +1778,7 @@ sub processAlarms {
 # It opens a WSS socket and keeps listening
 sub initSocketServer
 {
-    checkEvents();
+    checkNewEvents();
     my $ssl_server;
     if ($ssl_enabled)
     {
@@ -1825,30 +1814,23 @@ sub initSocketServer
             printDebug("---------->Tick START<--------------");
             checkConnection();
             processJobs();
-            if (checkEvents())
+            if (checkNewEvents())
             {
-            
-              
                 my $pid = fork;
                 if (!defined $pid) {
                     die "Cannot fork: $!";
-
                 }
                 elsif ($pid == 0) {
                     # client
                     local $SIG{'CHLD'} = 'DEFAULT';
                     my  $numAlarms = scalar @events;
                     printInfo ("Forking process:$$ to handle $numAlarms alarms");
-                    # send it the list of current events to handle bcause checkEvents() will clean it
+                    # send it the list of current events to handle bcause checkNewEvents() will clean it
                     processAlarms(@events);
                     printInfo ("Ending process:$$ to handle alarms");
                     exit 0; 
                 }
-                
-
             }
-
-
             printDebug("---------->Tick END<--------------");
         },
         # called when a new connection comes in
@@ -1862,7 +1844,7 @@ sub initSocketServer
                     printDebug("---------->onConnect msg START<--------------");
                     my ($conn, $msg) = @_;
                     printDebug ("Raw incoming message: $msg");
-                    checkMessage($conn, $msg);
+                    processIncomingMessage($conn, $msg);
                     printDebug("---------->onConnect msg STOP<--------------");
                 },
                 handshake => sub {
