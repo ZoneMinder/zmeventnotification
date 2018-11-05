@@ -642,6 +642,7 @@ sub checkEvents()
         }
         @needsReload = ();
     }
+
     @events = ();
 
     foreach my $monitor ( values(%monitors) )
@@ -882,11 +883,11 @@ sub sendOverFCM
     my $alarm = shift;
     my $obj = shift;
 
-    my $header = $alarm->{Name}.":(".$alarm->EventId.") "+$alarm->{Cause};
+    my $header = $alarm->{Name}.":(".$alarm->{EventId}.") "+$alarm->{Cause};
     my $mid = $alarm->{MonitorId};
     my $eid = $alarm->{EventId};
 
-     my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => \$alarm});
+     my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => $alarm});
 
      my $mname = $alarm->{Name};
 
@@ -913,7 +914,7 @@ sub sendOverFCM
                title=>$title,
                body=>$header." at ".$now,
                sound=>"default",
-               badge=>$obj->{badge},
+               badge=>$badge,
             },
            data=> {
                myMessageId=> $notId,
