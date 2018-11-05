@@ -1645,7 +1645,7 @@ sub sendEvent{
     my $ac = shift;
     my $t = gettimeofday;
 
-     my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => $[alarm]});
+     my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => [$alarm]});
     
     
     if ($ac->{type}==FCM && $ac->{pushstate} ne "disabled" && $ac->{state} != PENDING_AUTH) {
