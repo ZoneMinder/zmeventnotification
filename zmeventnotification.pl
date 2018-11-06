@@ -882,8 +882,6 @@ sub sendOverFCM
 
     my $alarm = shift;
     my $obj = shift;
-
-    my $header = $alarm->{Name}.":(".$alarm->{EventId}.") ".$alarm->{Cause};
     my $mid = $alarm->{MonitorId};
     my $eid = $alarm->{EventId};
 
@@ -894,9 +892,8 @@ sub sendOverFCM
    # my ($obj, $header, $mid, $eid,  $str, $mname) = @_;
 
     
-    my $now = strftime('%I:%M %p, %b-%d',localtime);
-
-   
+    my $now = strftime('%I:%M %p, %d-%b',localtime);
+        my $body = $alarm->{Cause}." at ".$now;
     my $badge = $obj->{badge}+1;
 
     print WRITER "badge--TYPE--".$obj->{id}."--SPLIT--".$badge."\n";
@@ -912,7 +909,7 @@ sub sendOverFCM
             to=>$obj->{token},
             notification=> {
                title=>$title,
-               body=>$header." at ".$now,
+               body=>$body,
                sound=>"default",
                badge=>$badge,
             },
@@ -929,7 +926,7 @@ sub sendOverFCM
             priority=>'high',
             data=> {
                 title=>$title,
-                message=>$header." at ".$now,
+                message=>$body,
                 style=>"inbox",
                 myMessageId=> $notId,
                 icon=>"ic_stat_notification",
