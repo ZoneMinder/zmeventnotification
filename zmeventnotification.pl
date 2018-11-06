@@ -1713,7 +1713,7 @@ sub shouldSendEventToConn {
         } 
         else # monitorId not in list 
         {
-            printInfo ("should NOT sending alarm as Monitor ".$alarm->{MonitorId}." is excluded");
+            printInfo ("should NOT send alarm as Monitor ".$alarm->{MonitorId}." is excluded");
             $retVal = 0;
         }
         
