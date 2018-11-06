@@ -339,8 +339,6 @@ if ($ssl_enabled && (!$ssl_cert_file || !$ssl_key_file)) {
 
 my $notId = 1;
 
-
-
 # this is just a wrapper around Config::IniFiles val
 # older versions don't support a default parameter
 sub config_get_val {
@@ -1617,7 +1615,7 @@ sub getConnectionIdentity
     my $identity="";
 
     if ($obj->{type} == FCM) {
-        if (exists $obj->{conn} )
+        if (exists $obj->{conn} && $obj->{state} != INVALID_CONNECTION )
         {
             $identity = $obj->{conn}->ip().":".$obj->{conn}->port().", ";
         }
