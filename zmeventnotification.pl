@@ -56,7 +56,7 @@ use IO::Select;
 # ==========================================================================
 
 
-my $app_version="2.3";
+my $app_version="2.4";
 
 # ==========================================================================
 #
@@ -848,6 +848,8 @@ sub sendOverMQTTBroker
                 eventid=> $alarm->{EventId}
             });
     
+   # based on the library docs, if this fails, it will try and reconnect 
+   # before the next message is sent (with a retry timer of 5 s)
    $ac->{mqtt_conn}->publish(join('/','zoneminder',$alarm->{MonitorId}) => $json);
     
 
@@ -1386,32 +1388,25 @@ sub loadPredefinedConnections {
 
 # MQTT init
 # currently just a dummy connection for the sake of consistency
-# If it makes sense to keep this persistent, we can do the init here instead
-# of sendOverMQTTBroker
+
 sub initMQTT {
     my $mqtt_connection;
-    my $initialized; 
 
     printInfo ("Initializing MQTT connection...");
+    # Note this does not actually connect to the MQTT server. That happens later during publish
     if (defined $mqtt_username && defined $mqtt_password)
     {
-        if ($mqtt_connection = Net::MQTT::Simple::Auth->new($mqtt_server, $mqtt_username, $mqtt_password)){
-		printInfo ("Intialized MQTT with auth");
-		$initialized = 1;
-	}
+        if ($mqtt_connection = Net::MQTT::Simple::Auth->new($mqtt_server, $mqtt_username, $mqtt_password)) {
+		    printInfo ("Intialized MQTT with auth");
+	    }
     }
     else
     {
         if ($mqtt_connection = Net::MQTT::Simple->new($mqtt_server)) {
-		printInfo ("Intialized MQTT without auth");
-		$initialized = 1;
-	}
+		    printInfo ("Intialized MQTT without auth");
+	    }
     }
 	
-    if (! $initialized) {
-	return;	    
-    }
-
     my $id = gettimeofday;
     my $connect_time = time();
     push @active_connections, {
