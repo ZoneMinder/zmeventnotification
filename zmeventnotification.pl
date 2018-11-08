@@ -933,6 +933,13 @@ sub sendOverFCM
         $android_message->{'data'}->{'picture'} = $pic;
         $android_message->{'data'}->{'summaryText'} = 'alarmed image';
         #printDebug ("Alarm image for android will be: $pic");
+
+        #need cordova-ios support before this works
+        #$ios_message->{'data'}->{'attachment'}->{'url'} = $pic;
+        #$ios_message->{'data'}->{'attachment'}->{'content-type'} = 'jpeg';
+        #$ios_message->{'data'}->{'attachment'}->{'hide-thumbnail'} = 'false';
+
+
     } 
 
 

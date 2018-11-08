@@ -59,6 +59,9 @@ DETECT_PATTERN="(person|car)"
 # --------- You *may* need to change these ------------
 WGET="/usr/bin/wget"
 
+# You need to also enable frames in your storage if you want
+# to use anything besides snapshot
+
 FID='alarm' # get first alarmed frame
 #FID=26   # specific frame id
 #FID="snapshot" # Use this if you want to analyze the frame with the maximum score
