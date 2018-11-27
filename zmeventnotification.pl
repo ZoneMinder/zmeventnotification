@@ -1750,19 +1750,20 @@ sub processAlarms {
         # if you want to use hook, lets first call the hook
         # if the hook returns an exit value of 0 (yes/success), we process it, else we skip it
         if ($hook) {
-            my $cmd = $hook." ".$alarm->{EventId}." ".$alarm->{MonitorId}." \"".$alarm->{Name}."\"";
+            my $cmd = $hook." ".$alarm->{EventId}." ".$alarm->{MonitorId}." \"".$alarm->{Name}."\""." \"".$alarm->{Cause}."\"";
             printInfo ("Invoking hook:".$cmd);
             my $resTxt = `$cmd`;
             my $resCode = $? >> 8;
             chomp($resTxt);
             printInfo("hook script returned with text:".$resTxt." exit:".$resCode);
-            next if ($resCode !=0);
+	    next if ($resCode !=0);
             if ($use_hook_description) {
               
                 $alarm->{Cause} = $resTxt;
                 # This updated the ZM DB with the detected description
                 print WRITER "event_description--TYPE--".$alarm->{MonitorId}."--SPLIT--".$resTxt."\n";
             }
+           
             
         }
         # coming here means the alarm needs to be sent out to listerens who are interested
