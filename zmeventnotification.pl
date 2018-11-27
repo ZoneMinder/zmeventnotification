@@ -1750,7 +1750,7 @@ sub processAlarms {
         # if you want to use hook, lets first call the hook
         # if the hook returns an exit value of 0 (yes/success), we process it, else we skip it
         if ($hook) {
-            my $cmd = $hook." ".$alarm->{EventId}." ".$alarm->{MonitorId}." \"".$alarm->{Name}."\"";
+            my $cmd = $hook." ".$alarm->{EventId}." ".$alarm->{MonitorId}." \"".$alarm->{Name}."\""." \"".$alarm->{Cause}."\"";
             printInfo ("Invoking hook:".$cmd);
             my $resTxt = `$cmd`;
             my $resCode = $? >> 8;
