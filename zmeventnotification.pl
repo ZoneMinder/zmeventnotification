@@ -1756,13 +1756,13 @@ sub processAlarms {
             my $resCode = $? >> 8;
             chomp($resTxt);
             printInfo("hook script returned with text:".$resTxt." exit:".$resCode);
-            next if ($resCode !=0);
             if ($use_hook_description) {
               
                 $alarm->{Cause} = $resTxt;
                 # This updated the ZM DB with the detected description
                 print WRITER "event_description--TYPE--".$alarm->{MonitorId}."--SPLIT--".$resTxt."\n";
             }
+            next if ($resCode !=0);
             
         }
         # coming here means the alarm needs to be sent out to listerens who are interested
