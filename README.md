@@ -115,7 +115,10 @@ If you face issues installing Crypt::MySQL try this instead: (Thanks to aaronl)
 ```
 sudo apt-get install libcrypt-mysql-perl
 ```
-
+If there are issues installing Config::IniFiles and the errors are related to Module::Build missing, use following command to get this module in debian based systems and install Config::IniFiles again.
+```
+sudo apt-get install libmodule-build-perl
+```
 Next up install WebSockets
 
 ```
