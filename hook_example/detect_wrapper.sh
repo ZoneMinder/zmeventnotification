@@ -4,6 +4,7 @@
 # $1 = eventId that triggered an alarm
 # $2 = monitor ID of monitor that triggered an alarm
 # $3 = monitor Name of monitor that triggered an alarm
+# $4 = cause of alarm 
 
 
 
@@ -59,12 +60,13 @@ DETECT_PATTERN="(person|car)"
 # --------- You *may* need to change these ------------
 WGET="/usr/bin/wget"
 
-# You need to also enable frames in your storage if you want
+# If you are using ZM 1.32.3 or above, you can use any of the modes below without any change.
+# If you are however using ZM 1.32.2 or less, you need to also enable frames in your storage if you want
 # to use anything besides snapshot
 
 FID='alarm' # get first alarmed frame
-#FID=26   # specific frame id
 #FID="snapshot" # Use this if you want to analyze the frame with the maximum score
+#FID=26   # specific frame id
 
 WILL_SNOOZE=0 # if 1 will wait for SNOOZE_DURATION seconds before it grabs a frame. 
 SNOOZE_DURATION=2
