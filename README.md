@@ -1,48 +1,48 @@
-**Latest Version: 2.4**
+**Latest Version: 2.5**
 
 <!-- TOC -->
 
 - [Breaking Changes](#breaking-changes)
-    - [version 2.0 onwards](#version-20-onwards)
-    - [version 1.0 onwards](#version-10-onwards)
+  - [version 2.0 onwards](#version-20-onwards)
+  - [version 1.0 onwards](#version-10-onwards)
 - [What is it?](#what-is-it)
 - [Why do we need it?](#why-do-we-need-it)
 - [Is this officially developed by ZM developers?](#is-this-officially-developed-by-zm-developers)
 - [How do I install it?](#how-do-i-install-it)
-    - [Download the server script and its config file](#download-the-server-script-and-its-config-file)
-    - [Install Dependencies](#install-dependencies)
-    - [SSL certificate (Generate new, or use ZoneMinder certs if you are already using HTTPS)](#ssl-certificate-generate-new-or-use-zoneminder-certs-if-you-are-already-using-https)
-        - [IOS Users](#ios-users)
-    - [Making sure everything is running (in manual mode)](#making-sure-everything-is-running-in-manual-mode)
-    - [Running it as a daemon so it starts automatically along with ZoneMinder](#running-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
+  - [Download the server script and its config file](#download-the-server-script-and-its-config-file)
+  - [Install Dependencies](#install-dependencies)
+  - [SSL certificate (Generate new, or use ZoneMinder certs if you are already using HTTPS)](#ssl-certificate-generate-new-or-use-zoneminder-certs-if-you-are-already-using-https)
+    - [IOS Users](#ios-users)
+  - [Making sure everything is running (in manual mode)](#making-sure-everything-is-running-in-manual-mode)
+  - [Running it as a daemon so it starts automatically along with ZoneMinder](#running-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
 - [How can I use this with Node-Red or Home Assistant?](#how-can-i-use-this-with-node-red-or-home-assistant)
 - [Disabling security](#disabling-security)
 - [How do I safely upgrade zmeventserver to new versions?](#how-do-i-safely-upgrade-zmeventserver-to-new-versions)
 - [Configuring the notification server](#configuring-the-notification-server)
-    - [Understanding zmeventnotification configuration](#understanding-zmeventnotification-configuration)
-    - [What is the hook attribute ?](#what-is-the-hook-attribute-)
+  - [Understanding zmeventnotification configuration](#understanding-zmeventnotification-configuration)
+  - [What is the hook attribute ?](#what-is-the-hook-attribute)
 - [Troubleshooting common situations](#troubleshooting-common-situations)
-    - [Picture notifications don't show images](#picture-notifications-dont-show-images)
-    - [Secure mode just doesn't work (WSS) - WS works](#secure-mode-just-doesnt-work-wss---ws-works)
-    - [I'm not receiving push notifications in zmNinja](#im-not-receiving-push-notifications-in-zmninja)
-    - [I'm getting multiple notifications for the same event](#im-getting-multiple-notifications-for-the-same-event)
-    - [The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)](#the-server-runs-fine-when-manually-executed-but-fails-when-run-in-daemon-mode-started-by-zmdcpl)
-    - [When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that](#when-you-run-zmeventnotifiationpl-manually-you-get-an-error-saying-port-already-in-use-or-cannot-bind-to-port-or-something-like-that)
-    - [Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!](#great-krypton-i-just-upgraded-zoneminder-and-im-not-getting-push-anymore)
+  - [Picture notifications don't show images](#picture-notifications-dont-show-images)
+  - [Secure mode just doesn't work (WSS) - WS works](#secure-mode-just-doesnt-work-wss---ws-works)
+  - [I'm not receiving push notifications in zmNinja](#im-not-receiving-push-notifications-in-zmninja)
+  - [I'm getting multiple notifications for the same event](#im-getting-multiple-notifications-for-the-same-event)
+  - [The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)](#the-server-runs-fine-when-manually-executed-but-fails-when-run-in-daemon-mode-started-by-zmdcpl)
+  - [When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that](#when-you-run-zmeventnotifiationpl-manually-you-get-an-error-saying-port-already-in-use-or-cannot-bind-to-port-or-something-like-that)
+  - [Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!](#great-krypton-i-just-upgraded-zoneminder-and-im-not-getting-push-anymore)
 - [How do I disable secure (WSS) mode?](#how-do-i-disable-secure-wss-mode)
 - [Debugging and reporting problems](#debugging-and-reporting-problems)
 - [For Developers writing their own consumers](#for-developers-writing-their-own-consumers)
-    - [How do I talk to it?](#how-do-i-talk-to-it)
-        - [Authentication messages](#authentication-messages)
-        - [Control messages](#control-messages)
-            - [Control message to restrict monitor IDs for events as well as interval durations for reporting](#control-message-to-restrict-monitor-ids-for-events-as-well-as-interval-durations-for-reporting)
-            - [Control message to get Event Server version](#control-message-to-get-event-server-version)
-        - [Alarm notifications](#alarm-notifications)
-        - [Push Notifications (for both iOS and Android)](#push-notifications-for-both-ios-and-android)
-            - [Concepts of Push and why it is only for zmNinja](#concepts-of-push-and-why-it-is-only-for-zmninja)
-            - [Registering Push token with the server](#registering-push-token-with-the-server)
-            - [Badge reset](#badge-reset)
-        - [Testing from command line](#testing-from-command-line)
+  - [How do I talk to it?](#how-do-i-talk-to-it)
+    - [Authentication messages](#authentication-messages)
+    - [Control messages](#control-messages)
+      - [Control message to restrict monitor IDs for events as well as interval durations for reporting](#control-message-to-restrict-monitor-ids-for-events-as-well-as-interval-durations-for-reporting)
+      - [Control message to get Event Server version](#control-message-to-get-event-server-version)
+    - [Alarm notifications](#alarm-notifications)
+    - [Push Notifications (for both iOS and Android)](#push-notifications-for-both-ios-and-android)
+      - [Concepts of Push and why it is only for zmNinja](#concepts-of-push-and-why-it-is-only-for-zmninja)
+      - [Registering Push token with the server](#registering-push-token-with-the-server)
+      - [Badge reset](#badge-reset)
+    - [Testing from command line](#testing-from-command-line)
 - [How scalable is it?](#how-scalable-is-it)
 - [Brickbats](#brickbats)
 
@@ -327,20 +327,55 @@ Try to put in your event server IP in the `address` token in `[network]` section
 
 ### I'm not receiving push notifications in zmNinja
 
-There could be many reasons. Here are the top few:
+This almost always happens when zmNinja is not able to reach the server. Before you contact me, please perform the following steps and send me the output: 
 
-- Make sure zmeventserver is running, and ONLY ONE INSTANCE is running. Do a `ps -aef | grep zmevent` - if you see multiple processes, kill them and start again
+1. Stop the event server. `sudo zmdc.pl stop zmeventnotification.pl`
+2. Do a `ps -aef | grep zmevent` and make sure no stale processes are running
+3. Edit your `/etc/zmeventnotification.ini` and make sure `verbose = 1` to get verbose logs
+4. Run the server manually by doing `sudo -u www-data /usr/bin/zmeventnotification.pl` (replace with `www-data` with `apache` depending on your OS)
+5. You should now see logs on the commandline like so that shows the server is running:
+
+```
+018-12-20,08:31:32 About to start listening to socket
+12/20/2018 08:31:32.606198 zmeventnotification[12460].INF [main:582] [About to start listening to socket]
+2018-12-20,08:31:32 Secure WS(WSS) is enabled...
+12/20/2018 08:31:32.656834 zmeventnotification[12460].INF [main:582] [Secure WS(WSS) is enabled...]
+2018-12-20,08:31:32 Web Socket Event Server listening on port 9000
+12/20/2018 08:31:32.696406 zmeventnotification[12460].INF [main:582] [Web Socket Event Server listening on port 9000]
+```
+
+6. Now start zmNinja. You should see event server logs like this:
+
+```
+2018-12-20,08:32:43 Raw incoming message: {"event":"push","data":{"type":"token","platform":"ios","token":"cVuLzCBsEn4:APA91bHYuO3hVJqTIMsm0IRNQEYAUa<deleted>GYBwNdwRfKyZV0","monlist":"1,2,4,5,6,7,11","intlist":"45,60,0,0,0,45,45","state":"enabled"}}
+```
+If you don't see these logs on the event server, zmNinja is not able to connect to the event server. This may be because of several reasons:
+a) Your event server IP/DNS is not reachable from your phone
+b) If you are using SSL, your certificates are invalid (try disabling SSL first - both on the event server and on zmNinja)
+c) Your zmNinja configuration is wrong (the most common error I see is the server has SSL disabled, but zmNinja is configured to use `wss://` instead of `ws://`)
+
+7. Assuming the above worked, go to zmNinja logs in the app. Somewhere in the logs, you should see a line similar to:
+
+```
+Dec 20, 2018 05:50:41 AM DEBUG Real-time event: {"type":"","version":"2.4","status":"Success","reason":"","event":"auth"}
+```
+
+This indicates that the event server successfully authenticated the app. If you see step 6 work but not step 7, you might have provided incorrect credentials (and in that case, you'll see an error message)
+
+8. Finally, after all of the above succeeds, do a `cat /etc/private/tokens.txt` to make sure the device token that zmNinja sent is stored (desktop apps don't have a device token). If you are using zmNinja on a mobile app, and you don't see an entry in `tokens.txt` you have a problem. Debug.
+   
+9.   _Always_ send me logs of both zmNinja and zmeventserver - I need them to understand what is going on. Don't send me one line. You may think you are sending what is relevant, but you are not. One line logs are mostly useless.
+
+10. Some other notes:
 
 - If you don't see an entry in `tokens.txt` (typically in `/etc/private`) then your phone is not registered to get push. Kill zmNinja,
   start the app, make sure the event server receives the registration and check `tokens.txt`
 
 - Sometimes, Google's FCM server goes down, or Apple's APNS server goes down for a while. Things automagically work in 24 hrs.
 
-- Is your phone able to reach the event server? When the app starts, you should see registration messages being sent to the event server. If not, you have a connection problem (from phone to event server)
 
 - Kill the app. Then empty the contents of `tokens.txt` in the event server (don't delete it). Then restart the event server. Start the app again. If you don't see a new registration token, you have a connection problem
 
-- _Always_ send me logs of both zmNinja and zmeventserver - I need them to understand what is going on. Don't send me one line. You may think you are sending what is relevant, but you are not. One line logs are mostly useless.
 
 - I'd strongly recommend you run the event server in "manual mode" and stop daemon mode while debugging.
 
@@ -463,9 +498,9 @@ Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push messa
 * If you provide an incorrect authentication or no authentication, the server will close your connection
 * As of today, there are 3 categories of message types your client (zmNinja or your own) can exchange with the server (event notification server)
  1. auth (from client to server)
- 1. control (from client to server)
- 1. push (only applicable for zmNinja)
- 1. alarm (from server to client)
+ 2. control (from client to server)
+ 3. push (only applicable for zmNinja)
+ 4. alarm (from server to client)
 
 #### Authentication messages
 

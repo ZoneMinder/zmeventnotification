@@ -56,7 +56,7 @@ use IO::Select;
 # ==========================================================================
 
 
-my $app_version="2.4";
+my $app_version="2.5";
 
 # ==========================================================================
 #
@@ -668,6 +668,18 @@ sub checkNewEvents()
             if ( !defined($monitor->{LastEvent})
                  || ($last_event != $last_event_for_monitors{$monitor->{Id}}{"eid"}))
             {
+                # It is possible we missed STATE_IDLE due to b2b events, so we may need to process it here 
+                # as well
+
+                if ($last_event_for_monitors{$monitor->{Id}}{"state"}== "recording") 
+                {
+                   my $hooktext = $last_event_for_monitors{$monitor->{Id}}{"hook_text"};
+                   if ($hooktext) {
+                        printDebug ("HOOK: (concurrent-event)".$last_event_for_monitors{$monitor->{Id}}{"eid"}. "writing hook to DB with hook text=".$hooktext);
+                        updateEventinZmDB($last_event_for_monitors{$monitor->{Id}}{"eid"},$hooktext) if $hooktext;
+                   }
+
+                }
                 $alarm_cause=zmMemRead($monitor,"shared_data:alarm_cause") if ($read_alarm_cause);
                 $alarm_cause = $trigger_cause if (defined($trigger_cause) && $alarm_cause eq "" && $trigger_cause ne "");
                 printInfo( "New event $last_event reported for ".$monitor->{Name}." ".$alarm_cause."\n");
@@ -678,7 +690,7 @@ sub checkNewEvents()
                 my $name = $monitor->{Name};
                 my $mid = $monitor->{Id};
                 my $eid = $last_event;
-                printDebug ("Creating event object for ".$monitor->{Name}." with $last_event");
+                printDebug ("HOOK: $last_event Creating event object for ".$monitor->{Name}.", setting state to recording");
                 push @events, {Name => $name, MonitorId => $mid, EventId => $last_event, Cause=> $alarm_cause};
                 $eventFound = 1;
             }
@@ -688,6 +700,12 @@ sub checkNewEvents()
         {
                 my $hooktext = $last_event_for_monitors{$monitor->{Id}}{"hook_text"};
                 printDebug ("Alarm ".$monitor->{LastEvent}." for monitor:".$monitor->{Id}." has ended ".$hooktext);
+                if ($hooktext) {
+                    printDebug ("HOOK: ".$monitor->{LastEvent}." writing hook to DB with hook text=".$hooktext);
+                }
+                else {
+                    printDebug ("HOOK: ".$monitor->{LastEvent}." NOT writing hook to DB as hook text was empty");
+                }
                 updateEventinZmDB($monitor->{LastEvent},$hooktext) if $hooktext;
                 $last_event_for_monitors{$monitor->{Id}}{"state"}="idle";
                 $last_event_for_monitors{$monitor->{Id}}{"hook_text"}=undef;
@@ -757,9 +775,9 @@ sub updateEventinZmDB
     printDebug ("updating Notes clause for Event:".$eid. " with:".$notes);
     my $sql = "UPDATE Events set Notes=CONCAT(?,Notes) where Id=?";
     my $sth = $dbh->prepare_cached( $sql )
-        or Fatal( "Can't prepare '$sql': ".$dbh->errstr() );
+        or Fatal( "HOOK: Can't prepare '$sql': ".$dbh->errstr() );
       my $res = $sth->execute( $notes, $eid  )
-        or Fatal( "Can't execute: ".$sth->errstr() );
+        or Fatal( "HOOK: Can't execute: ".$sth->errstr() );
 }
 
 
@@ -933,13 +951,6 @@ sub sendOverFCM
         $android_message->{'data'}->{'picture'} = $pic;
         $android_message->{'data'}->{'summaryText'} = 'alarmed image';
         #printDebug ("Alarm image for android will be: $pic");
-
-        #need cordova-ios support before this works
-        #$ios_message->{'data'}->{'attachment'}->{'url'} = $pic;
-        #$ios_message->{'data'}->{'attachment'}->{'content-type'} = 'jpeg';
-        #$ios_message->{'data'}->{'attachment'}->{'hide-thumbnail'} = 'false';
-
-
     } 
 
 
@@ -1750,20 +1761,19 @@ sub processAlarms {
         # if you want to use hook, lets first call the hook
         # if the hook returns an exit value of 0 (yes/success), we process it, else we skip it
         if ($hook) {
-            my $cmd = $hook." ".$alarm->{EventId}." ".$alarm->{MonitorId}." \"".$alarm->{Name}."\""." \"".$alarm->{Cause}."\"";
+            my $cmd = $hook." ".$alarm->{EventId}." ".$alarm->{MonitorId}." \"".$alarm->{Name}."\"";
             printInfo ("Invoking hook:".$cmd);
             my $resTxt = `$cmd`;
             my $resCode = $? >> 8;
             chomp($resTxt);
             printInfo("hook script returned with text:".$resTxt." exit:".$resCode);
-	    next if ($resCode !=0);
+            next if ($resCode !=0);
             if ($use_hook_description) {
               
                 $alarm->{Cause} = $resTxt;
                 # This updated the ZM DB with the detected description
                 print WRITER "event_description--TYPE--".$alarm->{MonitorId}."--SPLIT--".$resTxt."\n";
             }
-           
             
         }
         # coming here means the alarm needs to be sent out to listerens who are interested
