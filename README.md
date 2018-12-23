@@ -214,7 +214,7 @@ You can/should run it manually at first to check if it works
 
 ## How can I use this with Node-Red or Home Assistant?
 
-As of version 1.1, this also supports (Contributed by [@vajonam](https://github.com/vajonam)).
+As of version 1.1, the event server also supports MQTT (Contributed by [@vajonam](https://github.com/vajonam)).
 zmeventnotification server can be configured to broadcast on a topic called `/zoneminder/<monitor-id>` which can then be consumed by Home Assistant or Node-Red.
 
 To enable this, set `enable = 1` under the `[mqtt]` section and specify the `server` to broadcast to.
