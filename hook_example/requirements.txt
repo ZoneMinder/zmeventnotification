@@ -1,0 +1,3 @@
+numpy>=1.14.5
+opencv_python>=3.4.3.18
+imutils>=0.4.6
