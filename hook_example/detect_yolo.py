@@ -164,7 +164,7 @@ for l,c in zip (label,conf):
 
 if pred !="":
     pred = "detected:"+pred
-print pred
+print (pred)
 if (args["delete"]):
     os.remove(filename1)
     if filename2: 
