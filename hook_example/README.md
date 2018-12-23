@@ -6,9 +6,6 @@
 ### Limitations
 
 * Only tested with ZM 1.32. May or may not work with older versions
-*  Needs 2 files from master that were updated on Oct 11. If your build is older, you may need to pull them
-  * https://github.com/ZoneMinder/zoneminder/blob/master/web/index.php 
-  * https://github.com/ZoneMinder/zoneminder/blob/master/web/views/image.php
 
 ### What
 This is just an example of how you can use the new `hook` feature of the notification server
@@ -45,8 +42,10 @@ The detection uses OpenCV's DNN module and Tiny YoloV3 to predict multiple label
 You can manually invoke it to test:
 
 ```
-./detect_yolo.py --image image.jpg --config path/to/config/file --weight path/to/weights/file --label path/to/label/file
+./detect_yolo.py --image image.jpg --config path/to/config/file --weight path/to/weights/file --label path/to/label/file --pattern "<somepattern>"
 ```
+
+Where `<somepattern>` is the python regexp to filter. Example `"(person | car)"`  or `".*"` for all labels
 
 
 If you are using YOLO models, you will need the following data files:
@@ -64,9 +63,10 @@ The detection uses OpenCV's DNN module and YoloV3 to predict multiple labels wit
 You can manually invoke it to test:
 
 ```
-./detect_yolo.py --image image.jpg --config path/to/config/file --weight path/to/weights/file --label path/to/label/file
+./detect_yolo.py --image image.jpg --config path/to/config/file --weight path/to/weights/file --label path/to/label/file --pattern "<somepattern>"
 ```
 
+Where `<somepattern>` is the python regexp to filter. Example `"(person | car)"`  or `".*"` for all labels
 
 If you are using YOLO models, you will need the following data files:
 * weights: https://pjreddie.com/media/files/yolov3.weights

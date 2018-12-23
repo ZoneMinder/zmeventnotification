@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+# ver:1.0
+
 # Please don't ask me questions about this script
 # its a simple OpenCV person detection script I've proved as a sample "hook" you can add to the notification server
 
@@ -15,6 +17,10 @@ import imutils
 import cv2
 import datetime
 import os
+import re
+import sys
+
+#sys.stdout = sys.stderr #REMOVE - ONLY FOR TESTING
  
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -23,14 +29,17 @@ ap.add_argument("-t", "--time", action="store_true",  help="print time to detect
 ap.add_argument("-i", "--image", required=True, help="image with path")
 ap.add_argument("-w", "--win-stride", type=str, default="(4, 4)",
 	help="window stride")
-ap.add_argument("-p", "--padding", type=str, default="(8, 8)",
+ap.add_argument( "--padding", type=str, default="(8, 8)",
 	help="object padding")
 ap.add_argument("-s", "--scale", type=float, default=1.05,
 	help="image pyramid scale")
 ap.add_argument("-m", "--mean-shift", type=int, default=-1,
 	help="whether or not mean shift grouping should be used")
+ap.add_argument("-b", "--bestmatch", action="store_true", help="evaluates both alarm and snapshot")
 
-args = vars(ap.parse_args())
+
+args,u = ap.parse_known_args()
+args = vars(args)
  
  # evaluate the command line arguments (using the eval function like
 # this is not good form, but let's tolerate it for the example)
@@ -41,18 +50,43 @@ meanShift = True if args["mean_shift"] > 0 else False
 # initialize the HOG descriptor/person detector
 hog = cv2.HOGDescriptor()
 hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
-image = cv2.imread(args["image"])
+
+filename1 = args["image"]
+filename2 = ""
+
+if args["bestmatch"]:
+    name, ext = os.path.splitext(filename1)
+    filename1 = name + '-alarm'+ext
+    filename2 = name + '-snapshot'+ext
+
+print ("[DEBUG] loading: "+filename1)
+image = cv2.imread(filename1)
 image = imutils.resize(image, width=min(400, image.shape[1]))
 # detect people in the image
 start = datetime.datetime.now()
 r,w = hog.detectMultiScale(image, winStride=winStride,
 	padding=padding, scale=args["scale"], useMeanshiftGrouping=meanShift)
 
-if (args["time"]):
-    print("[INFO] detection took: {}s".format((datetime.datetime.now() - start).total_seconds()))
 if len(r) > 0:
     print ("detected: person")
+elif filename2:
+     print ("[DEBUG] person detect failed for "+filename1+" trying "+filename2)
+     print ("[DEBUG] loading: "+filename2)
+     image = cv2.imread(filename2)
+     image = imutils.resize(image, width=min(400, image.shape[1]))
+     # detect people in the image
+     r,w = hog.detectMultiScale(image, winStride=winStride,
+	 padding=padding, scale=args["scale"], useMeanshiftGrouping=meanShift)
+     if len(r) > 0:
+        print ("detected: person")
+
+    
+
+if (args["time"]):
+    print("[DEBUG] detection took: {}s".format((datetime.datetime.now() - start).total_seconds()))
 
 if (args["delete"]):
-    os.remove(args["image"])
+    os.remove(filename1)
+    if filename2:
+        os.remove(filename2)
 
