@@ -27,7 +27,7 @@ it will take to detect
 
 You can manually invoke it to test:
 
-```
+```bash
 ./detect_hog.py --image image.jpg
 ```
 
@@ -41,7 +41,7 @@ The detection uses OpenCV's DNN module and Tiny YoloV3 to predict multiple label
 
 You can manually invoke it to test:
 
-```
+```bash
 ./detect_yolo.py --image image.jpg --config path/to/config/file --weight path/to/weights/file --label path/to/label/file --pattern "<somepattern>"
 ```
 
@@ -62,7 +62,7 @@ The detection uses OpenCV's DNN module and YoloV3 to predict multiple labels wit
 
 You can manually invoke it to test:
 
-```
+```bash
 ./detect_yolo.py --image image.jpg --config path/to/config/file --weight path/to/weights/file --label path/to/label/file --pattern "<somepattern>"
 ```
 
