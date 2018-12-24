@@ -55,20 +55,17 @@ sudo wget https://pjreddie.com/media/files/yolov3.weights -O /var/detect/models/
 sudo wget https://pjreddie.com/media/files/yolov3-tiny.weights -O /var/detect/models/tinyyolo/yolov3-tiny.weights
 sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg -O /var/detect/models/tinyyolo/yolov3-tiny.cfg
 sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names -O /var/detect/models/tinyyolo/yolov3-tiny.txt
-
 ```
 
 * Now make sure it all RW accessible by `www-data` (or `apache`)
+```
 sudo chown -R www-data:www-data /var/detect/ #(change www-data to apache for CentOS/Fedora)
-
 ```
 
 * Edit `detect_wrapper.sh` and change:
     * `PORTAL` to your portal url (example: https://myip/server/zm)
     * `USERNAME` and `PASSWORD` to your ZM username and password
     * Study the rest of the file to see if you need to change anything else     
-    
-```
 
 
 * Now copy your detection files to `/usr/bin` -> `sudo cp detect_* /usr/bin`
