@@ -53,7 +53,7 @@
 
 ### version 2.0 onwards
 
-The notification now supports hooks and machine learning powered detection. Check the hook_examples directory
+The notification now supports hooks and Machine Learning powered detection. Check the hook_examples directory and follow the [README](https://github.com/pliablepixels/zmeventserver/blob/master/hook_example/README.md) there.
 
 ### version 1.0 onwards
 
