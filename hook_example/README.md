@@ -10,7 +10,7 @@
 ### What
 This is just an example of how you can use the new `hook` feature of the notification server
 to invoke a custom script on the event before it generates an alarm. This implements a hook script that detects
-for persons in an image that raised an alarm before sending out a notification. 
+objects using Machine Learning for events. If it matches the objects you are interested in, it will send a notification.
 
 There are two sample detection scripts. You can switch between them by changing the value of
 `DETECTION_SCRIPT` in `detect_wrapper.sh`
