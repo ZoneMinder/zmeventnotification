@@ -78,7 +78,6 @@ sudo cp detect_* /usr/bin
 * Test operation:
 ```
 sudo -u www-data /usr/bin/detect_wrapper.sh <eid> # replace www-data with apache if needed
-
 ```
 
 This will try and download the configured frame for alarm <eid> and analyze it. Replace with your own EID (Example 123456)
