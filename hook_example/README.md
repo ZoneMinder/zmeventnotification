@@ -70,7 +70,10 @@ sudo chown -R www-data:www-data /var/detect/ #(change www-data to apache for Cen
     * Study the rest of the file to see if you need to change anything else     
 
 
-* Now copy your detection files to `/usr/bin` -> `sudo cp detect_* /usr/bin`
+* Now copy your detection files to `/usr/bin` 
+```
+sudo cp detect_* /usr/bin
+```
 
 * Test operation:
 ```
