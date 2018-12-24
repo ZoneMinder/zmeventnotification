@@ -27,7 +27,7 @@ it will take to detect
 
 *  Make sure you have Python3. Python2 is not supported
 *  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`
-*  Clone the event server and go to the `hook_example` directory. If you haven't already cloned it is:
+*  Clone the event server and go to the `hook_example` directory 
 
 ```bash
 git clone https://github.com/pliablepixels/zmeventserver 
@@ -43,15 +43,17 @@ sudo pip install -r  requirements.txt
 ```bash
 sudo mkdir -p /var/detect/images
 sudo mkdir -p /var/detect/models
-sudo mkdir -p /var/detect/models/yolov3 # if you are using YoloV3
-sudo mkdir -p /var/detect/models/tinyyolo # if you are using TinyYoloV3
 
 # if you want to use YoloV3 (slower, accurate)
+sudo mkdir -p /var/detect/models/yolov3 # if you are using YoloV3
 sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg -O /var/detect/models/yolov3/yolov3.cfg
 sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names -O /var/detect/models/yolov3/yolov3_classes.txt
 sudo wget https://pjreddie.com/media/files/yolov3.weights -O /var/detect/models/yolov3/yolov3.weights
 
+--OR--
+
 # if you want to use TinyYoloV3 (faster, less accurate)
+sudo mkdir -p /var/detect/models/tinyyolo # if you are using TinyYoloV3
 sudo wget https://pjreddie.com/media/files/yolov3-tiny.weights -O /var/detect/models/tinyyolo/yolov3-tiny.weights
 sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg -O /var/detect/models/tinyyolo/yolov3-tiny.cfg
 sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names -O /var/detect/models/tinyyolo/yolov3-tiny.txt
