@@ -116,7 +116,7 @@ You can manually invoke it to test:
 Where `<somepattern>` is the python regexp to filter. Example `"(person | car)"`  or `".*"` for all labels
 
 
-If you are using YOLO models, you will need the following data files:
+If you are using YOLO models, you will need the following data files (if you followed the installation directions, you already have them):
 * weights: https://pjreddie.com/media/files/yolov3-tiny.weights
 * config:  https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg
 * labels:  https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names
@@ -136,7 +136,7 @@ You can manually invoke it to test:
 
 Where `<somepattern>` is the python regexp to filter. Example `"(person | car)"`  or `".*"` for all labels
 
-If you are using YOLO models, you will need the following data files:
+If you are using YOLO models, you will need the following data files (if you followed the installation directions, you already have them):
 * weights: https://pjreddie.com/media/files/yolov3.weights
 * config: https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg
 * labels: https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names
