@@ -99,7 +99,7 @@ If it doesn't work, go back and figure out where you have a problem
 
 ### Types of detection
 
-### detect_hog.py: using OpenCV SVM HOG (very fast, not accurate)
+#### detect_hog.py: using OpenCV SVM HOG (very fast, not accurate)
 
 You can manually invoke it to test:
 
@@ -111,7 +111,7 @@ The detection uses a very fast, but not very accurate OpenCV model (hog.detectMu
 The good part is that it is extremely fast can can be used for realtime needs. 
 Fiddle with the settings in detect.py (stride/scale) to get more accuracy at the cost of speed.
 
-### detect_yolo.py:  using OpenCV DNN with Tiny YoloV3 (almost comparable with HOG in speed, more accurate)
+#### detect_yolo.py:  using OpenCV DNN with Tiny YoloV3 (almost comparable with HOG in speed, more accurate)
 
 The detection uses OpenCV's DNN module and Tiny YoloV3 to predict multiple labels with score.
 
@@ -132,7 +132,7 @@ If you are using YOLO models, you will need the following data files (if you fol
 
 
 
-### detect_yolo.py:  using OpenCV DNN with YoloV3 (much slower, accurate)
+#### detect_yolo.py:  using OpenCV DNN with YoloV3 (much slower, accurate)
 
 The detection uses OpenCV's DNN module and YoloV3 to predict multiple labels with score.
 
@@ -165,7 +165,7 @@ As always, if you are trying to figure out how this works, do this in 3 steps:
 
 **STEP 1: Make sure the scripts(s) work**
 - Run the python script manually with `--image <path/to/image/image.jpg>` to see if it works
-- `./detect_wrapper.sh <eid>` --> make sure it downloads a proper image for that eid. Make sure it correctly invokes detect.py If not, fix it. Note that by default the wrapper script passed the `--delete` option to remove the downloaded image. While testing, remove the `--delete` option
+- `./detect_wrapper.sh <eid>` --> make sure it downloads a proper image for that eid. Make sure it correctly invokes detect_xxx.py If not, fix it. Note that by default the wrapper script passed the `--delete` option to remove the downloaded image. While testing, remove the `--delete` option
 - Make sure the `IMAGE_PATH` you've chosen in `detect_wrapper.sh` is WRITABLE by www-data (or apache) before you move to step 2
 
 **STEP 2: run zmeventnotification in MANUAL mode**
