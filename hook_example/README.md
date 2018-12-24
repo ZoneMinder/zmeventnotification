@@ -88,6 +88,13 @@ The above command will also try and run detection.
 
 If it doesn't work, go back and figure out where you have a problem
 
+* Other configuration notes, after you get everything working
+    * Set `DELETE_IMAGES` to `--delete` so that downloaded images are removed after analysis. In the default installation, the images are kept in `/var/detect/images` so you can debug.
+    * Remember these rules:
+        * `FID=snapshot` will work for any ZM >= 1.32
+        * If you are running ZM < 1.33, to enable `bestmatch` or `alarm` you need to enable the monitor to store JPEG frames in its ZM monitor->storage configuration in ZM 
+        * If you are running ZM >= 1.33, you can use all fid modes without requiring to enable frames in storage
+
 ### Types of detection
 
 ### detect_hog.py: using OpenCV SVM HOG (very fast, not accurate)
