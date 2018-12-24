@@ -23,6 +23,74 @@ Please don't ask me questions on how to use them. Please read the comments and f
 Try to keep the images less than 800px on the largest side. The larger the image, the longer
 it will take to detect
 
+### Dependencies and Installation
+
+*  Make sure you have Python3. Python2 is not supported
+*  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`
+*  Clone the event server and go to the `hook_example` directory. If you haven't already cloned it is:
+
+```bash
+git clone https://github.com/pliablepixels/zmeventserver 
+cd zmeventserver/hook_example
+```
+
+* Install the object detection dependencies:
+```bash
+sudo pip install -r  requirements.txt 
+```
+
+* Copy the models and weights:
+```bash
+sudo mkdir -p /var/detect/images
+sudo mkdir -p /var/detect/models
+sudo mkdir -p /var/detect/models/yolov3 # if you are using YoloV3
+sudo mkdir -p /var/detect/models/tinyyolo # if you are using TinyYoloV3
+
+# if you want to use YoloV3 (slower, accurate)
+sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg -O /var/detect/models/yolov3/yolov3.cfg
+sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names -O /var/detect/models/yolov3/yolov3_classes.txt
+sudo wget https://pjreddie.com/media/files/yolov3.weights -O /var/detect/models/yolov3/yolov3.weights
+
+# if you want to use TinyYoloV3 (faster, less accurate)
+sudo wget https://pjreddie.com/media/files/yolov3-tiny.weights -O /var/detect/models/tinyyolo/yolov3-tiny.weights
+sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg -O /var/detect/models/tinyyolo/yolov3-tiny.cfg
+sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names -O /var/detect/models/tinyyolo/yolov3-tiny.txt
+
+```
+
+* Now make sure it all RW accessible by `www-data` (or `apache`)
+sudo chown -R www-data:www-data /var/detect/ #(change www-data to apache for CentOS/Fedora)
+
+```
+
+* Edit `detect_wrapper.sh` and change:
+    * `PORTAL` to your portal url (example: https://myip/server/zm)
+    * `USERNAME` and `PASSWORD` to your ZM username and password
+    * Study the rest of the file to see if you need to change anything else     
+    
+```
+
+
+* Now copy your detection files to `/usr/bin` -> `sudo cp detect_* /usr/bin`
+
+* Test operation:
+```
+sudo -u www-data /usr/bin/detect_wrapper.sh <eid> # replace www-data with apache if needed
+
+```
+
+This will try and download the configured frame for alarm <eid>. Replace with your own EID (Example 123456)
+The files will be in `/var/detect/images`
+For example: 
+if you configured `FID` to be `bestmatch' you'll see two files `<eid>-alarm.jpg` and `<eid>-snapshot.jpg`
+If you configured `FID` to be `snapshot` or a specific number, you'll see one file `<eid>.jpg`
+
+The above command will also try and run detection.
+
+If it doesn't work, go back and figure out where you have a problem
+
+### Types of detection
+
 ### detect_hog.py: using OpenCV SVM HOG (very fast, not accurate)
 
 You can manually invoke it to test:
