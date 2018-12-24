@@ -79,7 +79,7 @@ sudo -u www-data /usr/bin/detect_wrapper.sh <eid> # replace www-data with apache
 
 ```
 
-This will try and download the configured frame for alarm <eid>. Replace with your own EID (Example 123456)
+This will try and download the configured frame for alarm <eid> and analyze it. Replace with your own EID (Example 123456)
 The files will be in `/var/detect/images`
 For example: 
 if you configured `FID` to be `bestmatch` you'll see two files `<eid>-alarm.jpg` and `<eid>-snapshot.jpg`
