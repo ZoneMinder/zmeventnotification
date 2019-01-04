@@ -427,8 +427,8 @@ Here is how to debug and report:
 - telnet/ssh into your zoneminder server
 - Stop the zmeventnotification doing `sudo zmdc.pl stop zmeventnotification.pl`
 - Make sure there are no stale processes running of zmeventnotification by doing `ps -aef | grep zmeventnotification` and making sure it doesn't show existing processes (ignore the one that says `grep <something>`)
-- Start a terminal (lets call it Terminal-Log) to tail logs like so `tail -f /var/log/syslog | grep zmeventnotification`
 - Edit `zmeventnotification.ini` (typically in `/etc/`) and make sure `verbose = 1` is set. This will print more logs on the console. Make sure you turn this off again before switching back to daemon mode.
+- Start a terminal (lets call it Terminal-Log) to tail logs like so `tail -f /var/log/syslog | grep zmeventnotification`
 - Start another terminal and start zmeventserver manually from command line like so `sudo /usr/bin/zmeventnotification.pl`
 - Make sure you see logs like this in the logs window like so:
 
