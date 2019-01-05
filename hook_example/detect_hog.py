@@ -35,14 +35,10 @@ ap = argparse.ArgumentParser()
 ap.add_argument("-d", "--delete", action="store_true",  help="delete image after processing")
 ap.add_argument("-t", "--time", action="store_true",  help="print time to detect")
 ap.add_argument("-i", "--image", required=True, help="image with path")
-ap.add_argument("-w", "--win-stride", type=str, default="(4, 4)",
-	help="window stride"yolo)
-ap.add_argument( "--padding", type=str, default="(8, 8)",
-	help="object padding")
-ap.add_argument("-s", "--scale", type=float, default=1.05,
-	help="image pyramid scale")
-ap.add_argument("-m", "--mean-shift", type=int, default=-1,
-	help="whether or not mean shift grouping should be used")
+ap.add_argument("-w", "--win-stride", type=str, default="(4, 4)", help="window stride")
+ap.add_argument( "--padding", type=str, default="(8, 8)", help="object padding")
+ap.add_argument("-s", "--scale", type=float, default=1.05, help="image pyramid scale")
+ap.add_argument("-m", "--mean-shift", type=int, default=-1, help="whether or not mean shift grouping should be used")
 ap.add_argument("-b", "--bestmatch", action="store_true", help="evaluates both alarm and snapshot")
 
 
