@@ -156,6 +156,7 @@ use constant NINJA_API_KEY => "AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bA
 my $dummyEventTest = 0; # if on, will generate dummy events. Not in config for a reason. Only dev testing
 my $dummyEventInterval = 20; # timespan to generate events in seconds
 my $dummyEventTimeLastSent = time();
+my $keepBestMatchId = 0; # keep [a] [s] -> useful to know which frame matched, but only for geeks
 
 
 # This part makes sure we have the right core deps. See later for optional deps
@@ -857,6 +858,8 @@ sub sendOverMQTTBroker
     my $ac = shift;
     my $json;
 
+    # only remove if not removed before. If you are sending over multiple channels, it may have already been stripped
+    $alarm->{Cause} = substr ($alarm->{Cause},4) if (!$keepBestMatchId && $alarm->{Cause} =~ /^\[.\]/);
     my $description = $alarm->{Name}.":(".$alarm->{EventId}.") ".$alarm->{Cause};
 
     $json = encode_json ({
@@ -877,8 +880,10 @@ sub sendOverMQTTBroker
 sub sendOverWebSocket {
     # We can't send websocket data in a fork. WSS contains user space crypt data that
     # goes out of sync with the parent. So we use a parent pipe
-    my $alarm = shift;
+    my $alarm = shift; 
     my $ac = shift;
+    # only remove if not removed before. If you are sending over multiple channels, it may have already been stripped
+    $alarm->{Cause} = substr ($alarm->{Cause},4) if (!$keepBestMatchId && $alarm->{Cause} =~ /^\[.\]/);
     my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => [$alarm]});
      printDebug ("Child: posting job to send out message to id:".$ac->{id}."->".$ac->{conn}->ip().":".$ac->{conn}->port());
     print WRITER "message--TYPE--".$ac->{id}."--SPLIT--".$str."\n";
@@ -893,16 +898,30 @@ sub sendOverFCM
     my $obj = shift;
     my $mid = $alarm->{MonitorId};
     my $eid = $alarm->{EventId};
+    my $mname = $alarm->{Name};
 
-     my $str = encode_json({event => 'alarm', type=>'', status=>'Success', events => [$alarm]});
+    my $pic = $picture_url =~ s/EVENTID/$eid/gr;
 
-     my $mname = $alarm->{Name};
-
-   # my ($obj, $header, $mid, $eid,  $str, $mname) = @_;
-
+    # if we used best match we will use the right image in notification
+    if ( substr($alarm->{Cause},0,3) eq "[a]" ) {
+        my $npic = $pic =~ s/BESTMATCH/alarm/gr;
+        $pic = $npic;        
+        printDebug ("Alarm frame matched, changing picture url to:$pic ");
+        $alarm->{Cause} = substr ($alarm->{Cause},4) if (!$keepBestMatchId);
+    }
+    
+    elsif ( substr($alarm->{Cause},0,3) eq "[s]" ) {
+        my $npic = $pic =~ s/BESTMATCH/snapshot/gr;
+        $pic = $npic;        
+        printDebug ("Alarm frame matched, changing picture url to:$pic ");
+        $alarm->{Cause} = substr ($alarm->{Cause},4) if (!$keepBestMatchId);
+    }
+    elsif ( substr($alarm->{Cause},0,3) eq "[x]" ) {
+        $alarm->{Cause} = substr ($alarm->{Cause},4) if (!$keepBestMatchId);
+    }
     
     my $now = strftime('%I:%M %p, %d-%b',localtime);
-        my $body = $alarm->{Cause}." at ".$now;
+    my $body = $alarm->{Cause}." at ".$now;
     my $badge = $obj->{badge}+1;
 
     print WRITER "badge--TYPE--".$obj->{id}."--SPLIT--".$badge."\n";
@@ -912,7 +931,8 @@ sub sendOverFCM
     my $key="key=" . $fcm_api_key;
     my $title = $mname." Alarm";
     $title=$title." (".$eid.")" if ($tag_alarm_event_id);
-    my $pic = $picture_url =~ s/EVENTID/$eid/gr;
+
+    
 
     my $ios_message = {
             to=>$obj->{token},
@@ -947,6 +967,10 @@ sub sendOverFCM
         };
 
      if ($picture_url && $include_picture) {
+        $ios_message->{'mutable_content'} = \1;
+        #$ios_message->{'content_available'} = \1;
+        $ios_message->{'data'}->{'image_url_jpg'} = $pic;
+        
         $android_message->{'data'}->{'style'} = 'picture';
         $android_message->{'data'}->{'picture'} = $pic;
         $android_message->{'data'}->{'summaryText'} = 'alarmed image';
@@ -966,7 +990,7 @@ sub sendOverFCM
         
     }
 
-    #printDebug ("Final JSON being sent is: $json");
+    printDebug ("Final JSON being sent is: $json");
     my $req = HTTP::Request->new ('POST', $uri);
     $req->header( 'Content-Type' => 'application/json', 'Authorization'=> $key);
      $req->content($json);

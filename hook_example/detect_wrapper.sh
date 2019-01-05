@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ver:1.0
+# version: 2.0
 
 # When invoked by zmeventnotification.pl it will be passed:
 # $1 = eventId that triggered an alarm
@@ -23,8 +23,8 @@ PORTAL="https://yourserver/zm"
 USERNAME=admin
 PASSWORD=yourpassword
 
-#DELETE_IMAGES="--delete" # comment this if you don't want to delete downloaded images
-DELETE_IMAGES=""
+DELETE_IMAGES="--delete" # comment this if you don't want to delete downloaded images
+#DELETE_IMAGES=""
 
 # Enable this if you want fast but inaccurate HOG
 #DETECTION_SCRIPT="/usr/bin/detect_hog.py" # path to detection script 
@@ -53,7 +53,7 @@ IMAGE_PATH="/var/detect/images" # make sure this exists and WRITEABLE by www-dat
 
 # If you only want persons, make this person (or any other label class)
 # Note: This is a python regular expression, so if you change it, follow python reg exp guidelines
-#DETECT_PATTERN="detected:"
+#DETECT_PATTERN=".*"
 DETECT_PATTERN="(person|car)"
 
 # --------- You *may* need to change these ------------
@@ -84,11 +84,11 @@ if [[ "${FID}" = "bestmatch" ]]; then
     ${WGET} "${_URL}" --no-check-certificate -O "${IMAGE_PATH}/$1-alarm.jpg"  >/dev/null 2>&1
     _URL="${PORTAL}/index.php?view=image&eid=$1&fid=snapshot&width=800&username=${USERNAME}&password=${PASSWORD}"
     ${WGET} "${_URL}" --no-check-certificate -O "${IMAGE_PATH}/$1-snapshot.jpg"  >/dev/null 2>&1
-    RESULTS=`${DETECTION_SCRIPT}  ${DELETE_IMAGES}  --bestmatch --image ${IMAGE_PATH}/$1.jpg --pattern ${DETECT_PATTERN}| grep "detected:"`
+    RESULTS=`${DETECTION_SCRIPT}  ${DELETE_IMAGES}  --bestmatch --image ${IMAGE_PATH}/$1.jpg --pattern "${DETECT_PATTERN}"| grep "detected:"`
 else # only one image get
     _URL="${PORTAL}/index.php?view=image&eid=$1&fid=${FID}&width=800&username=${USERNAME}&password=${PASSWORD}"
     ${WGET} "${_URL}" --no-check-certificate -O "${IMAGE_PATH}/$1.jpg"  >/dev/null 2>&1
-    RESULTS=`${DETECTION_SCRIPT}  ${DELETE_IMAGES} --image ${IMAGE_PATH}/$1.jpg  --pattern ${DETECT_PATTERN} | grep "detected:"`
+    RESULTS=`${DETECTION_SCRIPT}  ${DELETE_IMAGES} --image ${IMAGE_PATH}/$1.jpg  --pattern "${DETECT_PATTERN}" | grep "detected:"`
 fi
 
 

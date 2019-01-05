@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
-# ver:1.0
+# version: 2.0
 
 # Please don't ask me questions about this script
 # its a simple OpenCV person detection script I've proved as a sample "hook" you can add to the notification server
@@ -20,7 +20,15 @@ import os
 import re
 import sys
 
-#sys.stdout = sys.stderr #REMOVE - ONLY FOR TESTING
+# set up logging to syslog
+import logging
+import logging.handlers
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.handlers.SysLogHandler('/dev/log')
+formatter = logging.Formatter('detect_hog:[%(process)d]: %(levelname)s [%(message)s]')
+handler.formatter = formatter
+logger.addHandler(handler)
  
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -28,7 +36,7 @@ ap.add_argument("-d", "--delete", action="store_true",  help="delete image after
 ap.add_argument("-t", "--time", action="store_true",  help="print time to detect")
 ap.add_argument("-i", "--image", required=True, help="image with path")
 ap.add_argument("-w", "--win-stride", type=str, default="(4, 4)",
-	help="window stride")
+	help="window stride"yolo)
 ap.add_argument( "--padding", type=str, default="(8, 8)",
 	help="object padding")
 ap.add_argument("-s", "--scale", type=float, default=1.05,
@@ -59,7 +67,7 @@ if args["bestmatch"]:
     filename1 = name + '-alarm'+ext
     filename2 = name + '-snapshot'+ext
 
-print ("[DEBUG] loading: "+filename1)
+logger.info ("Analyzing: "+filename1)
 image = cv2.imread(filename1)
 image = imutils.resize(image, width=min(400, image.shape[1]))
 # detect people in the image
@@ -70,8 +78,7 @@ r,w = hog.detectMultiScale(image, winStride=winStride,
 if len(r) > 0:
     print ("detected: person")
 elif filename2:
-     print ("[DEBUG] person detect failed for "+filename1+" trying "+filename2)
-     print ("[DEBUG] loading: "+filename2)
+     logger.debug ("person detect failed for "+filename1+" trying "+filename2)
      image = cv2.imread(filename2)
      image = imutils.resize(image, width=min(400, image.shape[1]))
      # detect people in the image
@@ -83,7 +90,7 @@ elif filename2:
     
 
 if (args["time"]):
-    print("[DEBUG] detection took: {}s".format((datetime.datetime.now() - start).total_seconds()))
+    logger.debug("detection took: {}s".format((datetime.datetime.now() - start).total_seconds()))
 
 if (args["delete"]):
     os.remove(filename1)

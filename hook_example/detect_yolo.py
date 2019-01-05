@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
-# ver:1.0
+# Version: 2.0
 
 # Alternate detection script using neural nets and YoloV3. 
 # slower than openCV HOG but much more accurate
@@ -22,11 +22,16 @@ import os
 import numpy as np
 import re
 
-#sys.stdout = sys.stderr #REMOVE - ONLY FOR TESTING
+# set up logging to syslog
+import logging
+import logging.handlers
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.handlers.SysLogHandler('/dev/log')
+formatter = logging.Formatter('detect_yolo:[%(process)d]: %(levelname)s [%(message)s]')
+handler.formatter = formatter
+logger.addHandler(handler)
 
-initialize = True
-net = None
-classes = None
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -39,6 +44,11 @@ ap.add_argument("-l", "--label", required=True, help="label file with path")
 ap.add_argument("-t", "--time", action="store_true", help="print time")
 ap.add_argument("-b", "--bestmatch", action="store_true", help="evaluates both alarm and snapshot")
 args = vars(ap.parse_args())
+
+# The actual CNN object detection code
+initialize = True
+net = None
+classes = None
 
 def populate_class_labels():
 
@@ -120,39 +130,40 @@ def detect_common_objects(image):
         
     return bbox, label, conf
 
-# image
+# main handler
 
+# filename1 will be the first frame to analyze (typically alarm)
+# filename2 will be the second frame to analyze only if the first fails (typically snapshot)
 filename1 = args["image"]
 filename2 = ""
+prefix = "[x] " # not best match
 
 if args["bestmatch"]:
     name, ext = os.path.splitext(filename1)
     filename1 = name + '-alarm'+ext
     filename2 = name + '-snapshot'+ext
+    prefix = "[a] "
 
-print ("[DEBUG] loading: "+filename1)
 image = cv2.imread(filename1)
 
+logger.info ("Analyzing image "+filename1+" with pattern: " + args["pattern"])
 start = datetime.datetime.now()
 bbox, label, conf = detect_common_objects(image)
-print ("[DEBUG] original:"+str(label))
 r = re.compile(args["pattern"])
 match = list(filter(r.match, label))
 if len (match) == 0 and filename2:
-        print ("[DEBUG] matched:"+str(match))
-        print ("[DEBUG] pattern match failed for "+filename1+" trying "+filename2)
-        print ("[DEBUG] loading: "+filename2)
+        # switch to next image
+        logger.debug ("pattern match failed for "+filename1+" trying "+filename2)
+        prefix = "[s] "
         image = cv2.imread(filename2)
         bbox, label, conf = detect_common_objects(image)
-        print ("[DEBUG] original:"+str(label))
-        print ("[DEBUG] matched:"+str(match))
         match = list(filter(r.match, label))
         if len (match) == 0:
             label = []
             conf = []
 
 if (args["time"]):
-    print("[DEBUG] detection took: {}s".format((datetime.datetime.now() - start).total_seconds()))
+    logger.debug("detection took: {}s".format((datetime.datetime.now() - start).total_seconds()))
 
 pred=""
 
@@ -163,8 +174,8 @@ for l,c in zip (label,conf):
         seen[l] = 1
 
 if pred !="":
-    pred = "detected:"+pred
-print (pred)
+    pred = prefix+"detected:"+pred
+print pred
 if (args["delete"]):
     os.remove(filename1)
     if filename2: 
