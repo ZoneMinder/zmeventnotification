@@ -5,7 +5,7 @@
 
 ### Limitations
 
-* Only tested with ZM 1.32. May or may not work with older versions
+* Only tested with ZM 1.32+. May or may not work with older versions
 
 ### What
 This is just an example of how you can use the new `hook` feature of the notification server
@@ -30,7 +30,7 @@ it will take to detect
 *  Clone the event server and go to the `hook_example` directory 
 
 ```bash
-git clone https://github.com/pliablepixels/zmeventserver 
+git clone https://github.com/pliablepixels/zmeventserver # if you don't already have it downloaded
 cd zmeventserver/hook_example
 ```
 
@@ -39,7 +39,7 @@ cd zmeventserver/hook_example
 sudo pip install -r  requirements.txt 
 ```
 
-* Copy the models and weights:
+* You now need to download configuration and weight files that are required by the machine learning magic. Note that you don't have to put them in `/var/detect` -> use whatever you want (and change variables in `detect_wrapper.sh` script if you do) 
 ```bash
 sudo mkdir -p /var/detect/images
 sudo mkdir -p /var/detect/models
