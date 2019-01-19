@@ -3,58 +3,52 @@
 <!-- TOC -->
 
 - [Breaking Changes](#breaking-changes)
-  - [version 2.0 onwards](#version-20-onwards)
-  - [version 1.0 onwards](#version-10-onwards)
+    - [version 1.0 onwards](#version-10-onwards)
+- [Machine Learning! Mmm..Machine Learning!](#machine-learning-mmmmachine-learning)
 - [What is it?](#what-is-it)
 - [Why do we need it?](#why-do-we-need-it)
 - [Is this officially developed by ZM developers?](#is-this-officially-developed-by-zm-developers)
 - [How do I install it?](#how-do-i-install-it)
-  - [Download the server script and its config file](#download-the-server-script-and-its-config-file)
-  - [Install Dependencies](#install-dependencies)
-  - [SSL certificate (Generate new, or use ZoneMinder certs if you are already using HTTPS)](#ssl-certificate-generate-new-or-use-zoneminder-certs-if-you-are-already-using-https)
-    - [IOS Users](#ios-users)
-  - [Making sure everything is running (in manual mode)](#making-sure-everything-is-running-in-manual-mode)
-  - [Running it as a daemon so it starts automatically along with ZoneMinder](#running-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
+    - [Download the server script and its config file](#download-the-server-script-and-its-config-file)
+    - [Install Dependencies](#install-dependencies)
+    - [SSL certificate (Generate new, or use ZoneMinder certs if you are already using HTTPS)](#ssl-certificate-generate-new-or-use-zoneminder-certs-if-you-are-already-using-https)
+        - [IOS Users](#ios-users)
+    - [Making sure everything is running (in manual mode)](#making-sure-everything-is-running-in-manual-mode)
+    - [Running it as a daemon so it starts automatically along with ZoneMinder](#running-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
 - [How can I use this with Node-Red or Home Assistant?](#how-can-i-use-this-with-node-red-or-home-assistant)
 - [Disabling security](#disabling-security)
 - [How do I safely upgrade zmeventserver to new versions?](#how-do-i-safely-upgrade-zmeventserver-to-new-versions)
 - [Configuring the notification server](#configuring-the-notification-server)
-  - [Understanding zmeventnotification configuration](#understanding-zmeventnotification-configuration)
-  - [What is the hook attribute ?](#what-is-the-hook-attribute)
+    - [Understanding zmeventnotification configuration](#understanding-zmeventnotification-configuration)
+    - [What is the hook attribute ?](#what-is-the-hook-attribute-)
 - [Troubleshooting common situations](#troubleshooting-common-situations)
-  - [Picture notifications don't show images](#picture-notifications-dont-show-images)
-  - [Secure mode just doesn't work (WSS) - WS works](#secure-mode-just-doesnt-work-wss---ws-works)
-  - [I'm not receiving push notifications in zmNinja](#im-not-receiving-push-notifications-in-zmninja)
-  - [I'm getting multiple notifications for the same event](#im-getting-multiple-notifications-for-the-same-event)
-  - [The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)](#the-server-runs-fine-when-manually-executed-but-fails-when-run-in-daemon-mode-started-by-zmdcpl)
-  - [When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that](#when-you-run-zmeventnotifiationpl-manually-you-get-an-error-saying-port-already-in-use-or-cannot-bind-to-port-or-something-like-that)
-  - [Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!](#great-krypton-i-just-upgraded-zoneminder-and-im-not-getting-push-anymore)
+    - [Picture notifications don't show images](#picture-notifications-dont-show-images)
+    - [Secure mode just doesn't work (WSS) - WS works](#secure-mode-just-doesnt-work-wss---ws-works)
+    - [I'm not receiving push notifications in zmNinja](#im-not-receiving-push-notifications-in-zmninja)
+    - [I'm getting multiple notifications for the same event](#im-getting-multiple-notifications-for-the-same-event)
+    - [The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)](#the-server-runs-fine-when-manually-executed-but-fails-when-run-in-daemon-mode-started-by-zmdcpl)
+    - [When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that](#when-you-run-zmeventnotifiationpl-manually-you-get-an-error-saying-port-already-in-use-or-cannot-bind-to-port-or-something-like-that)
+    - [Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!](#great-krypton-i-just-upgraded-zoneminder-and-im-not-getting-push-anymore)
 - [How do I disable secure (WSS) mode?](#how-do-i-disable-secure-wss-mode)
 - [Debugging and reporting problems](#debugging-and-reporting-problems)
 - [For Developers writing their own consumers](#for-developers-writing-their-own-consumers)
-  - [How do I talk to it?](#how-do-i-talk-to-it)
-    - [Authentication messages](#authentication-messages)
-    - [Control messages](#control-messages)
-      - [Control message to restrict monitor IDs for events as well as interval durations for reporting](#control-message-to-restrict-monitor-ids-for-events-as-well-as-interval-durations-for-reporting)
-      - [Control message to get Event Server version](#control-message-to-get-event-server-version)
-    - [Alarm notifications](#alarm-notifications)
-    - [Push Notifications (for both iOS and Android)](#push-notifications-for-both-ios-and-android)
-      - [Concepts of Push and why it is only for zmNinja](#concepts-of-push-and-why-it-is-only-for-zmninja)
-      - [Registering Push token with the server](#registering-push-token-with-the-server)
-      - [Badge reset](#badge-reset)
-    - [Testing from command line](#testing-from-command-line)
+    - [How do I talk to it?](#how-do-i-talk-to-it)
+        - [Authentication messages](#authentication-messages)
+        - [Control messages](#control-messages)
+            - [Control message to restrict monitor IDs for events as well as interval durations for reporting](#control-message-to-restrict-monitor-ids-for-events-as-well-as-interval-durations-for-reporting)
+            - [Control message to get Event Server version](#control-message-to-get-event-server-version)
+        - [Alarm notifications](#alarm-notifications)
+        - [Push Notifications (for both iOS and Android)](#push-notifications-for-both-ios-and-android)
+            - [Concepts of Push and why it is only for zmNinja](#concepts-of-push-and-why-it-is-only-for-zmninja)
+            - [Registering Push token with the server](#registering-push-token-with-the-server)
+            - [Badge reset](#badge-reset)
+        - [Testing from command line](#testing-from-command-line)
 - [How scalable is it?](#how-scalable-is-it)
 - [Brickbats](#brickbats)
 
 <!-- /TOC -->
 
 ## Breaking Changes
-
-
-### version 2.0 onwards
-
-The notification now supports hooks and Machine Learning powered detection. Check the hook_examples directory and follow the [README](https://github.com/pliablepixels/zmeventserver/blob/master/hook_example/README.md) there.
-
 ### version 1.0 onwards
 
 Version 1.0 moves configuration to a separate `zmeventnotification.ini` file that makes it easier to re-configure. If you are already
@@ -63,6 +57,9 @@ to re-configure the params to your liking in the ini file. Note that you may nee
 
 If you are installing `zmeventnotification` for the first time, just read the [How do I install it?](#how-do-i-install-it) section.
 
+## Machine Learning! Mmm..Machine Learning!
+
+Easy. You will first have to read this document to correctly install this server along with zoneminder. Once it works well, you can explore how to enable Machine Learning based object detection that can be used along with ZoneMinder alarms. If you already have this server figured out, you can skip directly to the machine learning part [here](https://github.com/pliablepixels/zmeventserver/blob/master/hook_example/README.md)
 
 ## What is it?
 
