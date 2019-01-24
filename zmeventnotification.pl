@@ -56,7 +56,7 @@ use IO::Select;
 # ==========================================================================
 
 
-my $app_version="2.5";
+my $app_version="2.6";
 
 # ==========================================================================
 #
@@ -676,7 +676,7 @@ sub checkNewEvents()
                 {
                    my $hooktext = $last_event_for_monitors{$monitor->{Id}}{"hook_text"};
                    if ($hooktext) {
-                        printDebug ("HOOK: (concurrent-event)".$last_event_for_monitors{$monitor->{Id}}{"eid"}. "writing hook to DB with hook text=".$hooktext);
+                        printDebug ("HOOK: (concurrent-event) ".$last_event_for_monitors{$monitor->{Id}}{"eid"}. " writing hook to DB with hook text=".$hooktext);
                         updateEventinZmDB($last_event_for_monitors{$monitor->{Id}}{"eid"},$hooktext) if $hooktext;
                    }
 
@@ -1085,9 +1085,28 @@ sub processJobs
             }
             # hook script result will be updated in ZM DB
             elsif ($job eq "event_description") {
-                my ($mid, $desc) = split("--SPLIT--",$msg);
+                my ($mid, $eid, $desc) = split("--SPLIT--",$msg);
                 printDebug("GOT JOB==> Update monitor ".$mid." description:".$desc);
-                $last_event_for_monitors{$mid}{"hook_text"}= $desc;
+
+                # If the hook took too long and the alarm already closed, 
+                # we need to handle it here. Two situations:
+                # a) that mid is now handling a new alarm
+                # b) that mid is now idling
+
+                if ( ($last_event_for_monitors{$mid}{"eid"} != $eid) ||
+                     ($last_event_for_monitors{$mid}{"state"} == "idle")) {
+                         printDebug ("HOOK: script for eid:$eid returned after the alarm closed, so writing hook text:$desc now...");
+                         updateEventinZmDB($eid, $desc);
+                } 
+
+                #  hook returned before the alarm closed, so we will catch it in the
+                # main loop
+                else {
+                    $last_event_for_monitors{$mid}{"hook_text"}= $desc;
+                }
+                
+
+                
                 
             } 
 
@@ -1796,7 +1815,7 @@ sub processAlarms {
               
                 $alarm->{Cause} = $resTxt;
                 # This updated the ZM DB with the detected description
-                print WRITER "event_description--TYPE--".$alarm->{MonitorId}."--SPLIT--".$resTxt."\n";
+                print WRITER "event_description--TYPE--".$alarm->{MonitorId}."--SPLIT--".$alarm->{EventId}."--SPLIT--".$resTxt."\n";
             }
             
         }
