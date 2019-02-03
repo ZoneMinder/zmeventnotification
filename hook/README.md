@@ -116,9 +116,9 @@ The detection uses OpenCV's DNN module and YoloV3 to predict multiple labels wit
 You can manually invoke it to test:
 
 ```bash
-./sudo -u www-data /usr/bin/detect_yolo.py --config /var/detect/config/objectconfig.ini  --eventid <eid> --monitor <mid>
+./sudo -u www-data /usr/bin/detect_yolo.py --config /var/detect/config/objectconfig.ini  --eventid <eid> --monitorid <mid>
 ```
-The `--monitor <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
+The `--monitorid <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
 
 
 If you are using YOLO models, you will need the following data files (if you followed the installation directions, you already have them):
@@ -135,9 +135,9 @@ The detection uses OpenCV's DNN module and Tiny YoloV3 to predict multiple label
 You can manually invoke it to test:
 
 ```bash
-./sudo -u www-data /usr/bin/detect_yolo.py --config /var/detect/config/objectconfig.ini  --eventid <eid> --monitor <mid>
+./sudo -u www-data /usr/bin/detect_yolo.py --config /var/detect/config/objectconfig.ini  --eventid <eid> --monitorid <mid>
 ```
-The `--monitor <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
+The `--monitorid <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
 
 
 If you are using YOLO models, you will need the following data files (if you followed the installation directions, you already have them):

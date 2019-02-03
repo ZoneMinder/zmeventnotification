@@ -42,7 +42,7 @@ logger.addHandler(handler)
 ap = argparse.ArgumentParser()
 ap.add_argument('-c', '--config', required=True, help='config file with path')
 ap.add_argument('-e', '--eventid', required=True,  help='event ID to retrieve')
-ap.add_argument('-m', '--monitor',  help='monitor id - needed for mask')
+ap.add_argument('-m', '--monitorid',  help='monitor id - needed for mask')
 ap.add_argument('-t', '--time',  help='log time')
 
 args,u = ap.parse_known_args()
@@ -77,16 +77,16 @@ try:
         logger.setLevel(logging.ERROR)
 
     # get the mask polygons for the supplied monitor
-    if args['monitor']:
-            if config_file.has_section('mask-'+args['monitor']):
-                itms = config_file['mask-'+args['monitor']].items()
-                if itms: logger.debug ('mask definition found for monitor:'+args['monitor'])
+    if args['monitorid']:
+            if config_file.has_section('mask-'+args['monitorid']):
+                itms = config_file['mask-'+args['monitorid']].items()
+                if itms: logger.debug ('mask definition found for monitor:'+args['monitorid'])
                 a=[]
                 for k,v in itms:
                     a.append(str2arr(v))
                     masks = np.asarray(a)
             else:
-                logger.debug ('no mask found for monitor:'+args['monitor'])
+                logger.debug ('no mask found for monitor:'+args['monitorid'])
                 masks = np.asarray([])
     else:
         logger.error ('Ignoring masks, as you did not provide a monitor id')
