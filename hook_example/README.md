@@ -45,6 +45,7 @@ sudo pip install -r  requirements.txt
 sudo mkdir -p /var/detect/images
 sudo mkdir -p /var/detect/models
 sudo mkdir -p /var/detect/config
+
 # if you want to use YoloV3 (slower, accurate)
 sudo mkdir -p /var/detect/models/yolov3 # if you are using YoloV3
 sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg -O /var/detect/models/yolov3/yolov3.cfg

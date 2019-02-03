@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# version 2.1
+# version 3.0
 
 # Alternate detection script using neural nets and YoloV3. 
 # slower than openCV HOG but much more accurate
@@ -172,6 +172,7 @@ try:
                 masks = np.asarray([])
     else:
         logger.error ('Ignoring masks, as you did not provide a monitor id')  
+        masks = np.asarray([])
         
 except Exception,e:
     logger.error('Error parsing config:'+args['config'])
@@ -256,12 +257,13 @@ seen = {}
 for l,c in zip (label,conf):
     if l not in seen:
         if config['show_percent'] == 'no':
-            pred = pred +l+' '
+            pred = pred +l+','
         else:
             pred = pred +l+':{:.0%}'.format(c)+' '
         seen[l] = 1
 
 if pred !='':
+    pred = pred.rstrip(',')
     pred = prefix+'detected:'+pred
     logger.debug ('Prediction string:'+pred)
 print (pred)
