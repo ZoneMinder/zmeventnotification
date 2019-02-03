@@ -84,7 +84,7 @@ sudo cp detect_* /usr/bin
 
 * Test operation:
 ```
-sudo -u www-data /usr/bin/detect_wrapper.sh <eid> # replace www-data with apache if needed
+sudo -u www-data /usr/bin/detect_wrapper.sh <eid> <mid> # replace www-data with apache if needed
 ```
 
 This will try and download the configured frame for alarm <eid> and analyze it. Replace with your own EID (Example 123456)
@@ -92,6 +92,8 @@ The files will be in `/var/detect/images`
 For example: 
 if you configured `frame_id` to be `bestmatch` you'll see two files `<eid>-alarm.jpg` and `<eid>-snapshot.jpg`
 If you configured `frame_id` to be `snapshot` or a specific number, you'll see one file `<eid>.jpg`
+
+The `<mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
 
 The above command will also try and run detection.
 
@@ -106,6 +108,44 @@ If it doesn't work, go back and figure out where you have a problem
 
 ### Types of detection
 
+#### RECOMMENDED: detect_yolo.py:  using OpenCV DNN with YoloV3 (much slower, accurate)
+
+The detection uses OpenCV's DNN module and YoloV3 to predict multiple labels with score.
+
+You can manually invoke it to test:
+
+```bash
+./sudo -u www-data /usr/bin/detect_yolo.py --config /var/detect/config/objectconfig.ini  --eventid <eid> --monitor <mid>
+```
+The `--monitor <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
+
+
+If you are using YOLO models, you will need the following data files (if you followed the installation directions, you already have them):
+* weights: https://pjreddie.com/media/files/yolov3.weights
+* config: https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg
+* labels: https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names
+
+
+
+#### detect_yolo.py:  using OpenCV DNN with Tiny YoloV3 (almost comparable with HOG in speed, more accurate)
+
+The detection uses OpenCV's DNN module and Tiny YoloV3 to predict multiple labels with score.
+
+You can manually invoke it to test:
+
+```bash
+./sudo -u www-data /usr/bin/detect_yolo.py --config /var/detect/config/objectconfig.ini  --eventid <eid> --monitor <mid>
+```
+The `--monitor <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
+
+
+If you are using YOLO models, you will need the following data files (if you followed the installation directions, you already have them):
+* weights: https://pjreddie.com/media/files/yolov3-tiny.weights
+* config:  https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg
+* labels:  https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names
+
+(Note: `coco.names` is the label file the script needs. It is common for both tiny or regular yolo)
+
 #### detect_hog.py: using OpenCV SVM HOG (very fast, not accurate)
 
 You can manually invoke it to test:
@@ -117,42 +157,6 @@ You can manually invoke it to test:
 The detection uses a very fast, but not very accurate OpenCV model (hog.detectMultiScale). 
 The good part is that it is extremely fast can can be used for realtime needs. 
 Fiddle with the settings in detect.py (stride/scale) to get more accuracy at the cost of speed.
-
-#### detect_yolo.py:  using OpenCV DNN with Tiny YoloV3 (almost comparable with HOG in speed, more accurate)
-
-The detection uses OpenCV's DNN module and Tiny YoloV3 to predict multiple labels with score.
-
-You can manually invoke it to test:
-
-```bash
-./sudo -u www-data /usr/bin/detect_yolo.py -c /var/detect/config/objectconfig.ini  -e 313035
-```
-
-
-If you are using YOLO models, you will need the following data files (if you followed the installation directions, you already have them):
-* weights: https://pjreddie.com/media/files/yolov3-tiny.weights
-* config:  https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg
-* labels:  https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names
-
-
-
-
-#### detect_yolo.py:  using OpenCV DNN with YoloV3 (much slower, accurate)
-
-The detection uses OpenCV's DNN module and YoloV3 to predict multiple labels with score.
-
-You can manually invoke it to test:
-
-```bash
-./sudo -u www-data /usr/bin/detect_yolo.py -c /var/detect/config/objectconfig.ini  -e 313035
-```
-
-If you are using YOLO models, you will need the following data files (if you followed the installation directions, you already have them):
-* weights: https://pjreddie.com/media/files/yolov3.weights
-* config: https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg
-* labels: https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names
-
-(Note: `coco.names` is the label file the script needs. It is common for both tiny or regular yolo)
 
 
 ### Performance comparison
