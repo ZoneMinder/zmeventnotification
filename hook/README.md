@@ -8,7 +8,7 @@
 * Only tested with ZM 1.32+. May or may not work with older versions
 
 ### What
-This is just an example of how you can use the new `hook` feature of the notification server
+This is an example of how you can use the `hook` feature of the notification server
 to invoke a custom script on the event before it generates an alarm. This implements a hook script that detects
 objects using Machine Learning for events. If it matches the objects you are interested in, it will send a notification.
 
@@ -27,11 +27,11 @@ it will take to detect
 
 *  Make sure you have Python3. Python2 is not supported
 *  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`
-*  Clone the event server and go to the `hook_example` directory 
+*  Clone the event server and go to the `hook` directory 
 
 ```bash
 git clone https://github.com/pliablepixels/zmeventserver # if you don't already have it downloaded
-cd zmeventserver/hook_example
+cd zmeventserver/hook
 ```
 
 * Install the object detection dependencies:

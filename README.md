@@ -59,7 +59,7 @@ If you are installing `zmeventnotification` for the first time, just read the [H
 
 ## Machine Learning! Mmm..Machine Learning!
 
-Easy. You will first have to read this document to correctly install this server along with zoneminder. Once it works well, you can explore how to enable Machine Learning based object detection that can be used along with ZoneMinder alarms. If you already have this server figured out, you can skip directly to the machine learning part [here](https://github.com/pliablepixels/zmeventserver/blob/master/hook_example/README.md)
+Easy. You will first have to read this document to correctly install this server along with zoneminder. Once it works well, you can explore how to enable Machine Learning based object detection that can be used along with ZoneMinder alarms. If you already have this server figured out, you can skip directly to the machine learning part [here](https://github.com/pliablepixels/zmeventserver/blob/master/hook/README.md)
 
 ## What is it?
 
@@ -297,14 +297,14 @@ Related to `hook` we also have a `hook_description` attribute. When set to 1, th
 Here is an example:
 (Note: just an example, please don't ask me for support for person detection)
 
-- You will find a sample `detect_wrapper.sh` hook in the `hook_example` directory. This script is invoked by the notification server when an event occurs.
+- You will find a sample `detect_wrapper.sh` hook in the `hook` directory. This script is invoked by the notification server when an event occurs.
 - This script in turn invokes a python OpenCV based script that grabs an image with maximum score from the current event so far and runs a fast person detection routine.
 - It returns the value "person detected" if a person is found and none if not
 - The wrapper script then checks for this value and exits with either 0 (send alarm) or 1 (don't send alarm)
 - the notification server then sends out a "<Monitor Name>: person detected" notification to the clients listening
 
 Those who want to know more:
-- Read the detailed notes [here](https://github.com/pliablepixels/zmeventserver/tree/master/hook_example)
+- Read the detailed notes [here](https://github.com/pliablepixels/zmeventserver/tree/master/hook)
 - Read [this](https://medium.com/zmninja/inside-the-hood-machine-learning-enhanced-real-time-alarms-with-zoneminder-e26c34fe354c) for an explanation of how this works
 
 ## Troubleshooting common situations
