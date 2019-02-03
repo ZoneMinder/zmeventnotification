@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# version: 2.0
+# version: 2.1
 
 # Please don't ask me questions about this script
 # its a simple OpenCV person detection script I've proved as a sample "hook" you can add to the notification server
@@ -19,6 +19,7 @@ import datetime
 import os
 import re
 import sys
+import configparser
 
 # set up logging to syslog
 import logging
@@ -40,10 +41,34 @@ ap.add_argument( "--padding", type=str, default="(8, 8)", help="object padding")
 ap.add_argument("-s", "--scale", type=float, default=1.05, help="image pyramid scale")
 ap.add_argument("-m", "--mean-shift", type=int, default=-1, help="whether or not mean shift grouping should be used")
 ap.add_argument("-b", "--bestmatch", action="store_true", help="evaluates both alarm and snapshot")
+ap.add_argument("--mask",  help="config file with mask definitions")
+ap.add_argument("--monitor",  help="monitor id - needed for mask")
 
 
 args,u = ap.parse_known_args()
 args = vars(args)
+
+def str2arr(str):
+    return  [map(int,x.strip().split(',')) for x in str.split(' ')]
+
+# main handler
+
+# process crop masks, if they exist
+masks = np.array([[]])
+config = configparser.ConfigParser()
+if config.read(args["mask"]):
+   if args["monitor"]: # check if a mask for that monitor is specified
+        try:
+            itms = config.items(args["monitor"])
+            if itms: logger.info ("mask definition found for monitor:"+args["monitor"])
+            a=[]
+            for k,v in itms:
+                a.append(str2arr(v))
+                masks = np.asarray(a)
+        except configparser.NoSectionError:
+                logger.info ("no mask found for monitor:"+args["monitor"])
+   else:
+        logger.error ("Ignoring masks, as you did not provide a monitor id")
  
  # evaluate the command line arguments (using the eval function like
 # this is not good form, but let's tolerate it for the example)
@@ -65,6 +90,17 @@ if args["bestmatch"]:
 
 logger.info ("Analyzing: "+filename1)
 image = cv2.imread(filename1)
+
+if masks.size:
+    logger.info ("creating masked image...")
+    filter_mask = np.zeros(image.shape, dtype=np.uint8)
+    cv2.fillPoly(filter_mask, pts=masks, color=(255,255,255))
+    masked_image = cv2.bitwise_and(image, filter_mask)
+    image = masked_image
+    logger.info ("overwriting masked image: "+filename1)
+    cv2.imwrite (filename1,image)
+
+
 image = imutils.resize(image, width=min(400, image.shape[1]))
 # detect people in the image
 start = datetime.datetime.now()
@@ -76,6 +112,15 @@ if len(r) > 0:
 elif filename2:
      logger.debug ("person detect failed for "+filename1+" trying "+filename2)
      image = cv2.imread(filename2)
+     if masks.size:
+            logger.info ("creating masked image...")
+            filter_mask = np.zeros(image.shape, dtype=np.uint8)
+            cv2.fillPoly(filter_mask, pts=masks, color=(255,255,255))
+            masked_image = cv2.bitwise_and(image, filter_mask)
+            image = masked_image
+            logger.info ("overwriting masked image: "+filename1)
+            cv2.imwrite (filename2,image)
+
      image = imutils.resize(image, width=min(400, image.shape[1]))
      # detect people in the image
      r,w = hog.detectMultiScale(image, winStride=winStride,

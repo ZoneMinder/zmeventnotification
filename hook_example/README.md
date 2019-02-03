@@ -40,10 +40,11 @@ sudo pip install -r  requirements.txt
 ```
 
 * You now need to download configuration and weight files that are required by the machine learning magic. Note that you don't have to put them in `/var/detect` -> use whatever you want (and change variables in `detect_wrapper.sh` script if you do) 
+
 ```bash
 sudo mkdir -p /var/detect/images
 sudo mkdir -p /var/detect/models
-
+sudo mkdir -p /var/detect/config
 # if you want to use YoloV3 (slower, accurate)
 sudo mkdir -p /var/detect/models/yolov3 # if you are using YoloV3
 sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg -O /var/detect/models/yolov3/yolov3.cfg
@@ -59,15 +60,21 @@ sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-t
 sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names -O /var/detect/models/tinyyolo/yolov3-tiny.txt
 ```
 
+* Copy over the object detection config file
+
+```bash
+sudo cp objectconfig.ini /var/detect/config
+```
+
+
 * Now make sure it all RW accessible by `www-data` (or `apache`)
 ```
 sudo chown -R www-data:www-data /var/detect/ #(change www-data to apache for CentOS/Fedora)
 ```
 
 * Edit `detect_wrapper.sh` and change:
-    * `PORTAL` to your portal url (example: https://myip/server/zm)
-    * `USERNAME` and `PASSWORD` to your ZM username and password
-    * Study the rest of the file to see if you need to change anything else     
+    * `CONFIG_FILE` to point to the right config file, if you changed paths
+    * `DETECTION_SCRIPT` if you want to change from YOLO to HOG
 
 
 * Now copy your detection files to `/usr/bin` 
@@ -118,10 +125,8 @@ The detection uses OpenCV's DNN module and Tiny YoloV3 to predict multiple label
 You can manually invoke it to test:
 
 ```bash
-./detect_yolo.py --image image.jpg --config path/to/config/file --weight path/to/weights/file --label path/to/label/file --pattern "<somepattern>"
+./sudo -u www-data /usr/bin/detect_yolo.py -c /var/detect/config/objectconfig.ini  -e 313035
 ```
-
-Where `<somepattern>` is the python regexp to filter. Example `"(person | car)"`  or `".*"` for all labels
 
 
 If you are using YOLO models, you will need the following data files (if you followed the installation directions, you already have them):
