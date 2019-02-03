@@ -144,10 +144,8 @@ The detection uses OpenCV's DNN module and YoloV3 to predict multiple labels wit
 You can manually invoke it to test:
 
 ```bash
-./detect_yolo.py --image image.jpg --config path/to/config/file --weight path/to/weights/file --label path/to/label/file --pattern "<somepattern>"
+./sudo -u www-data /usr/bin/detect_yolo.py -c /var/detect/config/objectconfig.ini  -e 313035
 ```
-
-Where `<somepattern>` is the python regexp to filter. Example `"(person | car)"`  or `".*"` for all labels
 
 If you are using YOLO models, you will need the following data files (if you followed the installation directions, you already have them):
 * weights: https://pjreddie.com/media/files/yolov3.weights
