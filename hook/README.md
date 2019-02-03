@@ -152,12 +152,13 @@ If you are using YOLO models, you will need the following data files (if you fol
 You can manually invoke it to test:
 
 ```bash
-./detect_hog.py --image image.jpg
+./sudo -u www-data /usr/bin/detect_hog.py --config /var/detect/config/objectconfig.ini  --eventid <eid> --monitorid <mid>
 ```
+The `--monitorid <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
 
 The detection uses a very fast, but not very accurate OpenCV model (hog.detectMultiScale). 
 The good part is that it is extremely fast can can be used for realtime needs. 
-Fiddle with the settings in detect.py (stride/scale) to get more accuracy at the cost of speed.
+Fiddle with the config settings in the `[hog]` section (stride/scale) to get more accuracy at the cost of speed.
 
 
 ### Performance comparison
@@ -172,9 +173,9 @@ On a Intel Xeon 3.16GHz 4Core machine:
 As always, if you are trying to figure out how this works, do this in 3 steps:
 
 **STEP 1: Make sure the scripts(s) work**
-- Run the python script manually with `--image <path/to/image/image.jpg>` to see if it works
-- `./detect_wrapper.sh <eid>` --> make sure it downloads a proper image for that eid. Make sure it correctly invokes detect_xxx.py If not, fix it. Note that by default the wrapper script passed the `--delete` option to remove the downloaded image. While testing, remove the `--delete` option
-- Make sure the `IMAGE_PATH` you've chosen in `detect_wrapper.sh` is WRITABLE by www-data (or apache) before you move to step 2
+- Run the python script manually to see if it works (refer to sections above on how to run them manuall)
+- `./detect_wrapper.sh <eid> <mid>` --> make sure it downloads a proper image for that eid. Make sure it correctly invokes detect_xxx.py If not, fix it. (`<mid>` is optional and is used to apply a crop mask if specified)
+- Make sure the `image_path` you've chosen in the config file is WRITABLE by www-data (or apache) before you move to step 2
 
 **STEP 2: run zmeventnotification in MANUAL mode**
 * `sudo zmdc.pl stop zmeventnotification.pl`
