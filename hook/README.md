@@ -25,7 +25,7 @@ it will take to detect
 
 ### Dependencies and Installation
 
-*  Make sure you have Python3. Python2 is not supported
+*  Only tested with Python2
 *  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`
 *  Clone the event server and go to the `hook` directory 
 
