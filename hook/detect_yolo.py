@@ -24,6 +24,7 @@ import re
 import configparser
 import urllib
 import imutils
+import ssl
 
 def str2arr(str):
     return  [map(int,x.strip().split(',')) for x in str.split(' ')]
@@ -132,6 +133,7 @@ args = vars(args)
 # process config file
 config_file = configparser.ConfigParser()
 config_file.read(args['config'])
+ctx = ssl.create_default_context()
 
 # parse config file into a dictionary with defaults
 config={}
@@ -146,6 +148,7 @@ try:
     config['delete_after_analyze']=config_file['general'].get('delete_after_analyze','no');
     config['show_percent']=config_file['general'].get('show_percent','no');
     config['log_level']=config_file['general'].get('log_level','info');
+    config['allow_self_signed']=config_file['general'].get('allow_self_signed','yes');
 
     config['config']=config_file['yolo'].get('yolo','/var/detect/models/yolov3/yolov3.cfg');
     config['weights']=config_file['yolo'].get('yolo','/var/detect/models/yolov3/yolov3.weights');
@@ -157,6 +160,14 @@ try:
         logger.setLevel(logging.INFO)
     elif config['log_level']=='error':
         logger.setLevel(logging.ERROR)
+
+    if config['allow_self_signed'] == 'yes':
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        logger.debug("allowing self-signed certs to work...")
+    else:
+        logger.debug ("strict SSL cert checking is on...")
+
 
     # get the mask polygons for the supplied monitor
     if args['monitorid']:
@@ -187,18 +198,18 @@ if config['frame_id'] == 'bestmatch':
     filename2 = config['image_path']+'/'+args['eventid']+'-alarm.jpg'
     url = config['portal']+'/index.php?view=image&eid='+args['eventid']+'&fid=snapshot'+ \
           '&username='+config['user']+'&password='+config['password']
-    urllib.urlretrieve(url,filename1)
+    urllib.urlretrieve(url,filename1,context=ctx)
 
     url = config['portal']+'/index.php?view=image&eid='+args['eventid']+'&fid=alarm'+ \
           '&username='+config['user']+'&password='+config['password']
-    urllib.urlretrieve(url,filename2)
+    urllib.urlretrieve(url,filename2,context=ctx)
 else:
     # only download one
     filename1 = config['image_path']+'/'+args['eventid']+'.jpg'
     filename2 = ''
     url = config['portal']+'/index.php?view=image&eid='+args['eventid']+'&fid='+config['frame_id']+ \
           '&username='+config['user']+'&password='+config['password']
-    urllib.urlretrieve(url,filename1)
+    urllib.urlretrieve(url,filename1, context=ctx)
 
 
 # filename1 will be the first frame to analyze (typically alarm)
