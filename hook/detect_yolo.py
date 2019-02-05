@@ -170,14 +170,18 @@ try:
 
 
     # get the mask polygons for the supplied monitor
+    masks = np.asarray([])
     if args['monitorid']:
             if config_file.has_section('mask-'+args['monitorid']):
                 itms = config_file['mask-'+args['monitorid']].items()
-                if itms: logger.debug ('mask definition found for monitor:'+args['monitorid'])
+                if itms: 
+                    logger.debug ('mask definition found for monitor:'+args['monitorid'])
+                else:
+                    logger.debug ('mask section found, but no mask entries found')
                 a=[]
                 for k,v in itms:
                     a.append(str2arr(v))
-                    masks = np.asarray(a)
+                masks = np.asarray(a)
             else:
                 logger.debug ('no mask found for monitor:'+args['monitorid'])
                 masks = np.asarray([])
