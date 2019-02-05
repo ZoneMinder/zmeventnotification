@@ -181,6 +181,7 @@ try:
                 a=[]
                 for k,v in itms:
                     a.append(str2arr(v))
+                    logger.debug ("adding mask:"+v)
                 masks = np.asarray(a)
             else:
                 logger.debug ('no mask found for monitor:'+args['monitorid'])
