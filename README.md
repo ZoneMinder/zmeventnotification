@@ -20,7 +20,7 @@
 - [How do I safely upgrade zmeventserver to new versions?](#how-do-i-safely-upgrade-zmeventserver-to-new-versions)
 - [Configuring the notification server](#configuring-the-notification-server)
     - [Understanding zmeventnotification configuration](#understanding-zmeventnotification-configuration)
-    - [What is the hook attribute ?](#what-is-the-hook-attribute-)
+    - [What is the hook section ?](#what-is-the-hook-section-)
 - [Troubleshooting common situations](#troubleshooting-common-situations)
     - [Picture notifications don't show images](#picture-notifications-dont-show-images)
     - [Secure mode just doesn't work (WSS) - WS works](#secure-mode-just-doesnt-work-wss---ws-works)
@@ -286,13 +286,22 @@ Hook .......................... '/usr/bin/person_detect_wrapper.sh'
 Use Hook Description........... true
 ```
 
-### What is the hook attribute ?
+### What is the hook section ?
 
-The `hook` attribute allows you to invoke a custom script when an alarm is triggered by ZM. 
+The `hook` section allows you to invoke a custom script when an alarm is triggered by ZM. 
+
+`hook_script` points to the script that is invoked when an alarm occurs
+
 If the script returns success (exit value of 0) then the notification server will send out an alarm notification. If not, it will not send a notification to 
 its listeners. This is useful to implement any custom logic you may want to perform that decides whether this event is worth sending a notification for.
 
 Related to `hook` we also have a `hook_description` attribute. When set to 1, the text returned by the hook script will overwrite the alarm text that is notified.
+
+We also have a `skip_monitors` attribute. This is a comma separated list of monitors. When alarms occur in those monitors, hooks will not be called and the ES will
+directly send out notifications (if enabled in ES). This is useful when you don't want to invoke hooks for certain monitors as they may be expensive 
+(especially if you are doing object detection)
+
+Finally, `keep_frame_match_type` is really used when you enable "bestmatch". It prefixes an `[a]` or `[s]` to tell you if object detection succeeded in the alarmed or snapshot frame.
 
 Here is an example:
 (Note: just an example, please don't ask me for support for person detection)
