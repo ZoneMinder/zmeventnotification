@@ -90,7 +90,7 @@ classes = None
 def draw_bbox(img, bbox, labels, confidence, colors=None, write_conf=False, polys=[]):
 
     COLORS = np.random.uniform(0, 255, size=(80, 3))
-    polycolor = (127, 140, 141)
+    polycolor = config['poly_color']
     global classes
 
     # first draw the polygons, if any
@@ -231,6 +231,7 @@ try:
     config['weights']=config_file['yolo'].get('yolo','/var/detect/models/yolov3/yolov3.weights');
     config['labels']=config_file['yolo'].get('yolo','/var/detect/models/yolov3/yolov3_classes.txt');
     config['write_bounding_boxes']=config_file['yolo'].get('write_bounding_boxes','yes');
+    config['poly_color']=eval(config_file['yolo'].get('poly_color','(127, 140, 141)'));
 
     if config['log_level']=='debug':
         logger.setLevel(logging.DEBUG)
