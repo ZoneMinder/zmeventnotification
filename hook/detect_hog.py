@@ -82,7 +82,7 @@ try:
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
             logger.debug("allowing self-signed certs to work...")
-        else:
+    else:
             logger.debug ("strict SSL cert checking is on...")
 
     # get the mask polygons for the supplied monitor

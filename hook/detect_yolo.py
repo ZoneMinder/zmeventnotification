@@ -12,8 +12,8 @@
 # This trained model is able to detect the following 80 categories
 # https://github.com/pjreddie/darknet/blob/master/data/coco.names
 
-# opencv DNN code credit: https://github.com/arunponnusamy/cvlib
 
+from __future__ import division
 import sys
 import cv2
 import argparse
@@ -24,15 +24,89 @@ import re
 import configparser
 import urllib
 import imutils
+import logging
+import logging.handlers
 import ssl
+from shapely.geometry import Polygon
 
-def str2arr(str):
-    return  [map(int,x.strip().split(',')) for x in str.split(' ')]
+# converts a string of cordinates 'x1,y1 x2,y2 ...' to a tuple set. We use this
+# to parse the polygon parameters in the ini file
+def str2tuple(str):
+    return  [tuple(map(int,x.strip().split(','))) for x in str.split(' ')]
+
+# re-scales the polygons you specified in the config file
+# to the size we use for analysis (by default min(image width,800))
+def adjustPolygons(xfactor, yfactor,polygons):
+    newps = []
+    for p in polygons:
+        newp = []
+        for x,y in p['value']:
+            newx = int(x * xfactor)
+            newy = int (y * yfactor)
+            newp.append((newx,newy))
+        newps.append({'name':p['name'], 'value':newp})
+    logger.debug('resized polygons x={}/y={}: {}'.format(xfactor,yfactor,newps))
+    return newps
+
+# once all bounding boxes are detected, we check to see if any of them
+# intersect the polygons, if specified
+def checkIntersection(labels, polygons, bbox):
+    for idx,b in enumerate(bbox):
+        doesIntersect = False
+
+        # cv2 rectangle only needs top left and bottom right
+        # but to check for polygon intersection, we need all 4 corners
+        # b has [a,b,c,d] -> convert to [a,b, c,b, c,d, a,d]
+        # https://stackoverflow.com/a/23286299/1361529
+        it = iter(b)
+        b = zip(it,it)
+        b.insert (1, (b[1][0], b[0][1]))
+        b.insert (3, (b[0][0], b[1][1]))
+        obj = Polygon(b)
+
+        for p in polygons:
+            poly = Polygon(p['value'])
+            if poly.intersects(obj):
+                logger.debug( '{} intersects object:{}[{}]'.format(p['name'],labels[idx],b))
+                doesIntersect = True
+                break
+            if doesIntersect == False:
+                logger.debug ( 'object:{} at [{}] does not fall into any polygons, removing...'.format(labels[idx],obj))
+                labels.pop(idx)
+                bbox.pop(idx)
 
 # The actual CNN object detection code
+# opencv DNN code credit: https://github.com/arunponnusamy/cvlib
 initialize = True
 net = None
 classes = None
+
+def draw_bbox(img, bbox, labels, confidence, colors=None, write_conf=False, polys=[]):
+
+    COLORS = np.random.uniform(0, 255, size=(80, 3))
+    polycolor = (127, 140, 141)
+    global classes
+
+    # first draw the polygons, if any
+    for ps in polys:
+            cv2.polylines(img, [np.asarray(ps['value'])],True,polycolor,thickness=2 )
+
+    # now draw object boundaries
+    if classes is None:
+        classes = populate_class_labels()
+    
+    for i, label in enumerate(labels):
+        if colors is None:
+            color = COLORS[classes.index(label)]            
+        else:
+            color = colors[classes.index(label)]
+
+        if write_conf:
+            label += ' ' + str(format(confidence[i] * 100, '.2f')) + '%'
+        cv2.rectangle(img, (bbox[i][0],bbox[i][1]), (bbox[i][2],bbox[i][3]), color, 2)
+        cv2.putText(img, label, (bbox[i][0],bbox[i][1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+    return img
+
 
 def populate_class_labels():
     class_file_abs_path = config['labels']
@@ -100,7 +174,7 @@ def detect_common_objects(image):
         y = box[1]
         w = box[2]
         h = box[3]
-        bbox.append([round(x), round(y), round(x+w), round(y+h)])
+        bbox.append([int(round(x)), int(round(y)), int(round(x+w)), int(round(y+h))])
         label.append(str(classes[class_ids[i]]))
         conf.append(confidences[i])
         
@@ -109,8 +183,6 @@ def detect_common_objects(image):
 # main handler
 
 # set up logging to syslog
-import logging
-import logging.handlers
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 handler = logging.handlers.SysLogHandler('/dev/log')
@@ -128,7 +200,6 @@ ap.add_argument('-t', '--time',  help='log time')
 
 args,u = ap.parse_known_args()
 args = vars(args)
-
 
 # process config file
 config_file = configparser.ConfigParser()
@@ -153,6 +224,7 @@ try:
     config['config']=config_file['yolo'].get('yolo','/var/detect/models/yolov3/yolov3.cfg');
     config['weights']=config_file['yolo'].get('yolo','/var/detect/models/yolov3/yolov3.weights');
     config['labels']=config_file['yolo'].get('yolo','/var/detect/models/yolov3/yolov3_classes.txt');
+    config['write_bounding_boxes']=config_file['yolo'].get('write_bounding_boxes','yes');
 
     if config['log_level']=='debug':
         logger.setLevel(logging.DEBUG)
@@ -164,48 +236,44 @@ try:
     if config['allow_self_signed'] == 'yes':
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
-        logger.debug("allowing self-signed certs to work...")
+        logger.debug('allowing self-signed certs to work...')
     else:
-        logger.debug ("strict SSL cert checking is on...")
+        logger.debug ('strict SSL cert checking is on...')
 
 
-    # get the mask polygons for the supplied monitor
-    masks = np.asarray([])
+    # get the polygons, if any, for the supplied monitor
+    polygons=[]
     if args['monitorid']:
-            if config_file.has_section('mask-'+args['monitorid']):
-                itms = config_file['mask-'+args['monitorid']].items()
+            if config_file.has_section('object-areas-'+args['monitorid']):
+                itms = config_file['object-areas-'+args['monitorid']].items()
                 if itms: 
-                    logger.debug ('mask definition found for monitor:'+args['monitorid'])
+                    logger.debug ('object areas definition found for monitor:{}'.format(args['monitorid']))
                 else:
-                    logger.debug ('mask section found, but no mask entries found')
-                a=[]
+                    logger.debug ('object areas section found, but no polygon entries found')
                 for k,v in itms:
-                    a.append(str2arr(v))
-                    logger.debug ("adding mask:"+v)
-                masks = np.asarray(a)
+                    polygons.append({'name':k, 'value':str2tuple(v)})
+                    logger.debug ('adding polygon: {} [{}]'.format(k,v))
             else:
-                logger.debug ('no mask found for monitor:'+args['monitorid'])
-                masks = np.asarray([])
+                logger.debug ('no object areas found for monitor:{}'.format(args['monitorid']))
     else:
-        logger.error ('Ignoring masks, as you did not provide a monitor id')  
-        masks = np.asarray([])
+        logger.info ('Ignoring object areas, as you did not provide a monitor id')  
         
 except Exception,e:
-    logger.error('Error parsing config:'+args['config'])
-    logger.error('Error was:'+str(e))
+    logger.error('Error parsing config:{}'.format(args['config']))
+    logger.error('Error was:{}'.format(e))
     exit(0)
 
 
 # now download image(s)
 if config['frame_id'] == 'bestmatch':
     # download both alarm and snapshot
-    filename1 = config['image_path']+'/'+args['eventid']+'-snapshot.jpg'
-    filename2 = config['image_path']+'/'+args['eventid']+'-alarm.jpg'
-    url = config['portal']+'/index.php?view=image&eid='+args['eventid']+'&fid=snapshot'+ \
+    filename1 = config['image_path']+'/'+args['eventid']+'-alarm.jpg'
+    filename2 = config['image_path']+'/'+args['eventid']+'-snapshot.jpg'
+    url = config['portal']+'/index.php?view=image&eid='+args['eventid']+'&fid=alarm'+ \
           '&username='+config['user']+'&password='+config['password']
     urllib.urlretrieve(url,filename1,context=ctx)
 
-    url = config['portal']+'/index.php?view=image&eid='+args['eventid']+'&fid=alarm'+ \
+    url = config['portal']+'/index.php?view=image&eid='+args['eventid']+'&fid=snapshot'+ \
           '&username='+config['user']+'&password='+config['password']
     urllib.urlretrieve(url,filename2,context=ctx)
 else:
@@ -219,48 +287,51 @@ else:
 
 # filename1 will be the first frame to analyze (typically alarm)
 # filename2 will be the second frame to analyze only if the first fails (typically snapshot)
-prefix = '[x] ' # not best match
 
 if config['frame_id']=='bestmatch':
-    prefix = '[a] '
+    prefix = '[a] ' # we will first analyze alarm
+else:
+    prefix = '[x] '
 
 image = cv2.imread(filename1)
+oldh, oldw = image.shape[:2]
 
-# If a mask is specified, create a black and white mask and apply it on image
-if masks.size:
-    logger.debug ('creating masked image...')
-    filter_mask = np.zeros(image.shape, dtype=np.uint8)
-    cv2.fillPoly(filter_mask, pts=masks, color=(255,255,255))
-    masked_image = cv2.bitwise_and(image, filter_mask)
-    image = masked_image
-    logger.debug ('overwriting masked image: '+filename1)
-    cv2.imwrite (filename1,image)
-
-logger.info ('Analyzing image '+filename1+' with pattern: ' + config['detect_pattern'])
+logger.info ('Analyzing image {} with pattern: {}'.format(filename1, config['detect_pattern']))
 start = datetime.datetime.now()
-logger.debug ('resizing to '+config['resize']+' before analysis...')
-image = imutils.resize(image, width=min(int(config['resize']), image.shape[1]))
+if config['resize']:
+    logger.debug ('resizing to {} before analysis...'.format(config['resize']))
+    image = imutils.resize(image, width=min(int(config['resize']), image.shape[1]))
+    newh, neww = image.shape[:2]
+    polygons = adjustPolygons(neww/oldw, newh/oldh, polygons)
+
+# detect objects
 bbox, label, conf = detect_common_objects(image)
+checkIntersection(label, polygons, bbox)
+
+if config['write_bounding_boxes']=='yes' and bbox:
+    out = draw_bbox(image, bbox, label, conf, None, False, polygons)
+    logger.debug ('Writing out bounding boxes...')
+    cv2.imwrite(filename1, out)
+
 r = re.compile(config['detect_pattern'])
 match = list(filter(r.match, label))
 if len (match) == 0 and filename2:
         # switch to next image
-        logger.info ('pattern match failed for '+filename1+' trying '+filename2)
-        prefix = '[s] '
+        logger.debug ('pattern match failed for {}, trying {}'.format(filename1,filename2))
+        prefix = '[s] ' # snapshot analysis
         image = cv2.imread(filename2)
-        if masks.size:
-            logger.debug ('creating masked image...')
-            filter_mask = np.zeros(image.shape, dtype=np.uint8)
-            cv2.fillPoly(filter_mask, pts=masks, color=(255,255,255))
-            masked_image = cv2.bitwise_and(image, filter_mask)
-            image = masked_image
-            logger.debug ('overwriting masked image: '+filename1)
-            cv2.imwrite (filename2,image)
+        if config['resize']:
+            logger.debug ('resizing to {} before analysis...'.format(config['resize']))
             image = imutils.resize(image, width=min(int(config['resize']), image.shape[1]))
-
         bbox, label, conf = detect_common_objects(image)
+        checkIntersection(label, polygons, bbox)
+        if config['write_bounding_boxes']=='yes' and bbox:
+            out = draw_bbox(image, bbox, label, conf, None, False, polygons)
+            logger.debug ('Writing out bounding boxes...')
+            cv2.imwrite(filename2, out)
         match = list(filter(r.match, label))
         if len (match) == 0:
+            logger.debug ('pattern match failed for {} as well'.format(filename2))
             label = []
             conf = []
 
@@ -281,7 +352,7 @@ for l,c in zip (label,conf):
 if pred !='':
     pred = pred.rstrip(',')
     pred = prefix+'detected:'+pred
-    logger.debug ('Prediction string:'+pred)
+    logger.debug ('Prediction string:{}'.format(pred))
 print (pred)
 if config['delete_after_analyze']=='yes':
     os.remove(filename1)
