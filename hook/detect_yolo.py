@@ -50,14 +50,17 @@ def adjustPolygons(xfactor, yfactor,polygons):
 
 # once all bounding boxes are detected, we check to see if any of them
 # intersect the polygons, if specified
-def checkIntersection(labels, polygons, bbox):
+def processIntersection(polygons, bbox, label, conf):
+    new_label = []
+    new_bbox = []
+    new_conf = []
     for idx,b in enumerate(bbox):
         doesIntersect = False
-
         # cv2 rectangle only needs top left and bottom right
         # but to check for polygon intersection, we need all 4 corners
         # b has [a,b,c,d] -> convert to [a,b, c,b, c,d, a,d]
         # https://stackoverflow.com/a/23286299/1361529
+        old_b = b
         it = iter(b)
         b = zip(it,it)
         b.insert (1, (b[1][0], b[0][1]))
@@ -67,13 +70,16 @@ def checkIntersection(labels, polygons, bbox):
         for p in polygons:
             poly = Polygon(p['value'])
             if poly.intersects(obj):
-                logger.debug( '{} intersects object:{}[{}]'.format(p['name'],labels[idx],b))
+                logger.debug( '{} intersects object:{}[{}]'.format(p['name'],label[idx],b))
+                new_label.append(label[idx])
+                new_bbox.append(old_b)
+                new_conf.append(conf[idx])
                 doesIntersect = True
                 break
-            if doesIntersect == False:
-                logger.debug ( 'object:{} at [{}] does not fall into any polygons, removing...'.format(labels[idx],obj))
-                labels.pop(idx)
-                bbox.pop(idx)
+            else:
+                logger.debug ( 'object:{} at [{}] does not fall into any polygons, removing...'.format(label[idx],b))
+    return new_bbox, new_label, new_conf
+                
 
 # The actual CNN object detection code
 # opencv DNN code credit: https://github.com/arunponnusamy/cvlib
@@ -306,7 +312,7 @@ if config['resize']:
 
 # detect objects
 bbox, label, conf = detect_common_objects(image)
-checkIntersection(label, polygons, bbox)
+bbox, label, conf = processIntersection(polygons, bbox, label, conf)
 
 if config['write_bounding_boxes']=='yes' and bbox:
     out = draw_bbox(image, bbox, label, conf, None, False, polygons)
@@ -324,7 +330,7 @@ if len (match) == 0 and filename2:
             logger.debug ('resizing to {} before analysis...'.format(config['resize']))
             image = imutils.resize(image, width=min(int(config['resize']), image.shape[1]))
         bbox, label, conf = detect_common_objects(image)
-        checkIntersection(label, polygons, bbox)
+        bbox, label, conf = processIntersection(polygons, bbox, label, conf)
         if config['write_bounding_boxes']=='yes' and bbox:
             out = draw_bbox(image, bbox, label, conf, None, False, polygons)
             logger.debug ('Writing out bounding boxes...')
@@ -355,7 +361,6 @@ if pred !='':
     logger.debug ('Prediction string:{}'.format(pred))
 print (pred)
 if config['delete_after_analyze']=='yes':
-    os.remove(filename1)
-    if filename2: 
-        os.remove(filename2) 
+    if filename1: os.remove(filename1)
+    if filename2: os.remove(filename2) 
 
