@@ -54,6 +54,9 @@ def processIntersection(polygons, bbox, label, conf):
     new_label = []
     new_bbox = []
     new_conf = []
+    if not polygons:
+        logger.debug ('No intersections to check')
+        return bbox, label, conf
     for idx,b in enumerate(bbox):
         doesIntersect = False
         # cv2 rectangle only needs top left and bottom right
@@ -201,6 +204,7 @@ logger.addHandler(handler)
 ap = argparse.ArgumentParser()
 ap.add_argument('-c', '--config', required=True, help='config file with path')
 ap.add_argument('-e', '--eventid', required=True,  help='event ID to retrieve')
+ap.add_argument('-p', '--eventpath',help='path to store object image file', default='')
 ap.add_argument('-m', '--monitorid',  help='monitor id - needed for mask')
 ap.add_argument('-t', '--time',  help='log time')
 
@@ -314,11 +318,15 @@ if config['resize']:
 # detect objects
 bbox, label, conf = detect_common_objects(image)
 bbox, label, conf = processIntersection(polygons, bbox, label, conf)
+logger.debug ('labels found: {}'.format(label))
 
 if config['write_bounding_boxes']=='yes' and bbox:
     out = draw_bbox(image, bbox, label, conf, None, False, polygons)
     logger.debug ('Writing out bounding boxes...')
     cv2.imwrite(filename1, out)
+    if (args['eventpath']):
+        logger.debug ('Writing detected image to {}'.format(args['eventpath']))
+        cv2.imwrite(args['eventpath']+'/objdetect.jpg', out)
 
 r = re.compile(config['detect_pattern'])
 match = list(filter(r.match, label))
@@ -332,10 +340,14 @@ if len (match) == 0 and filename2:
             image = imutils.resize(image, width=min(int(config['resize']), image.shape[1]))
         bbox, label, conf = detect_common_objects(image)
         bbox, label, conf = processIntersection(polygons, bbox, label, conf)
+        logger.debug ('labels found: {}'.format(label))
         if config['write_bounding_boxes']=='yes' and bbox:
             out = draw_bbox(image, bbox, label, conf, None, False, polygons)
             logger.debug ('Writing out bounding boxes...')
             cv2.imwrite(filename2, out)
+            if (args['eventpath']):
+                logger.debug ('Writing detected image to {}'.format(args['eventpath']))
+                cv2.imwrite(args['eventpath']+'/objdetect.jpg', out)
         match = list(filter(r.match, label))
         if len (match) == 0:
             logger.debug ('pattern match failed for {} as well'.format(filename2))

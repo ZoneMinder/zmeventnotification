@@ -89,7 +89,8 @@ use constant {
     DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND => 0,
     DEFAULT_CUSTOMIZE_INCLUDE_PICTURE               => 0,
     DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE              => 1,
-    DEFAULT_HOOK_USE_HOOK_DESCRIPTION               => 0
+    DEFAULT_HOOK_USE_HOOK_DESCRIPTION               => 0,
+    DEFAULT_HOOK_STORE_FRAME_IN_ZM                  => 0,
 };
 
 
@@ -148,6 +149,7 @@ my $hook;
 my $use_hook_description;
 my $keep_frame_match_type;
 my $skip_monitors;
+my $store_frame_in_zm;
 
 my $picture_url;
 my $include_picture;
@@ -268,6 +270,7 @@ GetOptions(
   "hook-script=s"                  => \$hook,
   "use-hook-description!"          => \$use_hook_description,
   "keep-frame-match-type!"         => \$keep_frame_match_type,
+  "store_frame_in_zm!"             => \$store_frame_in_zm,
   "skip-monitors=s"                => \$skip_monitors,
 
   "picture-url=s"                  => \$picture_url,
@@ -344,6 +347,7 @@ $hook                         //= config_get_val($config, "hook", "hook_script")
 $use_hook_description         //= config_get_val($config, "hook", "use_hook_description", DEFAULT_HOOK_USE_HOOK_DESCRIPTION);
 $keep_frame_match_type        //= config_get_val($config, "hook", "keep_frame_match_type", DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE);
 $skip_monitors                //= config_get_val($config, "hook", "skip_monitors");
+$store_frame_in_zm            //= config_get_val($config, "hook", "store_frame_in_zm");
 
 
 my %ssl_push_opts = ();
@@ -417,6 +421,7 @@ Hook .......................... ${\(value_or_undefined($hook))}
 Use Hook Description........... ${\(true_or_false($use_hook_description))}
 Keep frame match type.......... ${\(true_or_false($keep_frame_match_type))}
 Skipped monitors............... ${\(value_or_undefined($skip_monitors))}
+Store Frame in ZM...............${\(true_or_false($store_frame_in_zm))}
 
 
 Picture URL ................... ${\(value_or_undefined($picture_url))}
@@ -1826,7 +1831,18 @@ sub processAlarms {
                 printInfo ("Skipping hook processing because ".$alarm->{Name}."(".$alarm->{MonitorId}.") is in skip monitor list");
             }
             else {
-                my $cmd = $hook." ".$alarm->{EventId}." ".$alarm->{MonitorId}." \"".$alarm->{Name}."\"";
+                my $cmd = $hook." ".$alarm->{EventId}." ".$alarm->{MonitorId}." \"".$alarm->{Name}."\""." \"".$alarm->{Cause}."\"";
+                # new ZM 1.33 feature - lets me extract event path so I can store the hook detection image
+                if ($store_frame_in_zm) {
+                    if (!try_use ("ZoneMinder::Event")) {
+                        Error ("ZoneMinder::Event missing, you may be using an old version");
+                    } else {
+                        my $event = new ZoneMinder::Event($alarm->{EventId});
+                        $cmd = $cmd." \"".$event->Path()."\"";
+                        printInfo ("Adding event path:".$event->Path()." to hook for image storage");
+                    }
+                    
+                }
                 printInfo ("Invoking hook:".$cmd);
                 my $resTxt = `$cmd`;
                 my $resCode = $? >> 8;

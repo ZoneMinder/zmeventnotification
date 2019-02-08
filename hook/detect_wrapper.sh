@@ -5,6 +5,7 @@
 # $2 = monitor ID of monitor that triggered an alarm
 # $3 = monitor Name of monitor that triggered an alarm
 # $4 = cause of alarm 
+# $5 = path to event store (if store_frame_in_zm is 1)
 
 
 
@@ -16,7 +17,8 @@
 # change this to the path of the object detection config"
 CONFIG_FILE="/var/detect/config/objectconfig.ini"
 
-DETECTION_SCRIPT="/usr/bin/detect_yolo.py --monitorid $2 --eventid $1 --config ${CONFIG_FILE}"
+DETECTION_SCRIPT="/usr/bin/detect_yolo.py --monitorid $2 --eventid $1 --config ${CONFIG_FILE} --eventpath $5"
+echo "${DETECTION_SCRIPT}" > /tmp/foo.txt
 #DETECTION_SCRIPT="/usr/bin/detect_hog.py --monitorid $2 --eventid $1 --config ${CONFIG_FILE}"
 
 RESULTS=`${DETECTION_SCRIPT}|grep "detected:"`
