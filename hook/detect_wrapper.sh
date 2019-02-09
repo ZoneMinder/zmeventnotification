@@ -16,10 +16,11 @@
 
 # change this to the path of the object detection config"
 CONFIG_FILE="/var/detect/config/objectconfig.ini"
+EVENT_PATH="$5"
 
-DETECTION_SCRIPT="/usr/bin/detect_yolo.py --monitorid $2 --eventid $1 --config ${CONFIG_FILE} --eventpath $5"
+DETECTION_SCRIPT="/usr/bin/detect_yolo.py --monitorid $2 --eventid $1 --config \"${CONFIG_FILE}\" --eventpath \"${EVENT_PATH}\""
 echo "${DETECTION_SCRIPT}" > /tmp/foo.txt
-#DETECTION_SCRIPT="/usr/bin/detect_hog.py --monitorid $2 --eventid $1 --config ${CONFIG_FILE}"
+#DETECTION_SCRIPT="/usr/bin/detect_hog.py --monitorid $2 --eventid $1 --config \"${CONFIG_FILE}\""
 
 RESULTS=`${DETECTION_SCRIPT}|grep "detected:"`
 _RETVAL=1
