@@ -27,7 +27,7 @@ it will take to detect
 
 *  Only tested with Python2
 *  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`
-*  Clone the event server and go to the `hook` directory
+*  Clone the event server and go to the `hook` directory (avoid cloning in `/root` or you will have permission issues in the testing steps below)
 
 ```bash
 git clone https://github.com/pliablepixels/zmeventserver # if you don't already have it downloaded
@@ -39,6 +39,7 @@ cd zmeventserver/hook
 sudo pip install -r  requirements.txt
 ```
 
+*  *OpenCV_Python* requires `libSM` installed. On ubuntu, it is `sudo apt install libsm6`
 * You now need to download configuration and weight files that are required by the machine learning magic. Note that you don't have to put them in `/var/detect` -> use whatever you want (and change variables in `detect_wrapper.sh` script if you do)
 
 ```bash
