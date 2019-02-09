@@ -15,7 +15,7 @@ objects using Machine Learning for events. If it matches the objects you are int
 There are two sample detection scripts. You can switch between them by changing the value of
 `DETECTION_SCRIPT` in `detect_wrapper.sh`
 
-**Both of these scripts require setup, please run from command line first and 
+**Both of these scripts require setup, please run from command line first and
 make sure deps are installed**
 
 Please don't ask me questions on how to use them. Please read the comments and figure it out.
@@ -27,7 +27,7 @@ it will take to detect
 
 *  Only tested with Python2
 *  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`
-*  Clone the event server and go to the `hook` directory 
+*  Clone the event server and go to the `hook` directory
 
 ```bash
 git clone https://github.com/pliablepixels/zmeventserver # if you don't already have it downloaded
@@ -36,10 +36,10 @@ cd zmeventserver/hook
 
 * Install the object detection dependencies:
 ```bash
-sudo pip install -r  requirements.txt 
+sudo pip install -r  requirements.txt
 ```
 
-* You now need to download configuration and weight files that are required by the machine learning magic. Note that you don't have to put them in `/var/detect` -> use whatever you want (and change variables in `detect_wrapper.sh` script if you do) 
+* You now need to download configuration and weight files that are required by the machine learning magic. Note that you don't have to put them in `/var/detect` -> use whatever you want (and change variables in `detect_wrapper.sh` script if you do)
 
 ```bash
 sudo mkdir -p /var/detect/images
@@ -78,7 +78,7 @@ sudo chown -R www-data:www-data /var/detect/ #(change www-data to apache for Cen
     * `DETECTION_SCRIPT` if you want to change from YOLO to HOG
 
 
-* Now copy your detection files to `/usr/bin` 
+* Now copy your detection files to `/usr/bin`
 ```
 sudo cp detect_* /usr/bin
 ```
@@ -90,7 +90,7 @@ sudo -u www-data /usr/bin/detect_wrapper.sh <eid> <mid> # replace www-data with 
 
 This will try and download the configured frame for alarm <eid> and analyze it. Replace with your own EID (Example 123456)
 The files will be in `/var/detect/images`
-For example: 
+For example:
 if you configured `frame_id` to be `bestmatch` you'll see two files `<eid>-alarm.jpg` and `<eid>-snapshot.jpg`
 If you configured `frame_id` to be `snapshot` or a specific number, you'll see one file `<eid>.jpg`
 
@@ -104,7 +104,7 @@ If it doesn't work, go back and figure out where you have a problem
     * Set `delete_after_analyze` to `yes` so that downloaded images are removed after analysis. In the default installation, the images are kept in `/var/detect/images` so you can debug.
     * Remember these rules:
         * `frame_id=snapshot` will work for any ZM >= 1.32
-        * If you are running ZM < 1.33, to enable `bestmatch` or `alarm` you need to enable the monitor to store JPEG frames in its ZM monitor->storage configuration in ZM 
+        * If you are running ZM < 1.33, to enable `bestmatch` or `alarm` you need to enable the monitor to store JPEG frames in its ZM monitor->storage configuration in ZM
         * If you are running ZM >= 1.33, you can use all fid modes without requiring to enable frames in storage
 
 ### Types of detection
@@ -156,14 +156,14 @@ You can manually invoke it to test:
 ```
 The `--monitorid <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
 
-The detection uses a very fast, but not very accurate OpenCV model (hog.detectMultiScale). 
-The good part is that it is extremely fast can can be used for realtime needs. 
+The detection uses a very fast, but not very accurate OpenCV model (hog.detectMultiScale).
+The good part is that it is extremely fast can can be used for realtime needs.
 Fiddle with the config settings in the `[hog]` section (stride/scale) to get more accuracy at the cost of speed.
 
 
 ### Performance comparison
 
-DNNs perform very well on a GPU. My ZM server doesn't have a GPU. 
+DNNs perform very well on a GPU. My ZM server doesn't have a GPU.
 On a Intel Xeon 3.16GHz 4Core machine:
 - HOG takes 0.24s
 - YOLOv3 with tiny-yolo takes 0.32s
