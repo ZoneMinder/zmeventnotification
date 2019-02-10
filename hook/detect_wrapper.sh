@@ -18,11 +18,13 @@
 CONFIG_FILE="/var/detect/config/objectconfig.ini"
 EVENT_PATH="$5"
 
-DETECTION_SCRIPT="/usr/bin/detect_yolo.py --monitorid $2 --eventid $1 --config ${CONFIG_FILE} --eventpath ${EVENT_PATH}"
-echo "${DETECTION_SCRIPT}" > /tmp/foo.txt
-#DETECTION_SCRIPT="/usr/bin/detect_hog.py --monitorid $2 --eventid $1 --config ${CONFIG_FILE}"
+# use arrays instead of strings to avoid quote hell
+DETECTION_SCRIPT=(/usr/bin/detect_yolo.py --monitorid $2 --eventid $1 --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}")
+#DETECTION_SCRIPT=(/usr/bin/detect_hog.py --monitorid $2 --eventid $1 --config "${CONFIG_FILE}")
 
-RESULTS=`${DETECTION_SCRIPT}|grep "detected:"`
+#RESULTS=`${DETECTION_SCRIPT}|grep "detected:"`
+RESULTS=$("${DETECTION_SCRIPT[@]}" | grep "detected:")
+
 _RETVAL=1
 # The script needs  to return a 0 for success ( detected) or 1 for failure (not detected)
 if [[ ! -z "${RESULTS}" ]]; then
