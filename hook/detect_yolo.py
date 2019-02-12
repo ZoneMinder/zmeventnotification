@@ -255,13 +255,15 @@ try:
     # get the polygons, if any, for the supplied monitor
     polygons=[]
     if args['monitorid']:
-            if config_file.has_section('object-areas-'+args['monitorid']):
-                itms = config_file['object-areas-'+args['monitorid']].items()
+            if config_file.has_section('monitor-'+args['monitorid']):
+                itms = config_file['monitor-'+args['monitorid']].items()
                 if itms:
                     logger.debug ('object areas definition found for monitor:{}'.format(args['monitorid']))
                 else:
                     logger.debug ('object areas section found, but no polygon entries found')
                 for k,v in itms:
+                    if k == 'detect_pattern':
+                        continue
                     polygons.append({'name':k, 'value':str2tuple(v)})
                     logger.debug ('adding polygon: {} [{}]'.format(k,v))
             else:
@@ -309,8 +311,8 @@ oldh, oldw = image.shape[:2]
 
 # Check if we have a custom detection pattern for the current monitor
 if args['monitorid']:
-    if config_file.has_option('general', 'detect_pattern_' + args['monitorid']):
-        config['detect_pattern'] = config_file['general'].get('detect_pattern_' + args['monitorid'], '.*')
+    if config_file.has_option('monitor-%s' % args['monitorid'], 'detect_pattern'):
+        config['detect_pattern'] = config_file['monitor-%s' % args['monitorid']].get('detect_pattern', '.*')
         logger.debug('monitor with ID {} has specific detection pattern: {}'.format(args['monitorid'], config['detect_pattern']))
 
 logger.info('Analyzing image {} with pattern: {}'.format(filename1, config['detect_pattern']))
