@@ -2,7 +2,7 @@
 
 # version 3.0
 
-# Alternate detection script using neural nets and YoloV3. 
+# Alternate detection script using neural nets and YoloV3.
 # slower than openCV HOG but much more accurate
 # also capable of detecting many more objects
 
@@ -82,7 +82,7 @@ def processIntersection(polygons, bbox, label, conf):
             else:
                 logger.debug ( 'object:{} at [{}] does not fall into any polygons, removing...'.format(label[idx],b))
     return new_bbox, new_label, new_conf
-                
+
 
 # The actual CNN object detection code
 # opencv DNN code credit: https://github.com/arunponnusamy/cvlib
@@ -103,10 +103,10 @@ def draw_bbox(img, bbox, labels, confidence, colors=None, write_conf=False, poly
     # now draw object boundaries
     if classes is None:
         classes = populate_class_labels()
-    
+
     for i, label in enumerate(labels):
         if colors is None:
-            color = COLORS[classes.index(label)]            
+            color = COLORS[classes.index(label)]
         else:
             color = colors[classes.index(label)]
 
@@ -186,7 +186,7 @@ def detect_common_objects(image):
         bbox.append([int(round(x)), int(round(y)), int(round(x+w)), int(round(y+h))])
         label.append(str(classes[class_ids[i]]))
         conf.append(confidences[i])
-        
+
     return bbox, label, conf
 
 # main handler
@@ -257,7 +257,7 @@ try:
     if args['monitorid']:
             if config_file.has_section('object-areas-'+args['monitorid']):
                 itms = config_file['object-areas-'+args['monitorid']].items()
-                if itms: 
+                if itms:
                     logger.debug ('object areas definition found for monitor:{}'.format(args['monitorid']))
                 else:
                     logger.debug ('object areas section found, but no polygon entries found')
@@ -267,8 +267,8 @@ try:
             else:
                 logger.debug ('no object areas found for monitor:{}'.format(args['monitorid']))
     else:
-        logger.info ('Ignoring object areas, as you did not provide a monitor id')  
-        
+        logger.info ('Ignoring object areas, as you did not provide a monitor id')
+
 except Exception,e:
     logger.error('Error parsing config:{}'.format(args['config']))
     logger.error('Error was:{}'.format(e))
@@ -307,7 +307,13 @@ else:
 image = cv2.imread(filename1)
 oldh, oldw = image.shape[:2]
 
-logger.info ('Analyzing image {} with pattern: {}'.format(filename1, config['detect_pattern']))
+# Check if we have a custom detection pattern for the current monitor
+if args['monitorid']:
+    if config_file.has_option('general', 'detect_pattern_' + args['monitorid']):
+        config['detect_pattern'] = config_file['general'].get('detect_pattern_' + args['monitorid'], '.*')
+        logger.debug('monitor with ID {} has specific detection pattern: {}'.format(args['monitorid'], config['detect_pattern']))
+
+logger.info('Analyzing image {} with pattern: {}'.format(filename1, config['detect_pattern']))
 start = datetime.datetime.now()
 if config['resize']:
     logger.debug ('resizing to {} before analysis...'.format(config['resize']))
@@ -375,5 +381,4 @@ if pred !='':
 print (pred)
 if config['delete_after_analyze']=='yes':
     if filename1: os.remove(filename1)
-    if filename2: os.remove(filename2) 
-
+    if filename2: os.remove(filename2)
