@@ -312,6 +312,7 @@ oldh, oldw = image.shape[:2]
 # Check if we have a custom detection pattern for the current monitor
 if args['monitorid']:
     if config_file.has_option('monitor-%s' % args['monitorid'], 'detect_pattern'):
+        # local detect_pattern overrides global
         config['detect_pattern'] = config_file['monitor-%s' % args['monitorid']].get('detect_pattern', '.*')
         logger.debug('monitor with ID {} has specific detection pattern: {}'.format(args['monitorid'], config['detect_pattern']))
 
