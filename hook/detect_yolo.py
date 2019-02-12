@@ -50,13 +50,12 @@ def adjustPolygons(xfactor, yfactor,polygons):
 
 # once all bounding boxes are detected, we check to see if any of them
 # intersect the polygons, if specified
-def processIntersection(polygons, bbox, label, conf):
+# it also makes sure only patterns specified in detect_pattern are drawn
+def processIntersection(polygons, bbox, label, conf, match):
     new_label = []
     new_bbox = []
     new_conf = []
-    if not polygons:
-        logger.debug ('No intersections to check')
-        return bbox, label, conf
+        
     for idx,b in enumerate(bbox):
         doesIntersect = False
         # cv2 rectangle only needs top left and bottom right
@@ -72,15 +71,19 @@ def processIntersection(polygons, bbox, label, conf):
 
         for p in polygons:
             poly = Polygon(p['value'])
-            if poly.intersects(obj):
-                logger.debug( '{} intersects object:{}[{}]'.format(p['name'],label[idx],b))
-                new_label.append(label[idx])
-                new_bbox.append(old_b)
-                new_conf.append(conf[idx])
+            if obj.intersects(poly):
+                if label[idx] in match:
+                    logger.debug( '{} intersects object:{}[{}]'.format(p['name'],label[idx],b))
+                    new_label.append(label[idx])
+                    new_bbox.append(old_b)
+                    new_conf.append(conf[idx])
+                else:
+                    logger.debug( '{} intersects object:{}[{}] but does NOT match your detect_pattern filter'.format(p['name'],label[idx],b))
                 doesIntersect = True
                 break
-            else:
-                logger.debug ( 'object:{} at [{}] does not fall into any polygons, removing...'.format(label[idx],b))
+
+            else: # of poly intersects
+                logger.debug ( 'object:{} at {} does not fall into any polygons, removing...'.format(label[idx],obj))
     return new_bbox, new_label, new_conf
 
 
@@ -309,6 +312,11 @@ else:
 image = cv2.imread(filename1)
 oldh, oldw = image.shape[:2]
 
+if not polygons:
+   polygons.append({'name':'full_image', 'value': [(0,0), (oldw,0), (oldw, oldh), (0,oldh)]})
+   logger.debug ('No polygon area specfied, so adding a full image polygon:{}'.format(polygons))
+     
+
 # Check if we have a custom detection pattern for the current monitor
 if args['monitorid']:
     if config_file.has_option('monitor-%s' % args['monitorid'], 'detect_pattern'):
@@ -326,7 +334,12 @@ if config['resize']:
 
 # detect objects
 bbox, label, conf = detect_common_objects(image)
-bbox, label, conf = processIntersection(polygons, bbox, label, conf)
+
+# Now look for matched patterns in bounding boxes
+r = re.compile(config['detect_pattern'])
+match = list(filter(r.match, label))
+
+bbox, label, conf = processIntersection(polygons, bbox, label, conf,match)
 logger.debug ('labels found: {}'.format(label))
 
 if config['write_bounding_boxes']=='yes' and bbox:
@@ -337,9 +350,8 @@ if config['write_bounding_boxes']=='yes' and bbox:
         logger.debug ('Writing detected image to {}'.format(args['eventpath']))
         cv2.imwrite(args['eventpath']+'/objdetect.jpg', out)
 
-r = re.compile(config['detect_pattern'])
-match = list(filter(r.match, label))
-if len (match) == 0 and filename2:
+# if bbox has 0 elements, nothing matched
+if len (bbox) == 0 and filename2:
         # switch to next image
         logger.debug ('pattern match failed for {}, trying {}'.format(filename1,filename2))
         prefix = '[s] ' # snapshot analysis
@@ -348,7 +360,7 @@ if len (match) == 0 and filename2:
             logger.debug ('resizing to {} before analysis...'.format(config['resize']))
             image = imutils.resize(image, width=min(int(config['resize']), image.shape[1]))
         bbox, label, conf = detect_common_objects(image)
-        bbox, label, conf = processIntersection(polygons, bbox, label, conf)
+        bbox, label, conf = processIntersection(polygons, bbox, label, conf, match)
         logger.debug ('labels found: {}'.format(label))
         if config['write_bounding_boxes']=='yes' and bbox:
             out = draw_bbox(image, bbox, label, conf, None, False, polygons)
@@ -357,8 +369,7 @@ if len (match) == 0 and filename2:
             if (args['eventpath']):
                 logger.debug ('Writing detected image to {}'.format(args['eventpath']))
                 cv2.imwrite(args['eventpath']+'/objdetect.jpg', out)
-        match = list(filter(r.match, label))
-        if len (match) == 0:
+        if len (bbox) == 0:
             logger.debug ('pattern match failed for {} as well'.format(filename2))
             label = []
             conf = []
