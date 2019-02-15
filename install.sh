@@ -36,6 +36,7 @@ if [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]]
 then
     echo '***** Installing Hooks **********'
     cd hook
+    pip install -r  requirements.txt 
     install -m 755 -o "${WEB_OWNER}" detect_wrapper.sh "${TARGET_BIN}"
     install -m 755 -o "${WEB_OWNER}" detect_yolo.py "${TARGET_BIN}"
     install -m 755 -o "${WEB_OWNER}" detect_hog.py "${TARGET_BIN}"
