@@ -25,7 +25,7 @@ it will take to detect
 
 ### Dependencies and Installation
 
-*  Only tested with Python2
+*  Works with both Python2 and Python3
 *  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`
 *  Clone the event server and go to the `hook` directory 
 
