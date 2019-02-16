@@ -83,7 +83,6 @@ def draw_bbox(img, bbox, labels, confidence, colors=None, write_conf=False):
     global classes
 
     # first draw the polygons, if any
-    g.logger.debug ("POLYGONS TO DRAW {}".format(g.polygons))
     for ps in g.polygons:
         cv2.polylines(img, [np.asarray(ps['value'])], True, polycolor, thickness=2)
 
