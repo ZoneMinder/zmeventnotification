@@ -118,10 +118,11 @@ read -p "Replace zmes and object config files? [y/N]?:" confirm
 if [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]]
 then
     echo '***** Replacing config files *****'
-    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -m 644 hook/objectconfig.ini "${TARGET_HOOK_CONFIG}"
+    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -m 644 hook/objectconfig.ini "${TARGET_HOOK_CONFIG_BASE}/config"
     install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}"  -m 644 zmeventnotification.ini "${TARGET_ZMES_CONFIG}"
     echo "Done"
-    echo "========> Remember to fill in the right values in the config files, or your system won't work! <============="
+    echo "====> Remember to fill in the right values in the config files, or your system won't work! <============="
+    echo "====> If you changed $TARGET_HOOK_CONFIG_BASE remember to fix  ${TARGET_BIN}/detect_wrapper.sh! <========"
     echo
 fi
 
