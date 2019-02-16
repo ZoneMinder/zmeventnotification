@@ -275,9 +275,31 @@ check_args
 check_root
 verify_config
 
-[[ ${INSTALL_ES} == 'yes' || $(confirm 'Install Event Server' 'y/N') ]]  && install_es || echo 'Skipping Event Server'
-[[ ${INSTALL_ES_CONFIG} == 'yes' || $(confirm 'Install Event Server Config' 'y/N') ]] && install_es_config || echo 'Skipping Event Server config'
+[[ ${INSTALL_ES} == 'yes' ]] && install_es
+[[ ${INSTALL_ES} == 'no' ]] && echo 'Skipping Event Server install'
+if [[ ${INSTALL_ES} == 'prompt' ]] 
+then
+    confirm 'Install Event Server' 'y/N' && install_es || echo 'Skipping Event Server install'
+fi
 
+[[ ${INSTALL_ES_CONFIG} == 'yes' ]] && install_es_config
+[[ ${INSTALL_ES_CONFIG} == 'no' ]] && echo 'Skipping Event Server config install'
+if [[ ${INSTALL_ES_CONFIG} == 'prompt' ]] 
+then
+    confirm 'Install Event Server Config' 'y/N' && install_es_config || echo 'Skipping Event Server config install'
+fi
 
-[[ ${INSTALL_HOOK} == 'yes' || $(confirm 'Install Hooks' 'y/N') ]]  && install_hook || echo 'Skipping Hook'
-[[ ${INSTALL_HOOK_CONFIG} == 'yes' || $(confirm 'Install Hook Config' 'y/N') ]] && install_hook_config || echo 'Skipping Hook config'
+[[ ${INSTALL_HOOK} == 'yes' ]] && install_hook
+[[ ${INSTALL_HOOK} == 'no' ]] && echo 'Skipping Hook'
+if [[ ${INSTALL_HOOK} == 'prompt' ]] 
+then
+    confirm 'Install Hook' 'y/N' && install_hook || echo 'Skipping Hook install'
+fi
+
+[[ ${INSTALL_HOOK_CONFIG} == 'yes' ]] && install_hook_config
+[[ ${INSTALL_HOOK_CONFIG} == 'no' ]] && echo 'Skipping Hook config install'
+if [[ ${INSTALL_HOOK_CONFIG} == 'prompt' ]] 
+then
+    confirm 'Install Hook Config' 'y/N' && install_hook_config || echo 'Skipping Hook config install'
+fi
+
