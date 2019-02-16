@@ -16,6 +16,24 @@ MAKE_CONFIG_BACKUP='-b'
 WEB_OWNER=${WEB_OWNER:-www-data}
 WGET=${WGET:-/usr/bin/wget}
 
+print_error() {
+    COLOR="\033[1;31m"
+    NOCOLOR="\033[0m"
+    echo -e "${COLOR}ERROR:${NOCOLOR}$1"
+}
+
+print_warning() {
+    COLOR="\033[0;33m"
+    NOCOLOR="\033[0m"
+    echo -e "${COLOR}WARNING:${NOCOLOR}$1"
+}
+
+print_success() {
+    COLOR="\033[1;32m"
+    NOCOLOR="\033[0m"
+    echo -e "${COLOR}Success:{NOCOLOR}$1"
+}
+
 # generic confirm function that returns 0 for yes and 1 for no
 confirm() {
     display_str=$1
@@ -36,7 +54,7 @@ check_root() {
     then
         echo 
         echo "********************************************************************************"
-        echo "WARNING: Unless you have changed paths, this script requires to be run as sudo"
+        print_warning "Unless you have changed paths, this script requires to be run as sudo"
         echo "********************************************************************************"
         echo
         [[ ${INTERACTIVE} == 'yes' ]] && read -p "Press any key to continue or Ctrl+C to quit and run again with sudo..."
@@ -52,7 +70,7 @@ verify_config() {
             ${INSTALL_HOOK_CONFIG} == 'prompt' || ${INSTALL_ES_CONFIG} == 'prompt' ) 
        ]] 
     then
-        echo 'ERROR: In non-interactive mode, you need to specify flags for all components'
+        print_error 'In non-interactive mode, you need to specify flags for all components'
         echo
         exit
     fi
@@ -245,6 +263,7 @@ check_args() {
 
     [[ ${INSTALL_HOOK} == 'no' ]] && INSTALL_HOOK_CONFIG='no'
     [[ ${INSTALL_HOOK} == 'prompt' && ${INSTALL_HOOK_CONFIG} == 'yes' ]] && INSTALL_HOOK_CONFIG='prompt'
+
 }
 
 
