@@ -4,4 +4,5 @@
 ctx = None # SSL context
 logger = None # loggin handler
 config = {}
+polygons = []
 

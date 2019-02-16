@@ -31,7 +31,7 @@ import zmes_hook_helpers.common_params as g
 # intersect the polygons, if specified
 # it also makes sure only patterns specified in detect_pattern are drawn
 
-def processIntersection(polygons, bbox, label, conf, match):
+def processIntersection(bbox, label, conf, match):
     new_label = []
     new_bbox = []
     new_conf = []
@@ -49,7 +49,7 @@ def processIntersection(polygons, bbox, label, conf, match):
         b.insert(3, (b[0][0], b[1][1]))
         obj = Polygon(b)
 
-        for p in polygons:
+        for p in g.polygons:
             poly = Polygon(p['value'])
             if obj.intersects(poly):
                 if label[idx] in match:
@@ -76,14 +76,15 @@ net = None
 classes = None
 
 
-def draw_bbox(img, bbox, labels, confidence, colors=None, write_conf=False, polys=[]):
+def draw_bbox(img, bbox, labels, confidence, colors=None, write_conf=False):
 
     COLORS = np.random.uniform(0, 255, size=(80, 3))
     polycolor = g.config['poly_color']
     global classes
 
     # first draw the polygons, if any
-    for ps in polys:
+    g.logger.debug ("POLYGONS TO DRAW {}".format(g.polygons))
+    for ps in g.polygons:
         cv2.polylines(img, [np.asarray(ps['value'])], True, polycolor, thickness=2)
 
     # now draw object boundaries
@@ -190,11 +191,11 @@ ap.add_argument('-t', '--time', help='log time')
 
 args, u = ap.parse_known_args()
 args = vars(args)
-polygons = []
+g.polygons = []
 
 # process config file
 g.ctx = ssl.create_default_context()
-utils.process_config(args,g.ctx,polygons)
+utils.process_config(args,g.ctx)
 # now download image(s)
 filename1, filename2 = utils.download_files(args)
 # filename1 will be the first frame to analyze (typically alarm)
@@ -208,9 +209,9 @@ else:
 image = cv2.imread(filename1)
 oldh, oldw = image.shape[:2]
 
-if not polygons:
-    polygons.append({'name': 'full_image', 'value': [(0, 0), (oldw, 0), (oldw, oldh), (0, oldh)]})
-    g.logger.debug('No polygon area specfied, so adding a full image polygon:{}'.format(polygons))
+if not g.polygons:
+    g.polygons.append({'name': 'full_image', 'value': [(0, 0), (oldw, 0), (oldw, oldh), (0, oldh)]})
+    g.logger.debug('No polygon area specfied, so adding a full image polygon:{}'.format(g.polygons))
 
 g.logger.info('Analyzing image {} with pattern: {}'.format(filename1, g.config['detect_pattern']))
 start = datetime.datetime.now()
@@ -218,7 +219,7 @@ if g.config['resize']:
     g.logger.debug('resizing to {} before analysis...'.format(g.config['resize']))
     image = imutils.resize(image, width=min(int(g.config['resize']), image.shape[1]))
     newh, neww = image.shape[:2]
-    polygons = utils.rescale_polygons(neww / oldw, newh / oldh, polygons)
+    utils.rescale_polygons(neww / oldw, newh / oldh)
 
 # detect objects
 bbox, label, conf = detect_common_objects(image)
@@ -227,11 +228,11 @@ bbox, label, conf = detect_common_objects(image)
 r = re.compile(g.config['detect_pattern'])
 match = list(filter(r.match, label))
 
-bbox, label, conf = processIntersection(polygons, bbox, label, conf, match)
+bbox, label, conf = processIntersection(bbox, label, conf, match)
 g.logger.debug('labels found: {}'.format(label))
 
 if g.config['write_bounding_boxes'] == 'yes' and bbox:
-    out = draw_bbox(image, bbox, label, conf, None, False, polygons)
+    out = draw_bbox(image, bbox, label, conf, None, False)
     g.logger.debug('Writing out bounding boxes...')
     cv2.imwrite(filename1, out)
     if (args['eventpath']):
@@ -248,10 +249,10 @@ if len(bbox) == 0 and filename2:
         g.logger.debug('resizing to {} before analysis...'.format(g.config['resize']))
         image = imutils.resize(image, width=min(int(g.config['resize']), image.shape[1]))
     bbox, label, conf = detect_common_objects(image)
-    bbox, label, conf = processIntersection(polygons, bbox, label, conf, match)
+    bbox, label, conf = processIntersection(bbox, label, conf, match)
     g.logger.debug('labels found: {}'.format(label))
     if g.config['write_bounding_boxes'] == 'yes' and bbox:
-        out = draw_bbox(image, bbox, label, conf, None, False, polygons)
+        out = draw_bbox(image, bbox, label, conf, None, False)
         g.logger.debug('Writing out bounding boxes...')
         cv2.imwrite(filename2, out)
         if (args['eventpath']):

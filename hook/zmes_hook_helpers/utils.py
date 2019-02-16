@@ -18,11 +18,10 @@ standard_library.install_aliases()
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
-# converts a string of cordinates 'x1,y1 x2,y2 ...' to a tuple set. We use this
-# to parse the polygon parameters in the ini file
-def rescale_polygons(xfactor, yfactor, polygons):
+#resize polygons based on analysis scale
+def rescale_polygons(xfactor, yfactor):
     newps = []
-    for p in polygons:
+    for p in g.polygons:
         newp = []
         for x, y in p['value']:
             newx = int(x * xfactor)
@@ -30,8 +29,10 @@ def rescale_polygons(xfactor, yfactor, polygons):
             newp.append((newx, newy))
         newps.append({'name': p['name'], 'value': newp})
     g.logger.debug('resized polygons x={}/y={}: {}'.format(xfactor, yfactor, newps))
-    return newps
+    g.polygons = newps
 
+# converts a string of cordinates 'x1,y1 x2,y2 ...' to a tuple set. We use this
+# to parse the polygon parameters in the ini file
 def str2tuple(str):
     return [tuple(map(int, x.strip().split(','))) for x in str.split(' ')]
 
@@ -65,7 +66,7 @@ def download_files(args):
     return filename1, filename2
 
 
-def process_config(args, ctx, polygons=[]):
+def process_config(args, ctx):
 # parse config file into a dictionary with defaults
 
     g.config = {}
@@ -114,7 +115,7 @@ def process_config(args, ctx, polygons=[]):
 
 
         # get the polygons, if any, for the supplied monitor
-        polygons = []
+        g.polygons = []
         if args['monitorid']:
             if config_file.has_section('monitor-' + args['monitorid']):
                 itms = config_file['monitor-' + args['monitorid']].items()
@@ -125,7 +126,7 @@ def process_config(args, ctx, polygons=[]):
                 for k, v in itms:
                     if k == 'detect_pattern':
                         continue
-                    polygons.append({'name': k, 'value': str2tuple(v)})
+                    g.polygons.append({'name': k, 'value': str2tuple(v)})
                     g.logger.debug('adding polygon: {} [{}]'.format(k, v))
             else:
                 g.logger.debug('no object areas found for monitor:{}'.format(args['monitorid']))
