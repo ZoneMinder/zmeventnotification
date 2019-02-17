@@ -48,7 +48,7 @@ print_warning() {
 print_success() {
     COLOR="\033[1;32m"
     NOCOLOR="\033[0m"
-    echo -e "${COLOR}Success:{NOCOLOR}$1"
+    echo -e "${COLOR}Success:${NOCOLOR}$1"
 }
 
 # generic confirm function that returns 0 for yes and 1 for no
