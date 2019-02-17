@@ -86,11 +86,11 @@ def process_config(args, ctx):
         g.config['show_percent'] = config_file['general'].get('show_percent', 'no')
         g.config['log_level'] = config_file['general'].get('log_level', 'info')
         g.config['allow_self_signed'] = config_file['general'].get('allow_self_signed', 'yes')
+        g.config['write_bounding_boxes'] = config_file['general'].get('write_bounding_boxes', 'yes')
 
         g.config['config'] = config_file['yolo'].get('yolo', '/var/detect/models/yolov3/yolov3.cfg')
         g.config['weights'] = config_file['yolo'].get('yolo', '/var/detect/models/yolov3/yolov3.weights')
         g.config['labels'] = config_file['yolo'].get('yolo', '/var/detect/models/yolov3/yolov3_classes.txt')
-        g.config['write_bounding_boxes'] = config_file['yolo'].get('write_bounding_boxes', 'yes')
         g.config['poly_color'] = eval(config_file['yolo'].get('poly_color', '(127, 140, 141)'))
 
         g.config['stride']=eval(config_file['hog'].get('stride','(4,4)'));

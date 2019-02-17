@@ -8,7 +8,7 @@
 # credit: https://www.pyimagesearch.com/2015/11/16/hog-detectmultiscale-parameters-explained/
 
 # import the necessary packages
-from __future__ import print_function
+from __future__ import division
 from imutils.object_detection import non_max_suppression
 from imutils import paths
 import numpy as np
@@ -60,25 +60,39 @@ g.logger.info ('Analyzing: '+filename1)
 image = cv2.imread(filename1)
 
 
-# Unlike in Yolo, we can't do polygon intersection
-# as there are no bounding boxes. So we mask out image
-
-if g.polygons:
-    filter_mask = np.zeros(image.shape, dtype=np.uint8)
-    for p in g.polygons:
-        g.logger.debug ('creating mask of {}'.format(p))
-        r = [np.asarray(p['value'])]
-        cv2.fillPoly(filter_mask, pts=r, color=(255,255,255))
-    masked_image = cv2.bitwise_and(image, filter_mask)
-    image = masked_image
-    g.logger.debug ('overwriting masked image: '+filename1)
-    cv2.imwrite (filename1,image)
+h, w = image.shape[:2]
+if not g.polygons:
+    g.polygons.append({'name': 'full_image', 'value': [(0, 0), (w, 0), (w, h), (0, h)]})
+    g.logger.debug('No polygon area specfied, so adding a full image polygon:{}'.format(g.polygons))
 
 
-image = imutils.resize(image, width=min(int(g.config['resize']), image.shape[1]))
+if g.config['resize']:
+    g.logger.debug('resizing to {} before analysis...'.format(g.config['resize']))
+    image = imutils.resize(image, width=min(int(g.config['resize']), image.shape[1]))
+    newh, neww = image.shape[:2]
+    utils.rescale_polygons(neww / w, newh / h)
+
 # detect people in the image
 start = datetime.datetime.now()
 r,w = hog.detectMultiScale(image, winStride=winStride, padding=padding, scale=float(g.config['scale']), useMeanshiftGrouping=meanShift)
+labels = []
+classes=[]
+conf=[]
+
+# make it yolo format for utility functions
+for i in r:
+    labels.append('person')
+    classes.append('person')
+    conf.append('1')
+
+
+r, labels, conf = img.processIntersection(r, labels, conf, ['person'])
+
+# draw the original bounding boxes
+if g.config['write_bounding_boxes'] == 'yes':
+    g.logger.debug ('writing bounding boxes')
+    img.draw_bbox(image,r,labels, classes, conf, None, False)
+    cv2.imwrite (filename1,image)
 
 if len(r) > 0:
     print ('detected: person')
@@ -86,21 +100,27 @@ if len(r) > 0:
 elif filename2:
      g.logger.debug ('person detect failed for '+filename1+' trying '+filename2)
      image = cv2.imread(filename2)
-     if g.polygons:
-        filter_mask = np.zeros(image.shape, dtype=np.uint8)
-        for p in g.polygons:
-            g.logger.debug ('creating mask of {}'.format(p))
-            r = [np.asarray(p['value'])]
-            cv2.fillPoly(filter_mask, pts=r, color=(255,255,255))
-        masked_image = cv2.bitwise_and(image, filter_mask)
-        image = masked_image
-        g.logger.debug ('overwriting masked image: '+filename1)
-        cv2.imwrite (filename1,image)
-     
      image = imutils.resize(image, width=min(int(config['resize']), image.shape[1]))
      # detect people in the image
      r,w = hog.detectMultiScale(image, winStride=winStride,
 	 padding=padding, scale=float(config['scale']), useMeanshiftGrouping=meanShift)
+     labels = []
+     classes=[]
+     conf=[]
+
+     # make it yolo format for utility functions
+     for i in r:
+        labels.append('person')
+        classes.append('person')
+        conf.append('1')
+     r, labels, conf = img.processIntersection(r, labels, conf, ['person'])
+     # draw the original bounding boxes
+     if g.config['write_bounding_boxes'] == 'yes':
+        g.logger.debug ('writing bounding boxes')
+        img.draw_bbox(image,r,labels, classes,conf, None, False)
+
+        cv2.imwrite (filename1,image)
+
      if len(r) > 0:
         print ('detected: person')
         g.logger.debug ('detected person')
