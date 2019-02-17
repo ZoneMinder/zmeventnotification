@@ -36,6 +36,8 @@ def rescale_polygons(xfactor, yfactor):
 def str2tuple(str):
     return [tuple(map(int, x.strip().split(','))) for x in str.split(' ')]
 
+def str2arr(str):
+    return  [map(int,x.strip().split(',')) for x in str.split(' ')]
 
 def download_files(args):
     if g.config['frame_id'] == 'bestmatch':
@@ -90,7 +92,11 @@ def process_config(args, ctx):
         g.config['labels'] = config_file['yolo'].get('yolo', '/var/detect/models/yolov3/yolov3_classes.txt')
         g.config['write_bounding_boxes'] = config_file['yolo'].get('write_bounding_boxes', 'yes')
         g.config['poly_color'] = eval(config_file['yolo'].get('poly_color', '(127, 140, 141)'))
-    
+
+        g.config['stride']=eval(config_file['hog'].get('stride','(4,4)'));
+        g.config['padding']=eval(config_file['hog'].get('padding','(8,8)'));
+        g.config['scale']=config_file['hog'].get('scale','1.05');
+        g.config['mean_shift']=config_file['hog'].get('mean_shift','-1');
 
         if g.config['log_level'] == 'debug':
             g.logger.setLevel(logging.DEBUG)
