@@ -20,10 +20,11 @@ TARGET_ZMES_CONFIG='/etc'
 TARGET_HOOK_CONFIG_BASE='/var/detect'
 
 WGET=$(which wget)
-WEB_OWNER=$(ps -ef | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $1}' )
+WEB_OWNER=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $1}')
 #WEB_OWNER='www-data' # uncomment this if the above mechanism fails
 
-WEB_GROUP=${WEB_OWNER}
+WEB_GROUP=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $2}')
+#WEB_GROUP='www-data' # uncomment if above line fails
 # make this empty if you don't want backups
 MAKE_CONFIG_BACKUP='-b'
 
@@ -95,6 +96,7 @@ verify_config() {
     echo
     echo ----------- Configured Values ----------------------------
     echo "Your webserver user seems to be ${WEB_OWNER}"
+    echo "Your webserver group seems to be ${WEB_GROUP}"
     echo "wget is at ${WGET}"
     echo
     echo "Install Event Server: ${INSTALL_ES}"
