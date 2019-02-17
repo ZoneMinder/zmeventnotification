@@ -26,7 +26,7 @@ it will take to detect
 ### Dependencies and Installation
 
 *  Only tested with Python2
-*  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`
+*  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`, or see [this](https://pip.pypa.io/en/stable/installing/)
 *  Clone the event server and go to the `hook` directory 
 
 ```bash
