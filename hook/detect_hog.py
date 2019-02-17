@@ -100,10 +100,10 @@ if len(r) > 0:
 elif filename2:
      g.logger.debug ('person detect failed for '+filename1+' trying '+filename2)
      image = cv2.imread(filename2)
-     image = imutils.resize(image, width=min(int(config['resize']), image.shape[1]))
+     image = imutils.resize(image, width=min(int(g.config['resize']), image.shape[1]))
      # detect people in the image
      r,w = hog.detectMultiScale(image, winStride=winStride,
-	 padding=padding, scale=float(config['scale']), useMeanshiftGrouping=meanShift)
+	 padding=padding, scale=float(g.config['scale']), useMeanshiftGrouping=meanShift)
      labels = []
      classes=[]
      conf=[]
