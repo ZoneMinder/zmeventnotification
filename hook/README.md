@@ -23,15 +23,34 @@ Please don't ask me questions on how to use them. Please read the comments and f
 Try to keep the images less than 800px on the largest side. The larger the image, the longer
 it will take to detect
 
-### Dependencies and Installation
+### Installation
 
-*  Works with both Python2 and Python3
 *  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`
-*  Clone the event server and go to the `hook` directory 
+
+#### Option 1: Automatic install
 
 ```bash
 git clone https://github.com/pliablepixels/zmeventserver # if you don't already have it downloaded
-cd zmeventserver/hook
+
+cd zmeventserver
+```
+
+* Edit `hook/detect_wrapper.sh` and change:
+    * `CONFIG_FILE` to point to the right config file, if you changed paths
+    * `DETECTION_SCRIPT` if you want to change from YOLO to HOG
+
+```
+sudo ./install.sh # and follow the prompts
+```
+
+#### Option 2: Manual install 
+
+If automatic install fails for you, or you like to be in control:
+
+
+```bash
+git clone https://github.com/pliablepixels/zmeventserver # if you don't already have it downloaded
+cd zmeventserver/hooks
 ```
 
 * Install the object detection dependencies:
@@ -83,7 +102,7 @@ sudo chown -R www-data:www-data /var/detect/ #(change www-data to apache for Cen
 sudo cp detect_* /usr/bin
 ```
 
-* Test operation:
+### Test operation:
 ```
 sudo -u www-data /usr/bin/detect_wrapper.sh <eid> <mid> # replace www-data with apache if needed
 ```

@@ -80,7 +80,7 @@ No. I developed it for zmNinja, but you can use it with your own consumer.
 
 ## How do I install it?
 
-### Download the server script and its config file
+### Download the repo
 
 - Clone the project to some directory `git clone https://github.com/pliablepixels/zmeventserver.git`
 - Edit `zmeventnotification.ini` to your liking. More details about various parts of the configuration are explained later in this readme
@@ -178,7 +178,7 @@ key = /etc/apache2/ssl/zoneminder.key
 
 #### IOS Users
 
-Starting IOS 10.2, I noticed that zmNinja was not able to register with the event server when it was using WSS (SSL enabled) and self-signed certificates. To solve this, I had to email myself the zoneminder certificate (`zoneminder.crt`) file and install it in the phone. Why that is needed only for WSS and not for HTTPS is a mystery to me. The alternative is to run the eventserver in WS mode by disabling SSL.
+On some IOS devices and when using self signed certs, I noticed that zmNinja was not able to register with the event server when it was using WSS (SSL enabled) and self-signed certificates. To solve this, I had to email myself the zoneminder certificate (`zoneminder.crt`) file and install it in the phone. Why that is needed only for WSS and not for HTTPS is a mystery to me. The alternative is to run the eventserver in WS mode by disabling SSL.
 
 ### Making sure everything is running (in manual mode)
 
@@ -190,11 +190,10 @@ Starting IOS 10.2, I noticed that zmNinja was not able to register with the even
 
 ### Running it as a daemon so it starts automatically along with ZoneMinder
 
-- Move `zmeventnotification.pl` to `/usr/bin` (or `/usr/local/bin` or whichever directory your other ZM perl scripts are installed).
-- Move `zmeventnotification.ini` to `/etc`
-- If you are using hook scripts, move the hook scripts to the path you specified in your ini file. Make sure they are executable.
+- You can now move the ES to the right place by simply doing `./sudo install.sh` and following prompts. Other options are below:
+- Execute `sudo ./install.sh --no-install-hook` to move the ES to the right place without installing machine learning hooks 
+- In ZM 1.32.0 and above, go to your web interface, and go to `Options->Systems` and enable `OPT_USE_EVENTNOTIFICATION` and you are all set.
 
-**NOTE** : Starting version 1.32.0 of ZoneMinder, you now have an option to directly enable this daemon as an option directly in the settings of Options->Systems. Just enable "OPT_USE_EVENTNOTIFICATION" and you are all set.
 **The rest of this section is NOT NEEDED for 1.32.0 and above!**
 
 **WARNING** : Do NOT do this before you run it manually as I've mentioned above to test. Make sure it works, all packages are present etc. before you
