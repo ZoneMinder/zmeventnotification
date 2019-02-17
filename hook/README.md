@@ -6,7 +6,8 @@
 - [Installation](#installation)
     - [Option 1: Automatic install](#option-1-automatic-install)
     - [Option 2: Manual install](#option-2-manual-install)
-- [Test operation:](#test-operation)
+- [Post install steps](#post-install-steps)
+- [Test operation](#test-operation)
 - [Types of detection](#types-of-detection)
     - [RECOMMENDED: detect_yolo.py:  using OpenCV DNN with YoloV3 (much slower, accurate)](#recommended-detect_yolopy--using-opencv-dnn-with-yolov3-much-slower-accurate)
     - [detect_yolo.py:  using OpenCV DNN with Tiny YoloV3 (almost comparable with HOG in speed, more accurate)](#detect_yolopy--using-opencv-dnn-with-tiny-yolov3-almost-comparable-with-hog-in-speed-more-accurate)
@@ -17,9 +18,9 @@
 
 
 ### Note
-
-**I don't plan to provide support for these hooks. They are for reference only and require setup and some degree of know how**
-
+**Please don't ask me basic questions like "pip command not found" or "cv2 not found" - what do I do?**
+**Hooks require some terminal knowledge and familiarity with troubleshooting**
+**I don't plan to provide support for these hooks. They are for reference only**
 
 ### Limitations
 
@@ -121,13 +122,13 @@ sudo cp detect_* /usr/bin
 ```
 
 
-### Post install steps:
+### Post install steps
 
 * Make sure you edit your installed `objectconfig.ini` to the right settings. You MUST change the `[general]` section for your own portal.
 * Make sure the `CONFIG_FILE` variable in `detect_wrapper.sh` is correct 
 
 
-### Test operation:
+### Test operation
 ```
 sudo -u www-data /usr/bin/detect_wrapper.sh <eid> <mid> # replace www-data with apache if needed
 ```
