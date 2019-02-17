@@ -1,15 +1,32 @@
 #!/bin/bash
 
-# --- Change these --
+#-----------------------------------------------------
+# Install script for the EventServer and the 
+# machine learning looks
+#
+# /install.sh --help
+#
+# Note that this doesn't install all the event server
+# dependencies. You still need to follow the README
+#
+# It does however try to install all the hook dependencies
+#
+#-----------------------------------------------------
+
+# --- Change these if you want --
+
 TARGET_BIN='/usr/bin'
 TARGET_ZMES_CONFIG='/etc'
 TARGET_HOOK_CONFIG_BASE='/var/detect'
 
 WGET=$(which wget)
 WEB_OWNER=$(ps -ef | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $1}' )
+#WEB_OWNER='www-data' # uncomment this if the above mechanism fails
+
 WEB_GROUP=${WEB_OWNER}
 # make this empty if you don't want backups
 MAKE_CONFIG_BACKUP='-b'
+
 # --- end of change these ---
 
 # set default values 
@@ -99,8 +116,9 @@ verify_config() {
 # move proc for zmeventnotification.pl
 install_es() {
     echo '***** Installing ES **********'
-    install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN}"
-    echo "Done, but you will still have to manually install all ES dependencies as per https://github.com/pliablepixels/zmeventserver#how-do-i-install-it"
+    install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN}" && 
+            print_success "Completed, but you will still have to install ES dependencies as per https://github.com/pliablepixels/zmeventserver/blob/master/README.md#install-dependencies"  || print_error "failed"
+    #echo "Done, but you will still have to manually install all ES dependencies as per https://github.com/pliablepixels/zmeventserver#how-do-i-install-it"
 }
 
 # install proc for ML hooks
@@ -160,24 +178,23 @@ install_hook() {
     install -m 755 -o "${WEB_OWNER}" detect_wrapper.sh "${TARGET_BIN}"
     install -m 755 -o "${WEB_OWNER}" detect_yolo.py "${TARGET_BIN}"
     install -m 755 -o "${WEB_OWNER}" detect_hog.py "${TARGET_BIN}"
-    python setup.py install 
-    echo "Done"
+    python setup.py install && print_success "Done" || print_error "python setup failed"
     cd ..
 }
 
 
 install_es_config() {
     echo 'Replacing ES config file'
-    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 zmeventnotification.ini "${TARGET_ZMES_CONFIG}"
-    echo "Done"
+    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 zmeventnotification.ini "${TARGET_ZMES_CONFIG}" && 
+        print_success "config copied" || print_error "could not copy config"
     echo "====> Remember to fill in the right values in the config files, or your system won't work! <============="
     echo
 }
 
 install_hook_config() {
     echo 'Replacing Hook config file'
-    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.ini "${TARGET_HOOK_CONFIG_BASE}/config"
-    echo "Done"
+    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.ini "${TARGET_HOOK_CONFIG_BASE}/config" &&
+        print_success "config copied" || print_error "could not copy config"
     echo "====> Remember to fill in the right values in the config files, or your system won't work! <============="
     echo "====> If you changed $TARGET_HOOK_CONFIG_BASE remember to fix  ${TARGET_BIN}/detect_wrapper.sh! <========"
     echo
