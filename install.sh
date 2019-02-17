@@ -137,7 +137,7 @@ install_hook() {
     targets=('yolov3.cfg' 'yolov3_classes.txt' 'yolov3.weights')
     sources=('https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg'
              'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
-             'https://pjreddie.com/media/files/yolov3.weights -O /var/detect/models/yolov3/yolov3.weights')
+             'https://pjreddie.com/media/files/yolov3.weights')
 
     for ((i=0;i<${#targets[@]};++i))
     do
