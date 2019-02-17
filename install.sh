@@ -213,7 +213,7 @@ display_help() {
         --no-install-es: skips Event Server install without prompting
 
         --install-hook: installs hooks without prompting
-        --no_install_hook: skips hooks install without prompting
+        --no-install-hook: skips hooks install without prompting
 
         --install-config: installs/overwrites config files without prompting
         --no-install-config: skips config install without prompting
