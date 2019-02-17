@@ -118,8 +118,7 @@ elif filename2:
      if g.config['write_bounding_boxes'] == 'yes':
         g.logger.debug ('writing bounding boxes')
         img.draw_bbox(image,r,labels, classes,conf, None, False)
-
-        cv2.imwrite (filename1,image)
+        cv2.imwrite (filename2,image)
 
      if len(r) > 0:
         print ('detected: person')
