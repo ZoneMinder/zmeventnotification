@@ -53,7 +53,7 @@ git clone https://github.com/pliablepixels/zmeventserver # if you don't already 
 cd zmeventserver
 ```
 
-* Edit `hook/detect_wrapper.sh` and change:
+* (OPTIONAL) Edit `hook/detect_wrapper.sh` and change:
     * `CONFIG_FILE` to point to the right config file, if you changed paths
     * `DETECTION_SCRIPT` if you want to change from YOLO to HOG
 
@@ -110,7 +110,7 @@ sudo cp objectconfig.ini /var/detect/config
 sudo chown -R www-data:www-data /var/detect/ #(change www-data to apache for CentOS/Fedora)
 ```
 
-* Edit `detect_wrapper.sh` and change:
+* (OPTIONAL) Edit `detect_wrapper.sh` and change:
     * `CONFIG_FILE` to point to the right config file, if you changed paths
     * `DETECTION_SCRIPT` if you want to change from YOLO to HOG
 
@@ -119,6 +119,13 @@ sudo chown -R www-data:www-data /var/detect/ #(change www-data to apache for Cen
 ```
 sudo cp detect_* /usr/bin
 ```
+
+
+### Post install steps:
+
+* Make sure you edit your installed `objectconfig.ini` to the right settings. You MUST change the `[general]` section for your own portal.
+* Make sure the `CONFIG_FILE` variable in `detect_wrapper.sh` is correct 
+
 
 ### Test operation:
 ```
