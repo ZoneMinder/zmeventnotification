@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# version: 3.0
+# version: 3.1
 
 # Please don't ask me questions about this script
 # its a simple OpenCV person detection script I've proved as a sample 'hook' you can add to the notification server

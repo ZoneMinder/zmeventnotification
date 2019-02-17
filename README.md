@@ -1,4 +1,4 @@
-**Latest Version: 3.0**
+**Latest Version: 3.1**
 
 <!-- TOC -->
 
@@ -9,7 +9,7 @@
 - [Why do we need it?](#why-do-we-need-it)
 - [Is this officially developed by ZM developers?](#is-this-officially-developed-by-zm-developers)
 - [How do I install it?](#how-do-i-install-it)
-    - [Download the server script and its config file](#download-the-server-script-and-its-config-file)
+    - [Download the repo](#download-the-repo)
     - [Install Dependencies](#install-dependencies)
     - [SSL certificate (Generate new, or use ZoneMinder certs if you are already using HTTPS)](#ssl-certificate-generate-new-or-use-zoneminder-certs-if-you-are-already-using-https)
         - [IOS Users](#ios-users)

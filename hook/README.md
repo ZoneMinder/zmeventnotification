@@ -1,3 +1,21 @@
+<!-- TOC -->
+
+- [Note](#note)
+- [Limitations](#limitations)
+- [What](#what)
+- [Installation](#installation)
+    - [Option 1: Automatic install](#option-1-automatic-install)
+    - [Option 2: Manual install](#option-2-manual-install)
+- [Test operation:](#test-operation)
+- [Types of detection](#types-of-detection)
+    - [RECOMMENDED: detect_yolo.py:  using OpenCV DNN with YoloV3 (much slower, accurate)](#recommended-detect_yolopy--using-opencv-dnn-with-yolov3-much-slower-accurate)
+    - [detect_yolo.py:  using OpenCV DNN with Tiny YoloV3 (almost comparable with HOG in speed, more accurate)](#detect_yolopy--using-opencv-dnn-with-tiny-yolov3-almost-comparable-with-hog-in-speed-more-accurate)
+    - [detect_hog.py: using OpenCV SVM HOG (very fast, not accurate)](#detect_hogpy-using-opencv-svm-hog-very-fast-not-accurate)
+- [Performance comparison](#performance-comparison)
+
+<!-- /TOC -->
+
+
 ### Note
 
 **I don't plan to provide support for these hooks. They are for reference only and require setup and some degree of know how**
