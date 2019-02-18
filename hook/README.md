@@ -44,9 +44,15 @@ it will take to detect
 
 ### Installation
 
-*  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`
+
+
 
 #### Option 1: Automatic install
+
+*  Only tested with Python2
+*  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`, or see [this](https://pip.pypa.io/en/stable/installing/)
+*  Clone the event server and go to the `hook` directory 
+
 
 ```bash
 git clone https://github.com/pliablepixels/zmeventserver # if you don't already have it downloaded
