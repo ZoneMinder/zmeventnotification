@@ -34,6 +34,8 @@ MAKE_CONFIG_BACKUP='-b'
 WEB_OWNER=${WEB_OWNER:-www-data}
 WGET=${WGET:-/usr/bin/wget}
 
+
+# utility functions for color coded pretty printing
 print_error() {
     COLOR="\033[1;31m"
     NOCOLOR="\033[0m"
@@ -185,6 +187,7 @@ install_hook() {
 }
 
 
+# move ES config files
 install_es_config() {
     echo 'Replacing ES config file'
     install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 zmeventnotification.ini "${TARGET_ZMES_CONFIG}" && 
@@ -193,6 +196,7 @@ install_es_config() {
     echo
 }
 
+# move Hook config files
 install_hook_config() {
     echo 'Replacing Hook config file'
     install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.ini "${TARGET_HOOK_CONFIG_BASE}/config" &&
@@ -202,6 +206,7 @@ install_hook_config() {
     echo
 }
 
+# wuh
 display_help() {
     cat << EOF
     
@@ -226,6 +231,7 @@ display_help() {
 EOF
 }
 
+# parses arguments and does a bit of conflict sanitization
 check_args() {
     # credit: https://stackoverflow.com/a/14203146/1361529
     INSTALL_ES='prompt'
@@ -277,9 +283,13 @@ check_args() {
     esac
     done  
 
+    # if ES won't be installed, doesn't make sense to copy ES config. Umm actually...
     [[ ${INSTALL_ES} == 'no' ]] && INSTALL_ES_CONFIG='no'
+
+    # If we are prompting for ES, lets also prompt for config and not auto
     [[ ${INSTALL_ES} == 'prompt' && ${INSTALL_ES_CONFIG} == 'yes' ]] && INSTALL_ES_CONFIG='prompt'
 
+    # same logic as above
     [[ ${INSTALL_HOOK} == 'no' ]] && INSTALL_HOOK_CONFIG='no'
     [[ ${INSTALL_HOOK} == 'prompt' && ${INSTALL_HOOK_CONFIG} == 'yes' ]] && INSTALL_HOOK_CONFIG='prompt'
 
@@ -289,6 +299,7 @@ check_args() {
 ###################################################
 # script main
 ###################################################
+
 cmd_args=("$@") # because we need a function to access them
 check_args
 check_root
