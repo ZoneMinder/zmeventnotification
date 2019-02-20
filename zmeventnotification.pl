@@ -865,7 +865,8 @@ sub deleteFCMToken
                        intlist => $intlist,
                        last_sent=>{},
                        platform => $platform,
-                       pushstate => $pushstate
+                       pushstate => $pushstate,
+                       extra_fields=>''
                       };
         
     }
@@ -1155,6 +1156,20 @@ sub processJobs
 }
 
 
+sub getConnFields {
+    my $conn = shift;
+    my $matched = "";
+    foreach (@active_connections) {
+        if (exists $_->{conn} && $_{conn} eq $conn) {
+            $matched = $_->{extra_fields};
+            $matched = ' [' . $matched . '] ' if $matched;
+            last;
+            
+        }
+    }
+    return $matched;
+}
+
 # This runs at each tick to purge connections
 # that are inactive or have had an error
 # This also closes any connection that has not provided
@@ -1174,7 +1189,7 @@ sub checkConnection
                 if (exists $_->{conn})
                 {
                     my $conn = $_->{conn};
-                    printInfo ("Rejecting ".$conn->ip()." - authentication timeout");
+                    printInfo ("Rejecting ".$conn->ip().getConnFields()." - authentication timeout");
                     $_->{state} = PENDING_DELETE;
                     my $str = encode_json({event => 'auth', type=>'',status=>'Fail', reason => 'NOAUTH'});
                     eval {$_->{conn}->send_utf8($str);};
@@ -1500,7 +1515,8 @@ sub initMQTT {
         monlist => "",
         intlist => "",
         last_sent=>{},
-	mqtt_conn=>$mqtt_connection,
+        extra_fields=>'',
+	    mqtt_conn=>$mqtt_connection,
     };
 }
 
@@ -1541,6 +1557,7 @@ sub initFCMTokens
                intlist => $intlist,
                last_sent=>{},
                platform => $platform,
+               extra_fields=>'',
                pushstate => $pushstate
               };
         
@@ -1958,7 +1975,6 @@ sub initSocketServer
                            my $f = $handshake->req->fields;
                            #print Dumper($f);
                            $fields = $fields." X-Forwarded:".$f->{"x-forwarded-for"} if $f->{"x-forwarded-for"};
-                           $fields = $fields. ":".$f->{"x-forwarded-port"} if $f->{"x-forwarded-port"};
                             
                     }
                     #print Dumper($handshake);
@@ -1976,6 +1992,7 @@ sub initSocketServer
                                    last_sent=>{},
                                    platform => "websocket",
                                    pushstate => '',
+                                   extra_fields=> $fields,
                                    badge => 0};
                    
                 printDebug("---------->onConnect:handshake END<--------------");
@@ -1984,7 +2001,7 @@ sub initSocketServer
                 {
                     my ($conn, $code, $reason) = @_;
                     printDebug("---------->onConnect:disconnect START<--------------");
-                    printInfo ("Websocket remotely disconnected from ".$conn->ip());
+                    printInfo ("Websocket remotely disconnected from ".$conn->ip().getConnFields($conn));
                     foreach (@active_connections)
                     {
                         if ((exists $_->{conn}) && ($_->{conn}->ip() eq $conn->ip())  &&
@@ -1995,12 +2012,13 @@ sub initSocketServer
                             if ( $_->{token} eq '')
                             {
                                 $_->{state}=PENDING_DELETE;
-                                printInfo( "Marking ".$conn->ip()." for deletion as websocket closed remotely\n");
+                                printInfo( "Marking ".$conn->ip().getConnFields()." for deletion as websocket closed remotely\n");
                             }
                             else
                             {
                                 
-                                printInfo( "Invaliding websocket, but NOT Marking ".$conn->ip()." for deletion as token ".$_->{token}." active\n");
+                                printInfo( "Invaliding websocket, but NOT Marking ".$conn->ip().getConnFields
+()." for deletion as token ".$_->{token}." active\n");
                                 $_->{state}=INVALID_CONNECTION;
                             }
                         }
