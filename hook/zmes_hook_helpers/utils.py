@@ -46,12 +46,19 @@ def download_files(args):
         filename2 = g.config['image_path'] + '/' + args['eventid'] + '-snapshot.jpg'
         url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=alarm' + \
             '&username=' + g.config['user'] + '&password=' + g.config['password']
+        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
+            '&username=' + g.config['user'] + '&password=*****'
+
+        g.logger.debug('Trying to download {}'.format(durl))
         input_file= urlopen(url, context=g.ctx)
         with open (filename1, 'wb') as output_file:
             output_file.write(input_file.read())
 
         url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
             '&username=' + g.config['user'] + '&password=' + g.config['password']
+        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
+            '&username=' + g.config['user'] + '&password=*****'
+        g.logger.debug('Trying to download {}'.format(durl))
         input_file= urlopen(url, context=g.ctx)
         with open (filename2, 'wb') as output_file:
             output_file.write(input_file.read())
@@ -62,6 +69,9 @@ def download_files(args):
         filename2 = ''
         url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=' + g.config['frame_id'] + \
             '&username=' + g.config['user'] + '&password=' + g.config['password']
+        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
+            '&username=' + g.config['user'] + '&password=*****'
+        g.logger.debug('Trying to download {}'.format(durl))
         input_file= urlopen(url, context=g.ctx)
         with open (filename1, 'wb') as output_file:
             output_file.write(input_file.read())
