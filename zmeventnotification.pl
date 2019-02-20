@@ -41,7 +41,9 @@ use Time::HiRes qw/gettimeofday/;
 use Symbol qw(qualify_to_ref);
 use IO::Select;
 
-#use Data::Dump qw(dump);
+# debugging only
+#use Data::Dumper;
+
 # ==========================================================================
 #
 # Starting v1.0, configuration has moved to a separate file, please make sure
@@ -1939,6 +1941,7 @@ sub initSocketServer
             printDebug("---------->onConnect START<--------------");
             my ($len) = scalar @active_connections;
             printInfo ("got a websocket connection from ".$conn->ip()." (". $len.") active connections");
+             #print Dumper($conn);
             $conn->on(
                 utf8 => sub {
                     printDebug("---------->onConnect msg START<--------------");
@@ -1950,8 +1953,17 @@ sub initSocketServer
                 handshake => sub {
                     my ($conn, $handshake) = @_;
                     printDebug("---------->onConnect:handshake START<--------------");
+                    my $fields="";
+                    if ($handshake->req->fields ) {
+                           my $f = $handshake->req->fields;
+                           #print Dumper($f);
+                           $fields = $fields." X-Forwarded:".$f->{"x-forwarded-for"} if $f->{"x-forwarded-for"};
+                           $fields = $fields. ":".$f->{"x-forwarded-port"} if $f->{"x-forwarded-port"};
+                            
+                    }
+                    #print Dumper($handshake);
                     my $id = gettimeofday;
-                    printInfo ("Websockets: New Connection Handshake requested from ".$conn->ip().":".$conn->port()." state=pending auth, id=".$id);
+                    printInfo ("Websockets: New Connection Handshake requested from ".$conn->ip().":".$conn->port()." state=pending auth, id=".$id." ".$fields);
                     my $connect_time = time();
                     push @active_connections, {
                                    type => WEB,
