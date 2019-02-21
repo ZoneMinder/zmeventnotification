@@ -1160,7 +1160,7 @@ sub getConnFields {
     my $conn = shift;
     my $matched = "";
     foreach (@active_connections) {
-        if (exists $_->{conn} && $_{conn} eq $conn) {
+        if (exists $_->{conn} && $_->{conn} == $conn) {
             $matched = $_->{extra_fields};
             $matched = ' [' . $matched . '] ' if $matched;
             last;
@@ -1189,7 +1189,7 @@ sub checkConnection
                 if (exists $_->{conn})
                 {
                     my $conn = $_->{conn};
-                    printInfo ("Rejecting ".$conn->ip().getConnFields()." - authentication timeout");
+                    printInfo ("Rejecting ".$conn->ip().getConnFields($conn)." - authentication timeout");
                     $_->{state} = PENDING_DELETE;
                     my $str = encode_json({event => 'auth', type=>'',status=>'Fail', reason => 'NOAUTH'});
                     eval {$_->{conn}->send_utf8($str);};
@@ -2012,13 +2012,13 @@ sub initSocketServer
                             if ( $_->{token} eq '')
                             {
                                 $_->{state}=PENDING_DELETE;
-                                printInfo( "Marking ".$conn->ip().getConnFields()." for deletion as websocket closed remotely\n");
+                                printInfo( "Marking ".$conn->ip().getConnFields($conn)." for deletion as websocket closed remotely\n");
                             }
                             else
                             {
                                 
                                 printInfo( "Invaliding websocket, but NOT Marking ".$conn->ip().getConnFields
-()." for deletion as token ".$_->{token}." active\n");
+($conn)." for deletion as token ".$_->{token}." active\n");
                                 $_->{state}=INVALID_CONNECTION;
                             }
                         }
