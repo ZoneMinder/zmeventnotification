@@ -179,6 +179,7 @@ if len(bbox) == 0 and filename2:
         g.logger.debug('resizing to {} before analysis...'.format(g.config['resize']))
         image = imutils.resize(image, width=min(int(g.config['resize']), image.shape[1]))
     bbox, label, conf = detect_common_objects(image)
+    match = list(filter(r.match, label))
     bbox, label, conf = img.processIntersection(bbox, label, conf, match)
     g.logger.debug('labels found: {}'.format(label))
     if g.config['write_bounding_boxes'] == 'yes' and bbox:
