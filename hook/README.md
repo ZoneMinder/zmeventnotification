@@ -1,7 +1,26 @@
+<!-- TOC -->
+
+- [Note](#note)
+- [Limitations](#limitations)
+- [What](#what)
+- [Installation](#installation)
+    - [Option 1: Automatic install](#option-1-automatic-install)
+    - [Option 2: Manual install](#option-2-manual-install)
+- [Post install steps](#post-install-steps)
+- [Test operation](#test-operation)
+- [Types of detection](#types-of-detection)
+    - [RECOMMENDED: detect_yolo.py:  using OpenCV DNN with YoloV3 (much slower, accurate)](#recommended-detect_yolopy--using-opencv-dnn-with-yolov3-much-slower-accurate)
+    - [detect_yolo.py:  using OpenCV DNN with Tiny YoloV3 (almost comparable with HOG in speed, more accurate)](#detect_yolopy--using-opencv-dnn-with-tiny-yolov3-almost-comparable-with-hog-in-speed-more-accurate)
+    - [detect_hog.py: using OpenCV SVM HOG (very fast, not accurate)](#detect_hogpy-using-opencv-svm-hog-very-fast-not-accurate)
+- [Performance comparison](#performance-comparison)
+
+<!-- /TOC -->
+
+
 ### Note
-
-**I don't plan to provide support for these hooks. They are for reference only and require setup and some degree of know how**
-
+**Please don't ask me basic questions like "pip command not found" or "cv2 not found" - what do I do?**
+**Hooks require some terminal knowledge and familiarity with troubleshooting**
+**I don't plan to provide support for these hooks. They are for reference only**
 
 ### Limitations
 
@@ -23,15 +42,40 @@ Please don't ask me questions on how to use them. Please read the comments and f
 Try to keep the images less than 800px on the largest side. The larger the image, the longer
 it will take to detect
 
-### Dependencies and Installation
+### Installation
+
+
+
+
+#### Option 1: Automatic install
 
 *  Only tested with Python2
-*  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`
+*  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`, or see [this](https://pip.pypa.io/en/stable/installing/)
 *  Clone the event server and go to the `hook` directory 
+
 
 ```bash
 git clone https://github.com/pliablepixels/zmeventserver # if you don't already have it downloaded
-cd zmeventserver/hook
+
+cd zmeventserver
+```
+
+* (OPTIONAL) Edit `hook/detect_wrapper.sh` and change:
+    * `CONFIG_FILE` to point to the right config file, if you changed paths
+    * `DETECTION_SCRIPT` if you want to change from YOLO to HOG
+
+```
+sudo ./install.sh # and follow the prompts
+```
+
+#### Option 2: Manual install 
+
+If automatic install fails for you, or you like to be in control:
+
+
+```bash
+git clone https://github.com/pliablepixels/zmeventserver # if you don't already have it downloaded
+cd zmeventserver/hooks
 ```
 
 * Install the object detection dependencies:
@@ -73,7 +117,7 @@ sudo cp objectconfig.ini /var/detect/config
 sudo chown -R www-data:www-data /var/detect/ #(change www-data to apache for CentOS/Fedora)
 ```
 
-* Edit `detect_wrapper.sh` and change:
+* (OPTIONAL) Edit `detect_wrapper.sh` and change:
     * `CONFIG_FILE` to point to the right config file, if you changed paths
     * `DETECTION_SCRIPT` if you want to change from YOLO to HOG
 
@@ -83,7 +127,14 @@ sudo chown -R www-data:www-data /var/detect/ #(change www-data to apache for Cen
 sudo cp detect_* /usr/bin
 ```
 
-* Test operation:
+
+### Post install steps
+
+* Make sure you edit your installed `objectconfig.ini` to the right settings. You MUST change the `[general]` section for your own portal.
+* Make sure the `CONFIG_FILE` variable in `detect_wrapper.sh` is correct 
+
+
+### Test operation
 ```
 sudo -u www-data /usr/bin/detect_wrapper.sh <eid> <mid> # replace www-data with apache if needed
 ```
