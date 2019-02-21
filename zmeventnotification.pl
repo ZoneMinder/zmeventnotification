@@ -1156,6 +1156,7 @@ sub processJobs
 }
 
 
+# returns extra fields associated to a connection
 sub getConnFields {
     my $conn = shift;
     my $matched = "";
@@ -1971,6 +1972,8 @@ sub initSocketServer
                     my ($conn, $handshake) = @_;
                     printDebug("---------->onConnect:handshake START<--------------");
                     my $fields="";
+
+                    # Stuff in more headers you want here over time
                     if ($handshake->req->fields ) {
                            my $f = $handshake->req->fields;
                            #print Dumper($f);
@@ -1979,7 +1982,6 @@ sub initSocketServer
                     }
                     #print Dumper($handshake);
                     my $id = gettimeofday;
-                    printInfo ("Websockets: New Connection Handshake requested from ".$conn->ip().":".$conn->port()." state=pending auth, id=".$id." ".$fields);
                     my $connect_time = time();
                     push @active_connections, {
                                    type => WEB,
@@ -1994,7 +1996,8 @@ sub initSocketServer
                                    pushstate => '',
                                    extra_fields=> $fields,
                                    badge => 0};
-                   
+                    printInfo ("Websockets: New Connection Handshake requested from ".$conn->ip().":".$conn->port().getConnFields($conn)." state=pending auth, id=".$id);
+                                      
                 printDebug("---------->onConnect:handshake END<--------------");
                 },
                 disconnect => sub
