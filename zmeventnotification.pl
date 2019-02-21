@@ -1974,7 +1974,7 @@ sub initSocketServer
                     if ($handshake->req->fields ) {
                            my $f = $handshake->req->fields;
                            #print Dumper($f);
-                           $fields = $fields." X-Forwarded:".$f->{"x-forwarded-for"} if $f->{"x-forwarded-for"};
+                           $fields = $fields." X-Forwarded-For:".$f->{"x-forwarded-for"} if $f->{"x-forwarded-for"};
                             
                     }
                     #print Dumper($handshake);
