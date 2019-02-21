@@ -71,7 +71,7 @@ my $app_version="3.0";
 
 # configuration constants
 use constant {
-    DEFAULT_CONFIG_FILE                             => "/etc/zmeventnotification.ini",
+    DEFAULT_CONFIG_FILE                             => "/etc/zm/zmeventnotification.ini",
     DEFAULT_PORT                                    => 9000,
     DEFAULT_ADDRESS                                 => '[::]',
     DEFAULT_AUTH_ENABLE                             => 1,
@@ -284,12 +284,12 @@ exit(print(USAGE)) if $help;
 # configuration path, and if it doesn't exist, take all the default values by
 # loading a blank Config::IniFiles object.
 
-if (! $config_file) {
+if ( !$config_file ) {
   $config_file = DEFAULT_CONFIG_FILE;
   $config_file_present = -e $config_file;
 } else {
   if ( ! -e $config_file) {
-    Fatal ("$config_file does not exist!"); 
+    Fatal("$config_file does not exist!"); 
   }
   $config_file_present = 1;
 }
