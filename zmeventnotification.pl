@@ -41,7 +41,9 @@ use Time::HiRes qw/gettimeofday/;
 use Symbol qw(qualify_to_ref);
 use IO::Select;
 
-#use Data::Dump qw(dump);
+# debugging only
+#use Data::Dumper;
+
 # ==========================================================================
 #
 # Starting v1.0, configuration has moved to a separate file, please make sure
@@ -863,7 +865,8 @@ sub deleteFCMToken
                        intlist => $intlist,
                        last_sent=>{},
                        platform => $platform,
-                       pushstate => $pushstate
+                       pushstate => $pushstate,
+                       extra_fields=>''
                       };
         
     }
@@ -1153,6 +1156,21 @@ sub processJobs
 }
 
 
+# returns extra fields associated to a connection
+sub getConnFields {
+    my $conn = shift;
+    my $matched = "";
+    foreach (@active_connections) {
+        if (exists $_->{conn} && $_->{conn} == $conn) {
+            $matched = $_->{extra_fields};
+            $matched = ' [' . $matched . '] ' if $matched;
+            last;
+            
+        }
+    }
+    return $matched;
+}
+
 # This runs at each tick to purge connections
 # that are inactive or have had an error
 # This also closes any connection that has not provided
@@ -1172,7 +1190,7 @@ sub checkConnection
                 if (exists $_->{conn})
                 {
                     my $conn = $_->{conn};
-                    printInfo ("Rejecting ".$conn->ip()." - authentication timeout");
+                    printInfo ("Rejecting ".$conn->ip().getConnFields($conn)." - authentication timeout");
                     $_->{state} = PENDING_DELETE;
                     my $str = encode_json({event => 'auth', type=>'',status=>'Fail', reason => 'NOAUTH'});
                     eval {$_->{conn}->send_utf8($str);};
@@ -1498,7 +1516,8 @@ sub initMQTT {
         monlist => "",
         intlist => "",
         last_sent=>{},
-	mqtt_conn=>$mqtt_connection,
+        extra_fields=>'',
+	    mqtt_conn=>$mqtt_connection,
     };
 }
 
@@ -1539,6 +1558,7 @@ sub initFCMTokens
                intlist => $intlist,
                last_sent=>{},
                platform => $platform,
+               extra_fields=>'',
                pushstate => $pushstate
               };
         
@@ -1939,6 +1959,7 @@ sub initSocketServer
             printDebug("---------->onConnect START<--------------");
             my ($len) = scalar @active_connections;
             printInfo ("got a websocket connection from ".$conn->ip()." (". $len.") active connections");
+             #print Dumper($conn);
             $conn->on(
                 utf8 => sub {
                     printDebug("---------->onConnect msg START<--------------");
@@ -1950,8 +1971,18 @@ sub initSocketServer
                 handshake => sub {
                     my ($conn, $handshake) = @_;
                     printDebug("---------->onConnect:handshake START<--------------");
+                    my $fields="";
+
+                    # Stuff in more headers you want here over time
+                    if ($handshake->req->fields ) {
+                           my $f = $handshake->req->fields;
+                           #print Dumper($f);
+                           $fields = $fields." X-Forwarded-For:".$f->{"x-forwarded-for"} if $f->{"x-forwarded-for"};
+                           #$fields = $fields." host:".$f->{"host"} if $f->{"host"};
+                            
+                    }
+                    #print Dumper($handshake);
                     my $id = gettimeofday;
-                    printInfo ("Websockets: New Connection Handshake requested from ".$conn->ip().":".$conn->port()." state=pending auth, id=".$id);
                     my $connect_time = time();
                     push @active_connections, {
                                    type => WEB,
@@ -1964,15 +1995,17 @@ sub initSocketServer
                                    last_sent=>{},
                                    platform => "websocket",
                                    pushstate => '',
+                                   extra_fields=> $fields,
                                    badge => 0};
-                   
+                    printInfo ("Websockets: New Connection Handshake requested from ".$conn->ip().":".$conn->port().getConnFields($conn)." state=pending auth, id=".$id);
+                                      
                 printDebug("---------->onConnect:handshake END<--------------");
                 },
                 disconnect => sub
                 {
                     my ($conn, $code, $reason) = @_;
                     printDebug("---------->onConnect:disconnect START<--------------");
-                    printInfo ("Websocket remotely disconnected from ".$conn->ip());
+                    printInfo ("Websocket remotely disconnected from ".$conn->ip().getConnFields($conn));
                     foreach (@active_connections)
                     {
                         if ((exists $_->{conn}) && ($_->{conn}->ip() eq $conn->ip())  &&
@@ -1983,12 +2016,13 @@ sub initSocketServer
                             if ( $_->{token} eq '')
                             {
                                 $_->{state}=PENDING_DELETE;
-                                printInfo( "Marking ".$conn->ip()." for deletion as websocket closed remotely\n");
+                                printInfo( "Marking ".$conn->ip().getConnFields($conn)." for deletion as websocket closed remotely\n");
                             }
                             else
                             {
                                 
-                                printInfo( "Invaliding websocket, but NOT Marking ".$conn->ip()." for deletion as token ".$_->{token}." active\n");
+                                printInfo( "Invaliding websocket, but NOT Marking ".$conn->ip().getConnFields
+($conn)." for deletion as token ".$_->{token}." active\n");
                                 $_->{state}=INVALID_CONNECTION;
                             }
                         }
