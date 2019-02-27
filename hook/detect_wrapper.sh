@@ -15,7 +15,7 @@
 
 
 # change this to the path of the object detection config"
-CONFIG_FILE="/var/detect/config/objectconfig.ini"
+CONFIG_FILE="/etc/zm/objectconfig.ini"
 EVENT_PATH="$5"
 
 # use arrays instead of strings to avoid quote hell
