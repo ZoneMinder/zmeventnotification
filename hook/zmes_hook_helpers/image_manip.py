@@ -38,7 +38,7 @@ def processIntersection(bbox, label, conf, match):
                     new_conf.append(conf[idx])
                 else:
                     g.logger.debug('{} intersects object:{}[{}] but does NOT match your detect_pattern filter of {}'
-                                   .format(p['name'], label[idx], b, match))
+                                   .format(p['name'], label[idx], b, g.config['detect_pattern']))
                 doesIntersect = True
                 break
 
