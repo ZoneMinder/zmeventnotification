@@ -83,38 +83,38 @@ cd zmeventserver/hooks
 sudo pip install -r  requirements.txt 
 ```
 
-* You now need to download configuration and weight files that are required by the machine learning magic. Note that you don't have to put them in `/var/detect` -> use whatever you want (and change variables in `detect_wrapper.sh` script if you do) 
+* You now need to download configuration and weight files that are required by the machine learning magic. Note that you don't have to put them in `/var/lib/zmeventnotification` -> use whatever you want (and change variables in `detect_wrapper.sh` script if you do) 
 
 ```bash
-sudo mkdir -p /var/detect/images
-sudo mkdir -p /var/detect/models
-sudo mkdir -p /var/detect/config
+sudo mkdir -p /var/lib/zmeventnotification/images
+sudo mkdir -p /var/lib/zmeventnotification/models
+sudo mkdir -p /etc/zm
 
 # if you want to use YoloV3 (slower, accurate)
-sudo mkdir -p /var/detect/models/yolov3 # if you are using YoloV3
-sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg -O /var/detect/models/yolov3/yolov3.cfg
-sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names -O /var/detect/models/yolov3/yolov3_classes.txt
-sudo wget https://pjreddie.com/media/files/yolov3.weights -O /var/detect/models/yolov3/yolov3.weights
+sudo mkdir -p /var/lib/zmeventnotification/models/yolov3 # if you are using YoloV3
+sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg -O /var/lib/zmeventnotification/models/yolov3/yolov3.cfg
+sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names -O /var/lib/zmeventnotification/models/yolov3/yolov3_classes.txt
+sudo wget https://pjreddie.com/media/files/yolov3.weights -O /var/lib/zmeventnotification/models/yolov3/yolov3.weights
 
 --OR--
 
 # if you want to use TinyYoloV3 (faster, less accurate)
-sudo mkdir -p /var/detect/models/tinyyolo # if you are using TinyYoloV3
-sudo wget https://pjreddie.com/media/files/yolov3-tiny.weights -O /var/detect/models/tinyyolo/yolov3-tiny.weights
-sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg -O /var/detect/models/tinyyolo/yolov3-tiny.cfg
-sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names -O /var/detect/models/tinyyolo/yolov3-tiny.txt
+sudo mkdir -p /var/lib/zmeventnotification/models/tinyyolo # if you are using TinyYoloV3
+sudo wget https://pjreddie.com/media/files/yolov3-tiny.weights -O /var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.weights
+sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg -O /var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.cfg
+sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names -O /var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.txt
 ```
 
 * Copy over the object detection config file
 
 ```bash
-sudo cp objectconfig.ini /var/detect/config
+sudo cp objectconfig.ini /etc/zm
 ```
 
 
 * Now make sure it all RW accessible by `www-data` (or `apache`)
 ```
-sudo chown -R www-data:www-data /var/detect/ #(change www-data to apache for CentOS/Fedora)
+sudo chown -R www-data:www-data /var/lib/zmeventnotification/ #(change www-data to apache for CentOS/Fedora)
 ```
 
 * (OPTIONAL) Edit `detect_wrapper.sh` and change:
@@ -140,7 +140,7 @@ sudo -u www-data /usr/bin/detect_wrapper.sh <eid> <mid> # replace www-data with 
 ```
 
 This will try and download the configured frame for alarm <eid> and analyze it. Replace with your own EID (Example 123456)
-The files will be in `/var/detect/images`
+The files will be in `/var/lib/zmeventnotification/images`
 For example: 
 if you configured `frame_id` to be `bestmatch` you'll see two files `<eid>-alarm.jpg` and `<eid>-snapshot.jpg`
 If you configured `frame_id` to be `snapshot` or a specific number, you'll see one file `<eid>.jpg`
@@ -152,7 +152,7 @@ The above command will also try and run detection.
 If it doesn't work, go back and figure out where you have a problem
 
 * Other configuration notes, after you get everything working
-    * Set `delete_after_analyze` to `yes` so that downloaded images are removed after analysis. In the default installation, the images are kept in `/var/detect/images` so you can debug.
+    * Set `delete_after_analyze` to `yes` so that downloaded images are removed after analysis. In the default installation, the images are kept in `/var/lib/zmeventnotification/images` so you can debug.
     * Remember these rules:
         * `frame_id=snapshot` will work for any ZM >= 1.32
         * If you are running ZM < 1.33, to enable `bestmatch` or `alarm` you need to enable the monitor to store JPEG frames in its ZM monitor->storage configuration in ZM 
@@ -167,7 +167,7 @@ The detection uses OpenCV's DNN module and YoloV3 to predict multiple labels wit
 You can manually invoke it to test:
 
 ```bash
-./sudo -u www-data /usr/bin/detect_yolo.py --config /var/detect/config/objectconfig.ini  --eventid <eid> --monitorid <mid>
+./sudo -u www-data /usr/bin/detect_yolo.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
 ```
 The `--monitorid <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
 
@@ -186,7 +186,7 @@ The detection uses OpenCV's DNN module and Tiny YoloV3 to predict multiple label
 You can manually invoke it to test:
 
 ```bash
-./sudo -u www-data /usr/bin/detect_yolo.py --config /var/detect/config/objectconfig.ini  --eventid <eid> --monitorid <mid>
+./sudo -u www-data /usr/bin/detect_yolo.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
 ```
 The `--monitorid <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
 
@@ -203,7 +203,7 @@ If you are using YOLO models, you will need the following data files (if you fol
 You can manually invoke it to test:
 
 ```bash
-./sudo -u www-data /usr/bin/detect_hog.py --config /var/detect/config/objectconfig.ini  --eventid <eid> --monitorid <mid>
+./sudo -u www-data /usr/bin/detect_hog.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
 ```
 The `--monitorid <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
 

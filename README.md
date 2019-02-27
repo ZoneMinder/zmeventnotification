@@ -17,7 +17,7 @@
     - [Running it as a daemon so it starts automatically along with ZoneMinder](#running-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
 - [How can I use this with Node-Red or Home Assistant?](#how-can-i-use-this-with-node-red-or-home-assistant)
 - [Disabling security](#disabling-security)
-- [How do I safely upgrade zmeventserver to new versions?](#how-do-i-safely-upgrade-zmeventserver-to-new-versions)
+- [How do I safely upgrade zmeventnotification to new versions?](#how-do-i-safely-upgrade-zmeventnotification-to-new-versions)
 - [Configuring the notification server](#configuring-the-notification-server)
     - [Understanding zmeventnotification configuration](#understanding-zmeventnotification-configuration)
     - [What is the hook section ?](#what-is-the-hook-section-)
@@ -52,14 +52,14 @@
 ### version 1.0 onwards
 
 Version 1.0 moves configuration to a separate `zmeventnotification.ini` file that makes it easier to re-configure. If you are already
-a user of previous versions and want to migrate to 1.0, please make sure you copy `zmeventnotification.ini` to `/etc`. You will need
+a user of previous versions and want to migrate to 1.0, please make sure you copy `zmeventnotification.ini` to `/etc/zm`. You will need
 to re-configure the params to your liking in the ini file. Note that you may need to install some additional packages like `Config::IniFiles` if it complains of missing libraries.
 
 If you are installing `zmeventnotification` for the first time, just read the [How do I install it?](#how-do-i-install-it) section.
 
 ## Machine Learning! Mmm..Machine Learning!
 
-Easy. You will first have to read this document to correctly install this server along with zoneminder. Once it works well, you can explore how to enable Machine Learning based object detection that can be used along with ZoneMinder alarms. If you already have this server figured out, you can skip directly to the machine learning part [here](https://github.com/pliablepixels/zmeventserver/blob/master/hook/README.md)
+Easy. You will first have to read this document to correctly install this server along with zoneminder. Once it works well, you can explore how to enable Machine Learning based object detection that can be used along with ZoneMinder alarms. If you already have this server figured out, you can skip directly to the machine learning part [here](https://github.com/pliablepixels/zmeventnotification/blob/master/hook/README.md)
 
 ## What is it?
 
@@ -82,7 +82,7 @@ No. I developed it for zmNinja, but you can use it with your own consumer.
 
 ### Download the repo
 
-- Clone the project to some directory `git clone https://github.com/pliablepixels/zmeventserver.git`
+- Clone the project to some directory `git clone https://github.com/pliablepixels/zmeventnotification.git`
 - Edit `zmeventnotification.ini` to your liking. More details about various parts of the configuration are explained later in this readme
 - If you are behind a firewall, make sure you enable port `9000`, TCP, bi-directional (unless you changed the port in the code)
 - We now need to install a bunch of dependencies (as described below)
@@ -160,10 +160,10 @@ If you are using SSL for ZoneMinder, simply point this script to the certificate
 If you are not already using SSL for ZoneMinder and don't have certificates, generating them is as
 easy as:
 
-(replace /etc/apache2/ssl/ with the directory you want the certificate and key files to be stored in)
+(replace /etc/zm/apache2/ssl/ with the directory you want the certificate and key files to be stored in)
 
 ```
-sudo openssl req -x509 -nodes -days 4096 -newkey rsa:2048 -keyout /etc/apache2/ssl/zoneminder.key -out /etc/apache2/ssl/zoneminder.crt
+sudo openssl req -x509 -nodes -days 4096 -newkey rsa:2048 -keyout /etc/zm/apache2/ssl/zoneminder.key -out /etc/zm/apache2/ssl/zoneminder.crt
 ```
 
 It's **very important** to ensure the `Common Name` selected while generating the certificate is the same as the hostname or IP of the server. For example if you plan to access the server as `myserver.ddns.net` Please make sure you use `myserver.ddns.net` as the common name. If you are planning to access it via IP, please make sure you use the same IP.
@@ -172,8 +172,8 @@ Once you do that please change the following options in the config file to point
 
 ```
 [ssl]
-cert = /etc/apache2/ssl/zoneminder.crt
-key = /etc/apache2/ssl/zoneminder.key
+cert = /etc/zm/apache2/ssl/zoneminder.crt
+key = /etc/zm/apache2/ssl/zoneminder.key
 ```
 
 #### IOS Users
@@ -184,9 +184,9 @@ On some IOS devices and when using self signed certs, I noticed that zmNinja was
 
 - I am assuming you have downloaded the  files to your current directory in the step below
 - Make sure you do a `chmod a+x ./zmeventnotification.pl`
-- Start the event server manually first using `sudo -u www-data ./zmeventnotification.pl --config ./zmeventnotification.ini` (Note that if you omit `--config` it will look for `/etc/zmeventnotification.ini` and if that doesn't exist, it will use default values) and make sure you check syslogs to ensure its loaded up and all dependencies are found. If you see errors, fix them. Then exit and follow the steps below to start it along with Zoneminder. Note that the `-u www-data` runs this command with the user id that apache uses (in some systems this may be `apache` or similar). It is important to run it using the same user id as your webserver because that is the permission zoneminder will use when run as a daemon mode.
+- Start the event server manually first using `sudo -u www-data ./zmeventnotification.pl --config ./zmeventnotification.ini` (Note that if you omit `--config` it will look for `/etc/zm/zmeventnotification.ini` and if that doesn't exist, it will use default values) and make sure you check syslogs to ensure its loaded up and all dependencies are found. If you see errors, fix them. Then exit and follow the steps below to start it along with Zoneminder. Note that the `-u www-data` runs this command with the user id that apache uses (in some systems this may be `apache` or similar). It is important to run it using the same user id as your webserver because that is the permission zoneminder will use when run as a daemon mode.
 
-- Its is HIGHLY RECOMMENDED that you first start the event server manually from terminal, as described above and not directly dive into daemon mode (described below) and ensure you inspect syslog to validate all logs are correct and THEN make it a daemon in ZoneMinder. If you don't, it will be hard to know what is going wrong. See the [debugging](https://github.com/pliablepixels/zmeventserver#debugging-and-reporting-problems) section later that describes how to make sure its all working fine from command line.
+- Its is HIGHLY RECOMMENDED that you first start the event server manually from terminal, as described above and not directly dive into daemon mode (described below) and ensure you inspect syslog to validate all logs are correct and THEN make it a daemon in ZoneMinder. If you don't, it will be hard to know what is going wrong. See the [debugging](https://github.com/pliablepixels/zmeventnotification#debugging-and-reporting-problems) section later that describes how to make sure its all working fine from command line.
 
 ### Running it as a daemon so it starts automatically along with ZoneMinder
 
@@ -228,14 +228,14 @@ While I don't recommend either, several users seem to be interested in the follo
 - To run the eventserver on Websockets and not Secure Websockets, use `enable = 0` in the `[ssl]` section of the configuration file.
 - To disable ZM Auth checking (be careful, anyone can get all your data INCLUDING passwords for ZoneMinder monitors if you open it up to the Internet) use `enable = 0` in the `[auth]` section of the configuration file.
 
-## How do I safely upgrade zmeventserver to new versions?
+## How do I safely upgrade zmeventnotification to new versions?
 
 ```
 sudo zmdc.pl stop zmeventnotification.pl
 ```
 
 Now copy the new zmeventnotification.pl to the right place (usually `/usr/bin`)
-If you need to, copy the new zmeventnotification.ini to the right place (usually `/etc`) (Note: this will replace your old config file and you shouldn't need to do this)
+If you need to, copy the new zmeventnotification.ini to the right place (usually `/etc/zm`) (Note: this will replace your old config file and you shouldn't need to do this)
 
 ```
 sudo zmdc.pl start zmeventnotification.pl
@@ -249,7 +249,7 @@ Make sure you look at the syslogs to make sure its started properly
 
 Starting v1.0, [@synthead](https://github.com/synthead) reworked the configuration as follows:
 
-- If you just run `zmeventnotification.pl` it will try and load `/etc/zmeventnotification.ini`. If it doesn't find it, it will use internal defaults
+- If you just run `zmeventnotification.pl` it will try and load `/etc/zm/zmeventnotification.ini`. If it doesn't find it, it will use internal defaults
 - If you want to override this with another configuration file, use `zmeventnotification.pl --config /path/to/your/config/filename.ini`. If you do choose to do this, please make sure you add `--config path/file` to `zmdc.pl` and `zmpkg.pl` when you add the daemons as per the [daemon section](#running-it-as-a-daemon-so-it-starts-automatically-along-with-zoneminder)
 - If you run `zmeventnotification` you can also choose to use command line arguments to override specific variables. This may be helpful when debugging. Do a `zmeventnotification.pl --help` for all options
 - Its always a good idea to validate you config settings. For example:
@@ -257,8 +257,8 @@ Starting v1.0, [@synthead](https://github.com/synthead) reworked the configurati
 ```
 sudo /usr/bin/zmeventnotification.pl --check-config
 
-03/31/2018 16:52:23.231955 zmeventnotification[29790].INF [using config file: /etc/zmeventnotification.ini]
-Configuration (read /etc/zmeventnotification.ini):
+03/31/2018 16:52:23.231955 zmeventnotification[29790].INF [using config file: /etc/zm/zmeventnotification.ini]
+Configuration (read /etc/zm/zmeventnotification.ini):
 
 Port .......................... 9000
 Address ....................... XX.XX.XX.XX
@@ -270,11 +270,11 @@ Auth timeout .................. 20
 
 Use FCM ....................... true
 FCM API key ................... (defined)
-Token file .................... /etc/private/tokens.txt
+Token file .................... /var/lib/zmeventnotification/push/tokens.txt
 
 SSL enabled ................... true
-SSL cert file ................. /etc/apache2/ssl/zoneminder.crt
-SSL key file .................. /etc/apache2/ssl/zoneminder.key
+SSL cert file ................. /etc/zm/apache2/ssl/zoneminder.crt
+SSL key file .................. /etc/zm/apache2/ssl/zoneminder.key
 
 Verbose ....................... false
 Read alarm cause .............. true
@@ -312,7 +312,7 @@ Here is an example:
 - the notification server then sends out a "<Monitor Name>: person detected" notification to the clients listening
 
 Those who want to know more:
-- Read the detailed notes [here](https://github.com/pliablepixels/zmeventserver/tree/master/hook)
+- Read the detailed notes [here](https://github.com/pliablepixels/zmeventnotification/tree/master/hook)
 - Read [this](https://medium.com/zmninja/inside-the-hood-machine-learning-enhanced-real-time-alarms-with-zoneminder-e26c34fe354c) for an explanation of how this works
 
 ## Troubleshooting common situations
@@ -337,7 +337,7 @@ This almost always happens when zmNinja is not able to reach the server. Before 
 
 1. Stop the event server. `sudo zmdc.pl stop zmeventnotification.pl`
 2. Do a `ps -aef | grep zmevent` and make sure no stale processes are running
-3. Edit your `/etc/zmeventnotification.ini` and make sure `verbose = 1` to get verbose logs
+3. Edit your `/etc/zm/zmeventnotification.ini` and make sure `verbose = 1` to get verbose logs
 4. Run the server manually by doing `sudo -u www-data /usr/bin/zmeventnotification.pl` (replace with `www-data` with `apache` depending on your OS)
 5. You should now see logs on the commandline like so that shows the server is running:
 
@@ -368,13 +368,13 @@ Dec 20, 2018 05:50:41 AM DEBUG Real-time event: {"type":"","version":"2.4","stat
 
 This indicates that the event server successfully authenticated the app. If you see step 6 work but not step 7, you might have provided incorrect credentials (and in that case, you'll see an error message)
 
-8. Finally, after all of the above succeeds, do a `cat /etc/private/tokens.txt` to make sure the device token that zmNinja sent is stored (desktop apps don't have a device token). If you are using zmNinja on a mobile app, and you don't see an entry in `tokens.txt` you have a problem. Debug.
+8. Finally, after all of the above succeeds, do a `cat /var/lib/zmeventnotification/push/tokens.txt` to make sure the device token that zmNinja sent is stored (desktop apps don't have a device token). If you are using zmNinja on a mobile app, and you don't see an entry in `tokens.txt` you have a problem. Debug.
    
-9.   _Always_ send me logs of both zmNinja and zmeventserver - I need them to understand what is going on. Don't send me one line. You may think you are sending what is relevant, but you are not. One line logs are mostly useless.
+9.   _Always_ send me logs of both zmNinja and zmeventnotification - I need them to understand what is going on. Don't send me one line. You may think you are sending what is relevant, but you are not. One line logs are mostly useless.
 
 10. Some other notes:
 
-- If you don't see an entry in `tokens.txt` (typically in `/etc/private`) then your phone is not registered to get push. Kill zmNinja,
+- If you don't see an entry in `tokens.txt` (typically in `/var/lib/zmeventnotification/push`) then your phone is not registered to get push. Kill zmNinja,
   start the app, make sure the event server receives the registration and check `tokens.txt`
 
 - Sometimes, Google's FCM server goes down, or Apple's APNS server goes down for a while. Things automagically work in 24 hrs.
@@ -397,9 +397,9 @@ this must be the reason, I'll wager that you are actually in the 99.9% lot and h
 
 ### The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)
 
-- Make sure the file where you store tokens (`/etc/private/tokens.txt or whatever you have used`) is not RW Root only. It needs to be RW `www-data` for Ubuntu/Debian or `apache` for Fedora/CentOS. You also need to make sure the directory is accessible. Something like `chown -R www-data:www-data /etc/private`
+- Make sure the file where you store tokens (`/var/lib/zmeventnotification/push/tokens.txt or whatever you have used`) is not RW Root only. It needs to be RW `www-data` for Ubuntu/Debian or `apache` for Fedora/CentOS. You also need to make sure the directory is accessible. Something like `chown -R www-data:www-data /var/lib/zmeventnotification/push`
 
-- Make sure your certificates are readable by `www-data` for Ubuntu/Debian, or `apache` for Fedora/CentOS (thanks to [@jagee](https://github.com/pliablepixels/zmeventserver/issues/8))
+- Make sure your certificates are readable by `www-data` for Ubuntu/Debian, or `apache` for Fedora/CentOS (thanks to [@jagee](https://github.com/pliablepixels/zmeventnotification/issues/8))
 - Make sure the _path_ to the certificates are readable by `www-data` for Ubuntu/Debian, or `apache` for Fedora/CentOS
 
 ### When you run zmeventnotifiation.pl manually, you get an error saying 'port already in use' or 'cannot bind to port' or something like that
@@ -433,9 +433,9 @@ Here is how to debug and report:
 - telnet/ssh into your zoneminder server
 - Stop the zmeventnotification doing `sudo zmdc.pl stop zmeventnotification.pl`
 - Make sure there are no stale processes running of zmeventnotification by doing `ps -aef | grep zmeventnotification` and making sure it doesn't show existing processes (ignore the one that says `grep <something>`)
-- Edit `zmeventnotification.ini` (typically in `/etc/`) and make sure `verbose = 1` is set. This will print more logs on the console. Make sure you turn this off again before switching back to daemon mode.
+- Edit `zmeventnotification.ini` (typically in `/etc/zm/`) and make sure `verbose = 1` is set. This will print more logs on the console. Make sure you turn this off again before switching back to daemon mode.
 - Start a terminal (lets call it Terminal-Log) to tail logs like so `tail -f /var/log/syslog | grep zmeventnotification`
-- Start another terminal and start zmeventserver manually from command line like so `sudo /usr/bin/zmeventnotification.pl`
+- Start another terminal and start zmeventnotification manually from command line like so `sudo /usr/bin/zmeventnotification.pl`
 - Make sure you see logs like this in the logs window like so:
 
 ```
@@ -482,14 +482,14 @@ Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push messa
   - Start zmNinja
   - At this point, in the `zmeventnotification` logs you should registration messages (refer to logs example above). If you don't you've either not configured zmNinja to use the eventserver, or it can't reach the eventserver (very common problem)
   - Next up, make sure you are not running zmNinja in the foreground (move it to background or kill it). When zmNinja is in the foreground, it uses websockets to get notifications
-  - Force an alarm like I described above. If you don't see logs in `zmeventnotification` saying "Sending notification over PushProxy" then the eventserver, for some reason, does not have your app token. Inspeced `tokens.txt` (typically in `/etc/`) to make sure an entry for your phone exists
+  - Force an alarm like I described above. If you don't see logs in `zmeventnotification` saying "Sending notification over PushProxy" then the eventserver, for some reason, does not have your app token. Inspeced `tokens.txt` (typically in `/etc/zm/`) to make sure an entry for your phone exists
   - If you see that message, but your mobile phone is not receiving a push notification:
   - Make sure you haven't disable push notifications on your phone (lots of people do this by mistake and wonder why)
   - Make sure you haven't muted notifications (again, lots of people...)
   - Sometimes, the push servers of Apple and Google stop forwarding messages for a day or two. I have no idea why. Give it a day or two?
   - Open up zmNinja, go right to logs and send it to me
 
-- If you have issues, please send me a copy of your zmeventserver logs generated above from Terminal-Log, as well as zmNinja debug logs
+- If you have issues, please send me a copy of your zmeventnotification logs generated above from Terminal-Log, as well as zmNinja debug logs
 
 ## For Developers writing their own consumers
     
@@ -611,7 +611,7 @@ Sample payload of 2 events being reported:
 
 #### Push Notifications (for both iOS and Android)
 
-To make Push Notifications work, please make sure you read the [section on enabling Push](https://github.com/pliablepixels/zmeventserver#44-apnsgcm-howto---only-applicable-for-zmninja-not-for-other-consumers) for the event server.
+To make Push Notifications work, please make sure you read the [section on enabling Push](https://github.com/pliablepixels/zmeventnotification#44-apnsgcm-howto---only-applicable-for-zmninja-not-for-other-consumers) for the event server.
 
 ##### Concepts of Push and why it is only for zmNinja
 
@@ -681,7 +681,7 @@ use a websocket client. While there are examples on the net on how to use `curl`
 much simpler to use [wscat](https://github.com/websockets/wscat) like so:
 
 ```
-wscat -c wss://myzmeventserver.domain:9000 -n
+wscat -c wss://myzmeventnotification.domain:9000 -n
 connected (press CTRL+C to quit)
 > {"event":"auth","data":{"user":"admin","password":"xxxx"}}
 < {"reason":"","status":"Success","type":"","event":"auth","version":"0.93"}
