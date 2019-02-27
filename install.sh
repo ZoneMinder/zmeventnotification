@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------
 # Install script for the EventServer and the 
-# machine learning looks
+# machine learning hooks
 #
 # /install.sh --help
 #
@@ -16,8 +16,9 @@
 # --- Change these if you want --
 
 TARGET_BIN='/usr/bin'
-TARGET_ZMES_CONFIG='/etc'
-TARGET_HOOK_CONFIG_BASE='/var/detect'
+
+TARGET_CONFIG='/etc/zm'
+TARGET_DATA='/var/lib/zmeventnotification'
 
 WGET=$(which wget)
 WEB_OWNER=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $1}')
@@ -109,8 +110,8 @@ verify_config() {
     [[ ${INSTALL_ES} != 'no' ]] && echo "The Event Server will be installed to ${TARGET_BIN}"
     [[ ${INSTALL_ES_CONFIG} != 'no' ]] && echo "The Event Server config will be installed to ${TARGET_ZMES_CONFIG}"
 
-    [[ ${INSTALL_HOOK} != 'no' ]] && echo "The hook files will be installed to ${TARGET_HOOK_CONFIG_BASE} sub-folders"
-    [[ ${INSTALL_HOOK_CONFIG} != 'no' ]] && echo "The hook config files will be installed to ${TARGET_HOOK_CONFIG_BASE} sub-folders"
+    [[ ${INSTALL_HOOK} != 'no' ]] && echo "The hook data files will be installed to ${TARGET_DATA} sub-folders"
+    [[ ${INSTALL_HOOK_CONFIG} != 'no' ]] && echo "The hook config files will be installed to ${TARGET_CONFIG}"
     echo
      [[ ${INTERACTIVE} == 'yes' ]] && read -p "If any of this looks wrong, please hit Ctrl+C and edit the variables in this script..."
 
@@ -121,17 +122,16 @@ verify_config() {
 install_es() {
     echo '***** Installing ES **********'
     install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN}" && 
-            print_success "Completed, but you will still have to install ES dependencies as per https://github.com/pliablepixels/zmeventserver/blob/master/README.md#install-dependencies"  || print_error "failed"
-    #echo "Done, but you will still have to manually install all ES dependencies as per https://github.com/pliablepixels/zmeventserver#how-do-i-install-it"
+            print_success "Completed, but you will still have to install ES dependencies as per https://github.com/pliablepixels/zmeventnotification/blob/master/README.md#install-dependencies"  || print_error "failed"
+    #echo "Done, but you will still have to manually install all ES dependencies as per https://github.com/pliablepixels/zmeventnotification#how-do-i-install-it"
 }
 
 # install proc for ML hooks
 install_hook() {
     echo '***** Installing Hooks **********'
-    mkdir -p "${TARGET_HOOK_CONFIG_BASE}/config" 2>/dev/null
-    mkdir -p "${TARGET_HOOK_CONFIG_BASE}/images" 2>/dev/null
-    mkdir -p "${TARGET_HOOK_CONFIG_BASE}/models/yolov3" 2>/dev/null
-    mkdir -p "${TARGET_HOOK_CONFIG_BASE}/models/tinyyolo" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/images" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/models/yolov3" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/models/tinyyolo" 2>/dev/null
 
     # If you don't already have data files, get them
     # First YOLOV3
@@ -143,9 +143,9 @@ install_hook() {
 
     for ((i=0;i<${#targets[@]};++i))
     do
-        if [ ! -f "${TARGET_HOOK_CONFIG_BASE}/models/yolov3/${targets[i]}" ]
+        if [ ! -f "${TARGET_DATA}/models/yolov3/${targets[i]}" ]
         then
-            ${WGET} "${sources[i]}"  -O"${TARGET_HOOK_CONFIG_BASE}/models/yolov3/${targets[i]}"
+            ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/yolov3/${targets[i]}"
         else
             echo "${targets[i]} exists, no need to download"
 
@@ -163,9 +163,9 @@ install_hook() {
 
     for ((i=0;i<${#targets[@]};++i))
     do
-        if [ ! -f "${TARGET_HOOK_CONFIG_BASE}/models/tinyyolo/${targets[i]}" ]
+        if [ ! -f "${TARGET_DATA}/models/tinyyolo/${targets[i]}" ]
         then
-            ${WGET} "${sources[i]}"  -O"${TARGET_HOOK_CONFIG_BASE}/models/tinyyolo/${targets[i]}"
+            ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/tinyyolo/${targets[i]}"
         else
             echo "${targets[i]} exists, no need to download"
 
@@ -174,7 +174,7 @@ install_hook() {
 
 
     # Make sure webserver can access them
-    chown -R ${WEB_OWNER}:${WEB_GROUP} "${TARGET_HOOK_CONFIG_BASE}"
+    chown -R ${WEB_OWNER}:${WEB_GROUP} "${TARGET_DATA}"
 
     # Now install the ML hooks
     cd hook
@@ -190,7 +190,7 @@ install_hook() {
 # move ES config files
 install_es_config() {
     echo 'Replacing ES config file'
-    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 zmeventnotification.ini "${TARGET_ZMES_CONFIG}" && 
+    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 zmeventnotification.ini "${TARGET_CONFIG}" && 
         print_success "config copied" || print_error "could not copy config"
     echo "====> Remember to fill in the right values in the config files, or your system won't work! <============="
     echo
@@ -199,10 +199,10 @@ install_es_config() {
 # move Hook config files
 install_hook_config() {
     echo 'Replacing Hook config file'
-    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.ini "${TARGET_HOOK_CONFIG_BASE}/config" &&
+    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.ini "${TARGET_CONFIG}" &&
         print_success "config copied" || print_error "could not copy config"
     echo "====> Remember to fill in the right values in the config files, or your system won't work! <============="
-    echo "====> If you changed $TARGET_HOOK_CONFIG_BASE remember to fix  ${TARGET_BIN}/detect_wrapper.sh! <========"
+    echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN}/detect_wrapper.sh! <========"
     echo
 }
 
