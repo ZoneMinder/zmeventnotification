@@ -4,7 +4,6 @@
 
 - [Breaking Changes](#breaking-changes)
     - [version 3.2 onwards](#version-32-onwards)
-    - [version 1.0 onwards](#version-10-onwards)
 - [Machine Learning! Mmm..Machine Learning!](#machine-learning-mmmmachine-learning)
 - [What is it?](#what-is-it)
 - [Why do we need it?](#why-do-we-need-it)
@@ -58,14 +57,13 @@ Changes in paths for everything.
 - Push token file now defaults to `/var/lib/zmeventnotification/push`
 - all object detection data files default to `/var/lib/zmeventnotification`
 
-
-### version 1.0 onwards
-
-Version 1.0 moves configuration to a separate `zmeventnotification.ini` file that makes it easier to re-configure. If you are already
-a user of previous versions and want to migrate to 1.0, please make sure you copy `zmeventnotification.ini` to `/etc/zm`. You will need
-to re-configure the params to your liking in the ini file. Note that you may need to install some additional packages like `Config::IniFiles` if it complains of missing libraries.
-
-If you are installing `zmeventnotification` for the first time, just read the [How do I install it?](#how-do-i-install-it) section.
+If you are migrating from a previous version:
+- Make a copy of your `/etc/zmeventnotification.ini` and `/var/detect/objectconfig.ini` (if you are using hooks)
+- Run `sudo ./install.sh` again inside the repo, let it set up all the files
+- Compare your old config files to the news ones at `/etc/zm` and make necessary changes
+- Make sure everything works well
+- You can now delete the old  `/var/detect` folder as well as `/etc/zmeventnotification.ini`
+- Run zmNinja again to make sure its token is registered in the new tokens file (in `/var/lib/zmeeventnotification/push/tokens.txt`)
 
 ## Machine Learning! Mmm..Machine Learning!
 
