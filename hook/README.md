@@ -8,6 +8,7 @@
     - [Option 2: Manual install](#option-2-manual-install)
 - [Post install steps](#post-install-steps)
 - [Test operation](#test-operation)
+- [Troubleshooting](#troubleshooting)
 - [Types of detection](#types-of-detection)
     - [RECOMMENDED: detect_yolo.py:  using OpenCV DNN with YoloV3 (much slower, accurate)](#recommended-detect_yolopy--using-opencv-dnn-with-yolov3-much-slower-accurate)
     - [detect_yolo.py:  using OpenCV DNN with Tiny YoloV3 (almost comparable with HOG in speed, more accurate)](#detect_yolopy--using-opencv-dnn-with-tiny-yolov3-almost-comparable-with-hog-in-speed-more-accurate)
@@ -157,6 +158,22 @@ If it doesn't work, go back and figure out where you have a problem
         * `frame_id=snapshot` will work for any ZM >= 1.32
         * If you are running ZM < 1.33, to enable `bestmatch` or `alarm` you need to enable the monitor to store JPEG frames in its ZM monitor->storage configuration in ZM 
         * If you are running ZM >= 1.33, you can use all fid modes without requiring to enable frames in storage
+
+
+### Troubleshooting
+
+* In general, I expect you to debug properly. Please don't ask me basic questions without investigating logs yourself
+* Always run `detect_wrapper.sh` in manual mode first to make sure it works
+* Set `log_level` to `debug` in `objdetect.ini` before you run it manually
+* When you run in manually, view system logs in another window to look for errors (`tail -f /var/log/syslog | grep yolo`)
+* One of the big reasons why object detection fails is because the hook is not able to download the image to check. This may be because your ZM version is old or other errors. Some common issues:
+    * Make sure your `objectconfig.ini` section for `[general]` are correct (portal, user,admin)
+    * For object detection to work, the hooks expect to download images of events using `https://yourportal/zm/?view=image&eid=<eid>&fid=snapshot` and possibly `https://yourportal/zm/?view=image&eid=<eid>&fid=snapshot`
+    * Open up a browser, log into ZM. Open a new tab and type in ``https://yourportal/zm/?view=image&eid=<eid>&fid=snapshot` in your browser. Replace `eid` with an actual event id. Do you see an image? If not, you'll have to fix/update ZM. Please don't ask me how. Please post in the ZM forums
+    * Open up a browser, log into ZM. Open a new tab and type in ``https://yourportal/zm/?view=image&eid=<eid>&fid=alarm` in your browser. Replace `eid` with an actual event id. Do you see an image? If not, you'll have to fix/update ZM. Please don't ask me how. Please post in the ZM forums
+    
+
+
 
 ### Types of detection
 
