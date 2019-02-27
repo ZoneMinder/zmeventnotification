@@ -1,8 +1,9 @@
-**Latest Version: 3.1**
+**Latest Version: 3.2**
 
 <!-- TOC -->
 
 - [Breaking Changes](#breaking-changes)
+    - [version 3.2 onwards](#version-32-onwards)
     - [version 1.0 onwards](#version-10-onwards)
 - [Machine Learning! Mmm..Machine Learning!](#machine-learning-mmmmachine-learning)
 - [What is it?](#what-is-it)
@@ -49,6 +50,15 @@
 <!-- /TOC -->
 
 ## Breaking Changes
+### version 3.2 onwards
+
+Changes in paths for everything.
+- event server config file now defaults to `/etc/zm`
+- hook config now defaults to `/etc/zm`
+- Push token file now defaults to `/var/lib/zmeventnotification/push`
+- all object detection data files default to `/var/lib/zmeventnotification`
+
+
 ### version 1.0 onwards
 
 Version 1.0 moves configuration to a separate `zmeventnotification.ini` file that makes it easier to re-configure. If you are already
