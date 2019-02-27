@@ -122,8 +122,8 @@ verify_config() {
 install_es() {
     echo '***** Installing ES **********'
     install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN}" && 
-            print_success "Completed, but you will still have to install ES dependencies as per https://github.com/pliablepixels/zmeventserver/blob/master/README.md#install-dependencies"  || print_error "failed"
-    #echo "Done, but you will still have to manually install all ES dependencies as per https://github.com/pliablepixels/zmeventserver#how-do-i-install-it"
+            print_success "Completed, but you will still have to install ES dependencies as per https://github.com/pliablepixels/zmeventnotification/blob/master/README.md#install-dependencies"  || print_error "failed"
+    #echo "Done, but you will still have to manually install all ES dependencies as per https://github.com/pliablepixels/zmeventnotification#how-do-i-install-it"
 }
 
 # install proc for ML hooks

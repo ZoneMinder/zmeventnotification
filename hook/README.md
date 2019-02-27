@@ -55,9 +55,9 @@ it will take to detect
 
 
 ```bash
-git clone https://github.com/pliablepixels/zmeventserver # if you don't already have it downloaded
+git clone https://github.com/pliablepixels/zmeventnotification # if you don't already have it downloaded
 
-cd zmeventserver
+cd zmeventnotification
 ```
 
 * (OPTIONAL) Edit `hook/detect_wrapper.sh` and change:
@@ -74,8 +74,8 @@ If automatic install fails for you, or you like to be in control:
 
 
 ```bash
-git clone https://github.com/pliablepixels/zmeventserver # if you don't already have it downloaded
-cd zmeventserver/hooks
+git clone https://github.com/pliablepixels/zmeventnotification # if you don't already have it downloaded
+cd zmeventnotification/hooks
 ```
 
 * Install the object detection dependencies:
