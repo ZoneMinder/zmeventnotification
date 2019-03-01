@@ -10,7 +10,7 @@ import logging.handlers
 import sys
 import datetime
 import ssl
-import urllib.request
+import urllib
 
 from configparser import ConfigParser
 import zmes_hook_helpers.common_params as g
@@ -41,17 +41,22 @@ def str2arr(str):
     return  [map(int,x.strip().split(',')) for x in str.split(' ')]
 
 def download_files(args):
-    httpshandler = urllib.request.HTTPSHandler(context=g.ctx)
+    if g.config['portal'].lower().startswith('https://'):
+        main_handler = urllib.request.HTTPSHandler(context=g.ctx)
+    else:
+        main_handler = urllib.request.HTTPHandler()
 
-    if g.config['http_user'] != 'none':
+
+    if g.config['basic_user']:
+        g.logger.debug ('Basic auth config found, associating handlers')
         password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
         top_level_url = g.config['portal']
-        password_mgr.add_password(None, top_level_url, g.config['http_user'], g.config['http_password'])
+        password_mgr.add_password(None, top_level_url, g.config['basic_user'], g.config['basic_password'])
         handler = urllib.request.HTTPBasicAuthHandler(password_mgr)
-        opener = urllib.request.build_opener(handler, httpshandler)
+        opener = urllib.request.build_opener(handler, main_handler)
 
     else:
-        opener = urllib.request.build_opener(httpshandler)
+        opener = urllib.request.build_opener(main_handler)
 
     if g.config['frame_id'] == 'bestmatch':
         # download both alarm and snapshot
@@ -101,8 +106,8 @@ def process_config(args, ctx):
         g.config['portal'] = config_file['general'].get('portal', '')
         g.config['user'] = config_file['general'].get('user', 'admin')
         g.config['password'] = config_file['general'].get('password', 'admin')
-        g.config['http_user'] = config_file['general'].get('http_user', 'none')
-        g.config['http_password'] = config_file['general'].get('http_password', 'none')
+        g.config['basic_user'] = config_file['general'].get('basic_user', '')
+        g.config['basic_password'] = config_file['general'].get('basic_password', '')
         g.config['image_path'] = config_file['general'].get('image_path', '/var/lib/zmeventnotification/images')
         g.config['detect_pattern'] = config_file['general'].get('detect_pattern', '.*')
         g.config['frame_id'] = config_file['general'].get('frame_id', 'snapshot')
