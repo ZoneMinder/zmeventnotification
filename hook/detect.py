@@ -84,8 +84,8 @@ if g.config['resize']:
     utils.rescale_polygons(neww / oldw, newh / oldh)
 
 # detect objects
-#y = yolo.Yolo()
-y = hog.Hog()
+y = yolo.Yolo()
+#y = hog.Hog()
 bbox, label, conf = y.detect(image)
 
 # Now look for matched patterns in bounding boxes
