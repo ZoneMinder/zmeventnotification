@@ -180,8 +180,7 @@ install_hook() {
     cd hook
     pip install -r  requirements.txt 
     install -m 755 -o "${WEB_OWNER}" detect_wrapper.sh "${TARGET_BIN}"
-    install -m 755 -o "${WEB_OWNER}" detect_yolo.py "${TARGET_BIN}"
-    install -m 755 -o "${WEB_OWNER}" detect_hog.py "${TARGET_BIN}"
+    install -m 755 -o "${WEB_OWNER}" detect.py "${TARGET_BIN}"
     python setup.py install && print_success "Done" || print_error "python setup failed"
     cd ..
 }
