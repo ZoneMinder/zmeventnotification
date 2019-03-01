@@ -19,8 +19,7 @@ CONFIG_FILE="/etc/zm/objectconfig.ini"
 EVENT_PATH="$5"
 
 # use arrays instead of strings to avoid quote hell
-DETECTION_SCRIPT=(/usr/bin/detect_yolo.py --monitorid $2 --eventid $1 --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}")
-#DETECTION_SCRIPT=(/usr/bin/detect_hog.py --monitorid $2 --eventid $1 --config "${CONFIG_FILE}")
+DETECTION_SCRIPT=(/usr/bin/detect.py --monitorid $2 --eventid $1 --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}")
 
 RESULTS=$("${DETECTION_SCRIPT[@]}" | grep "detected:")
 

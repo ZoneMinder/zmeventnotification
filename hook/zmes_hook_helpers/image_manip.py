@@ -61,6 +61,7 @@ def draw_bbox(img, bbox, labels, classes, confidence, colors=None, write_conf=Fa
     # now draw object boundaries
 
     for i, label in enumerate(labels):
+        g.logger.debug ('drawing box for: {}'.format(label))
         if colors is None:
             color = COLORS[classes.index(label)]
         else:
