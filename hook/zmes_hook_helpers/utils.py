@@ -10,12 +10,13 @@ import logging.handlers
 import sys
 import datetime
 import ssl
+import urllib
+
 from configparser import ConfigParser
 import zmes_hook_helpers.common_params as g
 
 from future import standard_library
 standard_library.install_aliases()
-from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
 #resize polygons based on analysis scale
@@ -40,6 +41,23 @@ def str2arr(str):
     return  [map(int,x.strip().split(',')) for x in str.split(' ')]
 
 def download_files(args):
+    if g.config['portal'].lower().startswith('https://'):
+        main_handler = urllib.request.HTTPSHandler(context=g.ctx)
+    else:
+        main_handler = urllib.request.HTTPHandler()
+
+
+    if g.config['basic_user']:
+        g.logger.debug ('Basic auth config found, associating handlers')
+        password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
+        top_level_url = g.config['portal']
+        password_mgr.add_password(None, top_level_url, g.config['basic_user'], g.config['basic_password'])
+        handler = urllib.request.HTTPBasicAuthHandler(password_mgr)
+        opener = urllib.request.build_opener(handler, main_handler)
+
+    else:
+        opener = urllib.request.build_opener(main_handler)
+
     if g.config['frame_id'] == 'bestmatch':
         # download both alarm and snapshot
         filename1 = g.config['image_path'] + '/' + args['eventid'] + '-alarm.jpg'
@@ -50,7 +68,7 @@ def download_files(args):
             '&username=' + g.config['user'] + '&password=*****'
 
         g.logger.debug('Trying to download {}'.format(durl))
-        input_file= urlopen(url, context=g.ctx)
+        input_file= opener.open(url)
         with open (filename1, 'wb') as output_file:
             output_file.write(input_file.read())
 
@@ -59,7 +77,7 @@ def download_files(args):
         durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
             '&username=' + g.config['user'] + '&password=*****'
         g.logger.debug('Trying to download {}'.format(durl))
-        input_file= urlopen(url, context=g.ctx)
+        input_file= opener.open(url)
         with open (filename2, 'wb') as output_file:
             output_file.write(input_file.read())
 
@@ -72,7 +90,7 @@ def download_files(args):
         durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
             '&username=' + g.config['user'] + '&password=*****'
         g.logger.debug('Trying to download {}'.format(durl))
-        input_file= urlopen(url, context=g.ctx)
+        input_file= opener.open(url)
         with open (filename1, 'wb') as output_file:
             output_file.write(input_file.read())
     return filename1, filename2
@@ -88,6 +106,8 @@ def process_config(args, ctx):
         g.config['portal'] = config_file['general'].get('portal', '')
         g.config['user'] = config_file['general'].get('user', 'admin')
         g.config['password'] = config_file['general'].get('password', 'admin')
+        g.config['basic_user'] = config_file['general'].get('basic_user', '')
+        g.config['basic_password'] = config_file['general'].get('basic_password', '')
         g.config['image_path'] = config_file['general'].get('image_path', '/var/lib/zmeventnotification/images')
         g.config['detect_pattern'] = config_file['general'].get('detect_pattern', '.*')
         g.config['frame_id'] = config_file['general'].get('frame_id', 'snapshot')
