@@ -15,7 +15,6 @@ def processIntersection(bbox, label, conf, match):
     new_bbox = []
     new_conf = []
 
-    g.logger.debug ('Matching passed filter:{}'.format(match))
     for idx, b in enumerate(bbox):
         doesIntersect = False
         # cv2 rectangle only needs top left and bottom right
@@ -56,13 +55,14 @@ def draw_bbox(img, bbox, labels, classes, confidence, colors=None, write_conf=Fa
     COLORS = np.random.uniform(0, 255, size=(80, 3))
     polycolor = g.config['poly_color']
     # first draw the polygons, if any
+    newh, neww = img.shape[:2]
     for ps in g.polygons:
         cv2.polylines(img, [np.asarray(ps['value'])], True, polycolor, thickness=2)
 
     # now draw object boundaries
 
     for i, label in enumerate(labels):
-        g.logger.debug ('drawing box for: {}'.format(label))
+        #g.logger.debug ('drawing box for: {}'.format(label))
         if colors is None:
             color = COLORS[classes.index(label)]
         else:

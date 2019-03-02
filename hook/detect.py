@@ -58,43 +58,44 @@ utils.process_config(args,g.ctx)
 # now download image(s)
 
 if not args['file']:
-    filename1, filename2 = utils.download_files(args)
-    # filename1 will be the first frame to analyze (typically alarm)
-    # filename2 will be the second frame to analyze only if the first fails (typically snapshot)
+    filename_alarm, filename_snapshot = utils.download_files(args)
+    # filename_alarm will be the first frame to analyze (typically alarm)
+    # filename_snapshot will be the second frame to analyze only if the first fails (typically snapshot)
 else:
     g.logger.debug('TESTING ONLY: reading image from {}'.format(args['file']))
-    filename1 = args['file']
-    filename2 = ''
+    filename_alarm = args['file']
+    filename_snapshot = ''
 
 if g.config['frame_id'] == 'bestmatch':
     prefix = '[a] '  # we will first analyze alarm
 else:
     prefix = '[x] '
 
-for filename in [filename1, filename2]:
+for filename in [filename_alarm, filename_snapshot]:
     if not filename:
         continue
-    g.logger.info ('Processing file: {}'.format(filename))
-    if filename == filename2:
-    # if we are processing filename2, we are using bestmatch
+    if filename == filename_snapshot:
+    # if we are processing filename_snapshot, we are using bestmatch
         prefix = '[s] '
 
     
     image = cv2.imread(filename)
     oldh, oldw = image.shape[:2]
 
+    g.logger.info ('About to anayze file: {}'.format(filename))
     if not g.polygons:
         g.polygons.append({'name': 'full_image', 'value': [(0, 0), (oldw, 0), (oldw, oldh), (0, oldh)]})
         g.logger.debug('No polygon area specfied, so adding a full image polygon:{}'.format(g.polygons))
 
-    g.logger.info('Analyzing image with pattern: {}'.format( g.config['detect_pattern']))
     start = datetime.datetime.now()
-    if g.config['resize']:
+    # we resize polys only one time
+    if g.config['resize'] && filename == filename_alarm:
         g.logger.debug('resizing to {} before analysis...'.format(g.config['resize']))
         image = imutils.resize(image, width=min(int(g.config['resize']), image.shape[1]))
         newh, neww = image.shape[:2]
         utils.rescale_polygons(neww / oldw, newh / oldh)
 
+    g.logger.info('Analyzing image with pattern: {}'.format( g.config['detect_pattern']))
     # detect objects
     bbox = []
     label = []
@@ -120,7 +121,10 @@ for filename in [filename1, filename2]:
         match = list(filter(r.match, l))
         if model == 'face':
             g.logger.debug ('Appending known faces to filter list')
-            match = match + m.get_classes()
+            for cls in m.get_classes():
+                if not cls in match:
+                    print ('Adding {}'.format(cls))
+                    match=match+[cls]
 
         # now filter these with polygon areas
         b, l, c = img.processIntersection(b, l, c, match)
@@ -150,6 +154,7 @@ for filename in [filename1, filename2]:
             if (args['eventpath']):
                 g.logger.debug('Writing detected image to {}'.format(args['eventpath']))
                 cv2.imwrite(args['eventpath'] + '/objdetect.jpg', image)
+        break;
 
 if (args['time']):
     g.logger.debug('detection took: {}s'.format((datetime.datetime.now() - start).total_seconds()))
@@ -173,7 +178,7 @@ if pred != '':
 
 print (pred)
 if g.config['delete_after_analyze'] == 'yes':
-    if filename1:
-        os.remove(filename1)
-    if filename2:
-        os.remove(filename2)
+    if filename_alarm:
+        os.remove(filename_alarm)
+    if filename_snapshot:
+        os.remove(filename_snapshot)
