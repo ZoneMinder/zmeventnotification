@@ -89,7 +89,7 @@ for filename in [filename_alarm, filename_snapshot]:
 
     start = datetime.datetime.now()
     # we resize polys only one time
-    if g.config['resize'] && filename == filename_alarm:
+    if g.config['resize'] and filename == filename_alarm:
         g.logger.debug('resizing to {} before analysis...'.format(g.config['resize']))
         image = imutils.resize(image, width=min(int(g.config['resize']), image.shape[1]))
         newh, neww = image.shape[:2]
