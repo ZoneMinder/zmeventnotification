@@ -128,6 +128,8 @@ def process_config(args, ctx):
         g.config['scale']=config_file['hog'].get('scale','1.05');
         g.config['mean_shift']=config_file['hog'].get('mean_shift','-1');
 
+        g.config['known_images_path']=config_file['face'].get('known_images_path','/var/lib/zmeventnotification/known_faces');
+
         if g.config['log_level'] == 'debug':
             g.logger.setLevel(logging.DEBUG)
         elif g.config['log_level'] == 'info':

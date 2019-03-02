@@ -130,6 +130,7 @@ install_es() {
 install_hook() {
     echo '***** Installing Hooks **********'
     mkdir -p "${TARGET_DATA}/images" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/known_faces" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/yolov3" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/tinyyolo" 2>/dev/null
 

@@ -29,6 +29,7 @@ import zmes_hook_helpers.common_params as g
 
 import  zmes_hook_helpers.yolo as yolo
 import  zmes_hook_helpers.hog as hog
+import  zmes_hook_helpers.face as face
 
 # main handler
 
@@ -84,7 +85,8 @@ if g.config['resize']:
     utils.rescale_polygons(neww / oldw, newh / oldh)
 
 # detect objects
-y = yolo.Yolo()
+#y = yolo.Yolo()
+y =  face.Face()
 #y = hog.Hog()
 bbox, label, conf = y.detect(image)
 
