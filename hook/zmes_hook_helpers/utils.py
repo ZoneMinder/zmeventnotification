@@ -40,6 +40,9 @@ def str2tuple(str):
 def str2arr(str):
     return  [map(int,x.strip().split(',')) for x in str.split(' ')]
 
+def str_split(my_str):
+    return [x.strip() for x in my_str.split(',')]
+
 def download_files(args):
     if g.config['portal'].lower().startswith('https://'):
         main_handler = urllib.request.HTTPSHandler(context=g.ctx)
@@ -117,6 +120,7 @@ def process_config(args, ctx):
         g.config['log_level'] = config_file['general'].get('log_level', 'info')
         g.config['allow_self_signed'] = config_file['general'].get('allow_self_signed', 'yes')
         g.config['write_bounding_boxes'] = config_file['general'].get('write_bounding_boxes', 'yes')
+        g.config['models'] = str_split(config_file['general'].get('models', 'yolo'))
 
         g.config['config'] = config_file['yolo'].get('yolo', '/var/lib/zmeventnotification/models/yolov3/yolov3.cfg')
         g.config['weights'] = config_file['yolo'].get('yolo', '/var/lib/zmeventnotification/models/yolov3/yolov3.weights')
@@ -151,6 +155,11 @@ def process_config(args, ctx):
                 g.config['detect_pattern'] = config_file['monitor-%s' % args['monitorid']].get('detect_pattern', '.*')
                 g.logger.debug('monitor with ID {} has specific detection pattern: {}'.format(args['monitorid'], g.config['detect_pattern']))
 
+        # Check if we have a custom model sequence for the current monitor
+            if config_file.has_option('monitor-%s' % args['monitorid'], 'models'):
+                # local model overrides global
+                g.config['models'] = str_split(config_file['monitor-%s' % args['monitorid']].get('models', 'yolo'))
+                g.logger.debug('monitor with ID {} has specific models: {}'.format(args['monitorid'], g.config['models']))
 
         # get the polygons, if any, for the supplied monitor
         g.polygons = []
@@ -162,7 +171,7 @@ def process_config(args, ctx):
                 else:
                     g.logger.debug('object areas section found, but no polygon entries found')
                 for k, v in itms:
-                    if k == 'detect_pattern':
+                    if k in ['detect_pattern','models']:
                         continue
                     g.polygons.append({'name': k, 'value': str2tuple(v)})
                     g.logger.debug('adding polygon: {} [{}]'.format(k, v))

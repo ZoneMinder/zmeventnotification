@@ -53,6 +53,8 @@ g.polygons = []
 # process config file
 g.ctx = ssl.create_default_context()
 utils.process_config(args,g.ctx)
+
+
 # now download image(s)
 
 if not args['file']:
@@ -69,85 +71,106 @@ if g.config['frame_id'] == 'bestmatch':
 else:
     prefix = '[x] '
 
-image = cv2.imread(filename1)
-oldh, oldw = image.shape[:2]
+for filename in [filename1, filename2]:
+    if not filename:
+        continue
+    g.logger.info ('Processing file: {}'.format(filename))
+    if filename == filename2:
+    # if we are processing filename2, we are using bestmatch
+        prefix = '[s] '
 
-if not g.polygons:
-    g.polygons.append({'name': 'full_image', 'value': [(0, 0), (oldw, 0), (oldw, oldh), (0, oldh)]})
-    g.logger.debug('No polygon area specfied, so adding a full image polygon:{}'.format(g.polygons))
+    
+    image = cv2.imread(filename)
+    oldh, oldw = image.shape[:2]
 
-g.logger.info('Analyzing image {} with pattern: {}'.format(filename1, g.config['detect_pattern']))
-start = datetime.datetime.now()
-if g.config['resize']:
-    g.logger.debug('resizing to {} before analysis...'.format(g.config['resize']))
-    image = imutils.resize(image, width=min(int(g.config['resize']), image.shape[1]))
-    newh, neww = image.shape[:2]
-    utils.rescale_polygons(neww / oldw, newh / oldh)
+    if not g.polygons:
+        g.polygons.append({'name': 'full_image', 'value': [(0, 0), (oldw, 0), (oldw, oldh), (0, oldh)]})
+        g.logger.debug('No polygon area specfied, so adding a full image polygon:{}'.format(g.polygons))
 
-# detect objects
-#y = yolo.Yolo()
-y =  face.Face()
-#y = hog.Hog()
-bbox, label, conf = y.detect(image)
-
-# Now look for matched patterns in bounding boxes
-r = re.compile(g.config['detect_pattern'])
-match = list(filter(r.match, label))
-
-bbox, label, conf = img.processIntersection(bbox, label, conf, match)
-g.logger.debug('labels found: {}'.format(label))
-
-if g.config['write_bounding_boxes'] == 'yes' and bbox:
-    out = img.draw_bbox(image, bbox, label, y.get_classes(), conf, None, False)
-    g.logger.debug('Writing out bounding boxes to {}...'.format(filename1))
-    cv2.imwrite(filename1, out)
-    if (args['eventpath']):
-        g.logger.debug('Writing detected image to {}'.format(args['eventpath']))
-        cv2.imwrite(args['eventpath'] + '/objdetect.jpg', out)
-
-# if bbox has 0 elements, nothing matched
-if len(bbox) == 0 and filename2:
-    # switch to next image
-    g.logger.debug('pattern match failed for {}, trying {}'.format(filename1, filename2))
-    prefix = '[s] '  # snapshot analysis
-    image = cv2.imread(filename2)
+    g.logger.info('Analyzing image with pattern: {}'.format( g.config['detect_pattern']))
+    start = datetime.datetime.now()
     if g.config['resize']:
         g.logger.debug('resizing to {} before analysis...'.format(g.config['resize']))
         image = imutils.resize(image, width=min(int(g.config['resize']), image.shape[1]))
-    bbox, label, conf = y.detect(image)
-    match = list(filter(r.match, label))
-    bbox, label, conf = img.processIntersection(bbox, label, conf, match)
-    g.logger.debug('labels found: {}'.format(label))
-    if g.config['write_bounding_boxes'] == 'yes' and bbox:
-        out = img.draw_bbox(image, bbox, label, y.get_classes(), conf, None, False)
-        g.logger.debug('Writing out bounding boxes to {}...'.format(filename2))
-        cv2.imwrite(filename2, out)
-        if (args['eventpath']):
-            g.logger.debug('Writing detected image to {}'.format(args['eventpath']))
-            cv2.imwrite(args['eventpath'] + '/objdetect.jpg', out)
+        newh, neww = image.shape[:2]
+        utils.rescale_polygons(neww / oldw, newh / oldh)
+
+    # detect objects
+    bbox = []
+    label = []
+    conf = []
+    classes = []
+    for model in g.config['models']:
+        g.logger.debug ('Using model: {}'.format(model))
+        if model == 'yolo':
+            m = yolo.Yolo()
+        elif model == 'hog':
+            m = hog.Hog()
+        elif model == 'face':
+            m = face.Face()
+        else:
+            g.logger.error('Invalid model {}'.format(model))
+            exit(0)
+
+
+        b, l, c = m.detect(image)
+
+        # Now look for matched patterns in bounding boxes
+        r = re.compile(g.config['detect_pattern'])
+        match = list(filter(r.match, l))
+        if model == 'face':
+            g.logger.debug ('Appending known faces to filter list')
+            match = match + m.get_classes()
+
+        # now filter these with polygon areas
+        b, l, c = img.processIntersection(b, l, c, match)
+        if b:
+            bbox.append(b)
+            label.append(l)
+            conf.append(c)
+            classes.append(m.get_classes())
+            g.logger.debug('labels found: {}'.format(l))
+        else:
+            g.logger.debug ('No matches found using model:{}'.format(model))
+
+    # At this stage, all models are run on this file
+    
     if len(bbox) == 0:
-        g.logger.debug('pattern match failed for {} as well'.format(filename2))
-        label = []
-        conf = []
+        g.logger.debug ('No patterns found using any models in {}'.format(filename))
+    else:
+        # we have matches, draw and quit loop
+        if g.config['write_bounding_boxes'] == 'yes':
+            for idx, b in enumerate (bbox):
+                out = img.draw_bbox(image, b, label[idx], classes[idx], conf[idx], None, False)
+                # for the next iteration, use the generated image
+                image = out
+            
+                g.logger.debug('Writing out bounding boxes to {}...'.format(filename))
+            cv2.imwrite(filename, image)
+            if (args['eventpath']):
+                g.logger.debug('Writing detected image to {}'.format(args['eventpath']))
+                cv2.imwrite(args['eventpath'] + '/objdetect.jpg', image)
 
 if (args['time']):
     g.logger.debug('detection took: {}s'.format((datetime.datetime.now() - start).total_seconds()))
 
+# Now create prediction string
+
 pred = ''
-
-seen = {}
-for l, c in zip(label, conf):
-    if l not in seen:
-        if g.config['show_percent'] == 'no':
-            pred = pred + l + ','
-        else:
-            pred = pred + l + ':{:.0%}'.format(c) + ' '
-        seen[l] = 1
-
+for idx,la in enumerate (label):
+    seen = {}
+    for l, c in zip(la, conf[idx]):
+        if l not in seen:
+            if g.config['show_percent'] == 'no':
+                pred = pred + l + ','
+            else:
+                pred = pred + l + ':{:.0%}'.format(c) + ' '
+            seen[l] = 1
 if pred != '':
     pred = pred.rstrip(',')
     pred = prefix + 'detected:' + pred
     g.logger.debug('Prediction string:{}'.format(pred))
+
 print (pred)
 if g.config['delete_after_analyze'] == 'yes':
     if filename1:

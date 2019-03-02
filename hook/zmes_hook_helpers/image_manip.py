@@ -15,6 +15,7 @@ def processIntersection(bbox, label, conf, match):
     new_bbox = []
     new_conf = []
 
+    g.logger.debug ('Matching passed filter:{}'.format(match))
     for idx, b in enumerate(bbox):
         doesIntersect = False
         # cv2 rectangle only needs top left and bottom right
