@@ -71,13 +71,13 @@ if g.config['frame_id'] == 'bestmatch':
 else:
     prefix = '[x] '
 
+# First do detection for alarmed image then snapshot
 for filename in [filename_alarm, filename_snapshot]:
     if not filename:
         continue
     if filename == filename_snapshot:
     # if we are processing filename_snapshot, we are using bestmatch
         prefix = '[s] '
-
     
     image = cv2.imread(filename)
     oldh, oldw = image.shape[:2]
@@ -89,6 +89,7 @@ for filename in [filename_alarm, filename_snapshot]:
 
     start = datetime.datetime.now()
     # we resize polys only one time
+    # when we get to the next image (snapshot), polygons have already resized
     if g.config['resize'] and filename == filename_alarm:
         g.logger.debug('resizing to {} before analysis...'.format(g.config['resize']))
         image = imutils.resize(image, width=min(int(g.config['resize']), image.shape[1]))
@@ -101,6 +102,8 @@ for filename in [filename_alarm, filename_snapshot]:
     label = []
     conf = []
     classes = []
+
+    # Apply all configured models to each file
     for model in g.config['models']:
         g.logger.debug ('Using model: {}'.format(model))
         if model == 'yolo':
@@ -114,11 +117,15 @@ for filename in [filename_alarm, filename_snapshot]:
             exit(0)
 
 
+        # each detection type has a detect method
         b, l, c = m.detect(image)
 
         # Now look for matched patterns in bounding boxes
         r = re.compile(g.config['detect_pattern'])
         match = list(filter(r.match, l))
+        # If you want face recognition, we need to add the list of found faces
+        # to the allowed list or they will be thrown away during the intersection
+        # check
         if model == 'face':
             g.logger.debug ('Appending known faces to filter list')
             for cls in m.get_classes():
@@ -148,12 +155,12 @@ for filename in [filename_alarm, filename_snapshot]:
                 out = img.draw_bbox(image, b, label[idx], classes[idx], conf[idx], None, False)
                 # for the next iteration, use the generated image
                 image = out
-            
-                g.logger.debug('Writing out bounding boxes to {}...'.format(filename))
+            g.logger.debug('Writing out bounding boxes to {}...'.format(filename))
             cv2.imwrite(filename, image)
             if (args['eventpath']):
                 g.logger.debug('Writing detected image to {}'.format(args['eventpath']))
                 cv2.imwrite(args['eventpath'] + '/objdetect.jpg', image)
+        # stop analysis if this file worked
         break;
 
 if (args['time']):
