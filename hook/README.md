@@ -10,9 +10,7 @@
 - [Test operation](#test-operation)
 - [Troubleshooting](#troubleshooting)
 - [Types of detection](#types-of-detection)
-    - [RECOMMENDED: detect_yolo.py:  using OpenCV DNN with YoloV3 (much slower, accurate)](#recommended-detect_yolopy--using-opencv-dnn-with-yolov3-much-slower-accurate)
-    - [detect_yolo.py:  using OpenCV DNN with Tiny YoloV3 (almost comparable with HOG in speed, more accurate)](#detect_yolopy--using-opencv-dnn-with-tiny-yolov3-almost-comparable-with-hog-in-speed-more-accurate)
-    - [detect_hog.py: using OpenCV SVM HOG (very fast, not accurate)](#detect_hogpy-using-opencv-svm-hog-very-fast-not-accurate)
+    - [Manual test](#manual-test)
 - [Performance comparison](#performance-comparison)
 
 <!-- /TOC -->
@@ -28,10 +26,12 @@
 * Only tested with ZM 1.32+. May or may not work with older versions
 
 ### What
+
+Kung-fu machine learning goodness. 
+
 This is an example of how you can use the `hook` feature of the notification server
 to invoke a custom script on the event before it generates an alarm. This implements a hook script that detects
-objects using Machine Learning for events. If it matches the objects you are interested in, it will send a notification.
-
+objects using machine learning for events. If it matches the objects you are interested in, it will send a notification.
 
 Please don't ask me questions on how to use them. Please read the comments and figure it out.
 
@@ -39,9 +39,6 @@ Try to keep the images less than 800px on the largest side. The larger the image
 it will take to detect
 
 ### Installation
-
-
-
 
 #### Option 1: Automatic install
 
@@ -63,7 +60,12 @@ cd zmeventnotification
 sudo ./install.sh # and follow the prompts
 ```
 
-Note: if you want to add "face recognition" you also need to do `sudo pip install face_recognition`. Takes a while.
+**Note:** if you want to add "face recognition" you also need to do 
+```
+sudo pip install face_recognition
+```
+
+Takes a while and installs a gob of stuff, which is why I did not add it automatically, especially if you don't need face recognition.
 
 #### Option 2: Manual install 
 
@@ -79,14 +81,27 @@ cd zmeventnotification/hooks
 ```bash
 sudo pip install -r  requirements.txt 
 ```
-Note: if you want to add "face recognition" you also need to do `sudo pip install face_recognition`. Takes a while.
+
+* Install object detection files:
+```bash
+sudo pip ./setup.py install
+```
+
+**Note:** if you want to add "face recognition" you also need to do 
+```
+sudo pip install face_recognition
+```
 
 * You now need to download configuration and weight files that are required by the machine learning magic. Note that you don't have to put them in `/var/lib/zmeventnotification` -> use whatever you want (and change variables in `detect_wrapper.sh` script if you do) 
 
 ```bash
 sudo mkdir -p /var/lib/zmeventnotification/images
 sudo mkdir -p /var/lib/zmeventnotification/models
-sudo mkdir -p /etc/zm
+
+# if you are using face recognition, create this folder
+# after that you need to copy images of faces you want to detect
+# to this folder
+sudo mkdir -p /var/lib/zmeventnotification/known_faces
 
 # if you want to use YoloV3 (slower, accurate)
 sudo mkdir -p /var/lib/zmeventnotification/models/yolov3 # if you are using YoloV3
@@ -117,12 +132,10 @@ sudo chown -R www-data:www-data /var/lib/zmeventnotification/ #(change www-data 
 
 * (OPTIONAL) Edit `detect_wrapper.sh` and change:
     * `CONFIG_FILE` to point to the right config file, if you changed paths
-    * `DETECTION_SCRIPT` if you want to change from YOLO to HOG
 
-
-* Now copy your detection files to `/usr/bin` 
+* Now copy your detection file to `/usr/bin` 
 ```
-sudo cp detect_* /usr/bin
+sudo cp detect.py /usr/bin
 ```
 
 
@@ -219,5 +232,4 @@ As always, if you are trying to figure out how this works, do this in 3 steps:
 *  Force an alarm, look at logs
 
 **STEP 3: integrate with the actual daemon**
-
 * You should know how to do this already
