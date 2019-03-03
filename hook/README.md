@@ -32,11 +32,6 @@ This is an example of how you can use the `hook` feature of the notification ser
 to invoke a custom script on the event before it generates an alarm. This implements a hook script that detects
 objects using Machine Learning for events. If it matches the objects you are interested in, it will send a notification.
 
-There are two sample detection scripts. You can switch between them by changing the value of
-`DETECTION_SCRIPT` in `detect_wrapper.sh`
-
-**Both of these scripts require setup, please run from command line first and 
-make sure deps are installed**
 
 Please don't ask me questions on how to use them. Please read the comments and figure it out.
 
@@ -63,11 +58,12 @@ cd zmeventnotification
 
 * (OPTIONAL) Edit `hook/detect_wrapper.sh` and change:
     * `CONFIG_FILE` to point to the right config file, if you changed paths
-    * `DETECTION_SCRIPT` if you want to change from YOLO to HOG
 
 ```
 sudo ./install.sh # and follow the prompts
 ```
+
+Note: if you want to add "face recognition" you also need to do `sudo pip install face_recognition`. Takes a while.
 
 #### Option 2: Manual install 
 
@@ -83,6 +79,7 @@ cd zmeventnotification/hooks
 ```bash
 sudo pip install -r  requirements.txt 
 ```
+Note: if you want to add "face recognition" you also need to do `sudo pip install face_recognition`. Takes a while.
 
 * You now need to download configuration and weight files that are required by the machine learning magic. Note that you don't have to put them in `/var/lib/zmeventnotification` -> use whatever you want (and change variables in `detect_wrapper.sh` script if you do) 
 
