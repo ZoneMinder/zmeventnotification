@@ -30,8 +30,8 @@
 Kung-fu machine learning goodness. 
 
 This is an example of how you can use the `hook` feature of the notification server
-to invoke a custom script on the event before it generates an alarm. This implements a hook script that detects
-objects using machine learning for events. If it matches the objects you are interested in, it will send a notification.
+to invoke a custom script on the event before it generates an alarm. 
+I currently support object detection and face recognition. 
 
 Please don't ask me questions on how to use them. Please read the comments and figure it out.
 
@@ -42,7 +42,6 @@ it will take to detect
 
 #### Option 1: Automatic install
 
-*  Only tested with Python2
 *  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`, or see [this](https://pip.pypa.io/en/stable/installing/)
 *  Clone the event server and go to the `hook` directory 
 
@@ -222,7 +221,7 @@ As always, if you are trying to figure out how this works, do this in 3 steps:
 
 **STEP 1: Make sure the scripts(s) work**
 - Run the python script manually to see if it works (refer to sections above on how to run them manuall)
-- `./detect_wrapper.sh <eid> <mid>` --> make sure it downloads a proper image for that eid. Make sure it correctly invokes detect_xxx.py If not, fix it. (`<mid>` is optional and is used to apply a crop mask if specified)
+- `./detect_wrapper.sh <eid> <mid>` --> make sure it downloads a proper image for that eid. Make sure it correctly invokes detect.py If not, fix it. (`<mid>` is optional and is used to apply a crop mask if specified)
 - Make sure the `image_path` you've chosen in the config file is WRITABLE by www-data (or apache) before you move to step 2
 
 **STEP 2: run zmeventnotification in MANUAL mode**
