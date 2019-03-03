@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 # version 3.1
 
@@ -31,6 +31,11 @@ import  zmes_hook_helpers.yolo as yolo
 import  zmes_hook_helpers.hog as hog
 import  zmes_hook_helpers.face as face
 
+
+def append_suffix(filename,token):
+    f,e = os.path.splitext(filename)
+    return f+token+e
+
 # main handler
 
 # set up logging to syslog
@@ -58,19 +63,22 @@ utils.process_config(args,g.ctx)
 # now download image(s)
 
 if not args['file']:
-    filename_alarm, filename_snapshot = utils.download_files(args)
+    filename_alarm, filename_snapshot, filename_alarm_bbox, filename_snapshot_bbox = utils.download_files(args)
     # filename_alarm will be the first frame to analyze (typically alarm)
     # filename_snapshot will be the second frame to analyze only if the first fails (typically snapshot)
 else:
     g.logger.debug('TESTING ONLY: reading image from {}'.format(args['file']))
     filename_alarm = args['file']
+    filename_alarm_bbox = append_suffix(filename_alarm, '-bbox')
     filename_snapshot = ''
+    filename_snapshot_bbox = ''
 
 if g.config['frame_id'] == 'bestmatch':
     prefix = '[a] '  # we will first analyze alarm
 else:
     prefix = '[x] '
 
+start = datetime.datetime.now()
 # First do detection for alarmed image then snapshot
 for filename in [filename_alarm, filename_snapshot]:
     if not filename:
@@ -78,8 +86,15 @@ for filename in [filename_alarm, filename_snapshot]:
     if filename == filename_snapshot:
     # if we are processing filename_snapshot, we are using bestmatch
         prefix = '[s] '
+        bbox_f = filename_snapshot_bbox
+    else:
+        bbox_f = filename_alarm_bbox
     
     image = cv2.imread(filename)
+    if image is None:
+        g.logger.error ('Error reading {}. It either does not exist or is invalid'.format(filename))
+        raise ValueError('Error reading file. It either does not exist or is invalid')
+        
     oldh, oldw = image.shape[:2]
 
     g.logger.info ('About to anayze file: {}'.format(filename))
@@ -87,7 +102,6 @@ for filename in [filename_alarm, filename_snapshot]:
         g.polygons.append({'name': 'full_image', 'value': [(0, 0), (oldw, 0), (oldw, oldh), (0, oldh)]})
         g.logger.debug('No polygon area specfied, so adding a full image polygon:{}'.format(g.polygons))
 
-    start = datetime.datetime.now()
     # we resize polys only one time
     # when we get to the next image (snapshot), polygons have already resized
     if g.config['resize'] and filename == filename_alarm:
@@ -114,8 +128,7 @@ for filename in [filename_alarm, filename_snapshot]:
             m = face.Face()
         else:
             g.logger.error('Invalid model {}'.format(model))
-            exit(0)
-
+            raise ValueError('Invalid model {}'.format(model))
 
         # each detection type has a detect method
         b, l, c = m.detect(image)
@@ -147,18 +160,23 @@ for filename in [filename_alarm, filename_snapshot]:
     
     if len(bbox) == 0:
         g.logger.debug ('No patterns found using any models in {}'.format(filename))
+
     else:
         # we have matches, draw and quit loop
-        if g.config['write_bounding_boxes'] == 'yes':
-            for idx, b in enumerate (bbox):
-                out = img.draw_bbox(image, b, label[idx], classes[idx], conf[idx], None, False)
-                # for the next iteration, use the generated image
-                image = out
-            g.logger.debug('Writing out bounding boxes to {}...'.format(filename))
-            cv2.imwrite(filename, image)
+        for idx, b in enumerate (bbox):
+            out = img.draw_bbox(image, b, label[idx], classes[idx], conf[idx], None,False)
+            image = out
+        
+        if g.config['write_debug_image'] == 'yes':
+            g.logger.debug('Writing out debug bounding box image to {}...'.format(bbox_f))
+            cv2.imwrite(bbox_f, image)
+
+        if g.config['write_image_to_zm'] == 'yes':
             if (args['eventpath']):
                 g.logger.debug('Writing detected image to {}'.format(args['eventpath']))
                 cv2.imwrite(args['eventpath'] + '/objdetect.jpg', image)
+            else:
+                g.logger.error ('Could not write image to ZoneMinder as eventpath not present')
         # stop analysis if this file worked
         break;
 

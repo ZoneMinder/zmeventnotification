@@ -64,14 +64,21 @@ def download_files(args):
     if g.config['frame_id'] == 'bestmatch':
         # download both alarm and snapshot
         filename1 = g.config['image_path'] + '/' + args['eventid'] + '-alarm.jpg'
+        filename1_bbox = g.config['image_path'] + '/' + args['eventid'] + '-alarm-bbox.jpg'
         filename2 = g.config['image_path'] + '/' + args['eventid'] + '-snapshot.jpg'
+        filename2_bbox = g.config['image_path'] + '/' + args['eventid'] + '-snapshot-bbox.jpg'
+
         url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=alarm' + \
             '&username=' + g.config['user'] + '&password=' + g.config['password']
         durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
             '&username=' + g.config['user'] + '&password=*****'
 
         g.logger.debug('Trying to download {}'.format(durl))
-        input_file= opener.open(url)
+        try:
+            input_file= opener.open(url)
+        except HTTPError as e:
+            g.logger.error (e)
+            raise
         with open (filename1, 'wb') as output_file:
             output_file.write(input_file.read())
 
@@ -80,14 +87,20 @@ def download_files(args):
         durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
             '&username=' + g.config['user'] + '&password=*****'
         g.logger.debug('Trying to download {}'.format(durl))
-        input_file= opener.open(url)
+        try:
+            input_file= opener.open(url)
+        except HTTPError as e:
+            g.logger.error (e)
+            raise
         with open (filename2, 'wb') as output_file:
             output_file.write(input_file.read())
 
     else:
         # only download one
         filename1 = g.config['image_path'] + '/' + args['eventid'] + '.jpg'
+        filename1_bbox = g.config['image_path'] + '/' + args['eventid'] + '-bbox.jpg'
         filename2 = ''
+        filename2_bbox = ''
         url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=' + g.config['frame_id'] + \
             '&username=' + g.config['user'] + '&password=' + g.config['password']
         durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
@@ -96,7 +109,8 @@ def download_files(args):
         input_file= opener.open(url)
         with open (filename1, 'wb') as output_file:
             output_file.write(input_file.read())
-    return filename1, filename2
+
+    return filename1, filename2, filename1_bbox, filename2_bbox
 
 
 def process_config(args, ctx):
@@ -119,7 +133,8 @@ def process_config(args, ctx):
         g.config['show_percent'] = config_file['general'].get('show_percent', 'no')
         g.config['log_level'] = config_file['general'].get('log_level', 'info')
         g.config['allow_self_signed'] = config_file['general'].get('allow_self_signed', 'yes')
-        g.config['write_bounding_boxes'] = config_file['general'].get('write_bounding_boxes', 'yes')
+        g.config['write_image_to_zm'] = config_file['general'].get('write_image_to_zm', 'yes')
+        g.config['write_debug_image'] = config_file['general'].get('write_debug_image', 'yes')
         g.config['models'] = str_split(config_file['general'].get('models', 'yolo'))
         g.config['poly_color'] = eval(config_file['general'].get('poly_color', '(127, 140, 141)'))
 
