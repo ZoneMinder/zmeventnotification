@@ -11,6 +11,12 @@ import numpy as np
 # it also makes sure only patterns specified in detect_pattern are drawn
 
 def processIntersection(bbox, label, conf, match):
+
+    # bbox is the set of bounding boxes
+    # labels are set of corresponding object names
+    # conf are set of confidence scores (for hog and face this is set to 1)
+    # match contains the list of labels that will be allowed based on detect_pattern
+
     new_label = []
     new_bbox = []
     new_conf = []

@@ -130,7 +130,6 @@ for filename in [filename_alarm, filename_snapshot]:
             g.logger.debug ('Appending known faces to filter list')
             for cls in m.get_classes():
                 if not cls in match:
-                    print ('Adding {}'.format(cls))
                     match=match+[cls]
 
         # now filter these with polygon areas

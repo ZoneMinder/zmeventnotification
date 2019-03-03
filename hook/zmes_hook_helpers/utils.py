@@ -121,18 +121,29 @@ def process_config(args, ctx):
         g.config['allow_self_signed'] = config_file['general'].get('allow_self_signed', 'yes')
         g.config['write_bounding_boxes'] = config_file['general'].get('write_bounding_boxes', 'yes')
         g.config['models'] = str_split(config_file['general'].get('models', 'yolo'))
+        g.config['poly_color'] = eval(config_file['general'].get('poly_color', '(127, 140, 141)'))
 
-        g.config['config'] = config_file['yolo'].get('yolo', '/var/lib/zmeventnotification/models/yolov3/yolov3.cfg')
-        g.config['weights'] = config_file['yolo'].get('yolo', '/var/lib/zmeventnotification/models/yolov3/yolov3.weights')
-        g.config['labels'] = config_file['yolo'].get('yolo', '/var/lib/zmeventnotification/models/yolov3/yolov3_classes.txt')
-        g.config['poly_color'] = eval(config_file['yolo'].get('poly_color', '(127, 140, 141)'))
+        g.config['config'] = config_file['yolo'].get('config', 
+                             '/var/lib/zmeventnotification/models/yolov3/yolov3.cfg')
+        g.config['weights'] = config_file['yolo'].get('weights', 
+                              '/var/lib/zmeventnotification/models/yolov3/yolov3.weights')
+        g.config['labels'] = config_file['yolo'].get('labels', 
+                              '/var/lib/zmeventnotification/models/yolov3/yolov3_classes.txt')
 
-        g.config['stride']=eval(config_file['hog'].get('stride','(4,4)'));
-        g.config['padding']=eval(config_file['hog'].get('padding','(8,8)'));
-        g.config['scale']=config_file['hog'].get('scale','1.05');
-        g.config['mean_shift']=config_file['hog'].get('mean_shift','-1');
+        g.config['tiny_config'] = config_file['yolo'].get('tiny_config', 
+                                  '/var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.cfg')
+        g.config['tiny_weights'] = config_file['yolo'].get('tiny_weights', 
+                                   '/var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.weights')
+        g.config['tiny_labels'] = config_file['yolo'].get('tiny_labels', 
+                                  '/var/lib/zmeventnotification/models/tinyyolo/yolov33-tiny.txt')
 
-        g.config['known_images_path']=config_file['face'].get('known_images_path','/var/lib/zmeventnotification/known_faces');
+        g.config['stride']=eval(config_file['hog'].get('stride','(4,4)'))
+        g.config['padding']=eval(config_file['hog'].get('padding','(8,8)'))
+        g.config['scale']=config_file['hog'].get('scale','1.05')
+        g.config['mean_shift']=config_file['hog'].get('mean_shift','-1')
+
+        g.config['known_images_path']=config_file['face'].get('known_images_path',
+                                      '/var/lib/zmeventnotification/known_faces')
 
         if g.config['log_level'] == 'debug':
             g.logger.setLevel(logging.DEBUG)
@@ -161,6 +172,14 @@ def process_config(args, ctx):
                 g.config['models'] = str_split(config_file['monitor-%s' % args['monitorid']].get('models', 'yolo'))
                 g.logger.debug('monitor with ID {} has specific models: {}'.format(args['monitorid'], g.config['models']))
 
+            # Check if we have a custom yolo type
+            if config_file.has_option('monitor-%s' % args['monitorid'], 'yolo_type'):
+                g.logger.debug ('Tiny YOLO type chosen, switching weights')
+                g.config['config']=g.config['tiny_config']
+                g.config['weights']=g.config['tiny_weights']
+                g.config['labels']=g.config['tiny_labels']
+                
+
         # get the polygons, if any, for the supplied monitor
         g.polygons = []
         if args['monitorid']:
@@ -171,7 +190,7 @@ def process_config(args, ctx):
                 else:
                     g.logger.debug('object areas section found, but no polygon entries found')
                 for k, v in itms:
-                    if k in ['detect_pattern','models']:
+                    if k in ['detect_pattern','models', 'yolo_type']:
                         continue
                     g.polygons.append({'name': k, 'value': str2tuple(v)})
                     g.logger.debug('adding polygon: {} [{}]'.format(k, v))
