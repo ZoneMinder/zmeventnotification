@@ -174,57 +174,27 @@ If it doesn't work, go back and figure out where you have a problem
 
 ### Types of detection
 
-#### RECOMMENDED: detect_yolo.py:  using OpenCV DNN with YoloV3 (much slower, accurate)
+You can switch detection type by using `model=<detection_type1>,<detection_type2>,....` in your `objectconfig.ini`
 
-The detection uses OpenCV's DNN module and YoloV3 to predict multiple labels with score.
+Example:
 
-You can manually invoke it to test:
+`model=yolo,hog,face` will run full Yolo, then HOG, then face recognition.
 
-```bash
-./sudo -u www-data /usr/bin/detect_yolo.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
-```
-The `--monitorid <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
+Note that you can change `model` on a per monitor basis too. Read the comments in `objectconfig.ini`
 
-
-If you are using YOLO models, you will need the following data files (if you followed the installation directions, you already have them):
-* weights: https://pjreddie.com/media/files/yolov3.weights
-* config: https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg
-* labels: https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names
+If you select yolo, you can add a `model_type=tiny` to use tiny YOLO instead of full yolo weights. Again, please readd
+the comments in `objectconfig.ini`
 
 
+#### Manual test
 
-#### detect_yolo.py:  using OpenCV DNN with Tiny YoloV3 (almost comparable with HOG in speed, more accurate)
 
-The detection uses OpenCV's DNN module and Tiny YoloV3 to predict multiple labels with score.
-
-You can manually invoke it to test:
+You can manually invoke the detection module to check if it works ok:
 
 ```bash
-./sudo -u www-data /usr/bin/detect_yolo.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
+./sudo -u www-data /usr/bin/detect.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
 ```
 The `--monitorid <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
-
-
-If you are using YOLO models, you will need the following data files (if you followed the installation directions, you already have them):
-* weights: https://pjreddie.com/media/files/yolov3-tiny.weights
-* config:  https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg
-* labels:  https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names
-
-(Note: `coco.names` is the label file the script needs. It is common for both tiny or regular yolo)
-
-#### detect_hog.py: using OpenCV SVM HOG (very fast, not accurate)
-
-You can manually invoke it to test:
-
-```bash
-./sudo -u www-data /usr/bin/detect_hog.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
-```
-The `--monitorid <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
-
-The detection uses a very fast, but not very accurate OpenCV model (hog.detectMultiScale). 
-The good part is that it is extremely fast can can be used for realtime needs. 
-Fiddle with the config settings in the `[hog]` section (stride/scale) to get more accuracy at the cost of speed.
-
 
 ### Performance comparison
 
