@@ -41,9 +41,9 @@ class Face:
     def get_classes(self):
         return self.known_face_names
 
-    def _convert_rects(self,a):
+    def _rescale_rects(self,a):
         rects = []
-        for (top,right,bottom,left) in a:
+        for (left,top,right,bottom) in a:
             top *= 4
             right *= 4
             bottom *= 4
@@ -73,11 +73,11 @@ class Face:
                 first_match_index = matches.index(True)
                 name = self.known_face_names[first_match_index]
                 matched_face_names.append(name)
-                # lower left, top right
+                # top right, lower left
                 loc = face_locations[idx]
                 
-                # draw_bbox expects x,y this is y,x
-                matched_face_rects.append((loc[1],loc[0],loc[3],loc[2]) )
+                # convert to left top, right bottom
+                matched_face_rects.append((loc[3],loc[0],loc[1],loc[2]) )
                 conf.append('1')
-        #rects = self._convert_rects(face_locations)
+        #rects = self._rescale_rects(matched_face_rects)
         return matched_face_rects, matched_face_names, conf
