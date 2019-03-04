@@ -3,6 +3,7 @@ import zmes_hook_helpers.common_params as g
 from shapely.geometry import Polygon
 import cv2
 import numpy as np
+import random
 
 # Generic image related algorithms
 
@@ -56,9 +57,21 @@ def processIntersection(bbox, label, conf, match):
 
 # draws bounding boxes of identified objects and polygons
 
-def draw_bbox(img, bbox, labels, classes, confidence, colors=None, write_conf=False ):
+def draw_bbox(img, bbox, labels, classes, confidence, color=None, write_conf=False ):
 
-    COLORS = np.random.uniform(0, 255, size=(80, 3))
+    slate_colors = [ 
+            (52,73,94),
+            (39, 174, 96),
+            (142, 68, 173),
+            (109, 33, 79),
+            (47, 54, 64)
+        ]
+    # if no color is specified, use my own slate
+    if color is None:
+            # opencv is BGR
+            bgr_slate_colors = slate_colors[::-1]
+            color = random.choice(bgr_slate_colors)
+
     polycolor = g.config['poly_color']
     # first draw the polygons, if any
     newh, neww = img.shape[:2]
@@ -69,15 +82,22 @@ def draw_bbox(img, bbox, labels, classes, confidence, colors=None, write_conf=Fa
 
     for i, label in enumerate(labels):
         #g.logger.debug ('drawing box for: {}'.format(label))
-        if colors is None:
-            color = COLORS[classes.index(label)]
-        else:
-            color = colors[classes.index(label)]
-
         if write_conf and confidence:
             label += ' ' + str(format(confidence[i] * 100, '.2f')) + '%'
+        # draw bounding box around object
         cv2.rectangle(img, (bbox[i][0], bbox[i][1]), (bbox[i][2], bbox[i][3]), color, 2)
-        cv2.putText(img, label, (bbox[i][0], bbox[i][1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+        # write text 
+        font_scale=0.8
+        font_type =cv2.FONT_HERSHEY_SIMPLEX
+        font_thickness=1
+        #cv2.getTextSize(text, font, font_scale, thickness)
+        text_size = cv2.getTextSize(label, font_type, font_scale , font_thickness)[0]
+        c2 = bbox[i][0] + text_size[0] + 3, bbox[i][1] + text_size[1] + 4
+        cv2.rectangle(img, (bbox[i][0], bbox[i][1]), c2,color, -1)
+        #cv2.putText(image, text, (x, y), font, font_scale, color, thickness) 
+        cv2.putText(img, label, (bbox[i][0], bbox[i][1] + text_size[1] + 4), font_type, font_scale, [255,255,255], font_thickness)
+
     return img
 
 
