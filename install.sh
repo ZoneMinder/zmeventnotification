@@ -130,6 +130,7 @@ install_es() {
 install_hook() {
     echo '***** Installing Hooks **********'
     mkdir -p "${TARGET_DATA}/images" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/known_faces" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/yolov3" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/tinyyolo" 2>/dev/null
 
@@ -180,8 +181,7 @@ install_hook() {
     cd hook
     pip install -r  requirements.txt 
     install -m 755 -o "${WEB_OWNER}" detect_wrapper.sh "${TARGET_BIN}"
-    install -m 755 -o "${WEB_OWNER}" detect_yolo.py "${TARGET_BIN}"
-    install -m 755 -o "${WEB_OWNER}" detect_hog.py "${TARGET_BIN}"
+    install -m 755 -o "${WEB_OWNER}" detect.py "${TARGET_BIN}"
     python setup.py install && print_success "Done" || print_error "python setup failed"
     cd ..
 }

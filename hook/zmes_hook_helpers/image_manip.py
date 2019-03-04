@@ -11,6 +11,12 @@ import numpy as np
 # it also makes sure only patterns specified in detect_pattern are drawn
 
 def processIntersection(bbox, label, conf, match):
+
+    # bbox is the set of bounding boxes
+    # labels are set of corresponding object names
+    # conf are set of confidence scores (for hog and face this is set to 1)
+    # match contains the list of labels that will be allowed based on detect_pattern
+
     new_label = []
     new_bbox = []
     new_conf = []
@@ -55,12 +61,14 @@ def draw_bbox(img, bbox, labels, classes, confidence, colors=None, write_conf=Fa
     COLORS = np.random.uniform(0, 255, size=(80, 3))
     polycolor = g.config['poly_color']
     # first draw the polygons, if any
+    newh, neww = img.shape[:2]
     for ps in g.polygons:
         cv2.polylines(img, [np.asarray(ps['value'])], True, polycolor, thickness=2)
 
     # now draw object boundaries
 
     for i, label in enumerate(labels):
+        #g.logger.debug ('drawing box for: {}'.format(label))
         if colors is None:
             color = COLORS[classes.index(label)]
         else:

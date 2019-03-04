@@ -40,6 +40,9 @@ def str2tuple(str):
 def str2arr(str):
     return  [map(int,x.strip().split(',')) for x in str.split(' ')]
 
+def str_split(my_str):
+    return [x.strip() for x in my_str.split(',')]
+
 def download_files(args):
     if g.config['portal'].lower().startswith('https://'):
         main_handler = urllib.request.HTTPSHandler(context=g.ctx)
@@ -61,14 +64,21 @@ def download_files(args):
     if g.config['frame_id'] == 'bestmatch':
         # download both alarm and snapshot
         filename1 = g.config['image_path'] + '/' + args['eventid'] + '-alarm.jpg'
+        filename1_bbox = g.config['image_path'] + '/' + args['eventid'] + '-alarm-bbox.jpg'
         filename2 = g.config['image_path'] + '/' + args['eventid'] + '-snapshot.jpg'
+        filename2_bbox = g.config['image_path'] + '/' + args['eventid'] + '-snapshot-bbox.jpg'
+
         url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=alarm' + \
             '&username=' + g.config['user'] + '&password=' + g.config['password']
         durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
             '&username=' + g.config['user'] + '&password=*****'
 
         g.logger.debug('Trying to download {}'.format(durl))
-        input_file= opener.open(url)
+        try:
+            input_file= opener.open(url)
+        except HTTPError as e:
+            g.logger.error (e)
+            raise
         with open (filename1, 'wb') as output_file:
             output_file.write(input_file.read())
 
@@ -77,14 +87,20 @@ def download_files(args):
         durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
             '&username=' + g.config['user'] + '&password=*****'
         g.logger.debug('Trying to download {}'.format(durl))
-        input_file= opener.open(url)
+        try:
+            input_file= opener.open(url)
+        except HTTPError as e:
+            g.logger.error (e)
+            raise
         with open (filename2, 'wb') as output_file:
             output_file.write(input_file.read())
 
     else:
         # only download one
         filename1 = g.config['image_path'] + '/' + args['eventid'] + '.jpg'
+        filename1_bbox = g.config['image_path'] + '/' + args['eventid'] + '-bbox.jpg'
         filename2 = ''
+        filename2_bbox = ''
         url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=' + g.config['frame_id'] + \
             '&username=' + g.config['user'] + '&password=' + g.config['password']
         durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
@@ -93,7 +109,8 @@ def download_files(args):
         input_file= opener.open(url)
         with open (filename1, 'wb') as output_file:
             output_file.write(input_file.read())
-    return filename1, filename2
+
+    return filename1, filename2, filename1_bbox, filename2_bbox
 
 
 def process_config(args, ctx):
@@ -116,17 +133,32 @@ def process_config(args, ctx):
         g.config['show_percent'] = config_file['general'].get('show_percent', 'no')
         g.config['log_level'] = config_file['general'].get('log_level', 'info')
         g.config['allow_self_signed'] = config_file['general'].get('allow_self_signed', 'yes')
-        g.config['write_bounding_boxes'] = config_file['general'].get('write_bounding_boxes', 'yes')
+        g.config['write_image_to_zm'] = config_file['general'].get('write_image_to_zm', 'yes')
+        g.config['write_debug_image'] = config_file['general'].get('write_debug_image', 'yes')
+        g.config['models'] = str_split(config_file['general'].get('models', 'yolo'))
+        g.config['poly_color'] = eval(config_file['general'].get('poly_color', '(127, 140, 141)'))
 
-        g.config['config'] = config_file['yolo'].get('yolo', '/var/lib/zmeventnotification/models/yolov3/yolov3.cfg')
-        g.config['weights'] = config_file['yolo'].get('yolo', '/var/lib/zmeventnotification/models/yolov3/yolov3.weights')
-        g.config['labels'] = config_file['yolo'].get('yolo', '/var/lib/zmeventnotification/models/yolov3/yolov3_classes.txt')
-        g.config['poly_color'] = eval(config_file['yolo'].get('poly_color', '(127, 140, 141)'))
+        g.config['config'] = config_file['yolo'].get('config', 
+                             '/var/lib/zmeventnotification/models/yolov3/yolov3.cfg')
+        g.config['weights'] = config_file['yolo'].get('weights', 
+                              '/var/lib/zmeventnotification/models/yolov3/yolov3.weights')
+        g.config['labels'] = config_file['yolo'].get('labels', 
+                              '/var/lib/zmeventnotification/models/yolov3/yolov3_classes.txt')
 
-        g.config['stride']=eval(config_file['hog'].get('stride','(4,4)'));
-        g.config['padding']=eval(config_file['hog'].get('padding','(8,8)'));
-        g.config['scale']=config_file['hog'].get('scale','1.05');
-        g.config['mean_shift']=config_file['hog'].get('mean_shift','-1');
+        g.config['tiny_config'] = config_file['yolo'].get('tiny_config', 
+                                  '/var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.cfg')
+        g.config['tiny_weights'] = config_file['yolo'].get('tiny_weights', 
+                                   '/var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.weights')
+        g.config['tiny_labels'] = config_file['yolo'].get('tiny_labels', 
+                                  '/var/lib/zmeventnotification/models/tinyyolo/yolov33-tiny.txt')
+
+        g.config['stride']=eval(config_file['hog'].get('stride','(4,4)'))
+        g.config['padding']=eval(config_file['hog'].get('padding','(8,8)'))
+        g.config['scale']=config_file['hog'].get('scale','1.05')
+        g.config['mean_shift']=config_file['hog'].get('mean_shift','-1')
+
+        g.config['known_images_path']=config_file['face'].get('known_images_path',
+                                      '/var/lib/zmeventnotification/known_faces')
 
         if g.config['log_level'] == 'debug':
             g.logger.setLevel(logging.DEBUG)
@@ -149,6 +181,19 @@ def process_config(args, ctx):
                 g.config['detect_pattern'] = config_file['monitor-%s' % args['monitorid']].get('detect_pattern', '.*')
                 g.logger.debug('monitor with ID {} has specific detection pattern: {}'.format(args['monitorid'], g.config['detect_pattern']))
 
+        # Check if we have a custom model sequence for the current monitor
+            if config_file.has_option('monitor-%s' % args['monitorid'], 'models'):
+                # local model overrides global
+                g.config['models'] = str_split(config_file['monitor-%s' % args['monitorid']].get('models', 'yolo'))
+                g.logger.debug('monitor with ID {} has specific models: {}'.format(args['monitorid'], g.config['models']))
+
+            # Check if we have a custom yolo type
+            if config_file.has_option('monitor-%s' % args['monitorid'], 'yolo_type'):
+                g.logger.debug ('Tiny YOLO type chosen, switching weights')
+                g.config['config']=g.config['tiny_config']
+                g.config['weights']=g.config['tiny_weights']
+                g.config['labels']=g.config['tiny_labels']
+                
 
         # get the polygons, if any, for the supplied monitor
         g.polygons = []
@@ -160,7 +205,7 @@ def process_config(args, ctx):
                 else:
                     g.logger.debug('object areas section found, but no polygon entries found')
                 for k, v in itms:
-                    if k == 'detect_pattern':
+                    if k in ['detect_pattern','models', 'yolo_type']:
                         continue
                     g.polygons.append({'name': k, 'value': str2tuple(v)})
                     g.logger.debug('adding polygon: {} [{}]'.format(k, v))

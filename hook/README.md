@@ -10,9 +10,7 @@
 - [Test operation](#test-operation)
 - [Troubleshooting](#troubleshooting)
 - [Types of detection](#types-of-detection)
-    - [RECOMMENDED: detect_yolo.py:  using OpenCV DNN with YoloV3 (much slower, accurate)](#recommended-detect_yolopy--using-opencv-dnn-with-yolov3-much-slower-accurate)
-    - [detect_yolo.py:  using OpenCV DNN with Tiny YoloV3 (almost comparable with HOG in speed, more accurate)](#detect_yolopy--using-opencv-dnn-with-tiny-yolov3-almost-comparable-with-hog-in-speed-more-accurate)
-    - [detect_hog.py: using OpenCV SVM HOG (very fast, not accurate)](#detect_hogpy-using-opencv-svm-hog-very-fast-not-accurate)
+    - [Manual test](#manual-test)
 - [Performance comparison](#performance-comparison)
 
 <!-- /TOC -->
@@ -28,15 +26,12 @@
 * Only tested with ZM 1.32+. May or may not work with older versions
 
 ### What
+
+Kung-fu machine learning goodness. 
+
 This is an example of how you can use the `hook` feature of the notification server
-to invoke a custom script on the event before it generates an alarm. This implements a hook script that detects
-objects using Machine Learning for events. If it matches the objects you are interested in, it will send a notification.
-
-There are two sample detection scripts. You can switch between them by changing the value of
-`DETECTION_SCRIPT` in `detect_wrapper.sh`
-
-**Both of these scripts require setup, please run from command line first and 
-make sure deps are installed**
+to invoke a custom script on the event before it generates an alarm. 
+I currently support object detection and face recognition. 
 
 Please don't ask me questions on how to use them. Please read the comments and figure it out.
 
@@ -45,12 +40,8 @@ it will take to detect
 
 ### Installation
 
-
-
-
 #### Option 1: Automatic install
 
-*  Only tested with Python2
 *  You need to have `pip` installed. On ubuntu, it is `sudo apt install python-pip`, or see [this](https://pip.pypa.io/en/stable/installing/)
 *  Clone the event server and go to the `hook` directory 
 
@@ -63,11 +54,17 @@ cd zmeventnotification
 
 * (OPTIONAL) Edit `hook/detect_wrapper.sh` and change:
     * `CONFIG_FILE` to point to the right config file, if you changed paths
-    * `DETECTION_SCRIPT` if you want to change from YOLO to HOG
 
 ```
 sudo ./install.sh # and follow the prompts
 ```
+
+**Note:** if you want to add "face recognition" you also need to do 
+```
+sudo pip install face_recognition
+```
+
+Takes a while and installs a gob of stuff, which is why I did not add it automatically, especially if you don't need face recognition.
 
 #### Option 2: Manual install 
 
@@ -84,12 +81,26 @@ cd zmeventnotification/hooks
 sudo pip install -r  requirements.txt 
 ```
 
+* Install object detection files:
+```bash
+sudo pip ./setup.py install
+```
+
+**Note:** if you want to add "face recognition" you also need to do 
+```
+sudo pip install face_recognition
+```
+
 * You now need to download configuration and weight files that are required by the machine learning magic. Note that you don't have to put them in `/var/lib/zmeventnotification` -> use whatever you want (and change variables in `detect_wrapper.sh` script if you do) 
 
 ```bash
 sudo mkdir -p /var/lib/zmeventnotification/images
 sudo mkdir -p /var/lib/zmeventnotification/models
-sudo mkdir -p /etc/zm
+
+# if you are using face recognition, create this folder
+# after that you need to copy images of faces you want to detect
+# to this folder
+sudo mkdir -p /var/lib/zmeventnotification/known_faces
 
 # if you want to use YoloV3 (slower, accurate)
 sudo mkdir -p /var/lib/zmeventnotification/models/yolov3 # if you are using YoloV3
@@ -120,12 +131,10 @@ sudo chown -R www-data:www-data /var/lib/zmeventnotification/ #(change www-data 
 
 * (OPTIONAL) Edit `detect_wrapper.sh` and change:
     * `CONFIG_FILE` to point to the right config file, if you changed paths
-    * `DETECTION_SCRIPT` if you want to change from YOLO to HOG
 
-
-* Now copy your detection files to `/usr/bin` 
+* Now copy your detection file to `/usr/bin` 
 ```
-sudo cp detect_* /usr/bin
+sudo cp detect.py /usr/bin
 ```
 
 
@@ -177,57 +186,27 @@ If it doesn't work, go back and figure out where you have a problem
 
 ### Types of detection
 
-#### RECOMMENDED: detect_yolo.py:  using OpenCV DNN with YoloV3 (much slower, accurate)
+You can switch detection type by using `model=<detection_type1>,<detection_type2>,....` in your `objectconfig.ini`
 
-The detection uses OpenCV's DNN module and YoloV3 to predict multiple labels with score.
+Example:
 
-You can manually invoke it to test:
+`model=yolo,hog,face` will run full Yolo, then HOG, then face recognition.
 
-```bash
-./sudo -u www-data /usr/bin/detect_yolo.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
-```
-The `--monitorid <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
+Note that you can change `model` on a per monitor basis too. Read the comments in `objectconfig.ini`
 
-
-If you are using YOLO models, you will need the following data files (if you followed the installation directions, you already have them):
-* weights: https://pjreddie.com/media/files/yolov3.weights
-* config: https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg
-* labels: https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names
+If you select yolo, you can add a `model_type=tiny` to use tiny YOLO instead of full yolo weights. Again, please readd
+the comments in `objectconfig.ini`
 
 
+#### Manual test
 
-#### detect_yolo.py:  using OpenCV DNN with Tiny YoloV3 (almost comparable with HOG in speed, more accurate)
 
-The detection uses OpenCV's DNN module and Tiny YoloV3 to predict multiple labels with score.
-
-You can manually invoke it to test:
+You can manually invoke the detection module to check if it works ok:
 
 ```bash
-./sudo -u www-data /usr/bin/detect_yolo.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
+./sudo -u www-data /usr/bin/detect.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
 ```
 The `--monitorid <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
-
-
-If you are using YOLO models, you will need the following data files (if you followed the installation directions, you already have them):
-* weights: https://pjreddie.com/media/files/yolov3-tiny.weights
-* config:  https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg
-* labels:  https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names
-
-(Note: `coco.names` is the label file the script needs. It is common for both tiny or regular yolo)
-
-#### detect_hog.py: using OpenCV SVM HOG (very fast, not accurate)
-
-You can manually invoke it to test:
-
-```bash
-./sudo -u www-data /usr/bin/detect_hog.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
-```
-The `--monitorid <mid>` is optional and is the monitor ID. If you do specify it, it will pick up the right mask to apply (if it is in your config)
-
-The detection uses a very fast, but not very accurate OpenCV model (hog.detectMultiScale). 
-The good part is that it is extremely fast can can be used for realtime needs. 
-Fiddle with the config settings in the `[hog]` section (stride/scale) to get more accuracy at the cost of speed.
-
 
 ### Performance comparison
 
@@ -242,7 +221,7 @@ As always, if you are trying to figure out how this works, do this in 3 steps:
 
 **STEP 1: Make sure the scripts(s) work**
 - Run the python script manually to see if it works (refer to sections above on how to run them manuall)
-- `./detect_wrapper.sh <eid> <mid>` --> make sure it downloads a proper image for that eid. Make sure it correctly invokes detect_xxx.py If not, fix it. (`<mid>` is optional and is used to apply a crop mask if specified)
+- `./detect_wrapper.sh <eid> <mid>` --> make sure it downloads a proper image for that eid. Make sure it correctly invokes detect.py If not, fix it. (`<mid>` is optional and is used to apply a crop mask if specified)
 - Make sure the `image_path` you've chosen in the config file is WRITABLE by www-data (or apache) before you move to step 2
 
 **STEP 2: run zmeventnotification in MANUAL mode**
@@ -252,5 +231,4 @@ As always, if you are trying to figure out how this works, do this in 3 steps:
 *  Force an alarm, look at logs
 
 **STEP 3: integrate with the actual daemon**
-
 * You should know how to do this already
