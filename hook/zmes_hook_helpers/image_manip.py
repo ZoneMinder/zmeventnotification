@@ -93,10 +93,15 @@ def draw_bbox(img, bbox, labels, classes, confidence, color=None, write_conf=Fal
         font_thickness=1
         #cv2.getTextSize(text, font, font_scale, thickness)
         text_size = cv2.getTextSize(label, font_type, font_scale , font_thickness)[0]
-        c2 = bbox[i][0] + text_size[0] + 3, bbox[i][1] + text_size[1] + 4
-        cv2.rectangle(img, (bbox[i][0], bbox[i][1]), c2,color, -1)
+        text_width_padded = text_size[0]+4
+        text_height_padded = text_size[1]+4
+
+        r_top_left = (bbox[i][0], bbox[i][1]-text_height_padded)
+        r_bottom_right = (bbox[i][0]+text_width_padded,bbox[i][1])
+        cv2.rectangle(img, r_top_left, r_bottom_right,color, -1)
         #cv2.putText(image, text, (x, y), font, font_scale, color, thickness) 
-        cv2.putText(img, label, (bbox[i][0], bbox[i][1] + text_size[1] + 4), font_type, font_scale, [255,255,255], font_thickness)
+        # location of text is botom left
+        cv2.putText(img, label, (bbox[i][0]+2, bbox[i][1]-2), font_type, font_scale, [255,255,255], font_thickness)
 
     return img
 
