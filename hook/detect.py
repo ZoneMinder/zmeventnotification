@@ -80,6 +80,7 @@ else:
 
 start = datetime.datetime.now()
 # First do detection for alarmed image then snapshot
+poly_scaled = False
 for filename in [filename_alarm, filename_snapshot]:
     if not filename:
         continue
@@ -102,13 +103,15 @@ for filename in [filename_alarm, filename_snapshot]:
         g.polygons.append({'name': 'full_image', 'value': [(0, 0), (oldw, 0), (oldw, oldh), (0, oldh)]})
         g.logger.debug('No polygon area specfied, so adding a full image polygon:{}'.format(g.polygons))
 
-    # we resize polys only one time
-    # when we get to the next image (snapshot), polygons have already resized
-    if g.config['resize'] and filename == filename_alarm:
+    if g.config['resize']:
         g.logger.debug('resizing to {} before analysis...'.format(g.config['resize']))
         image = imutils.resize(image, width=min(int(g.config['resize']), image.shape[1]))
         newh, neww = image.shape[:2]
-        utils.rescale_polygons(neww / oldw, newh / oldh)
+        # we resize polys only one time
+        # when we get to the next image (snapshot), polygons have already resized
+        if not poly_scaled:
+           utils.rescale_polygons(neww / oldw, newh / oldh)
+           poly_scaled = True
 
     g.logger.info('Analyzing image with pattern: {}'.format( g.config['detect_pattern']))
     # detect objects
