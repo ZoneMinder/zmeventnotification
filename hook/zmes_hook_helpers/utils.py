@@ -120,6 +120,8 @@ def process_config(args, ctx):
     try:
         config_file = ConfigParser()
         config_file.read(args['config'])
+
+        # general section
         g.config['portal'] = config_file['general'].get('portal', '')
         g.config['user'] = config_file['general'].get('user', 'admin')
         g.config['password'] = config_file['general'].get('password', 'admin')
@@ -138,6 +140,7 @@ def process_config(args, ctx):
         g.config['models'] = str_split(config_file['general'].get('models', 'yolo'))
         g.config['poly_color'] = eval(config_file['general'].get('poly_color', '(127, 140, 141)'))
 
+        # YOLO stuff
         g.config['config'] = config_file['yolo'].get('config', 
                              '/var/lib/zmeventnotification/models/yolov3/yolov3.cfg')
         g.config['weights'] = config_file['yolo'].get('weights', 
@@ -152,11 +155,17 @@ def process_config(args, ctx):
         g.config['tiny_labels'] = config_file['yolo'].get('tiny_labels', 
                                   '/var/lib/zmeventnotification/models/tinyyolo/yolov33-tiny.txt')
 
+
+        # HOG stuff
         g.config['stride']=eval(config_file['hog'].get('stride','(4,4)'))
         g.config['padding']=eval(config_file['hog'].get('padding','(8,8)'))
         g.config['scale']=config_file['hog'].get('scale','1.05')
         g.config['mean_shift']=config_file['hog'].get('mean_shift','-1')
 
+        # face recognition stuff
+        g.config['face_num_jitters']=int(config_file['face'].get('num_jitters','0'))
+        g.config['face_upsample_times']=int(config_file['face'].get('upsample_times','1'))
+        g.config['face_model']=config_file['face'].get('model','hog')
         g.config['known_images_path']=config_file['face'].get('known_images_path',
                                       '/var/lib/zmeventnotification/known_faces')
 

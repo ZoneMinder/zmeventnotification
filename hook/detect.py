@@ -128,7 +128,9 @@ for filename in [filename_alarm, filename_snapshot]:
         elif model == 'hog':
             m = hog.Hog()
         elif model == 'face':
-            m = face.Face()
+            m = face.Face(upsample_times=g.config['face_upsample_times'], 
+                          num_jitters=g.config['face_num_jitters'],
+                          model=g.config['face_model'])
         else:
             g.logger.error('Invalid model {}'.format(model))
             raise ValueError('Invalid model {}'.format(model))

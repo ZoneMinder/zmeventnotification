@@ -15,8 +15,13 @@ except ImportError:
 
 class Face:
 
-    def __init__(self):
-        g.logger.debug ('Initializing face recognition')
+    def __init__(self, upsample_times=1,  num_jitters=0, model='hog'):
+        g.logger.debug ('Initializing face recognition with model:{} upsample:{}, jitters:{}'
+                       .format(model, upsample_times, num_jitters))
+
+        self.upsample_times = upsample_times
+        self.num_jitters = num_jitters
+        self.model=model
         directory = g.config['known_images_path']
         ext = ['.jpg', '.jpeg', '.png', '.gif']
         self.known_face_encodings = []
@@ -60,8 +65,8 @@ class Face:
         rgb_image = image[:, :, ::-1]
 
         # Find all the faces and face encodings 
-        face_locations = face_recognition.face_locations(rgb_image)
-        face_encodings = face_recognition.face_encodings(rgb_image, face_locations)
+        face_locations = face_recognition.face_locations(rgb_image,model=self.model, number_of_times_to_upsample=self.upsample_times)
+        face_encodings = face_recognition.face_encodings(rgb_image, known_face_locations=face_locations,num_jitters=self.num_jitters)
 
         matched_face_names = []
         matched_face_rects = []
