@@ -93,7 +93,7 @@ for filename in [filename_alarm, filename_snapshot]:
     image = cv2.imread(filename)
     if image is None:
         g.logger.error ('Error reading {}. It either does not exist or is invalid'.format(filename))
-        raise ValueError('Error reading file. It either does not exist or is invalid')
+        raise ValueError('Error reading file {}. It either does not exist or is invalid'.format(filename))
         
     oldh, oldw = image.shape[:2]
 
