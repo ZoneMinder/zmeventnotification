@@ -6,16 +6,16 @@ import cv2
 
 # Class to handle Yolo based detection
 
+
 class Yolo:
 
-# The actual CNN object detection code
-# opencv DNN code credit: https://github.com/arunponnusamy/cvlib
+    # The actual CNN object detection code
+    # opencv DNN code credit: https://github.com/arunponnusamy/cvlib
 
     def __init__(self):
         self.initialize = True
         self.net = None
         self.classes = None
-
 
     def populate_class_labels(self):
         class_file_abs_path = g.config['labels']
@@ -25,14 +25,13 @@ class Yolo:
     def get_classes(self):
         return self.classes
 
-    
     def get_output_layers(self):
         layer_names = self.net.getLayerNames()
-        output_layers = [layer_names[i[0] - 1] for i in self.net.getUnconnectedOutLayers()]
+        output_layers = [layer_names[i[0] - 1]
+                         for i in self.net.getUnconnectedOutLayers()]
         return output_layers
 
-   
-    def detect(self,image):
+    def detect(self, image):
         Height, Width = image.shape[:2]
         scale = 0.00392
         config_file_abs_path = g.config['config']
@@ -40,12 +39,17 @@ class Yolo:
 
         if self.initialize:
             self.populate_class_labels()
-            self.net = cv2.dnn.readNet(weights_file_abs_path, config_file_abs_path)
+            self.net = cv2.dnn.readNet(
+                weights_file_abs_path, config_file_abs_path)
             self.initialize = False
             g.logger.debug('Initializing Yolo')
-            g.logger.debug('config:{}, weights:{}'.format(config_file_abs_path, weights_file_abs_path))
+            g.logger.debug(
+                'config:{}, weights:{}'.format(
+                    config_file_abs_path,
+                    weights_file_abs_path))
 
-        blob = cv2.dnn.blobFromImage(image, scale, (416, 416), (0, 0, 0), True, crop=False)
+        blob = cv2.dnn.blobFromImage(
+            image, scale, (416, 416), (0, 0, 0), True, crop=False)
         self.net.setInput(blob)
         outs = self.net.forward(self.get_output_layers())
 
@@ -71,7 +75,8 @@ class Yolo:
                     confidences.append(float(confidence))
                     boxes.append([x, y, w, h])
 
-        indices = cv2.dnn.NMSBoxes(boxes, confidences, conf_threshold, nms_threshold)
+        indices = cv2.dnn.NMSBoxes(
+            boxes, confidences, conf_threshold, nms_threshold)
 
         bbox = []
         label = []
@@ -84,9 +89,9 @@ class Yolo:
             y = box[1]
             w = box[2]
             h = box[3]
-            bbox.append([int(round(x)), int(round(y)), int(round(x + w)), int(round(y + h))])
+            bbox.append([int(round(x)), int(round(y)),
+                         int(round(x + w)), int(round(y + h))])
             label.append(str(self.classes[class_ids[i]]))
             conf.append(confidences[i])
 
-        return bbox, label, conf                                   
-
+        return bbox, label, conf

@@ -11,12 +11,14 @@ import random
 # intersect the polygons, if specified
 # it also makes sure only patterns specified in detect_pattern are drawn
 
+
 def processIntersection(bbox, label, conf, match):
 
     # bbox is the set of bounding boxes
     # labels are set of corresponding object names
     # conf are set of confidence scores (for hog and face this is set to 1)
-    # match contains the list of labels that will be allowed based on detect_pattern
+    # match contains the list of labels that will be allowed based on
+    # detect_pattern
 
     new_label = []
     new_bbox = []
@@ -39,44 +41,56 @@ def processIntersection(bbox, label, conf, match):
             poly = Polygon(p['value'])
             if obj.intersects(poly):
                 if label[idx] in match:
-                    g.logger.debug('{} intersects object:{}[{}]'.format(p['name'], label[idx], b))
+                    g.logger.debug(
+                        '{} intersects object:{}[{}]'.format(
+                            p['name'], label[idx], b))
                     new_label.append(label[idx])
                     new_bbox.append(old_b)
                     new_conf.append(conf[idx])
                 else:
-                    g.logger.debug('{} intersects object:{}[{}] but does NOT match your detect_pattern filter of {}'
-                                   .format(p['name'], label[idx], b, g.config['detect_pattern']))
+                    g.logger.debug(
+                        '{} intersects object:{}[{}] but does NOT match your detect_pattern filter of {}' .format(
+                            p['name'], label[idx], b, g.config['detect_pattern']))
                 doesIntersect = True
                 break
 
             else:  # of poly intersects
-                g.logger.debug('object:{} at {} does not fall into any polygons, removing...'
-                               .format(label[idx], obj))
+                g.logger.debug(
+                    'object:{} at {} does not fall into any polygons, removing...' .format(
+                        label[idx], obj))
     return new_bbox, new_label, new_conf
 
 
 # draws bounding boxes of identified objects and polygons
 
-def draw_bbox(img, bbox, labels, classes, confidence, color=None, write_conf=False ):
+def draw_bbox(
+        img,
+        bbox,
+        labels,
+        classes,
+        confidence,
+        color=None,
+        write_conf=False):
 
-    slate_colors = [ 
-            (52,73,94),
-            (39, 174, 96),
-            (142, 68, 173),
-            (109, 33, 79),
-            (47, 54, 64)
-        ]
+    slate_colors = [
+        (52, 73, 94),
+        (39, 174, 96),
+        (142, 68, 173),
+        (109, 33, 79),
+        (47, 54, 64)
+    ]
     # if no color is specified, use my own slate
     if color is None:
             # opencv is BGR
-            bgr_slate_colors = slate_colors[::-1]
-            color = random.choice(bgr_slate_colors)
+        bgr_slate_colors = slate_colors[::-1]
+        color = random.choice(bgr_slate_colors)
 
     polycolor = g.config['poly_color']
     # first draw the polygons, if any
     newh, neww = img.shape[:2]
     for ps in g.polygons:
-        cv2.polylines(img, [np.asarray(ps['value'])], True, polycolor, thickness=2)
+        cv2.polylines(img, [np.asarray(ps['value'])],
+                      True, polycolor, thickness=2)
 
     # now draw object boundaries
 
@@ -85,24 +99,33 @@ def draw_bbox(img, bbox, labels, classes, confidence, color=None, write_conf=Fal
         if write_conf and confidence:
             label += ' ' + str(format(confidence[i] * 100, '.2f')) + '%'
         # draw bounding box around object
-        cv2.rectangle(img, (bbox[i][0], bbox[i][1]), (bbox[i][2], bbox[i][3]), color, 2)
+        cv2.rectangle(img, (bbox[i][0], bbox[i][1]),
+                      (bbox[i][2], bbox[i][3]), color, 2)
 
-        # write text 
-        font_scale=0.8
-        font_type =cv2.FONT_HERSHEY_SIMPLEX
-        font_thickness=1
+        # write text
+        font_scale = 0.8
+        font_type = cv2.FONT_HERSHEY_SIMPLEX
+        font_thickness = 1
         #cv2.getTextSize(text, font, font_scale, thickness)
-        text_size = cv2.getTextSize(label, font_type, font_scale , font_thickness)[0]
-        text_width_padded = text_size[0]+4
-        text_height_padded = text_size[1]+4
+        text_size = cv2.getTextSize(
+            label, font_type, font_scale, font_thickness)[0]
+        text_width_padded = text_size[0] + 4
+        text_height_padded = text_size[1] + 4
 
-        r_top_left = (bbox[i][0], bbox[i][1]-text_height_padded)
-        r_bottom_right = (bbox[i][0]+text_width_padded,bbox[i][1])
-        cv2.rectangle(img, r_top_left, r_bottom_right,color, -1)
-        #cv2.putText(image, text, (x, y), font, font_scale, color, thickness) 
+        r_top_left = (bbox[i][0], bbox[i][1] - text_height_padded)
+        r_bottom_right = (bbox[i][0] + text_width_padded, bbox[i][1])
+        cv2.rectangle(img, r_top_left, r_bottom_right, color, -1)
+        #cv2.putText(image, text, (x, y), font, font_scale, color, thickness)
         # location of text is botom left
-        cv2.putText(img, label, (bbox[i][0]+2, bbox[i][1]-2), font_type, font_scale, [255,255,255], font_thickness)
+        cv2.putText(img,
+                    label,
+                    (bbox[i][0] + 2,
+                     bbox[i][1] - 2),
+                    font_type,
+                    font_scale,
+                    [255,
+                        255,
+                        255],
+                    font_thickness)
 
     return img
-
-
