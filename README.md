@@ -335,6 +335,11 @@ Starting v2.0, I support images in alarms. However, there are several conditions
 * You need patches to ZM unless you are using a package that is later than Oct 11, 2018. Please read the notes in the INI file 
 * A good way to isolate if its a URL problem or something else is replace the `picture_url` with a knows HTTPS url like [this](https://upload.wikimedia.org/wikipedia/commons/5/5f/Chinese_new_year_dragon_2014.jpg)
 
+Before you report issues, please make sure you have been diligent in testing
+- Try with a public URL as indicated above. This is important.
+- In your issue, post debug logs of zmeventnotification so I can see what message it is sending
+
+
 ### Secure mode just doesn't work (WSS) - WS works
 
 Try to put in your event server IP in the `address` token in `[network]` section of `zmeventnotification.ini`
