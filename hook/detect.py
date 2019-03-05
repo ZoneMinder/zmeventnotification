@@ -57,9 +57,9 @@ g.polygons = []
 
 # process config file
 g.ctx = ssl.create_default_context()
+
+
 utils.process_config(args,g.ctx)
-
-
 # now download image(s)
 
 if not args['file']:

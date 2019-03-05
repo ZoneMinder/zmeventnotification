@@ -11,6 +11,7 @@ import sys
 import datetime
 import ssl
 import urllib
+import json
 
 from configparser import ConfigParser
 import zmes_hook_helpers.common_params as g
@@ -43,6 +44,45 @@ def str2arr(str):
 def str_split(my_str):
     return [x.strip() for x in my_str.split(',')]
 
+
+# Imports zone definitions from ZM
+def import_zm_zones(mid):
+    url = g.config['portal']+'/api/zones/forMonitor/'+mid+'.json'
+    g.logger.debug ('Getting ZM zones using {}?username=xxx&password=yyy'.format(url))
+    url = url + '?username=' + g.config['user']
+    url = url + '&password=' + g.config['password']
+
+    if g.config['portal'].lower().startswith('https://'):
+        main_handler = urllib.request.HTTPSHandler(context=g.ctx)
+    else:
+        main_handler = urllib.request.HTTPHandler()
+
+    if g.config['basic_user']:
+        g.logger.debug ('Basic auth config found, associating handlers')
+        password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
+        top_level_url = g.config['portal']
+        password_mgr.add_password(None, top_level_url, g.config['basic_user'], g.config['basic_password'])
+        handler = urllib.request.HTTPBasicAuthHandler(password_mgr)
+        opener = urllib.request.build_opener(handler, main_handler)
+
+    else:
+        opener = urllib.request.build_opener(main_handler)
+    try:
+        input_file= opener.open(url)
+    except HTTPError as e:
+        g.logger.error (e)
+        raise
+
+    c = input_file.read()
+    j = json.loads(c)
+    for item in j['zones']:
+        g.polygons.append({'name': item['Zone']['Name'], 
+                           'value': str2tuple(item['Zone']['Coords'])})
+        g.logger.debug('importing zoneminder polygon: {} [{}]'
+                       .format(item['Zone']['Name'], item['Zone']['Coords'])) 
+
+
+# downloaded ZM image files for future analysis
 def download_files(args):
     if g.config['portal'].lower().startswith('https://'):
         main_handler = urllib.request.HTTPSHandler(context=g.ctx)
@@ -213,8 +253,11 @@ def process_config(args, ctx):
                     g.logger.debug('object areas definition found for monitor:{}'.format(args['monitorid']))
                 else:
                     g.logger.debug('object areas section found, but no polygon entries found')
+
                 for k, v in itms:
-                    if k in ['detect_pattern','models', 'yolo_type']:
+                    if k == 'import_zm_zones' and v == 'yes':
+                        import_zm_zones(args['monitorid'])
+                    if k in ['detect_pattern','models', 'yolo_type', 'import_zm_zones']:
                         continue
                     g.polygons.append({'name': k, 'value': str2tuple(v)})
                     g.logger.debug('adding polygon: {} [{}]'.format(k, v))
