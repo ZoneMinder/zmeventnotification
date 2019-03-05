@@ -21,6 +21,8 @@ standard_library.install_aliases()
 from urllib.error import HTTPError
 
 #resize polygons based on analysis scale
+
+
 def rescale_polygons(xfactor, yfactor):
     newps = []
     for p in g.polygons:
@@ -35,11 +37,15 @@ def rescale_polygons(xfactor, yfactor):
 
 # converts a string of cordinates 'x1,y1 x2,y2 ...' to a tuple set. We use this
 # to parse the polygon parameters in the ini file
+
+
 def str2tuple(str):
     return [tuple(map(int, x.strip().split(','))) for x in str.split(' ')]
 
+
 def str2arr(str):
-    return  [map(int,x.strip().split(',')) for x in str.split(' ')]
+    return [map(int, x.strip().split(',')) for x in str.split(' ')]
+
 
 def str_split(my_str):
     return [x.strip() for x in my_str.split(',')]
@@ -47,8 +53,8 @@ def str_split(my_str):
 
 # Imports zone definitions from ZM
 def import_zm_zones(mid):
-    url = g.config['portal']+'/api/zones/forMonitor/'+mid+'.json'
-    g.logger.debug ('Getting ZM zones using {}?username=xxx&password=yyy'.format(url))
+    url = g.config['portal'] + '/api/zones/forMonitor/' + mid + '.json'
+    g.logger.debug('Getting ZM zones using {}?username=xxx&password=yyy'.format(url))
     url = url + '?username=' + g.config['user']
     url = url + '&password=' + g.config['password']
 
@@ -58,7 +64,7 @@ def import_zm_zones(mid):
         main_handler = urllib.request.HTTPHandler()
 
     if g.config['basic_user']:
-        g.logger.debug ('Basic auth config found, associating handlers')
+        g.logger.debug('Basic auth config found, associating handlers')
         password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
         top_level_url = g.config['portal']
         password_mgr.add_password(None, top_level_url, g.config['basic_user'], g.config['basic_password'])
@@ -68,9 +74,9 @@ def import_zm_zones(mid):
     else:
         opener = urllib.request.build_opener(main_handler)
     try:
-        input_file= opener.open(url)
+        input_file = opener.open(url)
     except HTTPError as e:
-        g.logger.error (e)
+        g.logger.error(e)
         raise
 
     c = input_file.read()
@@ -89,9 +95,8 @@ def download_files(args):
     else:
         main_handler = urllib.request.HTTPHandler()
 
-
     if g.config['basic_user']:
-        g.logger.debug ('Basic auth config found, associating handlers')
+        g.logger.debug('Basic auth config found, associating handlers')
         password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
         top_level_url = g.config['portal']
         password_mgr.add_password(None, top_level_url, g.config['basic_user'], g.config['basic_password'])
@@ -115,11 +120,11 @@ def download_files(args):
 
         g.logger.debug('Trying to download {}'.format(durl))
         try:
-            input_file= opener.open(url)
+            input_file = opener.open(url)
         except HTTPError as e:
-            g.logger.error (e)
+            g.logger.error(e)
             raise
-        with open (filename1, 'wb') as output_file:
+        with open(filename1, 'wb') as output_file:
             output_file.write(input_file.read())
 
         url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
@@ -128,11 +133,11 @@ def download_files(args):
             '&username=' + g.config['user'] + '&password=*****'
         g.logger.debug('Trying to download {}'.format(durl))
         try:
-            input_file= opener.open(url)
+            input_file = opener.open(url)
         except HTTPError as e:
-            g.logger.error (e)
+            g.logger.error(e)
             raise
-        with open (filename2, 'wb') as output_file:
+        with open(filename2, 'wb') as output_file:
             output_file.write(input_file.read())
 
     else:
@@ -146,8 +151,8 @@ def download_files(args):
         durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
             '&username=' + g.config['user'] + '&password=*****'
         g.logger.debug('Trying to download {}'.format(durl))
-        input_file= opener.open(url)
-        with open (filename1, 'wb') as output_file:
+        input_file = opener.open(url)
+        with open(filename1, 'wb') as output_file:
             output_file.write(input_file.read())
 
     return filename1, filename2, filename1_bbox, filename2_bbox
@@ -195,18 +200,17 @@ def process_config(args, ctx):
         g.config['tiny_labels'] = config_file['yolo'].get('tiny_labels', 
                                   '/var/lib/zmeventnotification/models/tinyyolo/yolov33-tiny.txt')
 
-
         # HOG stuff
-        g.config['stride']=eval(config_file['hog'].get('stride','(4,4)'))
-        g.config['padding']=eval(config_file['hog'].get('padding','(8,8)'))
-        g.config['scale']=config_file['hog'].get('scale','1.05')
-        g.config['mean_shift']=config_file['hog'].get('mean_shift','-1')
+        g.config['stride'] = eval(config_file['hog'].get('stride', '(4,4)'))
+        g.config['padding'] = eval(config_file['hog'].get('padding', '(8,8)'))
+        g.config['scale'] = config_file['hog'].get('scale', '1.05')
+        g.config['mean_shift'] = config_file['hog'].get('mean_shift', '-1')
 
         # face recognition stuff
-        g.config['face_num_jitters']=int(config_file['face'].get('num_jitters','0'))
-        g.config['face_upsample_times']=int(config_file['face'].get('upsample_times','1'))
-        g.config['face_model']=config_file['face'].get('model','hog')
-        g.config['known_images_path']=config_file['face'].get('known_images_path',
+        g.config['face_num_jitters'] = int(config_file['face'].get('num_jitters', '0'))
+        g.config['face_upsample_times'] = int(config_file['face'].get('upsample_times', '1'))
+        g.config['face_model'] = config_file['face'].get('model', 'hog')
+        g.config['known_images_path'] = config_file['face'].get('known_images_path',
                                       '/var/lib/zmeventnotification/known_faces')
 
         if g.config['log_level'] == 'debug':
@@ -238,11 +242,10 @@ def process_config(args, ctx):
 
             # Check if we have a custom yolo type
             if config_file.has_option('monitor-%s' % args['monitorid'], 'yolo_type'):
-                g.logger.debug ('Tiny YOLO type chosen, switching weights')
-                g.config['config']=g.config['tiny_config']
-                g.config['weights']=g.config['tiny_weights']
-                g.config['labels']=g.config['tiny_labels']
-                
+                g.logger.debug('Tiny YOLO type chosen, switching weights')
+                g.config['config'] = g.config['tiny_config']
+                g.config['weights'] = g.config['tiny_weights']
+                g.config['labels'] = g.config['tiny_labels']
 
         # get the polygons, if any, for the supplied monitor
         g.polygons = []
@@ -257,7 +260,7 @@ def process_config(args, ctx):
                 for k, v in itms:
                     if k == 'import_zm_zones' and v == 'yes':
                         import_zm_zones(args['monitorid'])
-                    if k in ['detect_pattern','models', 'yolo_type', 'import_zm_zones']:
+                    if k in ['detect_pattern', 'models', 'yolo_type', 'import_zm_zones']:
                         continue
                     g.polygons.append({'name': k, 'value': str2tuple(v)})
                     g.logger.debug('adding polygon: {} [{}]'.format(k, v))
@@ -269,7 +272,7 @@ def process_config(args, ctx):
         g.logger.error('Error parsing config:{}'.format(args['config']))
         g.logger.error('Error was:{}'.format(e))
         exit(0)
-        
+
 
 
 
