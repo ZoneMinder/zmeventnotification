@@ -15,7 +15,7 @@
         - [Configuring face recognition](#configuring-face-recognition)
         - [known faces images](#known-faces-images)
         - [Yo, it can't recognize faces](#yo-it-cant-recognize-faces)
-    - [Manual test](#manual-test)
+    - [Manually testing if detection is working well](#manually-testing-if-detection-is-working-well)
 - [Performance comparison](#performance-comparison)
 
 <!-- /TOC -->
@@ -233,8 +233,7 @@ or completely overhead faces. Take a look at the [accuracy wiki](https://github.
     - If it says "no faces found" that means your alarmed image doesn't have a face that is recognizable
 - Experiment. Read the library wiki link I posted in the previous section.  Don't ask me questions on what do to do me it better. 
 
-
-#### Manual test
+#### Manually testing if detection is working well
 
 You can manually invoke the detection module to check if it works ok:
 
