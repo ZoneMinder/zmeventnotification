@@ -232,7 +232,7 @@ or completely overhead faces. Take a look at the [accuracy wiki](https://github.
     - If it says "no faces loaded" that means your known images don't have recognizable faces
     - If it says "no faces found" that means your alarmed image doesn't have a face that is recognizable
     - Read comments about `num_jitters`, `model`, `upsample_times` in `objectconfig.ini`
-- Experiment. Read the library wiki link I posted in the previous section.  Don't ask me questions on what do to do me it better. 
+    - Experiment. Read the accuracy wiki link I posted in the previous section
 
 #### Manually testing if detection is working well
 
