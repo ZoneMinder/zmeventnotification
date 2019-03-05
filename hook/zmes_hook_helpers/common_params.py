@@ -3,6 +3,6 @@
 
 ctx = None # SSL context
 logger = None # loggin handler
-config = {}
-polygons = []
+config = {} # object that will hold config values
+polygons = [] # will contain mask(s) for a monitor
 

@@ -19,6 +19,9 @@ setup(name = NAME,
       version=VERSION,
       py_modules = ['zmes_hook_helpers.common_params',
                     'zmes_hook_helpers.log',
+                    'zmes_hook_helpers.yolo',
+                    'zmes_hook_helpers.hog',
+                    'zmes_hook_helpers.face',
                     'zmes_hook_helpers.image_manip',
                     'zmes_hook_helpers.utils']
       )
