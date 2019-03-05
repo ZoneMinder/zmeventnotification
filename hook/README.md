@@ -10,6 +10,11 @@
 - [Test operation](#test-operation)
 - [Troubleshooting](#troubleshooting)
 - [Types of detection](#types-of-detection)
+    - [How to use face recognition](#how-to-use-face-recognition)
+        - [Limitations](#limitations-1)
+        - [Configuring face recognition](#configuring-face-recognition)
+        - [known faces images](#known-faces-images)
+        - [Yo, it can't recognize faces](#yo-it-cant-recognize-faces)
     - [Manual test](#manual-test)
 - [Performance comparison](#performance-comparison)
 
@@ -197,9 +202,39 @@ Note that you can change `model` on a per monitor basis too. Read the comments i
 If you select yolo, you can add a `model_type=tiny` to use tiny YOLO instead of full yolo weights. Again, please readd
 the comments in `objectconfig.ini`
 
+#### How to use face recognition
+Face Recognition uses [this](https://github.com/ageitgey/face_recognition) library. Before you try and use face recognition, please make sure you did a `sudo pip install face_recognition`
+The reason this is not automatically done during setup is that it installs a lot of dependencies that takes time (including dlib) and not everyone wants it.
+
+##### Limitations
+Don't expect magic with overhead cameras. This library requires a reasonable face orientation (works for front facing, or somewhat side facing poses) and does not work for full profiles
+or completely overhead faces. Take a look at the [accuracy wiki](https://github.com/ageitgey/face_recognition/wiki/Face-Recognition-Accuracy-Problems) of this library to know more about its limitations.
+
+##### Configuring face recognition
+- Make sure you have images of people you want to recognize in `/var/lib/zmeventnotification/known_faces`
+- Only one image per person
+- For example, you may have the following image setup:
+```
+    /var/lib/zmeventnotification/known_faces
+        + david_gilmour.jpg
+        + ramanujan.jpg
+        + bruce_lee.jpg
+```
+- When face recognition is triggered, it will load each of these files and if there are faces in them, will load them and compare them to the alarmed image
+
+##### known faces images 
+- Only put in one image per person
+- Make sure the face is recognizable 
+- crop it to around 200 pixels width (doesn't seem to need bigger images, but experiment. Larger the image, the larger the memory requirements)
+
+##### Yo, it can't recognize faces
+- Look at debug logs. 
+    - If it says "no faces loaded" that means your known images don't have recognizable faces
+    - If it says "no faces found" that means your alarmed image doesn't have a face that is recognizable
+- Experiment. Read the library wiki link I posted in the previous section.  Don't ask me questions on what do to do me it better. 
+
 
 #### Manual test
-
 
 You can manually invoke the detection module to check if it works ok:
 
