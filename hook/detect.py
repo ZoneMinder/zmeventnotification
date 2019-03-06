@@ -47,12 +47,18 @@ ap.add_argument('-c', '--config', required=True, help='config file with path')
 ap.add_argument('-e', '--eventid', required=True, help='event ID to retrieve')
 ap.add_argument('-p', '--eventpath', help='path to store object image file', default='')
 ap.add_argument('-m', '--monitorid', help='monitor id - needed for mask')
-ap.add_argument('-t', '--time', help='log time')
+ap.add_argument('-t', '--time', help='log time', action='store_true')
+ap.add_argument('-v', '--version', help='print version and quit',action='store_true')
 
 ap.add_argument('-f', '--file', help='internal testing use only - skips event download')
 
 args, u = ap.parse_known_args()
 args = vars(args)
+
+if args['version']:
+    print ('---------| app version: {} |------------'.format(__version__))
+    exit(0)
+
 g.polygons = []
 
 # process config file

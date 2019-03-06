@@ -11,8 +11,10 @@ from setuptools import setup
 NAME = 'zmes_hooks'
 DESCRIPTION = 'ZoneMinder EventServer hooks'
 URL = 'https://github.com/pliablepixels/zmeventserver/tree/master/hook'
-EMAIL = 'pliablepixels@gmail.com'
+AUTHOR_EMAIL = 'pliablepixels@gmail.com'
 AUTHOR = 'Pliable Pixels'
+LICENSE = 'GPL'
+
 
 here = os.path.abspath(os.path.dirname(__file__))
 def read(*parts):
@@ -28,6 +30,11 @@ def find_version(*file_paths):
 
 setup(name = NAME,
       version = find_version('zmes_hook_helpers','__init__.py'),
+      description = DESCRIPTION,
+      author = AUTHOR,
+      author_email = AUTHOR_EMAIL,
+      url = URL,
+      license = LICENSE,
       py_modules = ['zmes_hook_helpers.common_params',
                     'zmes_hook_helpers.log',
                     'zmes_hook_helpers.yolo',
