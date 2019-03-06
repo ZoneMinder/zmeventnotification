@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-# version 3.1
-
 # Alternate detection script using neural nets and YoloV3.
 # slower than openCV HOG but much more accurate
 # also capable of detecting many more objects
