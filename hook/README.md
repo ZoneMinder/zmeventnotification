@@ -61,12 +61,12 @@ cd zmeventnotification
     * `CONFIG_FILE` to point to the right config file, if you changed paths
 
 ```
-sudo ./install.sh # and follow the prompts
+sudo -H ./install.sh # and follow the prompts
 ```
 
 **Note:** if you want to add "face recognition" you also need to do 
 ```
-sudo pip install face_recognition
+sudo -H pip install face_recognition
 ```
 
 Takes a while and installs a gob of stuff, which is why I did not add it automatically, especially if you don't need face recognition.
@@ -78,17 +78,17 @@ If automatic install fails for you, or you like to be in control:
 
 ```bash
 git clone https://github.com/pliablepixels/zmeventnotification # if you don't already have it downloaded
-cd zmeventnotification/hooks
+cd zmeventnotification/
 ```
 
 * Install the object detection dependencies:
 ```bash
-sudo pip install -r  requirements.txt 
+sudo pip install -r  hook/requirements.txt 
 ```
 
 * Install object detection files:
 ```bash
-sudo pip ./setup.py install
+sudo -H pip install hook
 ```
 
 **Note:** if you want to add "face recognition" you also need to do 

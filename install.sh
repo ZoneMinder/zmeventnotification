@@ -178,12 +178,11 @@ install_hook() {
     chown -R ${WEB_OWNER}:${WEB_GROUP} "${TARGET_DATA}"
 
     # Now install the ML hooks
-    cd hook
-    pip install -r  requirements.txt 
-    install -m 755 -o "${WEB_OWNER}" detect_wrapper.sh "${TARGET_BIN}"
-    install -m 755 -o "${WEB_OWNER}" detect.py "${TARGET_BIN}"
-    python setup.py install && print_success "Done" || print_error "python setup failed"
-    cd ..
+    pip install -r  hook/requirements.txt 
+    install -m 755 -o "${WEB_OWNER}" hook/detect_wrapper.sh "${TARGET_BIN}"
+    install -m 755 -o "${WEB_OWNER}" hook/detect.py "${TARGET_BIN}"
+    #python setup.py install && print_success "Done" || print_error "python setup failed"
+    pip install hook/ && print_success "Done" || print_error "python setup failed"
 }
 
 
