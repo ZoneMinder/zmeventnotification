@@ -25,7 +25,7 @@ WEB_OWNER=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|ngi
 #WEB_OWNER='www-data' # uncomment this if the above mechanism fails
 
 WEB_GROUP=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $2}')
-#WEB_GROUP='www-data' # uncomment if above line fails
+WEB_GROUP='www-data' # uncomment if above line fails
 # make this empty if you don't want backups
 MAKE_CONFIG_BACKUP='-b'
 
