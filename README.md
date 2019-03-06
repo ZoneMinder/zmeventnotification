@@ -59,7 +59,7 @@ Changes in paths for everything.
 
 If you are migrating from a previous version:
 - Make a copy of your `/etc/zmeventnotification.ini` and `/var/detect/objectconfig.ini` (if you are using hooks)
-- Run `sudo ./install.sh` again inside the repo, let it set up all the files
+- Run `sudo -H ./install.sh` again inside the repo, let it set up all the files
 - Compare your old config files to the news ones at `/etc/zm` and make necessary changes
 - Make sure everything works well
 - You can now delete the old  `/var/detect` folder as well as `/etc/zmeventnotification.ini`

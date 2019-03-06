@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python
 
 # version 3.1
 
@@ -30,6 +30,7 @@ import zmes_hook_helpers.common_params as g
 import zmes_hook_helpers.yolo as yolo
 import zmes_hook_helpers.hog as hog
 import zmes_hook_helpers.face as face
+from zmes_hook_helpers.__init__ import __version__
 
 
 def append_suffix(filename, token):
@@ -40,6 +41,7 @@ def append_suffix(filename, token):
 
 # set up logging to syslog
 log.init('detect')
+g.logger.info ('---------| app version: {} |------------'.format(__version__))
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()

@@ -1,1 +1,0 @@
-/usr/local/lib/python2.7/dist-packages/zmes_hooks-1.0-py2.7.egg
