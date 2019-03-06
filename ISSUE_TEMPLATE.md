@@ -5,6 +5,15 @@ Before you create an issue, please make sure you have read the [README](https://
 
 (example only, please edit this line) 2.4
 
+**Hooks version**
+
+(If your question is about the machine learning looks)
+You can get the version by doing:
+```
+python -c "import zmes_hook_helpers as h; print (h.__version__)"
+```
+
+
 
 **The version of ZoneMinder you are using:**
 
