@@ -141,6 +141,7 @@ for filename in [filename_alarm, filename_snapshot]:
 
         # each detection type has a detect method
         b, l, c = m.detect(image)
+        g.logger.debug ('Before filtering, model returned the following labels:{}'.format(l))
 
         # Now look for matched patterns in bounding boxes
         r = re.compile(g.config['detect_pattern'])
