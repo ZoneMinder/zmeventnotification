@@ -1,6 +1,4 @@
-#!/usr/bin/python2
-
-# version 3.1
+#!/usr/bin/python
 
 # Alternate detection script using neural nets and YoloV3.
 # slower than openCV HOG but much more accurate
@@ -27,19 +25,20 @@ import zmes_hook_helpers.utils as utils
 import zmes_hook_helpers.image_manip as img
 import zmes_hook_helpers.common_params as g
 
-import  zmes_hook_helpers.yolo as yolo
-import  zmes_hook_helpers.hog as hog
-import  zmes_hook_helpers.face as face
+import zmes_hook_helpers.yolo as yolo
+import zmes_hook_helpers.hog as hog
+from zmes_hook_helpers.__init__ import __version__
 
 
-def append_suffix(filename,token):
-    f,e = os.path.splitext(filename)
-    return f+token+e
+def append_suffix(filename, token):
+    f, e = os.path.splitext(filename)
+    return f + token + e
 
 # main handler
 
 # set up logging to syslog
 log.init('detect')
+g.logger.info ('---------| app version: {} |------------'.format(__version__))
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -47,19 +46,25 @@ ap.add_argument('-c', '--config', required=True, help='config file with path')
 ap.add_argument('-e', '--eventid', required=True, help='event ID to retrieve')
 ap.add_argument('-p', '--eventpath', help='path to store object image file', default='')
 ap.add_argument('-m', '--monitorid', help='monitor id - needed for mask')
-ap.add_argument('-t', '--time', help='log time')
+ap.add_argument('-t', '--time', help='log time', action='store_true')
+ap.add_argument('-v', '--version', help='print version and quit',action='store_true')
 
 ap.add_argument('-f', '--file', help='internal testing use only - skips event download')
 
 args, u = ap.parse_known_args()
 args = vars(args)
+
+if args['version']:
+    print ('---------| app version: {} |------------'.format(__version__))
+    exit(0)
+
 g.polygons = []
 
 # process config file
 g.ctx = ssl.create_default_context()
-utils.process_config(args,g.ctx)
 
 
+utils.process_config(args, g.ctx)
 # now download image(s)
 
 if not args['file']:
@@ -90,15 +95,15 @@ for filename in [filename_alarm, filename_snapshot]:
         bbox_f = filename_snapshot_bbox
     else:
         bbox_f = filename_alarm_bbox
-    
+
     image = cv2.imread(filename)
     if image is None:
-        g.logger.error ('Error reading {}. It either does not exist or is invalid'.format(filename))
+        g.logger.error('Error reading {}. It either does not exist or is invalid'.format(filename))
         raise ValueError('Error reading file {}. It either does not exist or is invalid'.format(filename))
-        
+
     oldh, oldw = image.shape[:2]
 
-    g.logger.info ('About to anayze file: {}'.format(filename))
+    g.logger.info('About to anayze file: {}'.format(filename))
     if not g.polygons:
         g.polygons.append({'name': 'full_image', 'value': [(0, 0), (oldw, 0), (oldw, oldh), (0, oldh)]})
         g.logger.debug('No polygon area specfied, so adding a full image polygon:{}'.format(g.polygons))
@@ -110,10 +115,10 @@ for filename in [filename_alarm, filename_snapshot]:
         # we resize polys only one time
         # when we get to the next image (snapshot), polygons have already resized
         if not poly_scaled:
-           utils.rescale_polygons(neww / oldw, newh / oldh)
-           poly_scaled = True
+            utils.rescale_polygons(neww / oldw, newh / oldh)
+            poly_scaled = True
 
-    g.logger.info('Analyzing image with pattern: {}'.format( g.config['detect_pattern']))
+    g.logger.info('Analyzing image with pattern: {}'.format(g.config['detect_pattern']))
     # detect objects
     bbox = []
     label = []
@@ -122,12 +127,18 @@ for filename in [filename_alarm, filename_snapshot]:
 
     # Apply all configured models to each file
     for model in g.config['models']:
-        g.logger.debug ('Using model: {}'.format(model))
+        g.logger.debug('Using model: {}'.format(model))
         if model == 'yolo':
             m = yolo.Yolo()
         elif model == 'hog':
             m = hog.Hog()
         elif model == 'face':
+            try:
+                import zmes_hook_helpers.face as face
+            except ImportError:
+                g.logger.error ('Error importing face recognition. Make sure you did sudo -H pip install face_recognition')
+                raise
+
             m = face.Face(upsample_times=g.config['face_upsample_times'], 
                           num_jitters=g.config['face_num_jitters'],
                           model=g.config['face_model'])
@@ -145,10 +156,10 @@ for filename in [filename_alarm, filename_snapshot]:
         # to the allowed list or they will be thrown away during the intersection
         # check
         if model == 'face':
-            g.logger.debug ('Appending known faces to filter list')
+            g.logger.debug('Appending known faces to filter list')
             for cls in m.get_classes():
                 if not cls in match:
-                    match=match+[cls]
+                    match = match + [cls]
 
         # now filter these with polygon areas
         b, l, c = img.processIntersection(b, l, c, match)
@@ -159,19 +170,19 @@ for filename in [filename_alarm, filename_snapshot]:
             classes.append(m.get_classes())
             g.logger.debug('labels found: {}'.format(l))
         else:
-            g.logger.debug ('No matches found using model:{}'.format(model))
+            g.logger.debug('No matches found using model:{}'.format(model))
 
     # At this stage, all models are run on this file
-    
+
     if len(bbox) == 0:
-        g.logger.debug ('No patterns found using any models in {}'.format(filename))
+        g.logger.debug('No patterns found using any models in {}'.format(filename))
 
     else:
         # we have matches, draw and quit loop
-        for idx, b in enumerate (bbox):
-            out = img.draw_bbox(image, b, label[idx], classes[idx], conf[idx], None,False)
+        for idx, b in enumerate(bbox):
+            out = img.draw_bbox(image, b, label[idx], classes[idx], conf[idx], None, False)
             image = out
-        
+
         if g.config['write_debug_image'] == 'yes':
             g.logger.debug('Writing out debug bounding box image to {}...'.format(bbox_f))
             cv2.imwrite(bbox_f, image)
@@ -181,7 +192,7 @@ for filename in [filename_alarm, filename_snapshot]:
                 g.logger.debug('Writing detected image to {}'.format(args['eventpath']))
                 cv2.imwrite(args['eventpath'] + '/objdetect.jpg', image)
             else:
-                g.logger.error ('Could not write image to ZoneMinder as eventpath not present')
+                g.logger.error('Could not write image to ZoneMinder as eventpath not present')
         # stop analysis if this file worked
         break;
 
@@ -191,7 +202,7 @@ if (args['time']):
 # Now create prediction string
 
 pred = ''
-for idx,la in enumerate (label):
+for idx, la in enumerate(label):
     seen = {}
     for l, c in zip(la, conf[idx]):
         if l not in seen:

@@ -6,6 +6,7 @@ import cv2
 
 # Class to handle Yolo based detection
 
+
 class Yolo:
 
 # The actual CNN object detection code
@@ -16,7 +17,6 @@ class Yolo:
         self.net = None
         self.classes = None
 
-
     def populate_class_labels(self):
         class_file_abs_path = g.config['labels']
         f = open(class_file_abs_path, 'r')
@@ -25,14 +25,12 @@ class Yolo:
     def get_classes(self):
         return self.classes
 
-    
     def get_output_layers(self):
         layer_names = self.net.getLayerNames()
         output_layers = [layer_names[i[0] - 1] for i in self.net.getUnconnectedOutLayers()]
         return output_layers
 
-   
-    def detect(self,image):
+    def detect(self, image):
         Height, Width = image.shape[:2]
         scale = 0.00392
         config_file_abs_path = g.config['config']

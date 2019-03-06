@@ -61,12 +61,12 @@ cd zmeventnotification
     * `CONFIG_FILE` to point to the right config file, if you changed paths
 
 ```
-sudo ./install.sh # and follow the prompts
+sudo -H ./install.sh # and follow the prompts
 ```
 
 **Note:** if you want to add "face recognition" you also need to do 
 ```
-sudo pip install face_recognition
+sudo -H pip install face_recognition
 ```
 
 Takes a while and installs a gob of stuff, which is why I did not add it automatically, especially if you don't need face recognition.
@@ -78,22 +78,22 @@ If automatic install fails for you, or you like to be in control:
 
 ```bash
 git clone https://github.com/pliablepixels/zmeventnotification # if you don't already have it downloaded
-cd zmeventnotification/hooks
+cd zmeventnotification/
 ```
 
 * Install the object detection dependencies:
 ```bash
-sudo pip install -r  requirements.txt 
+sudo -H pip install -r  hook/requirements.txt 
 ```
 
 * Install object detection files:
 ```bash
-sudo pip ./setup.py install
+sudo -H pip install hook
 ```
 
 **Note:** if you want to add "face recognition" you also need to do 
 ```
-sudo pip install face_recognition
+sudo -H pip install face_recognition
 ```
 
 * You now need to download configuration and weight files that are required by the machine learning magic. Note that you don't have to put them in `/var/lib/zmeventnotification` -> use whatever you want (and change variables in `detect_wrapper.sh` script if you do) 
@@ -203,7 +203,7 @@ If you select yolo, you can add a `model_type=tiny` to use tiny YOLO instead of 
 the comments in `objectconfig.ini`
 
 #### How to use face recognition
-Face Recognition uses [this](https://github.com/ageitgey/face_recognition) library. Before you try and use face recognition, please make sure you did a `sudo pip install face_recognition`
+Face Recognition uses [this](https://github.com/ageitgey/face_recognition) library. Before you try and use face recognition, please make sure you did a `sudo -H pip install face_recognition`
 The reason this is not automatically done during setup is that it installs a lot of dependencies that takes time (including dlib) and not everyone wants it.
 
 ##### Limitations
@@ -232,7 +232,7 @@ or completely overhead faces. Take a look at the [accuracy wiki](https://github.
     - If it says "no faces loaded" that means your known images don't have recognizable faces
     - If it says "no faces found" that means your alarmed image doesn't have a face that is recognizable
     - Read comments about `num_jitters`, `model`, `upsample_times` in `objectconfig.ini`
-- Experiment. Read the library wiki link I posted in the previous section.  Don't ask me questions on what do to do me it better. 
+- Experiment. Read the accuracy wiki link I posted in the previous section
 
 #### Manually testing if detection is working well
 
