@@ -83,7 +83,7 @@ cd zmeventnotification/
 
 * Install the object detection dependencies:
 ```bash
-sudo pip install -r  hook/requirements.txt 
+sudo -H pip install -r  hook/requirements.txt 
 ```
 
 * Install object detection files:
@@ -93,7 +93,7 @@ sudo -H pip install hook
 
 **Note:** if you want to add "face recognition" you also need to do 
 ```
-sudo pip install face_recognition
+sudo -H pip install face_recognition
 ```
 
 * You now need to download configuration and weight files that are required by the machine learning magic. Note that you don't have to put them in `/var/lib/zmeventnotification` -> use whatever you want (and change variables in `detect_wrapper.sh` script if you do) 
@@ -203,7 +203,7 @@ If you select yolo, you can add a `model_type=tiny` to use tiny YOLO instead of 
 the comments in `objectconfig.ini`
 
 #### How to use face recognition
-Face Recognition uses [this](https://github.com/ageitgey/face_recognition) library. Before you try and use face recognition, please make sure you did a `sudo pip install face_recognition`
+Face Recognition uses [this](https://github.com/ageitgey/face_recognition) library. Before you try and use face recognition, please make sure you did a `sudo -H pip install face_recognition`
 The reason this is not automatically done during setup is that it installs a lot of dependencies that takes time (including dlib) and not everyone wants it.
 
 ##### Limitations
