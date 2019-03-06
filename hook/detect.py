@@ -1,14 +1,7 @@
 #!/usr/bin/python
 
-# Alternate detection script using neural nets and YoloV3.
-# slower than openCV HOG but much more accurate
-# also capable of detecting many more objects
-
-# Needs opencv-python-3.4.3.18 or above
-# On my non GPU machine, this takes 2 seconds while HOG takes 0.2 seconds
-
-# This trained model is able to detect the following 80 categories
-# https://github.com/pjreddie/darknet/blob/master/data/coco.names
+# Main detection script that loads different detection models
+# look at zmes_hook_helpers for different detectors
 
 from __future__ import division
 import sys
