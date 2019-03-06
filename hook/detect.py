@@ -27,7 +27,6 @@ import zmes_hook_helpers.common_params as g
 
 import zmes_hook_helpers.yolo as yolo
 import zmes_hook_helpers.hog as hog
-import zmes_hook_helpers.face as face
 from zmes_hook_helpers.__init__ import __version__
 
 
@@ -134,6 +133,12 @@ for filename in [filename_alarm, filename_snapshot]:
         elif model == 'hog':
             m = hog.Hog()
         elif model == 'face':
+            try:
+                import zmes_hook_helpers.face as face
+            except ImportError:
+                g.logger.error ('Error importing face recognition. Make sure you did sudo -H pip install face_recognition')
+                raise
+
             m = face.Face(upsample_times=g.config['face_upsample_times'], 
                           num_jitters=g.config['face_num_jitters'],
                           model=g.config['face_model'])

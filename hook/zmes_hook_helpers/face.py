@@ -4,11 +4,7 @@ import zmes_hook_helpers.log as log
 import sys
 import os
 import cv2
-
-try:
-    import face_recognition
-except ImportError:
-    raise ValueError('Could not import face_recognition. Make sure you did sudo pip install face_recognition')
+import face_recognition
 
 
 # Class to handle face recognition
