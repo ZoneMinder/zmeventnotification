@@ -1,1 +1,8 @@
-Test
+What
+----
+The Event Server sits along with ZoneMinder and offers real time notifications, support for push notifications as well as Machine Learning powered recognition.
+As of today, it supports detection of 80 types of objects (persons, cars, etc.) and face recognition. I will add more algorithms over time.
+
+Documentation
+-------------
+Documentation, including installation, FAQ etc.are available [here](http://pliablepixels.github.io/zmeventnotification/)
