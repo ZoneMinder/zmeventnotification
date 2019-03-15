@@ -15,6 +15,9 @@ Event NotificationServer Documentation
         guides/faq
         guides/developers
          
+ 
+`Github Repository <https://github.com/pliablepixels/zmeventnotification>`__        
+
 :doc:`guides/install`
         How to install the Event Notification Server
 :doc:`guides/hooks`
