@@ -25,10 +25,8 @@ generates an alarm. I currently support object detection and face
 recognition.
 
 Please don't ask me questions on how to use them. Please read the
-comments and figure it out.
+extensive documentation and ini file configs
 
-Try to keep the images less than 800px on the largest side. The larger
-the image, the longer it will take to detect
 
 Installation
 ~~~~~~~~~~~~
