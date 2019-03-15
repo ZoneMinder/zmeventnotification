@@ -61,17 +61,17 @@ def processIntersection(bbox, label, conf, match):
 def draw_bbox(img, bbox, labels, classes, confidence, color=None, write_conf=False):
 
     slate_colors = [ 
-            (52, 73, 94),
             (39, 174, 96),
             (142, 68, 173),
-            (109, 33, 79),
-            (47, 54, 64)
+            (0,129,254),
+            (254,60,113),
+            (243,134,48),
+            (91,177,47)
         ]
     # if no color is specified, use my own slate
     if color is None:
             # opencv is BGR
         bgr_slate_colors = slate_colors[::-1]
-        color = random.choice(bgr_slate_colors)
 
     polycolor = g.config['poly_color']
     # first draw the polygons, if any
@@ -83,6 +83,7 @@ def draw_bbox(img, bbox, labels, classes, confidence, color=None, write_conf=Fal
 
     for i, label in enumerate(labels):
         #g.logger.debug ('drawing box for: {}'.format(label))
+        color = random.choice(bgr_slate_colors)
         if write_conf and confidence:
             label += ' ' + str(format(confidence[i] * 100, '.2f')) + '%'
         # draw bounding box around object
