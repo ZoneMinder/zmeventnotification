@@ -6,3 +6,7 @@ As of today, it supports detection of 80 types of objects (persons, cars, etc.) 
 Documentation
 -------------
 Documentation, including installation, FAQ etc.are available [here](http://pliablepixels.github.io/zmeventnotification/)
+
+Screenshots
+------------
+<img src="https://github.com/pliablepixels/zmeventnotification/blob/master/screenshots/1.png" width="500px" /> <img src="https://github.com/pliablepixels/zmeventnotification/blob/master/screenshots/2.jpg" width="500px" />
