@@ -9,4 +9,4 @@ Documentation, including installation, FAQ etc.are available [here](http://pliab
 
 Screenshots
 ------------
-<img src="https://github.com/pliablepixels/zmeventnotification/blob/master/screenshots/1.png" width="500px" /> <img src="https://github.com/pliablepixels/zmeventnotification/blob/master/screenshots/2.jpg" width="500px" />
+<img src="https://github.com/pliablepixels/zmeventnotification/blob/master/screenshots/3.png" width="500px" /> <img src="https://github.com/pliablepixels/zmeventnotification/blob/master/screenshots/1.png" width="500px" /> <img src="https://github.com/pliablepixels/zmeventnotification/blob/master/screenshots/2.jpg" width="500px" />
