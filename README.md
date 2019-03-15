@@ -11,6 +11,6 @@ Screenshots
 ------------
 
 Click each image for larger versions. Some of these images are from other users who have granted permission for use
-<small>(Rockedge, granted permission on Mar 15, 2019 in the ZoneMinder slack channel)</small>
+###### (Rockedge, granted permission on Mar 15, 2019 in the ZoneMinder slack channel)
 
 <img src="https://github.com/pliablepixels/zmeventnotification/blob/master/screenshots/person_face.jpg" width="300px" /> <img src="https://github.com/pliablepixels/zmeventnotification/blob/master/screenshots/delivery.jpg" width="300px" /> <img src="https://github.com/pliablepixels/zmeventnotification/blob/master/screenshots/car.jpg" width="300px" /> <img src="https://github.com/pliablepixels/zmeventnotification/blob/master/screenshots/cat.jpg" width="300px" />
