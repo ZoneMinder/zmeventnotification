@@ -162,19 +162,25 @@
 <h1>Breaking Changes<a class="headerlink" href="#breaking-changes" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="version-3-2-onwards">
 <h2>version 3.2 onwards<a class="headerlink" href="#version-3-2-onwards" title="Permalink to this headline">¶</a></h2>
-<p>Changes in paths for everything. - event server config file now defaults
-to <code class="docutils literal"><span class="pre">/etc/zm</span></code> - hook config now defaults to <code class="docutils literal"><span class="pre">/etc/zm</span></code> - Push token
-file now defaults to <code class="docutils literal"><span class="pre">/var/lib/zmeventnotification/push</span></code> - all object
-detection data files default to <code class="docutils literal"><span class="pre">/var/lib/zmeventnotification</span></code></p>
-<p>If you are migrating from a previous version: - Make a copy of your
-<code class="docutils literal"><span class="pre">/etc/zmeventnotification.ini</span></code> and <code class="docutils literal"><span class="pre">/var/detect/objectconfig.ini</span></code>
-(if you are using hooks) - Run <code class="docutils literal"><span class="pre">sudo</span> <span class="pre">-H</span> <span class="pre">./install.sh</span></code> again inside the
-repo, let it set up all the files - Compare your old config files to the
-news ones at <code class="docutils literal"><span class="pre">/etc/zm</span></code> and make necessary changes - Make sure
-everything works well - You can now delete the old <code class="docutils literal"><span class="pre">/var/detect</span></code>
-folder as well as <code class="docutils literal"><span class="pre">/etc/zmeventnotification.ini</span></code> - Run zmNinja again
-to make sure its token is registered in the new tokens file (in
-<code class="docutils literal"><span class="pre">/var/lib/zmeeventnotification/push/tokens.txt</span></code>)</p>
+<ul class="simple">
+<li>Changes in paths for everything. - event server config file now defaults to <code class="docutils literal"><span class="pre">/etc/zm</span></code></li>
+<li>hook config now defaults to <code class="docutils literal"><span class="pre">/etc/zm</span></code></li>
+<li>Push token file now defaults to <code class="docutils literal"><span class="pre">/var/lib/zmeventnotification/push</span></code></li>
+<li>all object detection data files default to <code class="docutils literal"><span class="pre">/var/lib/zmeventnotification</span></code></li>
+<li><dl class="first docutils">
+<dt>If you are migrating from a previous version:</dt>
+<dd><ul class="first last">
+<li>Make a copy of your <code class="docutils literal"><span class="pre">/etc/zmeventnotification.ini</span></code> and <code class="docutils literal"><span class="pre">/var/detect/objectconfig.ini</span></code> (if you are using hooks)</li>
+<li>Run <code class="docutils literal"><span class="pre">sudo</span> <span class="pre">-H</span> <span class="pre">./install.sh</span></code> again inside the repo, let it set up all the files</li>
+<li>Compare your old config files to the news ones at <code class="docutils literal"><span class="pre">/etc/zm</span></code> and make necessary changes</li>
+<li>Make sure everything works well</li>
+<li>You can now delete the old <code class="docutils literal"><span class="pre">/var/detect</span></code> folder as well as <code class="docutils literal"><span class="pre">/etc/zmeventnotification.ini</span></code></li>
+<li>Run zmNinja again to make sure its token is registered in the new tokens file (in <code class="docutils literal"><span class="pre">/var/lib/zmeeventnotification/push/tokens.txt</span></code>)</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
 </div>
 </div>
 
