@@ -254,15 +254,14 @@ you try and use face recognition, please make sure you did a
 automatically done during setup is that it installs a lot of
 dependencies that takes time (including dlib) and not everyone wants it.
 
-Limitations
-'''''''''''
+.. sidebar:: Face recognition limitations
 
-Don't expect magic with overhead cameras. This library requires a
-reasonable face orientation (works for front facing, or somewhat side
-facing poses) and does not work for full profiles or completely overhead
-faces. Take a look at the `accuracy
-wiki <https://github.com/ageitgey/face_recognition/wiki/Face-Recognition-Accuracy-Problems>`__
-of this library to know more about its limitations.
+        Don't expect magic with overhead cameras. This library requires a
+        reasonable face orientation (works for front facing, or somewhat side
+        facing poses) and does not work for full profiles or completely overhead
+        faces. Take a look at the `accuracy
+        wiki <https://github.com/ageitgey/face_recognition/wiki/Face-Recognition-Accuracy-Problems>`__
+        of this library to know more about its limitations.
 
 Configuring face recognition
 ''''''''''''''''''''''''''''

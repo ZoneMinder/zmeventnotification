@@ -101,7 +101,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#types-of-detection">Types of detection</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#how-to-use-face-recognition">How to use face recognition</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#id1">Limitations</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#configuring-face-recognition">Configuring face recognition</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#known-faces-images">known faces images</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#yo-it-can-t-recognize-faces">Yo, it can’t recognize faces</a></li>
@@ -419,9 +418,9 @@ you try and use face recognition, please make sure you did a
 <code class="docutils literal"><span class="pre">sudo</span> <span class="pre">-H</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">face_recognition</span></code> The reason this is not
 automatically done during setup is that it installs a lot of
 dependencies that takes time (including dlib) and not everyone wants it.</p>
-<div class="section" id="id1">
-<h4>Limitations<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
-<p>Don’t expect magic with overhead cameras. This library requires a
+<div class="sidebar">
+<p class="first sidebar-title">Face recognition limitations</p>
+<p class="last">Don’t expect magic with overhead cameras. This library requires a
 reasonable face orientation (works for front facing, or somewhat side
 facing poses) and does not work for full profiles or completely overhead
 faces. Take a look at the <a class="reference external" href="https://github.com/ageitgey/face_recognition/wiki/Face-Recognition-Accuracy-Problems">accuracy

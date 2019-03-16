@@ -164,7 +164,7 @@ Making sure everything is running (in manual mode)
    validate all logs are correct and THEN make it a daemon in
    ZoneMinder. If you don't, it will be hard to know what is going
    wrong. See the
-   `debugging <https://github.com/pliablepixels/zmeventnotification#debugging-and-reporting-problems>`__
+   `debugging <http://pliablepixels.github.io/zmeventnotification/docgen/html/guides/faq.html#debugging-and-reporting-problems>`__
    section later that describes how to make sure its all working fine
    from command line.
 
