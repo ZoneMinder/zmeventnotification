@@ -45,7 +45,7 @@ How can I use this with Node-Red or Home Assistant?
 ---------------------------------------------------
 
 As of version 1.1, the event server also supports MQTT (Contributed by
-`@vajonam <https://github.com/vajonam>`__. zmeventnotification server can
+`@vajonam <https://github.com/vajonam>`__). zmeventnotification server can
 be configured to broadcast on a topic called
 ``/zoneminder/<monitor-id>`` which can then be consumed by Home
 Assistant or Node-Red.
@@ -351,6 +351,8 @@ deal with certificates. Fair enough. For that situation, edit
 zmeventnotification.pl and use ``enable = 0`` in the ``[ssl]`` section
 of the configuration file. **Remember to ensure that your EventServer
 URL in zmNinja does NOT use wss too - change it to ws**
+
+.. _debug_reporting_es:
 
 Debugging and reporting problems
 --------------------------------
