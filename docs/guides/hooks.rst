@@ -1,13 +1,17 @@
 Machine Learning Hooks
 ======================
 
-Note
-~~~~
+.. note::
 
-**Please don't ask me basic questions like "pip command not found" or
-"cv2 not found" - what do I do?** **Hooks require some terminal
-knowledge and familiarity with troubleshooting** **I don't plan to
-provide support for these hooks. They are for reference only**
+        Before you install machine learnings hooks, please make sure you have installed
+        the Event Notification Server (:doc:`install`) and have it working properly
+
+.. important::
+
+        Please don't ask me basic questions like "pip command not found" or
+        "cv2 not found" - what do I do? Hooks require some terminal
+        knowledge and familiarity with troubleshooting. I don't plan to
+        provide support for these hooks. They are for reference only
 
 Limitations
 ~~~~~~~~~~~
