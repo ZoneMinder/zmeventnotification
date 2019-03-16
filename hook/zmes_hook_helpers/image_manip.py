@@ -3,7 +3,6 @@ import zmes_hook_helpers.common_params as g
 from shapely.geometry import Polygon
 import cv2
 import numpy as np
-import random
 
 # Generic image related algorithms
 
@@ -81,9 +80,10 @@ def draw_bbox(img, bbox, labels, classes, confidence, color=None, write_conf=Fal
 
     # now draw object boundaries
 
+    arr_len = len(bgr_slate_colors)
     for i, label in enumerate(labels):
         #g.logger.debug ('drawing box for: {}'.format(label))
-        color = random.choice(bgr_slate_colors)
+        color = bgr_slate_colors[i % arr_len]
         if write_conf and confidence:
             label += ' ' + str(format(confidence[i] * 100, '.2f')) + '%'
         # draw bounding box around object
