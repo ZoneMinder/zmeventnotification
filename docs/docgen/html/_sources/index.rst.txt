@@ -28,6 +28,8 @@ Event NotificationServer Documentation
         FAQ covering common scenarios/issues
 :doc:`guides/developers`
         If you want to use the Event Notification Server to make your own app/client
+`zmNinja Documentation <http://pliablepixels.github.io/zmNinja/docgen/html/index.html>`__
+        Documentation for zmNinja
 
 
 
