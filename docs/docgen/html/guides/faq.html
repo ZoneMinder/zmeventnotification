@@ -120,6 +120,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="developers.html">For Developers writing their own consumers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins.html">Writing your own detection plugin</a></li>
 </ul>
 
             
@@ -359,13 +360,13 @@ for an explanation of how this works</p>
 <div class="section" id="picture-notifications-don-t-show-images">
 <h3>Picture notifications don’t show images<a class="headerlink" href="#picture-notifications-don-t-show-images" title="Permalink to this headline">¶</a></h3>
 <p>Starting v2.0, I support images in alarms. However, there are several
-conditions to be met: * You can’t use self signed certs * The
-IP/hostname needs to be publicly accessible (Apple/Google servers render
-the image) * You need patches to ZM unless you are using a package that
-is later than Oct 11, 2018. Please read the notes in the INI file * A
-good way to isolate if its a URL problem or something else is replace
-the <code class="docutils literal"><span class="pre">picture_url</span></code> with a knows HTTPS url like
-<a class="reference external" href="https://upload.wikimedia.org/wikipedia/commons/5/5f/Chinese_new_year_dragon_2014.jpg">this</a></p>
+conditions to be met:</p>
+<ul class="simple">
+<li>You can’t use self signed certs</li>
+<li>The IP/hostname needs to be publicly accessible (Apple/Google servers render the image)</li>
+<li>You need patches to ZM unless you are using a package that is later than Oct 11, 2018. Please read the notes in the INI file</li>
+<li>A good way to isolate if its a URL problem or something else is replace the <code class="docutils literal"><span class="pre">picture_url</span></code> with a knows HTTPS url like <a class="reference external" href="https://upload.wikimedia.org/wikipedia/commons/5/5f/Chinese_new_year_dragon_2014.jpg">this</a></li>
+</ul>
 <p>Before you report issues, please make sure you have been diligent in
 testing - Try with a public URL as indicated above. This is important. -
 In your issue, post debug logs of zmeventnotification so I can see what
