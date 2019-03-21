@@ -148,7 +148,7 @@ def download_files(args):
         filename2_bbox = ''
         url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=' + g.config['frame_id'] + \
             '&username=' + g.config['user'] + '&password=' + g.config['password']
-        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
+        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=' + g.config['frame_id'] + \
             '&username=' + g.config['user'] + '&password=*****'
         g.logger.debug('Trying to download {}'.format(durl))
         input_file = opener.open(url)
@@ -234,6 +234,14 @@ def process_config(args, ctx):
                 g.config['detect_pattern'] = config_file['monitor-%s' % args['monitorid']].get('detect_pattern', '.*')
                 g.logger.debug('monitor with ID {} has specific detection pattern: {}'.format(args['monitorid'], g.config['detect_pattern']))
 
+
+        # Check if we have a custom frame_id type for this monitor
+            if config_file.has_option('monitor-%s' % args['monitorid'], 'frame_id'):
+                # local model overrides global
+                g.config['frame_id'] = config_file['monitor-%s' % args['monitorid']].get('frame_id', 'snapshot')
+                g.logger.debug('monitor with ID {} has specific frame_id: {}'.format(args['monitorid'], g.config['frame_id']))
+
+
         # Check if we have a custom model sequence for the current monitor
             if config_file.has_option('monitor-%s' % args['monitorid'], 'models'):
                 # local model overrides global
@@ -260,7 +268,7 @@ def process_config(args, ctx):
                 for k, v in itms:
                     if k == 'import_zm_zones' and v == 'yes':
                         import_zm_zones(args['monitorid'])
-                    if k in ['detect_pattern', 'models', 'yolo_type', 'import_zm_zones']:
+                    if k in ['detect_pattern', 'models', 'yolo_type', 'import_zm_zones', 'frame_id']:
                         continue
                     g.polygons.append({'name': k, 'value': str2tuple(v)})
                     g.logger.debug('adding polygon: {} [{}]'.format(k, v))
