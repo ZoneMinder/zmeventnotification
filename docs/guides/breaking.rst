@@ -4,8 +4,8 @@ Breaking Changes
 version 3.3 onwards
 ~~~~~~~~~~~~~~~~~~~
 
-- Please use `yes` or `no` instead of `1` and `0` in `zmeventnotification.ini` to maintain consistency with `objectconfig.ini`
-- In `zmeventnotification.ini`, `store_frame_in_zm` is now `hook_pass_image_path`
+- Please use ``yes`` or ``no`` instead of ``1`` and ``0`` in ``zmeventnotification.ini`` to maintain consistency with ``objectconfig.ini``
+- In ``zmeventnotification.ini``, ``store_frame_in_zm`` is now ``hook_pass_image_path``
 
 version 3.2 onwards
 ~~~~~~~~~~~~~~~~~~~
