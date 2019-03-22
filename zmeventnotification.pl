@@ -291,7 +291,7 @@ sub config_get_val {
     # compatibility hack, lets use yes/no in config to maintain
     # parity with hook config
     if (lc($final_val) eq 'yes') {$final_val=1;}
-    elsif (lc($final_val) eq 'no') {$val=0;}
+    elsif (lc($final_val) eq 'no') {$final_val=0;}
     return $final_val;
 }
 
