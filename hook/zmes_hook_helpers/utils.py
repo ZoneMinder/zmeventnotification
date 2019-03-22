@@ -158,61 +158,39 @@ def download_files(args):
     return filename1, filename2, filename1_bbox, filename2_bbox
 
 
+
 def process_config(args, ctx):
 # parse config file into a dictionary with defaults
 
     g.config = {}
+
+
+    def _correct_type(val,t):
+        if t == 'int':
+             return int(val)
+        elif t == 'eval':
+            return eval(val)
+        elif t == 'str_split':
+            return str_split(val)
+        elif t  == 'string':
+            return val
+        else:
+            g.logger.error ('Unknown conversion type {} for config key:{}'.format(e['type'], e['key']))
+            return val
+
+    def _set_config_val(k,v):
+    # internal function to parse all keys
+        val = config_file[v['section']].get(k,v['default'])
+        g.config[k] = _correct_type(val, v['type'])
+        g.logger.debug ('Config: setting {} to {}'.format(k,g.config[k]))
+            
     try:
         config_file = ConfigParser()
         config_file.read(args['config'])
 
-        # general section
-        g.config['portal'] = config_file['general'].get('portal', '')
-        g.config['user'] = config_file['general'].get('user', 'admin')
-        g.config['password'] = config_file['general'].get('password', 'admin')
-        g.config['basic_user'] = config_file['general'].get('basic_user', '')
-        g.config['basic_password'] = config_file['general'].get('basic_password', '')
-        g.config['image_path'] = config_file['general'].get('image_path', '/var/lib/zmeventnotification/images')
-        g.config['detect_pattern'] = config_file['general'].get('detect_pattern', '.*')
-        g.config['frame_id'] = config_file['general'].get('frame_id', 'snapshot')
-        g.config['resize'] = config_file['general'].get('resize', '800')
-        g.config['delete_after_analyze'] = config_file['general'].get('delete_after_analyze', 'no')
-        g.config['show_percent'] = config_file['general'].get('show_percent', 'no')
+        # First, process log level, so we can see config read logs if needed
+        # Yes, it will be processed later too. Big deal.
         g.config['log_level'] = config_file['general'].get('log_level', 'info')
-        g.config['allow_self_signed'] = config_file['general'].get('allow_self_signed', 'yes')
-        g.config['write_image_to_zm'] = config_file['general'].get('write_image_to_zm', 'yes')
-        g.config['write_debug_image'] = config_file['general'].get('write_debug_image', 'yes')
-        g.config['models'] = str_split(config_file['general'].get('models', 'yolo'))
-        g.config['poly_color'] = eval(config_file['general'].get('poly_color', '(127, 140, 141)'))
-
-        # YOLO stuff
-        g.config['config'] = config_file['yolo'].get('config', 
-                             '/var/lib/zmeventnotification/models/yolov3/yolov3.cfg')
-        g.config['weights'] = config_file['yolo'].get('weights', 
-                              '/var/lib/zmeventnotification/models/yolov3/yolov3.weights')
-        g.config['labels'] = config_file['yolo'].get('labels', 
-                              '/var/lib/zmeventnotification/models/yolov3/yolov3_classes.txt')
-
-        g.config['tiny_config'] = config_file['yolo'].get('tiny_config', 
-                                  '/var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.cfg')
-        g.config['tiny_weights'] = config_file['yolo'].get('tiny_weights', 
-                                   '/var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.weights')
-        g.config['tiny_labels'] = config_file['yolo'].get('tiny_labels', 
-                                  '/var/lib/zmeventnotification/models/tinyyolo/yolov33-tiny.txt')
-
-        # HOG stuff
-        g.config['stride'] = eval(config_file['hog'].get('stride', '(4,4)'))
-        g.config['padding'] = eval(config_file['hog'].get('padding', '(8,8)'))
-        g.config['scale'] = config_file['hog'].get('scale', '1.05')
-        g.config['mean_shift'] = config_file['hog'].get('mean_shift', '-1')
-
-        # face recognition stuff
-        g.config['face_num_jitters'] = int(config_file['face'].get('num_jitters', '0'))
-        g.config['face_upsample_times'] = int(config_file['face'].get('upsample_times', '1'))
-        g.config['face_model'] = config_file['face'].get('model', 'hog')
-        g.config['known_images_path'] = config_file['face'].get('known_images_path',
-                                      '/var/lib/zmeventnotification/known_faces')
-
         if g.config['log_level'] == 'debug':
             g.logger.setLevel(logging.DEBUG)
         elif g.config['log_level'] == 'info':
@@ -220,6 +198,12 @@ def process_config(args, ctx):
         elif g.config['log_level'] == 'error':
             g.logger.setLevel(logging.ERROR)
 
+        g.logger.info('Log level set to:{}'.format(g.config['log_level']))
+        # now read config values
+        for k,v in g.config_vals.items():
+            _set_config_val(k,v)
+        
+        
         if g.config['allow_self_signed'] == 'yes':
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
@@ -227,55 +211,32 @@ def process_config(args, ctx):
         else:
             g.logger.debug('strict SSL cert checking is on...')
 
-        # Check if we have a custom detection pattern for the current monitor
-        if args['monitorid']:
-            if config_file.has_option('monitor-%s' % args['monitorid'], 'detect_pattern'):
-                # local detect_pattern overrides global
-                g.config['detect_pattern'] = config_file['monitor-%s' % args['monitorid']].get('detect_pattern', '.*')
-                g.logger.debug('monitor with ID {} has specific detection pattern: {}'.format(args['monitorid'], g.config['detect_pattern']))
-
-
-        # Check if we have a custom frame_id type for this monitor
-            if config_file.has_option('monitor-%s' % args['monitorid'], 'frame_id'):
-                # local model overrides global
-                g.config['frame_id'] = config_file['monitor-%s' % args['monitorid']].get('frame_id', 'snapshot')
-                g.logger.debug('monitor with ID {} has specific frame_id: {}'.format(args['monitorid'], g.config['frame_id']))
-
-
-        # Check if we have a custom model sequence for the current monitor
-            if config_file.has_option('monitor-%s' % args['monitorid'], 'models'):
-                # local model overrides global
-                g.config['models'] = str_split(config_file['monitor-%s' % args['monitorid']].get('models', 'yolo'))
-                g.logger.debug('monitor with ID {} has specific models: {}'.format(args['monitorid'], g.config['models']))
-
-            # Check if we have a custom yolo type
-            if config_file.has_option('monitor-%s' % args['monitorid'], 'yolo_type'):
-                g.logger.debug('Tiny YOLO type chosen, switching weights')
-                g.config['config'] = g.config['tiny_config']
-                g.config['weights'] = g.config['tiny_weights']
-                g.config['labels'] = g.config['tiny_labels']
-
-        # get the polygons, if any, for the supplied monitor
         g.polygons = []
-        if args['monitorid']:
-            if config_file.has_section('monitor-' + args['monitorid']):
-                itms = config_file['monitor-' + args['monitorid']].items()
-                if itms:
-                    g.logger.debug('object areas definition found for monitor:{}'.format(args['monitorid']))
-                else:
-                    g.logger.debug('object areas section found, but no polygon entries found')
 
-                for k, v in itms:
-                    if k == 'import_zm_zones' and v == 'yes':
-                        import_zm_zones(args['monitorid'])
-                    if k in ['detect_pattern', 'models', 'yolo_type', 'import_zm_zones', 'frame_id']:
-                        continue
-                    g.polygons.append({'name': k, 'value': str2tuple(v)})
-                    g.logger.debug('adding polygon: {} [{}]'.format(k, v))
-            else:
-                g.logger.debug('no object areas found for monitor:{}'.format(args['monitorid']))
+        # Check if we have a custom overrides for this monitor
+        if args['monitorid']:
+            sec = 'monitor-{}'.format(args['monitorid'])
+            if sec in config_file: 
+                # we have a specific section for this monitor
+                for item in config_file[sec].items():
+                    k = item[0]
+                    v = item[1]
+                    if k in g.config_vals:
+                        # This means its a legit config key that needs to be overriden
+                        g.logger.debug('[{}] overrides key:{} with value:{}'.format(sec, k,v))
+                        g.config[k] = _correct_type(v, g.config_vals[k]['type'])
+                    else:
+                        # This means its a polygon for the monitor
+                        g.polygons.append({'name': k, 'value': str2tuple(v)})
+                        g.logger.debug('adding polygon: {} [{}]'.format(k, v))
+
+                # now import zones if needed
+                if g.config['import_zm_zones'] == 'yes':
+                    import_zm_zones(args['monitorid'])
+                    
+           
         else:
-            g.logger.info('Ignoring object areas, as you did not provide a monitor id')
+            g.logger.info('Ignoring monitor specific settings, as you did not provide a monitor id')
     except Exception as e:
         g.logger.error('Error parsing config:{}'.format(args['config']))
         g.logger.error('Error was:{}'.format(e))
