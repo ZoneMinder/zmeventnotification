@@ -17,6 +17,8 @@ Limitations
 ~~~~~~~~~~~
 
 -  Only tested with ZM 1.32+. May or may not work with older versions
+-  Tested with Python3. Should also work with Python2, but you should know,
+   Python2 will be deprecated in 2020. May as well update.
 
 What
 ~~~~
