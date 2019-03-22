@@ -13,7 +13,7 @@ import numpy as np
 import re
 import imutils
 import ssl
-import md5
+#import hashlib
 
 import zmes_hook_helpers.log as log
 import zmes_hook_helpers.utils as utils
@@ -92,14 +92,15 @@ for filename in [filename_alarm, filename_snapshot]:
         bbox_f = filename_alarm_bbox
 
     image = cv2.imread(filename)
-    image_hash = md5.new(image).hexdigest()
+    #image_hash = hashlib.md5.new(image).hexdigest()
     if image is None:
         g.logger.error('Error reading {}. It either does not exist or is invalid'.format(filename))
         raise ValueError('Error reading file {}. It either does not exist or is invalid'.format(filename))
 
     oldh, oldw = image.shape[:2]
 
-    g.logger.info('About to anayze file: {} with hash:{}'.format(filename,image_hash))
+    #g.logger.info('About to anayze file: {} with hash:{}'.format(filename,image_hash))
+    g.logger.info('About to anayze file: {}'.format(filename))
     if not g.polygons:
         g.polygons.append({'name': 'full_image', 'value': [(0, 0), (oldw, 0), (oldw, oldh), (0, oldh)]})
         g.logger.debug('No polygon area specfied, so adding a full image polygon:{}'.format(g.polygons))
