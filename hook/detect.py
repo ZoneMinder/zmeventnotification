@@ -92,7 +92,7 @@ for filename in [filename_alarm, filename_snapshot]:
         bbox_f = filename_alarm_bbox
 
     image = cv2.imread(filename)
-    #image_hash = hashlib.md5.new(image).hexdigest()
+    #image_hash = hashlib.md5(image.encode()).hexdigest()
     if image is None:
         g.logger.error('Error reading {}. It either does not exist or is invalid'.format(filename))
         raise ValueError('Error reading file {}. It either does not exist or is invalid'.format(filename))
