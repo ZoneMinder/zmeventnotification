@@ -17,42 +17,45 @@
   
 
   
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="../genindex.html"/>
-        <link rel="search" title="Search" href="../search.html"/>
-    <link rel="top" title="Event Notification Server  documentation" href="../index.html"/>
-        <link rel="next" title="FAQ" href="faq.html"/>
-        <link rel="prev" title="Machine Learning Hooks" href="hooks.html"/> 
-
-  
-  <script src="../_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FAQ" href="faq.html" />
+    <link rel="prev" title="Machine Learning Hooks" href="hooks.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -107,7 +110,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">Event Notification Server</a>
@@ -115,9 +118,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -164,19 +168,19 @@
 <div class="section" id="version-3-2-onwards">
 <h2>version 3.2 onwards<a class="headerlink" href="#version-3-2-onwards" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Changes in paths for everything. - event server config file now defaults to <code class="docutils literal"><span class="pre">/etc/zm</span></code></li>
-<li>hook config now defaults to <code class="docutils literal"><span class="pre">/etc/zm</span></code></li>
-<li>Push token file now defaults to <code class="docutils literal"><span class="pre">/var/lib/zmeventnotification/push</span></code></li>
-<li>all object detection data files default to <code class="docutils literal"><span class="pre">/var/lib/zmeventnotification</span></code></li>
+<li>Changes in paths for everything. - event server config file now defaults to <code class="docutils literal notranslate"><span class="pre">/etc/zm</span></code></li>
+<li>hook config now defaults to <code class="docutils literal notranslate"><span class="pre">/etc/zm</span></code></li>
+<li>Push token file now defaults to <code class="docutils literal notranslate"><span class="pre">/var/lib/zmeventnotification/push</span></code></li>
+<li>all object detection data files default to <code class="docutils literal notranslate"><span class="pre">/var/lib/zmeventnotification</span></code></li>
 <li><dl class="first docutils">
 <dt>If you are migrating from a previous version:</dt>
 <dd><ul class="first last">
-<li>Make a copy of your <code class="docutils literal"><span class="pre">/etc/zmeventnotification.ini</span></code> and <code class="docutils literal"><span class="pre">/var/detect/objectconfig.ini</span></code> (if you are using hooks)</li>
-<li>Run <code class="docutils literal"><span class="pre">sudo</span> <span class="pre">-H</span> <span class="pre">./install.sh</span></code> again inside the repo, let it set up all the files</li>
-<li>Compare your old config files to the news ones at <code class="docutils literal"><span class="pre">/etc/zm</span></code> and make necessary changes</li>
+<li>Make a copy of your <code class="docutils literal notranslate"><span class="pre">/etc/zmeventnotification.ini</span></code> and <code class="docutils literal notranslate"><span class="pre">/var/detect/objectconfig.ini</span></code> (if you are using hooks)</li>
+<li>Run <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">-H</span> <span class="pre">./install.sh</span></code> again inside the repo, let it set up all the files</li>
+<li>Compare your old config files to the news ones at <code class="docutils literal notranslate"><span class="pre">/etc/zm</span></code> and make necessary changes</li>
 <li>Make sure everything works well</li>
-<li>You can now delete the old <code class="docutils literal"><span class="pre">/var/detect</span></code> folder as well as <code class="docutils literal"><span class="pre">/etc/zmeventnotification.ini</span></code></li>
-<li>Run zmNinja again to make sure its token is registered in the new tokens file (in <code class="docutils literal"><span class="pre">/var/lib/zmeeventnotification/push/tokens.txt</span></code>)</li>
+<li>You can now delete the old <code class="docutils literal notranslate"><span class="pre">/var/detect</span></code> folder as well as <code class="docutils literal notranslate"><span class="pre">/etc/zmeventnotification.ini</span></code></li>
+<li>Run zmNinja again to make sure its token is registered in the new tokens file (in <code class="docutils literal notranslate"><span class="pre">/var/lib/zmeeventnotification/push/tokens.txt</span></code>)</li>
 </ul>
 </dd>
 </dl>
@@ -187,9 +191,7 @@
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -198,7 +200,7 @@
         <a href="faq.html" class="btn btn-neutral float-right" title="FAQ" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="hooks.html" class="btn btn-neutral" title="Machine Learning Hooks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="hooks.html" class="btn btn-neutral float-left" title="Machine Learning Hooks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -207,11 +209,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, Pliable Pixels.
+        &copy; Copyright 2019, Pliable Pixels
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -224,36 +226,15 @@
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../',
-            VERSION:'',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../_static/jquery.js"></script>
-      <script type="text/javascript" src="../_static/underscore.js"></script>
-      <script type="text/javascript" src="../_static/doctools.js"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>
