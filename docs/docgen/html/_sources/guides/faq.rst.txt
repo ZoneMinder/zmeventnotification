@@ -96,7 +96,7 @@ Configuring the notification server
 Understanding zmeventnotification configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Starting v1.0, [@synthead](https://github.com/synthead) reworked the
+Starting v1.0, `@synthead <https://github.com/synthead>`__ reworked the
 configuration as follows:
 
 -  If you just run ``zmeventnotification.pl`` it will try and load

@@ -17,45 +17,42 @@
   
 
   
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
 
+  
+  
     
 
   
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Breaking Changes" href="breaking.html" />
-    <link rel="prev" title="Installation" href="install.html" /> 
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="Event Notification Server  documentation" href="../index.html"/>
+        <link rel="next" title="Breaking Changes" href="breaking.html"/>
+        <link rel="prev" title="Installation" href="install.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
 </head>
 
-<body class="wy-body-for-nav">
+<body class="wy-body-for-nav" role="document">
 
    
   <div class="wy-grid-for-nav">
+
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search">
           
 
           
@@ -130,7 +127,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" aria-label="top navigation">
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">Event Notification Server</a>
@@ -138,10 +135,9 @@
       </nav>
 
 
+      
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
           
 
 
@@ -208,7 +204,7 @@ Python2 will be deprecated in 2020. May as well update.</li>
 <div class="section" id="what">
 <h2>What<a class="headerlink" href="#what" title="Permalink to this headline">¶</a></h2>
 <p>Kung-fu machine learning goodness.</p>
-<p>This is an example of how you can use the <code class="docutils literal notranslate"><span class="pre">hook</span></code> feature of the
+<p>This is an example of how you can use the <code class="docutils literal"><span class="pre">hook</span></code> feature of the
 notification server to invoke a custom script on the event before it
 generates an alarm. I currently support object detection and face
 recognition.</p>
@@ -220,28 +216,28 @@ extensive documentation and ini file configs</p>
 <div class="section" id="option-1-automatic-install">
 <h3>Option 1: Automatic install<a class="headerlink" href="#option-1-automatic-install" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li>You need to have <code class="docutils literal notranslate"><span class="pre">pip</span></code> installed. On ubuntu, it is
-<code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">python-pip</span></code>, or see
+<li>You need to have <code class="docutils literal"><span class="pre">pip</span></code> installed. On ubuntu, it is
+<code class="docutils literal"><span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">python-pip</span></code>, or see
 <a class="reference external" href="https://pip.pypa.io/en/stable/installing/">this</a></li>
-<li>Clone the event server and go to the <code class="docutils literal notranslate"><span class="pre">hook</span></code> directory</li>
+<li>Clone the event server and go to the <code class="docutils literal"><span class="pre">hook</span></code> directory</li>
 </ul>
-<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">pliablepixels</span><span class="o">/</span><span class="n">zmeventnotification</span> <span class="c1"># if you don&#39;t already have it downloaded</span>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">pliablepixels</span><span class="o">/</span><span class="n">zmeventnotification</span> <span class="c1"># if you don&#39;t already have it downloaded</span>
 
 <span class="n">cd</span> <span class="n">zmeventnotification</span>
 </pre></div>
 </div>
 <ul class="simple">
-<li>(OPTIONAL) Edit <code class="docutils literal notranslate"><span class="pre">hook/detect_wrapper.sh</span></code> and change:<ul>
-<li><code class="docutils literal notranslate"><span class="pre">CONFIG_FILE</span></code> to point to the right config file, if you changed
+<li>(OPTIONAL) Edit <code class="docutils literal"><span class="pre">hook/detect_wrapper.sh</span></code> and change:<ul>
+<li><code class="docutils literal"><span class="pre">CONFIG_FILE</span></code> to point to the right config file, if you changed
 paths</li>
 </ul>
 </li>
 </ul>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">-</span><span class="n">H</span> <span class="o">./</span><span class="n">install</span><span class="o">.</span><span class="n">sh</span> <span class="c1"># and follow the prompts</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">-</span><span class="n">H</span> <span class="o">./</span><span class="n">install</span><span class="o">.</span><span class="n">sh</span> <span class="c1"># and follow the prompts</span>
 </pre></div>
 </div>
 <p><strong>Note:</strong> if you want to add “face recognition” you also need to do</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">-</span><span class="n">H</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">face_recognition</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">-</span><span class="n">H</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">face_recognition</span>
 </pre></div>
 </div>
 <p>Takes a while and installs a gob of stuff, which is why I did not add it
@@ -250,33 +246,33 @@ automatically, especially if you don’t need face recognition.</p>
 <div class="section" id="option-2-manual-install">
 <h3>Option 2: Manual install<a class="headerlink" href="#option-2-manual-install" title="Permalink to this headline">¶</a></h3>
 <p>If automatic install fails for you, or you like to be in control:</p>
-<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">pliablepixels</span><span class="o">/</span><span class="n">zmeventnotification</span> <span class="c1"># if you don&#39;t already have it downloaded</span>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">pliablepixels</span><span class="o">/</span><span class="n">zmeventnotification</span> <span class="c1"># if you don&#39;t already have it downloaded</span>
 <span class="n">cd</span> <span class="n">zmeventnotification</span><span class="o">/</span>
 </pre></div>
 </div>
 <ul>
 <li><p class="first">Install the object detection dependencies:</p>
-<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">-</span><span class="n">H</span> <span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span>  <span class="n">hook</span><span class="o">/</span><span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">-</span><span class="n">H</span> <span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span>  <span class="n">hook</span><span class="o">/</span><span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
 </pre></div>
 </div>
 </li>
 <li><p class="first">Install object detection files:</p>
-<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">-</span><span class="n">H</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">hook</span>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">-</span><span class="n">H</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">hook</span>
 </pre></div>
 </div>
 </li>
 </ul>
 <p><strong>Note:</strong> if you want to add “face recognition” you also need to do</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">-</span><span class="n">H</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">face_recognition</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">-</span><span class="n">H</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">face_recognition</span>
 </pre></div>
 </div>
 <ul class="simple">
 <li>You now need to download configuration and weight files that are
 required by the machine learning magic. Note that you don’t have to
-put them in <code class="docutils literal notranslate"><span class="pre">/var/lib/zmeventnotification</span></code> -&gt; use whatever you want
-(and change variables in <code class="docutils literal notranslate"><span class="pre">detect_wrapper.sh</span></code> script if you do)</li>
+put them in <code class="docutils literal"><span class="pre">/var/lib/zmeventnotification</span></code> -&gt; use whatever you want
+(and change variables in <code class="docutils literal"><span class="pre">detect_wrapper.sh</span></code> script if you do)</li>
 </ul>
-<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">mkdir</span> <span class="o">-</span><span class="n">p</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">zmeventnotification</span><span class="o">/</span><span class="n">images</span>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">mkdir</span> <span class="o">-</span><span class="n">p</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">zmeventnotification</span><span class="o">/</span><span class="n">images</span>
 <span class="n">sudo</span> <span class="n">mkdir</span> <span class="o">-</span><span class="n">p</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">zmeventnotification</span><span class="o">/</span><span class="n">models</span>
 
 <span class="c1"># if you are using face recognition, create this folder</span>
@@ -302,23 +298,23 @@ put them in <code class="docutils literal notranslate"><span class="pre">/var/li
 <ul class="simple">
 <li>Copy over the object detection config file</li>
 </ul>
-<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">cp</span> <span class="n">objectconfig</span><span class="o">.</span><span class="n">ini</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">zm</span>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">cp</span> <span class="n">objectconfig</span><span class="o">.</span><span class="n">ini</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">zm</span>
 </pre></div>
 </div>
 <ul>
-<li><p class="first">Now make sure it all RW accessible by <code class="docutils literal notranslate"><span class="pre">www-data</span></code> (or <code class="docutils literal notranslate"><span class="pre">apache</span></code>)</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">chown</span> <span class="o">-</span><span class="n">R</span> <span class="n">www</span><span class="o">-</span><span class="n">data</span><span class="p">:</span><span class="n">www</span><span class="o">-</span><span class="n">data</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">zmeventnotification</span><span class="o">/</span> <span class="c1">#(change www-data to apache for CentOS/Fedora)</span>
+<li><p class="first">Now make sure it all RW accessible by <code class="docutils literal"><span class="pre">www-data</span></code> (or <code class="docutils literal"><span class="pre">apache</span></code>)</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">chown</span> <span class="o">-</span><span class="n">R</span> <span class="n">www</span><span class="o">-</span><span class="n">data</span><span class="p">:</span><span class="n">www</span><span class="o">-</span><span class="n">data</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">zmeventnotification</span><span class="o">/</span> <span class="c1">#(change www-data to apache for CentOS/Fedora)</span>
 </pre></div>
 </div>
 </li>
-<li><p class="first">(OPTIONAL) Edit <code class="docutils literal notranslate"><span class="pre">detect_wrapper.sh</span></code> and change:</p>
+<li><p class="first">(OPTIONAL) Edit <code class="docutils literal"><span class="pre">detect_wrapper.sh</span></code> and change:</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">CONFIG_FILE</span></code> to point to the right config file, if you changed
+<li><code class="docutils literal"><span class="pre">CONFIG_FILE</span></code> to point to the right config file, if you changed
 paths</li>
 </ul>
 </li>
-<li><p class="first">Now copy your detection file to <code class="docutils literal notranslate"><span class="pre">/usr/bin</span></code></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">cp</span> <span class="n">detect</span><span class="o">.</span><span class="n">py</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span>
+<li><p class="first">Now copy your detection file to <code class="docutils literal"><span class="pre">/usr/bin</span></code></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">cp</span> <span class="n">detect</span><span class="o">.</span><span class="n">py</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span>
 </pre></div>
 </div>
 </li>
@@ -328,39 +324,39 @@ paths</li>
 <div class="section" id="post-install-steps">
 <h2>Post install steps<a class="headerlink" href="#post-install-steps" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Make sure you edit your installed <code class="docutils literal notranslate"><span class="pre">objectconfig.ini</span></code> to the right
-settings. You MUST change the <code class="docutils literal notranslate"><span class="pre">[general]</span></code> section for your own
+<li>Make sure you edit your installed <code class="docutils literal"><span class="pre">objectconfig.ini</span></code> to the right
+settings. You MUST change the <code class="docutils literal"><span class="pre">[general]</span></code> section for your own
 portal.</li>
-<li>Make sure the <code class="docutils literal notranslate"><span class="pre">CONFIG_FILE</span></code> variable in <code class="docutils literal notranslate"><span class="pre">detect_wrapper.sh</span></code> is
+<li>Make sure the <code class="docutils literal"><span class="pre">CONFIG_FILE</span></code> variable in <code class="docutils literal"><span class="pre">detect_wrapper.sh</span></code> is
 correct</li>
 </ul>
 </div>
 <div class="section" id="test-operation">
 <h2>Test operation<a class="headerlink" href="#test-operation" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">-</span><span class="n">u</span> <span class="n">www</span><span class="o">-</span><span class="n">data</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">detect_wrapper</span><span class="o">.</span><span class="n">sh</span> <span class="o">&lt;</span><span class="n">eid</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">mid</span><span class="o">&gt;</span> <span class="c1"># replace www-data with apache if needed</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">-</span><span class="n">u</span> <span class="n">www</span><span class="o">-</span><span class="n">data</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">detect_wrapper</span><span class="o">.</span><span class="n">sh</span> <span class="o">&lt;</span><span class="n">eid</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">mid</span><span class="o">&gt;</span> <span class="c1"># replace www-data with apache if needed</span>
 </pre></div>
 </div>
 <p>This will try and download the configured frame for alarm and analyze
 it. Replace with your own EID (Example 123456) The files will be in
-<code class="docutils literal notranslate"><span class="pre">/var/lib/zmeventnotification/images</span></code> For example: if you configured
-<code class="docutils literal notranslate"><span class="pre">frame_id</span></code> to be <code class="docutils literal notranslate"><span class="pre">bestmatch</span></code> you’ll see two files
-<code class="docutils literal notranslate"><span class="pre">&lt;eid&gt;-alarm.jpg</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;eid&gt;-snapshot.jpg</span></code> If you configured
-<code class="docutils literal notranslate"><span class="pre">frame_id</span></code> to be <code class="docutils literal notranslate"><span class="pre">snapshot</span></code> or a specific number, you’ll see one
-file <code class="docutils literal notranslate"><span class="pre">&lt;eid&gt;.jpg</span></code></p>
-<p>The <code class="docutils literal notranslate"><span class="pre">&lt;mid&gt;</span></code> is optional and is the monitor ID. If you do specify it,
+<code class="docutils literal"><span class="pre">/var/lib/zmeventnotification/images</span></code> For example: if you configured
+<code class="docutils literal"><span class="pre">frame_id</span></code> to be <code class="docutils literal"><span class="pre">bestmatch</span></code> you’ll see two files
+<code class="docutils literal"><span class="pre">&lt;eid&gt;-alarm.jpg</span></code> and <code class="docutils literal"><span class="pre">&lt;eid&gt;-snapshot.jpg</span></code> If you configured
+<code class="docutils literal"><span class="pre">frame_id</span></code> to be <code class="docutils literal"><span class="pre">snapshot</span></code> or a specific number, you’ll see one
+file <code class="docutils literal"><span class="pre">&lt;eid&gt;.jpg</span></code></p>
+<p>The <code class="docutils literal"><span class="pre">&lt;mid&gt;</span></code> is optional and is the monitor ID. If you do specify it,
 it will pick up the right mask to apply (if it is in your config)</p>
 <p>The above command will also try and run detection.</p>
 <p>If it doesn’t work, go back and figure out where you have a problem</p>
 <ul class="simple">
 <li>Other configuration notes, after you get everything working<ul>
-<li>Set <code class="docutils literal notranslate"><span class="pre">delete_after_analyze</span></code> to <code class="docutils literal notranslate"><span class="pre">yes</span></code> so that downloaded images
+<li>Set <code class="docutils literal"><span class="pre">delete_after_analyze</span></code> to <code class="docutils literal"><span class="pre">yes</span></code> so that downloaded images
 are removed after analysis. In the default installation, the
-images are kept in <code class="docutils literal notranslate"><span class="pre">/var/lib/zmeventnotification/images</span></code> so you
+images are kept in <code class="docutils literal"><span class="pre">/var/lib/zmeventnotification/images</span></code> so you
 can debug.</li>
 <li>Remember these rules:<ul>
-<li><code class="docutils literal notranslate"><span class="pre">frame_id=snapshot</span></code> will work for any ZM &gt;= 1.32</li>
-<li>If you are running ZM &lt; 1.33, to enable <code class="docutils literal notranslate"><span class="pre">bestmatch</span></code> or
-<code class="docutils literal notranslate"><span class="pre">alarm</span></code> you need to enable the monitor to store JPEG frames
+<li><code class="docutils literal"><span class="pre">frame_id=snapshot</span></code> will work for any ZM &gt;= 1.32</li>
+<li>If you are running ZM &lt; 1.33, to enable <code class="docutils literal"><span class="pre">bestmatch</span></code> or
+<code class="docutils literal"><span class="pre">alarm</span></code> you need to enable the monitor to store JPEG frames
 in its ZM monitor-&gt;storage configuration in ZM</li>
 <li>If you are running ZM &gt;= 1.33, you can use all fid modes
 without requiring to enable frames in storage</li>
@@ -375,29 +371,29 @@ without requiring to enable frames in storage</li>
 <ul class="simple">
 <li>In general, I expect you to debug properly. Please don’t ask me basic
 questions without investigating logs yourself</li>
-<li>Always run <code class="docutils literal notranslate"><span class="pre">detect_wrapper.sh</span></code> in manual mode first to make sure it
+<li>Always run <code class="docutils literal"><span class="pre">detect_wrapper.sh</span></code> in manual mode first to make sure it
 works</li>
-<li>Set <code class="docutils literal notranslate"><span class="pre">log_level</span></code> to <code class="docutils literal notranslate"><span class="pre">debug</span></code> in <code class="docutils literal notranslate"><span class="pre">objdetect.ini</span></code> before you run it
+<li>Set <code class="docutils literal"><span class="pre">log_level</span></code> to <code class="docutils literal"><span class="pre">debug</span></code> in <code class="docutils literal"><span class="pre">objdetect.ini</span></code> before you run it
 manually</li>
 <li>When you run in manually, view system logs in another window to look
-for errors (<code class="docutils literal notranslate"><span class="pre">tail</span> <span class="pre">-f</span> <span class="pre">/var/log/syslog</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">yolo</span></code>)</li>
+for errors (<code class="docutils literal"><span class="pre">tail</span> <span class="pre">-f</span> <span class="pre">/var/log/syslog</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">yolo</span></code>)</li>
 <li>One of the big reasons why object detection fails is because the hook
 is not able to download the image to check. This may be because your
 ZM version is old or other errors. Some common issues:<ul>
-<li>Make sure your <code class="docutils literal notranslate"><span class="pre">objectconfig.ini</span></code> section for <code class="docutils literal notranslate"><span class="pre">[general]</span></code> are
+<li>Make sure your <code class="docutils literal"><span class="pre">objectconfig.ini</span></code> section for <code class="docutils literal"><span class="pre">[general]</span></code> are
 correct (portal, user,admin)</li>
 <li>For object detection to work, the hooks expect to download images
 of events using
-<code class="docutils literal notranslate"><span class="pre">https://yourportal/zm/?view=image&amp;eid=&lt;eid&gt;&amp;fid=snapshot</span></code> and
-possibly <code class="docutils literal notranslate"><span class="pre">https://yourportal/zm/?view=image&amp;eid=&lt;eid&gt;&amp;fid=alarm</span></code></li>
+<code class="docutils literal"><span class="pre">https://yourportal/zm/?view=image&amp;eid=&lt;eid&gt;&amp;fid=snapshot</span></code> and
+possibly <code class="docutils literal"><span class="pre">https://yourportal/zm/?view=image&amp;eid=&lt;eid&gt;&amp;fid=alarm</span></code></li>
 <li>Open up a browser, log into ZM. Open a new tab and type in
-<code class="docutils literal notranslate"><span class="pre">https://yourportal/zm/?view=image&amp;eid=&lt;eid&gt;&amp;fid=snapshot</span></code> in
-your browser. Replace <code class="docutils literal notranslate"><span class="pre">eid</span></code> with an actual event id. Do you see
+<code class="docutils literal"><span class="pre">https://yourportal/zm/?view=image&amp;eid=&lt;eid&gt;&amp;fid=snapshot</span></code> in
+your browser. Replace <code class="docutils literal"><span class="pre">eid</span></code> with an actual event id. Do you see
 an image? If not, you’ll have to fix/update ZM. Please don’t ask
 me how. Please post in the ZM forums</li>
 <li>Open up a browser, log into ZM. Open a new tab and type in
-<code class="docutils literal notranslate"><span class="pre">https://yourportal/zm/?view=image&amp;eid=&lt;eid&gt;&amp;fid=alarm</span></code> in your
-browser. Replace <code class="docutils literal notranslate"><span class="pre">eid</span></code> with an actual event id. Do you see an
+<code class="docutils literal"><span class="pre">https://yourportal/zm/?view=image&amp;eid=&lt;eid&gt;&amp;fid=alarm</span></code> in your
+browser. Replace <code class="docutils literal"><span class="pre">eid</span></code> with an actual event id. Do you see an
 image? If not, you’ll have to fix/update ZM. Please don’t ask me
 how. Please post in the ZM forums</li>
 </ul>
@@ -407,22 +403,22 @@ how. Please post in the ZM forums</li>
 <div class="section" id="types-of-detection">
 <h2>Types of detection<a class="headerlink" href="#types-of-detection" title="Permalink to this headline">¶</a></h2>
 <p>You can switch detection type by using
-<code class="docutils literal notranslate"><span class="pre">model=&lt;detection_type1&gt;,&lt;detection_type2&gt;,....</span></code> in your
-<code class="docutils literal notranslate"><span class="pre">objectconfig.ini</span></code></p>
+<code class="docutils literal"><span class="pre">model=&lt;detection_type1&gt;,&lt;detection_type2&gt;,....</span></code> in your
+<code class="docutils literal"><span class="pre">objectconfig.ini</span></code></p>
 <p>Example:</p>
-<p><code class="docutils literal notranslate"><span class="pre">model=yolo,hog,face</span></code> will run full Yolo, then HOG, then face
+<p><code class="docutils literal"><span class="pre">model=yolo,hog,face</span></code> will run full Yolo, then HOG, then face
 recognition.</p>
-<p>Note that you can change <code class="docutils literal notranslate"><span class="pre">model</span></code> on a per monitor basis too. Read the
-comments in <code class="docutils literal notranslate"><span class="pre">objectconfig.ini</span></code></p>
-<p>If you select yolo, you can add a <code class="docutils literal notranslate"><span class="pre">model_type=tiny</span></code> to use tiny YOLO
+<p>Note that you can change <code class="docutils literal"><span class="pre">model</span></code> on a per monitor basis too. Read the
+comments in <code class="docutils literal"><span class="pre">objectconfig.ini</span></code></p>
+<p>If you select yolo, you can add a <code class="docutils literal"><span class="pre">model_type=tiny</span></code> to use tiny YOLO
 instead of full yolo weights. Again, please readd the comments in
-<code class="docutils literal notranslate"><span class="pre">objectconfig.ini</span></code></p>
+<code class="docutils literal"><span class="pre">objectconfig.ini</span></code></p>
 <div class="section" id="how-to-use-face-recognition">
 <h3>How to use face recognition<a class="headerlink" href="#how-to-use-face-recognition" title="Permalink to this headline">¶</a></h3>
 <p>Face Recognition uses
 <a class="reference external" href="https://github.com/ageitgey/face_recognition">this</a> library. Before
 you try and use face recognition, please make sure you did a
-<code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">-H</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">face_recognition</span></code> The reason this is not
+<code class="docutils literal"><span class="pre">sudo</span> <span class="pre">-H</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">face_recognition</span></code> The reason this is not
 automatically done during setup is that it installs a lot of
 dependencies that takes time (including dlib) and not everyone wants it.</p>
 <div class="sidebar">
@@ -438,12 +434,12 @@ of this library to know more about its limitations.</p>
 <h4>Configuring face recognition<a class="headerlink" href="#configuring-face-recognition" title="Permalink to this headline">¶</a></h4>
 <ul>
 <li><p class="first">Make sure you have images of people you want to recognize in
-<code class="docutils literal notranslate"><span class="pre">/var/lib/zmeventnotification/known_faces</span></code></p>
+<code class="docutils literal"><span class="pre">/var/lib/zmeventnotification/known_faces</span></code></p>
 </li>
 <li><p class="first">Only one image per person</p>
 </li>
 <li><p class="first">For example, you may have the following image setup:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">zmeventnotification</span><span class="o">/</span><span class="n">known_faces</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">zmeventnotification</span><span class="o">/</span><span class="n">known_faces</span>
     <span class="o">+</span> <span class="n">david_gilmour</span><span class="o">.</span><span class="n">jpg</span>
     <span class="o">+</span> <span class="n">ramanujan</span><span class="o">.</span><span class="n">jpg</span>
     <span class="o">+</span> <span class="n">bruce_lee</span><span class="o">.</span><span class="n">jpg</span>
@@ -474,8 +470,8 @@ requirements)</li>
 have recognizable faces</li>
 <li>If it says “no faces found” that means your alarmed image doesn’t
 have a face that is recognizable</li>
-<li>Read comments about <code class="docutils literal notranslate"><span class="pre">num_jitters</span></code>, <code class="docutils literal notranslate"><span class="pre">model</span></code>, <code class="docutils literal notranslate"><span class="pre">upsample_times</span></code>
-in <code class="docutils literal notranslate"><span class="pre">objectconfig.ini</span></code></li>
+<li>Read comments about <code class="docutils literal"><span class="pre">num_jitters</span></code>, <code class="docutils literal"><span class="pre">model</span></code>, <code class="docutils literal"><span class="pre">upsample_times</span></code>
+in <code class="docutils literal"><span class="pre">objectconfig.ini</span></code></li>
 </ul>
 </li>
 <li>Experiment. Read the accuracy wiki link I posted in the previous
@@ -486,10 +482,10 @@ section</li>
 <div class="section" id="manually-testing-if-detection-is-working-well">
 <h3>Manually testing if detection is working well<a class="headerlink" href="#manually-testing-if-detection-is-working-well" title="Permalink to this headline">¶</a></h3>
 <p>You can manually invoke the detection module to check if it works ok:</p>
-<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">sudo</span> <span class="o">-</span><span class="n">u</span> <span class="n">www</span><span class="o">-</span><span class="n">data</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">detect</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">config</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">zm</span><span class="o">/</span><span class="n">objectconfig</span><span class="o">.</span><span class="n">ini</span>  <span class="o">--</span><span class="n">eventid</span> <span class="o">&lt;</span><span class="n">eid</span><span class="o">&gt;</span> <span class="o">--</span><span class="n">monitorid</span> <span class="o">&lt;</span><span class="n">mid</span><span class="o">&gt;</span>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">sudo</span> <span class="o">-</span><span class="n">u</span> <span class="n">www</span><span class="o">-</span><span class="n">data</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">detect</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">config</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">zm</span><span class="o">/</span><span class="n">objectconfig</span><span class="o">.</span><span class="n">ini</span>  <span class="o">--</span><span class="n">eventid</span> <span class="o">&lt;</span><span class="n">eid</span><span class="o">&gt;</span> <span class="o">--</span><span class="n">monitorid</span> <span class="o">&lt;</span><span class="n">mid</span><span class="o">&gt;</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">--monitorid</span> <span class="pre">&lt;mid&gt;</span></code> is optional and is the monitor ID. If you do
+<p>The <code class="docutils literal"><span class="pre">--monitorid</span> <span class="pre">&lt;mid&gt;</span></code> is optional and is the monitor ID. If you do
 specify it, it will pick up the right mask to apply (if it is in your
 config)</p>
 </div>
@@ -504,17 +500,17 @@ steps:</p>
 <p><strong>STEP 1: Make sure the scripts(s) work</strong></p>
 <ul class="simple">
 <li>Run the python script manually to see if it works (refer to sections above on how to run them manually)</li>
-<li><code class="docutils literal notranslate"><span class="pre">./detect_wrapper.sh</span> <span class="pre">&lt;eid&gt;</span> <span class="pre">&lt;mid&gt;</span></code> –&gt; make sure it
+<li><code class="docutils literal"><span class="pre">./detect_wrapper.sh</span> <span class="pre">&lt;eid&gt;</span> <span class="pre">&lt;mid&gt;</span></code> –&gt; make sure it
 downloads a proper image for that eid. Make sure it correctly invokes
-detect.py If not, fix it. (<code class="docutils literal notranslate"><span class="pre">&lt;mid&gt;</span></code> is optional and is used to apply a
+detect.py If not, fix it. (<code class="docutils literal"><span class="pre">&lt;mid&gt;</span></code> is optional and is used to apply a
 crop mask if specified)</li>
-<li>Make sure the <code class="docutils literal notranslate"><span class="pre">image_path</span></code> you’ve chosen in the config file is WRITABLE by www-data (or apache) before you move to step 2</li>
+<li>Make sure the <code class="docutils literal"><span class="pre">image_path</span></code> you’ve chosen in the config file is WRITABLE by www-data (or apache) before you move to step 2</li>
 </ul>
 <p><strong>STEP 2: run zmeventnotification in MANUAL mode</strong></p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">zmdc.pl</span> <span class="pre">stop</span> <span class="pre">zmeventnotification.pl</span></code></li>
-<li>change verbose to 1 in <code class="docutils literal notranslate"><span class="pre">zmeventnotification.ini</span></code></li>
-<li><code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">-u</span> <span class="pre">www-data</span> <span class="pre">./zmeventnotification.pl</span>&#160; <span class="pre">--config</span> <span class="pre">./zmeventnotification.ini</span></code></li>
+<li><code class="docutils literal"><span class="pre">sudo</span> <span class="pre">zmdc.pl</span> <span class="pre">stop</span> <span class="pre">zmeventnotification.pl</span></code></li>
+<li>change verbose to 1 in <code class="docutils literal"><span class="pre">zmeventnotification.ini</span></code></li>
+<li><code class="docutils literal"><span class="pre">sudo</span> <span class="pre">-u</span> <span class="pre">www-data</span> <span class="pre">./zmeventnotification.pl</span>&#160; <span class="pre">--config</span> <span class="pre">./zmeventnotification.ini</span></code></li>
 <li>Force an alarm, look at logs</li>
 </ul>
 <p><strong>STEP 3: integrate with the actual daemon</strong>
@@ -524,7 +520,9 @@ crop mask if specified)</li>
 
 
            </div>
-           
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
@@ -533,7 +531,7 @@ crop mask if specified)</li>
         <a href="breaking.html" class="btn btn-neutral float-right" title="Breaking Changes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="install.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="install.html" class="btn btn-neutral" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -542,11 +540,11 @@ crop mask if specified)</li>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, Pliable Pixels
+        &copy; Copyright 2019, Pliable Pixels.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -559,15 +557,36 @@ crop mask if specified)</li>
   
 
 
-  <script type="text/javascript">
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script>
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
 
   
   
-    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
    
 
 </body>

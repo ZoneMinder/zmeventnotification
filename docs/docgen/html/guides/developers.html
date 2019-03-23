@@ -17,45 +17,42 @@
   
 
   
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
 
+  
+  
     
 
   
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Writing your own detection plugin" href="plugins.html" />
-    <link rel="prev" title="FAQ" href="faq.html" /> 
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="Event Notification Server  documentation" href="../index.html"/>
+        <link rel="next" title="Writing your own detection plugin" href="plugins.html"/>
+        <link rel="prev" title="FAQ" href="faq.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
 </head>
 
-<body class="wy-body-for-nav">
+<body class="wy-body-for-nav" role="document">
 
    
   <div class="wy-grid-for-nav">
+
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search">
           
 
           
@@ -126,7 +123,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" aria-label="top navigation">
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">Event Notification Server</a>
@@ -134,10 +131,9 @@
       </nav>
 
 
+      
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
           
 
 
@@ -184,7 +180,7 @@
 <div class="section" id="how-do-i-talk-to-it">
 <h2>How do I talk to it?<a class="headerlink" href="#how-do-i-talk-to-it" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">{&quot;JSON&quot;:&quot;everywhere&quot;}</span></code></li>
+<li><code class="docutils literal"><span class="pre">{&quot;JSON&quot;:&quot;everywhere&quot;}</span></code></li>
 <li>Your client sends messages (authentication) over JSON</li>
 <li>The server sends auth success/failure over JSON back at you</li>
 <li>New events are reported as JSON objects as well</li>
@@ -215,22 +211,22 @@ are not using SSL, it will be sent in clear.</p>
 you send the first one within 20 seconds of opening a connection or the
 server will terminate your connection.</p>
 <p><strong>Client –&gt; Server:</strong></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;auth&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;user&quot;</span><span class="p">:</span><span class="s2">&quot;&lt;username&gt;&quot;</span><span class="p">,</span><span class="s2">&quot;password&quot;</span><span class="p">:</span><span class="s2">&quot;&lt;password&gt;&quot;</span><span class="p">}}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;auth&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;user&quot;</span><span class="p">:</span><span class="s2">&quot;&lt;username&gt;&quot;</span><span class="p">,</span><span class="s2">&quot;password&quot;</span><span class="p">:</span><span class="s2">&quot;&lt;password&gt;&quot;</span><span class="p">}}</span>
 </pre></div>
 </div>
 <p><strong>Server –&gt; Client:</strong> The server will send back one of the following
 responses</p>
 <p>Authentication successful:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;auth&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;version&quot;</span><span class="p">:</span><span class="s2">&quot;0.2&quot;</span><span class="p">,</span><span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Success&quot;</span><span class="p">,</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;auth&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;version&quot;</span><span class="p">:</span><span class="s2">&quot;0.2&quot;</span><span class="p">,</span><span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Success&quot;</span><span class="p">,</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">}</span>
 </pre></div>
 </div>
 <p>Note that it also sends its version number for convenience</p>
 <p>Incorrect credentials:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;auth&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Fail&quot;</span><span class="p">,</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span><span class="s2">&quot;BADAUTH&quot;</span><span class="p">}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;auth&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Fail&quot;</span><span class="p">,</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span><span class="s2">&quot;BADAUTH&quot;</span><span class="p">}</span>
 </pre></div>
 </div>
 <p>No authentication received in time limit:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;auth&quot;</span><span class="p">,</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Fail&quot;</span><span class="p">,</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span><span class="s2">&quot;NOAUTH&quot;</span><span class="p">}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;auth&quot;</span><span class="p">,</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Fail&quot;</span><span class="p">,</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span><span class="s2">&quot;NOAUTH&quot;</span><span class="p">}</span>
 </pre></div>
 </div>
 </div>
@@ -246,7 +242,7 @@ interested in. When received, the server will only send it alarms for
 those specific monitor IDs. You can also specify the reporting interval
 for events.</p>
 <p><strong>Client–&gt;Server:</strong></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;control&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;filter&quot;</span><span class="p">,</span><span class="s2">&quot;monlist&quot;</span><span class="p">:</span><span class="s2">&quot;1,2,4,5,6&quot;</span><span class="p">,</span> <span class="s2">&quot;intlist&quot;</span><span class="p">:</span><span class="s2">&quot;0,0,3600,60,0&quot;</span><span class="p">}}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;control&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;filter&quot;</span><span class="p">,</span><span class="s2">&quot;monlist&quot;</span><span class="p">:</span><span class="s2">&quot;1,2,4,5,6&quot;</span><span class="p">,</span> <span class="s2">&quot;intlist&quot;</span><span class="p">:</span><span class="s2">&quot;0,0,3600,60,0&quot;</span><span class="p">}}</span>
 </pre></div>
 </div>
 <p>In this example, a client has requested to be notified of events only
@@ -259,11 +255,11 @@ seconds)</p>
 <p>There is no response for this request, unless the payload did not have
 either monlist or intlist.</p>
 <p>No monitorlist received:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;control&quot;</span><span class="p">,</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;filter&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Fail&quot;</span><span class="p">,</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span><span class="s2">&quot;NOMONITORLIST&quot;</span><span class="p">}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;control&quot;</span><span class="p">,</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;filter&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Fail&quot;</span><span class="p">,</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span><span class="s2">&quot;NOMONITORLIST&quot;</span><span class="p">}</span>
 </pre></div>
 </div>
 <p>No interval received:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;control&quot;</span><span class="p">,</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;filter&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Fail&quot;</span><span class="p">,</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span><span class="s2">&quot;NOINTERVALLIST&quot;</span><span class="p">}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;control&quot;</span><span class="p">,</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;filter&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Fail&quot;</span><span class="p">,</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span><span class="s2">&quot;NOINTERVALLIST&quot;</span><span class="p">}</span>
 </pre></div>
 </div>
 <p>Note that if you don’t want to specify intervals, send it a interval
@@ -274,11 +270,11 @@ list.</p>
 <h4>Control message to get Event Server version<a class="headerlink" href="#control-message-to-get-event-server-version" title="Permalink to this headline">¶</a></h4>
 <p>A client can send a control message to request Event Server version</p>
 <p><strong>Client–&gt;Server:</strong></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;control&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;version&quot;</span><span class="p">}}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;control&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;version&quot;</span><span class="p">}}</span>
 </pre></div>
 </div>
 <p><strong>Server–&gt;Client:</strong></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;control&quot;</span><span class="p">,</span> <span class="s2">&quot;type:&quot;</span><span class="p">:</span><span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="s2">&quot;version&quot;</span><span class="p">:</span><span class="s2">&quot;0.2&quot;</span><span class="p">,</span><span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Success&quot;</span><span class="p">,</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;control&quot;</span><span class="p">,</span> <span class="s2">&quot;type:&quot;</span><span class="p">:</span><span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="s2">&quot;version&quot;</span><span class="p">:</span><span class="s2">&quot;0.2&quot;</span><span class="p">,</span><span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Success&quot;</span><span class="p">,</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">}</span>
 </pre></div>
 </div>
 </div>
@@ -287,7 +283,7 @@ list.</p>
 <h3>Alarm notifications<a class="headerlink" href="#alarm-notifications" title="Permalink to this headline">¶</a></h3>
 <p>Alarms are events sent from the Server to the Client</p>
 <p><strong>Server–&gt;Client:</strong> Sample payload of 2 events being reported:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;alarm&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Success&quot;</span><span class="p">,</span> <span class="s2">&quot;events&quot;</span><span class="p">:[{</span><span class="s2">&quot;EventId&quot;</span><span class="p">:</span><span class="s2">&quot;5060&quot;</span><span class="p">,</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span><span class="s2">&quot;Garage&quot;</span><span class="p">,</span><span class="s2">&quot;MonitorId&quot;</span><span class="p">:</span><span class="s2">&quot;1&quot;</span><span class="p">},{</span><span class="s2">&quot;EventId&quot;</span><span class="p">:</span><span class="s2">&quot;5061&quot;</span><span class="p">,</span><span class="s2">&quot;MonitorId&quot;</span><span class="p">:</span><span class="s2">&quot;5&quot;</span><span class="p">,</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span><span class="s2">&quot;Unfinished&quot;</span><span class="p">}]}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;alarm&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Success&quot;</span><span class="p">,</span> <span class="s2">&quot;events&quot;</span><span class="p">:[{</span><span class="s2">&quot;EventId&quot;</span><span class="p">:</span><span class="s2">&quot;5060&quot;</span><span class="p">,</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span><span class="s2">&quot;Garage&quot;</span><span class="p">,</span><span class="s2">&quot;MonitorId&quot;</span><span class="p">:</span><span class="s2">&quot;1&quot;</span><span class="p">},{</span><span class="s2">&quot;EventId&quot;</span><span class="p">:</span><span class="s2">&quot;5061&quot;</span><span class="p">,</span><span class="s2">&quot;MonitorId&quot;</span><span class="p">:</span><span class="s2">&quot;5&quot;</span><span class="p">,</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span><span class="s2">&quot;Unfinished&quot;</span><span class="p">}]}</span>
 </pre></div>
 </div>
 </div>
@@ -310,11 +306,11 @@ Firebase cloud. This eliminates the need for me to run my own server.</p>
 <h4>Registering Push token with the server<a class="headerlink" href="#registering-push-token-with-the-server" title="Permalink to this headline">¶</a></h4>
 <p><strong>Client–&gt;Server:</strong></p>
 <p>Registering an iOS device:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;push&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;token&quot;</span><span class="p">,</span><span class="s2">&quot;platform&quot;</span><span class="p">:</span><span class="s2">&quot;ios&quot;</span><span class="p">,</span><span class="s2">&quot;token&quot;</span><span class="p">:</span><span class="s2">&quot;&lt;device tokenid here&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;state&quot;</span><span class="p">:</span><span class="s2">&quot;enabled&quot;</span><span class="p">}}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;push&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;token&quot;</span><span class="p">,</span><span class="s2">&quot;platform&quot;</span><span class="p">:</span><span class="s2">&quot;ios&quot;</span><span class="p">,</span><span class="s2">&quot;token&quot;</span><span class="p">:</span><span class="s2">&quot;&lt;device tokenid here&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;state&quot;</span><span class="p">:</span><span class="s2">&quot;enabled&quot;</span><span class="p">}}</span>
 </pre></div>
 </div>
 <p>Here is an example of registering an Android device:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;push&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;token&quot;</span><span class="p">,</span><span class="s2">&quot;platform&quot;</span><span class="p">:</span><span class="s2">&quot;android&quot;</span><span class="p">,</span><span class="s2">&quot;token&quot;</span><span class="p">:</span><span class="s2">&quot;&lt;device tokenid here&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;state&quot;</span><span class="p">:</span><span class="s2">&quot;enabled&quot;</span><span class="p">}}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;push&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;token&quot;</span><span class="p">,</span><span class="s2">&quot;platform&quot;</span><span class="p">:</span><span class="s2">&quot;android&quot;</span><span class="p">,</span><span class="s2">&quot;token&quot;</span><span class="p">:</span><span class="s2">&quot;&lt;device tokenid here&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;state&quot;</span><span class="p">:</span><span class="s2">&quot;enabled&quot;</span><span class="p">}}</span>
 </pre></div>
 </div>
 <p>For devices capable of receiving push notifications, but want to stop
@@ -322,7 +318,7 @@ receiving push notifications over APNS/GCM and have it delivered over
 websockets instead, set the state to disabled</p>
 <p>For example: Here is an example of registering an Android device, which
 disables push notifications over GCM:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;push&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;token&quot;</span><span class="p">,</span><span class="s2">&quot;platform&quot;</span><span class="p">:</span><span class="s2">&quot;android&quot;</span><span class="p">,</span><span class="s2">&quot;token&quot;</span><span class="p">:</span><span class="s2">&quot;&lt;device tokenid here&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;state&quot;</span><span class="p">:</span><span class="s2">&quot;disabled&quot;</span><span class="p">}}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;push&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;token&quot;</span><span class="p">,</span><span class="s2">&quot;platform&quot;</span><span class="p">:</span><span class="s2">&quot;android&quot;</span><span class="p">,</span><span class="s2">&quot;token&quot;</span><span class="p">:</span><span class="s2">&quot;&lt;device tokenid here&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;state&quot;</span><span class="p">:</span><span class="s2">&quot;disabled&quot;</span><span class="p">}}</span>
 </pre></div>
 </div>
 <p>What happens here is if there is a new event to report, the Event Server
@@ -333,7 +329,7 @@ you won’t receive notifications when the app is not running in the
 foreground. We went over why, remember?</p>
 <p><strong>Server–&gt;Client:</strong> If its successful, there is no response. However,
 if Push is disabled it will send back</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;push&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Fail&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;PUSHDISABLED&quot;</span><span class="p">}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;push&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Fail&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;PUSHDISABLED&quot;</span><span class="p">}</span>
 </pre></div>
 </div>
 </div>
@@ -346,7 +342,7 @@ count (unlike local notifications). So a client can request the server
 to reset its badge count so the next push notification starts from the
 value provided.</p>
 <p><strong>Client–&gt;Server:</strong></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;push&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;badge&quot;</span><span class="p">,</span> <span class="s2">&quot;badge&quot;</span><span class="p">:</span><span class="s2">&quot;0&quot;</span><span class="p">}}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;push&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;badge&quot;</span><span class="p">,</span> <span class="s2">&quot;badge&quot;</span><span class="p">:</span><span class="s2">&quot;0&quot;</span><span class="p">}}</span>
 </pre></div>
 </div>
 <p>In this example, the client requests the server to reset the badge count
@@ -360,17 +356,17 @@ away.</p>
 <p>If you are writing your own consumer/client it helps to test the event
 server commands from command line. The event server uses
 Secure/WebSockers so you can’t just HTTP to it using tools like
-<code class="docutils literal notranslate"><span class="pre">curl</span></code>. You’ll need to use a websocket client. While there are
-examples on the net on how to use <code class="docutils literal notranslate"><span class="pre">curl</span></code> for websockets, I’ve found it
+<code class="docutils literal"><span class="pre">curl</span></code>. You’ll need to use a websocket client. While there are
+examples on the net on how to use <code class="docutils literal"><span class="pre">curl</span></code> for websockets, I’ve found it
 much simpler to use <a class="reference external" href="https://github.com/websockets/wscat">wscat</a> like
 so:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">wscat</span> <span class="o">-</span><span class="n">c</span> <span class="n">wss</span><span class="p">:</span><span class="o">//</span><span class="n">myzmeventnotification</span><span class="o">.</span><span class="n">domain</span><span class="p">:</span><span class="mi">9000</span> <span class="o">-</span><span class="n">n</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">wscat</span> <span class="o">-</span><span class="n">c</span> <span class="n">wss</span><span class="p">:</span><span class="o">//</span><span class="n">myzmeventnotification</span><span class="o">.</span><span class="n">domain</span><span class="p">:</span><span class="mi">9000</span> <span class="o">-</span><span class="n">n</span>
 <span class="n">connected</span> <span class="p">(</span><span class="n">press</span> <span class="n">CTRL</span><span class="o">+</span><span class="n">C</span> <span class="n">to</span> <span class="n">quit</span><span class="p">)</span>
 <span class="o">&gt;</span> <span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;auth&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;user&quot;</span><span class="p">:</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span><span class="s2">&quot;password&quot;</span><span class="p">:</span><span class="s2">&quot;xxxx&quot;</span><span class="p">}}</span>
 <span class="o">&lt;</span> <span class="p">{</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Success&quot;</span><span class="p">,</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;auth&quot;</span><span class="p">,</span><span class="s2">&quot;version&quot;</span><span class="p">:</span><span class="s2">&quot;0.93&quot;</span><span class="p">}</span>
 </pre></div>
 </div>
-<p>In the example above, I used <code class="docutils literal notranslate"><span class="pre">wscat</span></code> to connect to my event server and
+<p>In the example above, I used <code class="docutils literal"><span class="pre">wscat</span></code> to connect to my event server and
 then sent it a JSON login message which it accepted and acknowledged.</p>
 </div>
 </div>
@@ -378,7 +374,9 @@ then sent it a JSON login message which it accepted and acknowledged.</p>
 
 
            </div>
-           
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
@@ -387,7 +385,7 @@ then sent it a JSON login message which it accepted and acknowledged.</p>
         <a href="plugins.html" class="btn btn-neutral float-right" title="Writing your own detection plugin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="faq.html" class="btn btn-neutral float-left" title="FAQ" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="faq.html" class="btn btn-neutral" title="FAQ" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -396,11 +394,11 @@ then sent it a JSON login message which it accepted and acknowledged.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, Pliable Pixels
+        &copy; Copyright 2019, Pliable Pixels.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -413,15 +411,36 @@ then sent it a JSON login message which it accepted and acknowledged.</p>
   
 
 
-  <script type="text/javascript">
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script>
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
 
   
   
-    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
    
 
 </body>

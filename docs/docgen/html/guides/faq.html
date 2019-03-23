@@ -17,45 +17,42 @@
   
 
   
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
 
+  
+  
     
 
   
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="For Developers writing their own consumers" href="developers.html" />
-    <link rel="prev" title="Breaking Changes" href="breaking.html" /> 
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="Event Notification Server  documentation" href="../index.html"/>
+        <link rel="next" title="For Developers writing their own consumers" href="developers.html"/>
+        <link rel="prev" title="Breaking Changes" href="breaking.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
 </head>
 
-<body class="wy-body-for-nav">
+<body class="wy-body-for-nav" role="document">
 
    
   <div class="wy-grid-for-nav">
+
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search">
           
 
           
@@ -135,7 +132,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" aria-label="top navigation">
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">Event Notification Server</a>
@@ -143,10 +140,9 @@
       </nav>
 
 
+      
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
           
 
 
@@ -232,12 +228,12 @@ consumer.</p>
 <p>As of version 1.1, the event server also supports MQTT (Contributed by
 <a class="reference external" href="https://github.com/vajonam">&#64;vajonam</a>). zmeventnotification server can
 be configured to broadcast on a topic called
-<code class="docutils literal notranslate"><span class="pre">/zoneminder/&lt;monitor-id&gt;</span></code> which can then be consumed by Home
+<code class="docutils literal"><span class="pre">/zoneminder/&lt;monitor-id&gt;</span></code> which can then be consumed by Home
 Assistant or Node-Red.</p>
-<p>To enable this, set <code class="docutils literal notranslate"><span class="pre">enable</span> <span class="pre">=</span> <span class="pre">1</span></code> under the <code class="docutils literal notranslate"><span class="pre">[mqtt]</span></code> section and
-specify the <code class="docutils literal notranslate"><span class="pre">server</span></code> to broadcast to.</p>
+<p>To enable this, set <code class="docutils literal"><span class="pre">enable</span> <span class="pre">=</span> <span class="pre">1</span></code> under the <code class="docutils literal"><span class="pre">[mqtt]</span></code> section and
+specify the <code class="docutils literal"><span class="pre">server</span></code> to broadcast to.</p>
 <p>You will also need to install the following module for this work</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">perl</span> <span class="o">-</span><span class="n">MCPAN</span> <span class="o">-</span><span class="n">e</span> <span class="s2">&quot;install Net::MQTT::Simple&quot;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">perl</span> <span class="o">-</span><span class="n">MCPAN</span> <span class="o">-</span><span class="n">e</span> <span class="s2">&quot;install Net::MQTT::Simple&quot;</span>
 </pre></div>
 </div>
 </div>
@@ -247,23 +243,23 @@ specify the <code class="docutils literal notranslate"><span class="pre">server<
 the following</p>
 <ul class="simple">
 <li>To run the eventserver on Websockets and not Secure Websockets, use
-<code class="docutils literal notranslate"><span class="pre">enable</span> <span class="pre">=</span> <span class="pre">0</span></code> in the <code class="docutils literal notranslate"><span class="pre">[ssl]</span></code> section of the configuration file.</li>
+<code class="docutils literal"><span class="pre">enable</span> <span class="pre">=</span> <span class="pre">0</span></code> in the <code class="docutils literal"><span class="pre">[ssl]</span></code> section of the configuration file.</li>
 <li>To disable ZM Auth checking (be careful, anyone can get all your data
 INCLUDING passwords for ZoneMinder monitors if you open it up to the
-Internet) use <code class="docutils literal notranslate"><span class="pre">enable</span> <span class="pre">=</span> <span class="pre">0</span></code> in the <code class="docutils literal notranslate"><span class="pre">[auth]</span></code> section of the
+Internet) use <code class="docutils literal"><span class="pre">enable</span> <span class="pre">=</span> <span class="pre">0</span></code> in the <code class="docutils literal"><span class="pre">[auth]</span></code> section of the
 configuration file.</li>
 </ul>
 </div>
 <div class="section" id="how-do-i-safely-upgrade-zmeventnotification-to-new-versions">
 <h2>How do I safely upgrade zmeventnotification to new versions?<a class="headerlink" href="#how-do-i-safely-upgrade-zmeventnotification-to-new-versions" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">zmdc</span><span class="o">.</span><span class="n">pl</span> <span class="n">stop</span> <span class="n">zmeventnotification</span><span class="o">.</span><span class="n">pl</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">zmdc</span><span class="o">.</span><span class="n">pl</span> <span class="n">stop</span> <span class="n">zmeventnotification</span><span class="o">.</span><span class="n">pl</span>
 </pre></div>
 </div>
 <p>Now copy the new zmeventnotification.pl to the right place (usually
-<code class="docutils literal notranslate"><span class="pre">/usr/bin</span></code>) If you need to, copy the new zmeventnotification.ini to
-the right place (usually <code class="docutils literal notranslate"><span class="pre">/etc/zm</span></code>) (Note: this will replace your old
+<code class="docutils literal"><span class="pre">/usr/bin</span></code>) If you need to, copy the new zmeventnotification.ini to
+the right place (usually <code class="docutils literal"><span class="pre">/etc/zm</span></code>) (Note: this will replace your old
 config file and you shouldn’t need to do this)</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">zmdc</span><span class="o">.</span><span class="n">pl</span> <span class="n">start</span> <span class="n">zmeventnotification</span><span class="o">.</span><span class="n">pl</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">zmdc</span><span class="o">.</span><span class="n">pl</span> <span class="n">start</span> <span class="n">zmeventnotification</span><span class="o">.</span><span class="n">pl</span>
 </pre></div>
 </div>
 <p>Make sure you look at the syslogs to make sure its started properly</p>
@@ -272,17 +268,17 @@ config file and you shouldn’t need to do this)</p>
 <h2>Configuring the notification server<a class="headerlink" href="#configuring-the-notification-server" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="understanding-zmeventnotification-configuration">
 <h3>Understanding zmeventnotification configuration<a class="headerlink" href="#understanding-zmeventnotification-configuration" title="Permalink to this headline">¶</a></h3>
-<p>Starting v1.0, [&#64;synthead](<a class="reference external" href="https://github.com/synthead">https://github.com/synthead</a>) reworked the
+<p>Starting v1.0, <a class="reference external" href="https://github.com/synthead">&#64;synthead</a> reworked the
 configuration as follows:</p>
 <ul class="simple">
-<li>If you just run <code class="docutils literal notranslate"><span class="pre">zmeventnotification.pl</span></code> it will try and load
-<code class="docutils literal notranslate"><span class="pre">/etc/zm/zmeventnotification.ini</span></code>. If it doesn’t find it, it will
+<li>If you just run <code class="docutils literal"><span class="pre">zmeventnotification.pl</span></code> it will try and load
+<code class="docutils literal"><span class="pre">/etc/zm/zmeventnotification.ini</span></code>. If it doesn’t find it, it will
 use internal defaults</li>
 <li>If you want to override this with another configuration file, use
-<code class="docutils literal notranslate"><span class="pre">zmeventnotification.pl</span> <span class="pre">--config</span> <span class="pre">/path/to/your/config/filename.ini</span></code>.</li>
+<code class="docutils literal"><span class="pre">zmeventnotification.pl</span> <span class="pre">--config</span> <span class="pre">/path/to/your/config/filename.ini</span></code>.</li>
 <li>Its always a good idea to validate you config settings. For example:</li>
 </ul>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">zmeventnotification</span><span class="o">.</span><span class="n">pl</span> <span class="o">--</span><span class="n">check</span><span class="o">-</span><span class="n">config</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">zmeventnotification</span><span class="o">.</span><span class="n">pl</span> <span class="o">--</span><span class="n">check</span><span class="o">-</span><span class="n">config</span>
 
 <span class="mi">03</span><span class="o">/</span><span class="mi">31</span><span class="o">/</span><span class="mi">2018</span> <span class="mi">16</span><span class="p">:</span><span class="mi">52</span><span class="p">:</span><span class="mf">23.231955</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">29790</span><span class="p">]</span><span class="o">.</span><span class="n">INF</span> <span class="p">[</span><span class="n">using</span> <span class="n">config</span> <span class="n">file</span><span class="p">:</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">zm</span><span class="o">/</span><span class="n">zmeventnotification</span><span class="o">.</span><span class="n">ini</span><span class="p">]</span>
 <span class="n">Configuration</span> <span class="p">(</span><span class="n">read</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">zm</span><span class="o">/</span><span class="n">zmeventnotification</span><span class="o">.</span><span class="n">ini</span><span class="p">):</span>
@@ -315,31 +311,31 @@ use internal defaults</li>
 </div>
 <div class="section" id="what-is-the-hook-section">
 <h3>What is the hook section ?<a class="headerlink" href="#what-is-the-hook-section" title="Permalink to this headline">¶</a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">hook</span></code> section allows you to invoke a custom script when an alarm
+<p>The <code class="docutils literal"><span class="pre">hook</span></code> section allows you to invoke a custom script when an alarm
 is triggered by ZM.</p>
-<p><code class="docutils literal notranslate"><span class="pre">hook_script</span></code> points to the script that is invoked when an alarm
+<p><code class="docutils literal"><span class="pre">hook_script</span></code> points to the script that is invoked when an alarm
 occurs</p>
 <p>If the script returns success (exit value of 0) then the notification
 server will send out an alarm notification. If not, it will not send a
 notification to its listeners. This is useful to implement any custom
 logic you may want to perform that decides whether this event is worth
 sending a notification for.</p>
-<p>Related to <code class="docutils literal notranslate"><span class="pre">hook</span></code> we also have a <code class="docutils literal notranslate"><span class="pre">hook_description</span></code> attribute. When
+<p>Related to <code class="docutils literal"><span class="pre">hook</span></code> we also have a <code class="docutils literal"><span class="pre">hook_description</span></code> attribute. When
 set to 1, the text returned by the hook script will overwrite the alarm
 text that is notified.</p>
-<p>We also have a <code class="docutils literal notranslate"><span class="pre">skip_monitors</span></code> attribute. This is a comma separated
+<p>We also have a <code class="docutils literal"><span class="pre">skip_monitors</span></code> attribute. This is a comma separated
 list of monitors. When alarms occur in those monitors, hooks will not be
 called and the ES will directly send out notifications (if enabled in
 ES). This is useful when you don’t want to invoke hooks for certain
 monitors as they may be expensive (especially if you are doing object
 detection)</p>
-<p>Finally, <code class="docutils literal notranslate"><span class="pre">keep_frame_match_type</span></code> is really used when you enable
-“bestmatch”. It prefixes an <code class="docutils literal notranslate"><span class="pre">[a]</span></code> or <code class="docutils literal notranslate"><span class="pre">[s]</span></code> to tell you if object
+<p>Finally, <code class="docutils literal"><span class="pre">keep_frame_match_type</span></code> is really used when you enable
+“bestmatch”. It prefixes an <code class="docutils literal"><span class="pre">[a]</span></code> or <code class="docutils literal"><span class="pre">[s]</span></code> to tell you if object
 detection succeeded in the alarmed or snapshot frame.</p>
 <p>Here is an example: (Note: just an example, please don’t ask me for
 support for person detection)</p>
 <ul class="simple">
-<li>You will find a sample <code class="docutils literal notranslate"><span class="pre">detect_wrapper.sh</span></code> hook in the <code class="docutils literal notranslate"><span class="pre">hook</span></code>
+<li>You will find a sample <code class="docutils literal"><span class="pre">detect_wrapper.sh</span></code> hook in the <code class="docutils literal"><span class="pre">hook</span></code>
 directory. This script is invoked by the notification server when an
 event occurs.</li>
 <li>This script in turn invokes a python OpenCV based script that grabs
@@ -369,7 +365,7 @@ conditions to be met:</p>
 <li>You can’t use self signed certs</li>
 <li>The IP/hostname needs to be publicly accessible (Apple/Google servers render the image)</li>
 <li>You need patches to ZM unless you are using a package that is later than Oct 11, 2018. Please read the notes in the INI file</li>
-<li>A good way to isolate if its a URL problem or something else is replace the <code class="docutils literal notranslate"><span class="pre">picture_url</span></code> with a knows HTTPS url like <a class="reference external" href="https://upload.wikimedia.org/wikipedia/commons/5/5f/Chinese_new_year_dragon_2014.jpg">this</a></li>
+<li>A good way to isolate if its a URL problem or something else is replace the <code class="docutils literal"><span class="pre">picture_url</span></code> with a knows HTTPS url like <a class="reference external" href="https://upload.wikimedia.org/wikipedia/commons/5/5f/Chinese_new_year_dragon_2014.jpg">this</a></li>
 </ul>
 <p>Before you report issues, please make sure you have been diligent in
 testing - Try with a public URL as indicated above. This is important. -
@@ -378,8 +374,8 @@ message it is sending</p>
 </div>
 <div class="section" id="secure-mode-just-doesn-t-work-wss-ws-works">
 <h3>Secure mode just doesn’t work (WSS) - WS works<a class="headerlink" href="#secure-mode-just-doesn-t-work-wss-ws-works" title="Permalink to this headline">¶</a></h3>
-<p>Try to put in your event server IP in the <code class="docutils literal notranslate"><span class="pre">address</span></code> token in
-<code class="docutils literal notranslate"><span class="pre">[network]</span></code> section of <code class="docutils literal notranslate"><span class="pre">zmeventnotification.ini</span></code></p>
+<p>Try to put in your event server IP in the <code class="docutils literal"><span class="pre">address</span></code> token in
+<code class="docutils literal"><span class="pre">[network]</span></code> section of <code class="docutils literal"><span class="pre">zmeventnotification.ini</span></code></p>
 </div>
 <div class="section" id="i-m-not-receiving-push-notifications-in-zmninja">
 <h3>I’m not receiving push notifications in zmNinja<a class="headerlink" href="#i-m-not-receiving-push-notifications-in-zmninja" title="Permalink to this headline">¶</a></h3>
@@ -387,18 +383,18 @@ message it is sending</p>
 Before you contact me, please perform the following steps and send me
 the output:</p>
 <ol class="arabic simple">
-<li>Stop the event server. <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">zmdc.pl</span> <span class="pre">stop</span> <span class="pre">zmeventnotification.pl</span></code></li>
-<li>Do a <code class="docutils literal notranslate"><span class="pre">ps</span> <span class="pre">-aef</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">zmevent</span></code> and make sure no stale processes are
+<li>Stop the event server. <code class="docutils literal"><span class="pre">sudo</span> <span class="pre">zmdc.pl</span> <span class="pre">stop</span> <span class="pre">zmeventnotification.pl</span></code></li>
+<li>Do a <code class="docutils literal"><span class="pre">ps</span> <span class="pre">-aef</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">zmevent</span></code> and make sure no stale processes are
 running</li>
-<li>Edit your <code class="docutils literal notranslate"><span class="pre">/etc/zm/zmeventnotification.ini</span></code> and make sure
-<code class="docutils literal notranslate"><span class="pre">verbose</span> <span class="pre">=</span> <span class="pre">1</span></code> to get verbose logs</li>
+<li>Edit your <code class="docutils literal"><span class="pre">/etc/zm/zmeventnotification.ini</span></code> and make sure
+<code class="docutils literal"><span class="pre">verbose</span> <span class="pre">=</span> <span class="pre">1</span></code> to get verbose logs</li>
 <li>Run the server manually by doing
-<code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">-u</span> <span class="pre">www-data</span> <span class="pre">/usr/bin/zmeventnotification.pl</span></code> (replace with
-<code class="docutils literal notranslate"><span class="pre">www-data</span></code> with <code class="docutils literal notranslate"><span class="pre">apache</span></code> depending on your OS)</li>
+<code class="docutils literal"><span class="pre">sudo</span> <span class="pre">-u</span> <span class="pre">www-data</span> <span class="pre">/usr/bin/zmeventnotification.pl</span></code> (replace with
+<code class="docutils literal"><span class="pre">www-data</span></code> with <code class="docutils literal"><span class="pre">apache</span></code> depending on your OS)</li>
 <li>You should now see logs on the commandline like so that shows the
 server is running:</li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span><span class="mi">08</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mi">32</span> <span class="n">About</span> <span class="n">to</span> <span class="n">start</span> <span class="n">listening</span> <span class="n">to</span> <span class="n">socket</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="mi">018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span><span class="mi">08</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mi">32</span> <span class="n">About</span> <span class="n">to</span> <span class="n">start</span> <span class="n">listening</span> <span class="n">to</span> <span class="n">socket</span>
 <span class="mi">12</span><span class="o">/</span><span class="mi">20</span><span class="o">/</span><span class="mi">2018</span> <span class="mi">08</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mf">32.606198</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">12460</span><span class="p">]</span><span class="o">.</span><span class="n">INF</span> <span class="p">[</span><span class="n">main</span><span class="p">:</span><span class="mi">582</span><span class="p">]</span> <span class="p">[</span><span class="n">About</span> <span class="n">to</span> <span class="n">start</span> <span class="n">listening</span> <span class="n">to</span> <span class="n">socket</span><span class="p">]</span>
 <span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span><span class="mi">08</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mi">32</span> <span class="n">Secure</span> <span class="n">WS</span><span class="p">(</span><span class="n">WSS</span><span class="p">)</span> <span class="ow">is</span> <span class="n">enabled</span><span class="o">...</span>
 <span class="mi">12</span><span class="o">/</span><span class="mi">20</span><span class="o">/</span><span class="mi">2018</span> <span class="mi">08</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mf">32.656834</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">12460</span><span class="p">]</span><span class="o">.</span><span class="n">INF</span> <span class="p">[</span><span class="n">main</span><span class="p">:</span><span class="mi">582</span><span class="p">]</span> <span class="p">[</span><span class="n">Secure</span> <span class="n">WS</span><span class="p">(</span><span class="n">WSS</span><span class="p">)</span> <span class="ow">is</span> <span class="n">enabled</span><span class="o">...</span><span class="p">]</span>
@@ -409,7 +405,7 @@ server is running:</li>
 <ol class="arabic simple" start="6">
 <li>Now start zmNinja. You should see event server logs like this:</li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span><span class="mi">08</span><span class="p">:</span><span class="mi">32</span><span class="p">:</span><span class="mi">43</span> <span class="n">Raw</span> <span class="n">incoming</span> <span class="n">message</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;push&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;token&quot;</span><span class="p">,</span><span class="s2">&quot;platform&quot;</span><span class="p">:</span><span class="s2">&quot;ios&quot;</span><span class="p">,</span><span class="s2">&quot;token&quot;</span><span class="p">:</span><span class="s2">&quot;cVuLzCBsEn4:APA91bHYuO3hVJqTIMsm0IRNQEYAUa&lt;deleted&gt;GYBwNdwRfKyZV0&quot;</span><span class="p">,</span><span class="s2">&quot;monlist&quot;</span><span class="p">:</span><span class="s2">&quot;1,2,4,5,6,7,11&quot;</span><span class="p">,</span><span class="s2">&quot;intlist&quot;</span><span class="p">:</span><span class="s2">&quot;45,60,0,0,0,45,45&quot;</span><span class="p">,</span><span class="s2">&quot;state&quot;</span><span class="p">:</span><span class="s2">&quot;enabled&quot;</span><span class="p">}}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="mi">2018</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span><span class="mi">08</span><span class="p">:</span><span class="mi">32</span><span class="p">:</span><span class="mi">43</span> <span class="n">Raw</span> <span class="n">incoming</span> <span class="n">message</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;push&quot;</span><span class="p">,</span><span class="s2">&quot;data&quot;</span><span class="p">:{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;token&quot;</span><span class="p">,</span><span class="s2">&quot;platform&quot;</span><span class="p">:</span><span class="s2">&quot;ios&quot;</span><span class="p">,</span><span class="s2">&quot;token&quot;</span><span class="p">:</span><span class="s2">&quot;cVuLzCBsEn4:APA91bHYuO3hVJqTIMsm0IRNQEYAUa&lt;deleted&gt;GYBwNdwRfKyZV0&quot;</span><span class="p">,</span><span class="s2">&quot;monlist&quot;</span><span class="p">:</span><span class="s2">&quot;1,2,4,5,6,7,11&quot;</span><span class="p">,</span><span class="s2">&quot;intlist&quot;</span><span class="p">:</span><span class="s2">&quot;45,60,0,0,0,45,45&quot;</span><span class="p">,</span><span class="s2">&quot;state&quot;</span><span class="p">:</span><span class="s2">&quot;enabled&quot;</span><span class="p">}}</span>
 </pre></div>
 </div>
 <p>If you don’t see these logs on the event server, zmNinja is not able to
@@ -418,12 +414,12 @@ Your event server IP/DNS is not reachable from your phone b) If you are
 using SSL, your certificates are invalid (try disabling SSL first - both
 on the event server and on zmNinja) c) Your zmNinja configuration is
 wrong (the most common error I see is the server has SSL disabled, but
-zmNinja is configured to use <code class="docutils literal notranslate"><span class="pre">wss://</span></code> instead of <code class="docutils literal notranslate"><span class="pre">ws://</span></code>)</p>
+zmNinja is configured to use <code class="docutils literal"><span class="pre">wss://</span></code> instead of <code class="docutils literal"><span class="pre">ws://</span></code>)</p>
 <ol class="arabic simple" start="7">
 <li>Assuming the above worked, go to zmNinja logs in the app. Somewhere
 in the logs, you should see a line similar to:</li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Dec</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">2018</span> <span class="mi">05</span><span class="p">:</span><span class="mi">50</span><span class="p">:</span><span class="mi">41</span> <span class="n">AM</span> <span class="n">DEBUG</span> <span class="n">Real</span><span class="o">-</span><span class="n">time</span> <span class="n">event</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s2">&quot;version&quot;</span><span class="p">:</span><span class="s2">&quot;2.4&quot;</span><span class="p">,</span><span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Success&quot;</span><span class="p">,</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;auth&quot;</span><span class="p">}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Dec</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">2018</span> <span class="mi">05</span><span class="p">:</span><span class="mi">50</span><span class="p">:</span><span class="mi">41</span> <span class="n">AM</span> <span class="n">DEBUG</span> <span class="n">Real</span><span class="o">-</span><span class="n">time</span> <span class="n">event</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s2">&quot;version&quot;</span><span class="p">:</span><span class="s2">&quot;2.4&quot;</span><span class="p">,</span><span class="s2">&quot;status&quot;</span><span class="p">:</span><span class="s2">&quot;Success&quot;</span><span class="p">,</span><span class="s2">&quot;reason&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="s2">&quot;event&quot;</span><span class="p">:</span><span class="s2">&quot;auth&quot;</span><span class="p">}</span>
 </pre></div>
 </div>
 <p>This indicates that the event server successfully authenticated the app.
@@ -431,10 +427,10 @@ If you see step 6 work but not step 7, you might have provided incorrect
 credentials (and in that case, you’ll see an error message)</p>
 <ol class="arabic simple" start="8">
 <li>Finally, after all of the above succeeds, do a
-<code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">/var/lib/zmeventnotification/push/tokens.txt</span></code> to make sure
+<code class="docutils literal"><span class="pre">cat</span> <span class="pre">/var/lib/zmeventnotification/push/tokens.txt</span></code> to make sure
 the device token that zmNinja sent is stored (desktop apps don’t
 have a device token). If you are using zmNinja on a mobile app, and
-you don’t see an entry in <code class="docutils literal notranslate"><span class="pre">tokens.txt</span></code> you have a problem. Debug.</li>
+you don’t see an entry in <code class="docutils literal"><span class="pre">tokens.txt</span></code> you have a problem. Debug.</li>
 <li><em>Always</em> send me logs of both zmNinja and zmeventnotification - I
 need them to understand what is going on. Don’t send me one line.
 You may think you are sending what is relevant, but you are not. One
@@ -442,13 +438,13 @@ line logs are mostly useless.</li>
 <li>Some other notes:</li>
 </ol>
 <ul class="simple">
-<li>If you don’t see an entry in <code class="docutils literal notranslate"><span class="pre">tokens.txt</span></code> (typically in
-<code class="docutils literal notranslate"><span class="pre">/var/lib/zmeventnotification/push</span></code>) then your phone is not
+<li>If you don’t see an entry in <code class="docutils literal"><span class="pre">tokens.txt</span></code> (typically in
+<code class="docutils literal"><span class="pre">/var/lib/zmeventnotification/push</span></code>) then your phone is not
 registered to get push. Kill zmNinja, start the app, make sure the
-event server receives the registration and check <code class="docutils literal notranslate"><span class="pre">tokens.txt</span></code></li>
+event server receives the registration and check <code class="docutils literal"><span class="pre">tokens.txt</span></code></li>
 <li>Sometimes, Google’s FCM server goes down, or Apple’s APNS server goes
 down for a while. Things automagically work in 24 hrs.</li>
-<li>Kill the app. Then empty the contents of <code class="docutils literal notranslate"><span class="pre">tokens.txt</span></code> in the event
+<li>Kill the app. Then empty the contents of <code class="docutils literal"><span class="pre">tokens.txt</span></code> in the event
 server (don’t delete it). Then restart the event server. Start the
 app again. If you don’t see a new registration token, you have a
 connection problem</li>
@@ -461,8 +457,8 @@ stop daemon mode while debugging.</li>
 <p>99.9% of times, its because you have multiple copies of the eventserver
 running and you don’t know it. Maybe you were manually testing it, and
 forgot to quit it and terminated the window. Do
-<code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">zmdc.pl</span> <span class="pre">stop</span> <span class="pre">zmeventnotification.pl</span></code> and then
-<code class="docutils literal notranslate"><span class="pre">ps</span> <span class="pre">-aef</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">zme</span></code>, kill everything, and start again. Monitor the
+<code class="docutils literal"><span class="pre">sudo</span> <span class="pre">zmdc.pl</span> <span class="pre">stop</span> <span class="pre">zmeventnotification.pl</span></code> and then
+<code class="docutils literal"><span class="pre">ps</span> <span class="pre">-aef</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">zme</span></code>, kill everything, and start again. Monitor the
 logs to see how many times a message is sent out.</p>
 <p>The other 0.1% is at times Google’s FCM servers send out multiple
 notifications. Why? I don’t know. But it sorts itself out very quickly,
@@ -473,38 +469,38 @@ actually in the 99.9% lot and haven’t checked properly.</p>
 <h3>The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)<a class="headerlink" href="#the-server-runs-fine-when-manually-executed-but-fails-when-run-in-daemon-mode-started-by-zmdc-pl" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Make sure the file where you store tokens
-(<code class="docutils literal notranslate"><span class="pre">/var/lib/zmeventnotification/push/tokens.txt</span> <span class="pre">or</span> <span class="pre">whatever</span> <span class="pre">you</span> <span class="pre">have</span> <span class="pre">used</span></code>)
-is not RW Root only. It needs to be RW <code class="docutils literal notranslate"><span class="pre">www-data</span></code> for Ubuntu/Debian
-or <code class="docutils literal notranslate"><span class="pre">apache</span></code> for Fedora/CentOS. You also need to make sure the
+(<code class="docutils literal"><span class="pre">/var/lib/zmeventnotification/push/tokens.txt</span> <span class="pre">or</span> <span class="pre">whatever</span> <span class="pre">you</span> <span class="pre">have</span> <span class="pre">used</span></code>)
+is not RW Root only. It needs to be RW <code class="docutils literal"><span class="pre">www-data</span></code> for Ubuntu/Debian
+or <code class="docutils literal"><span class="pre">apache</span></code> for Fedora/CentOS. You also need to make sure the
 directory is accessible. Something like
-<code class="docutils literal notranslate"><span class="pre">chown</span> <span class="pre">-R</span> <span class="pre">www-data:www-data</span> <span class="pre">/var/lib/zmeventnotification/push</span></code></li>
-<li>Make sure your certificates are readable by <code class="docutils literal notranslate"><span class="pre">www-data</span></code> for
-Ubuntu/Debian, or <code class="docutils literal notranslate"><span class="pre">apache</span></code> for Fedora/CentOS (thanks to
+<code class="docutils literal"><span class="pre">chown</span> <span class="pre">-R</span> <span class="pre">www-data:www-data</span> <span class="pre">/var/lib/zmeventnotification/push</span></code></li>
+<li>Make sure your certificates are readable by <code class="docutils literal"><span class="pre">www-data</span></code> for
+Ubuntu/Debian, or <code class="docutils literal"><span class="pre">apache</span></code> for Fedora/CentOS (thanks to
 [&#64;jagee](<a class="reference external" href="https://github.com/pliablepixels/zmeventnotification/issues/8">https://github.com/pliablepixels/zmeventnotification/issues/8</a>))</li>
-<li>Make sure the <em>path</em> to the certificates are readable by <code class="docutils literal notranslate"><span class="pre">www-data</span></code>
-for Ubuntu/Debian, or <code class="docutils literal notranslate"><span class="pre">apache</span></code> for Fedora/CentOS</li>
+<li>Make sure the <em>path</em> to the certificates are readable by <code class="docutils literal"><span class="pre">www-data</span></code>
+for Ubuntu/Debian, or <code class="docutils literal"><span class="pre">apache</span></code> for Fedora/CentOS</li>
 </ul>
 </div>
 <div class="section" id="when-you-run-zmeventnotifiation-pl-manually-you-get-an-error-saying-port-already-in-use-or-cannot-bind-to-port-or-something-like-that">
 <h3>When you run zmeventnotifiation.pl manually, you get an error saying ‘port already in use’ or ‘cannot bind to port’ or something like that<a class="headerlink" href="#when-you-run-zmeventnotifiation-pl-manually-you-get-an-error-saying-port-already-in-use-or-cannot-bind-to-port-or-something-like-that" title="Permalink to this headline">¶</a></h3>
 <p>The chances are very high that you have another copy of
-<code class="docutils literal notranslate"><span class="pre">zmeventnotification.pl</span></code> running. You might have run it in daemon
-mode. Try <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">zmdc.pl</span> <span class="pre">stop</span> <span class="pre">zmeventnotification.pl</span></code>. Also do
-<code class="docutils literal notranslate"><span class="pre">ps</span> <span class="pre">-aef</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">zmeventnotification</span></code> to check if another copy is not
+<code class="docutils literal"><span class="pre">zmeventnotification.pl</span></code> running. You might have run it in daemon
+mode. Try <code class="docutils literal"><span class="pre">sudo</span> <span class="pre">zmdc.pl</span> <span class="pre">stop</span> <span class="pre">zmeventnotification.pl</span></code>. Also do
+<code class="docutils literal"><span class="pre">ps</span> <span class="pre">-aef</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">zmeventnotification</span></code> to check if another copy is not
 running and if you do find one running, you’ll have to kill it before
 you can start it from command line again.</p>
 </div>
 <div class="section" id="great-krypton-i-just-upgraded-zoneminder-and-i-m-not-getting-push-anymore">
 <h3>Great Krypton! I just upgraded ZoneMinder and I’m not getting push anymore!<a class="headerlink" href="#great-krypton-i-just-upgraded-zoneminder-and-i-m-not-getting-push-anymore" title="Permalink to this headline">¶</a></h3>
 <p>Make sure your eventserver is running:
-<code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">zmdc.pl</span> <span class="pre">status</span> <span class="pre">zmeventnotification.pl</span></code></p>
+<code class="docutils literal"><span class="pre">sudo</span> <span class="pre">zmdc.pl</span> <span class="pre">status</span> <span class="pre">zmeventnotification.pl</span></code></p>
 </div>
 </div>
 <div class="section" id="how-do-i-disable-secure-wss-mode">
 <h2>How do I disable secure (WSS) mode?<a class="headerlink" href="#how-do-i-disable-secure-wss-mode" title="Permalink to this headline">¶</a></h2>
 <p>As it turns out many folks run ZM inside the LAN only and don’t want to
 deal with certificates. Fair enough. For that situation, edit
-zmeventnotification.pl and use <code class="docutils literal notranslate"><span class="pre">enable</span> <span class="pre">=</span> <span class="pre">0</span></code> in the <code class="docutils literal notranslate"><span class="pre">[ssl]</span></code> section
+zmeventnotification.pl and use <code class="docutils literal"><span class="pre">enable</span> <span class="pre">=</span> <span class="pre">0</span></code> in the <code class="docutils literal"><span class="pre">[ssl]</span></code> section
 of the configuration file. <strong>Remember to ensure that your EventServer
 URL in zmNinja does NOT use wss too - change it to ws</strong></p>
 </div>
@@ -528,22 +524,22 @@ notifications:</p>
 Debug Log)</li>
 <li>telnet/ssh into your zoneminder server</li>
 <li>Stop the zmeventnotification doing
-<code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">zmdc.pl</span> <span class="pre">stop</span> <span class="pre">zmeventnotification.pl</span></code></li>
+<code class="docutils literal"><span class="pre">sudo</span> <span class="pre">zmdc.pl</span> <span class="pre">stop</span> <span class="pre">zmeventnotification.pl</span></code></li>
 <li>Make sure there are no stale processes running of zmeventnotification
-by doing <code class="docutils literal notranslate"><span class="pre">ps</span> <span class="pre">-aef</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">zmeventnotification</span></code> and making sure it
+by doing <code class="docutils literal"><span class="pre">ps</span> <span class="pre">-aef</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">zmeventnotification</span></code> and making sure it
 doesn’t show existing processes (ignore the one that says
-<code class="docutils literal notranslate"><span class="pre">grep</span> <span class="pre">&lt;something&gt;</span></code>)</li>
-<li>Edit <code class="docutils literal notranslate"><span class="pre">zmeventnotification.ini</span></code> (typically in <code class="docutils literal notranslate"><span class="pre">/etc/zm/</span></code>) and make
-sure <code class="docutils literal notranslate"><span class="pre">verbose</span> <span class="pre">=</span> <span class="pre">1</span></code> is set. This will print more logs on the
+<code class="docutils literal"><span class="pre">grep</span> <span class="pre">&lt;something&gt;</span></code>)</li>
+<li>Edit <code class="docutils literal"><span class="pre">zmeventnotification.ini</span></code> (typically in <code class="docutils literal"><span class="pre">/etc/zm/</span></code>) and make
+sure <code class="docutils literal"><span class="pre">verbose</span> <span class="pre">=</span> <span class="pre">1</span></code> is set. This will print more logs on the
 console. Make sure you turn this off again before switching back to
 daemon mode.</li>
 <li>Start a terminal (lets call it Terminal-Log) to tail logs like so
-<code class="docutils literal notranslate"><span class="pre">tail</span> <span class="pre">-f</span> <span class="pre">/var/log/syslog</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">zmeventnotification</span></code></li>
+<code class="docutils literal"><span class="pre">tail</span> <span class="pre">-f</span> <span class="pre">/var/log/syslog</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">zmeventnotification</span></code></li>
 <li>Start another terminal and start zmeventnotification manually from
-command line like so <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">/usr/bin/zmeventnotification.pl</span></code></li>
+command line like so <code class="docutils literal"><span class="pre">sudo</span> <span class="pre">/usr/bin/zmeventnotification.pl</span></code></li>
 <li>Make sure you see logs like this in the logs window like so:</li>
 </ul>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Nov</span> <span class="mi">26</span> <span class="mi">14</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mi">20</span> <span class="n">homeserver</span> <span class="n">zmdc</span><span class="p">[</span><span class="mi">18560</span><span class="p">]:</span> <span class="n">INF</span> <span class="p">[</span><span class="s1">&#39;zmeventnotification.pl&#39;</span> <span class="n">started</span> <span class="n">at</span> <span class="mi">17</span><span class="o">/</span><span class="mi">11</span><span class="o">/</span><span class="mi">26</span> <span class="mi">14</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Nov</span> <span class="mi">26</span> <span class="mi">14</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mi">20</span> <span class="n">homeserver</span> <span class="n">zmdc</span><span class="p">[</span><span class="mi">18560</span><span class="p">]:</span> <span class="n">INF</span> <span class="p">[</span><span class="s1">&#39;zmeventnotification.pl&#39;</span> <span class="n">started</span> <span class="n">at</span> <span class="mi">17</span><span class="o">/</span><span class="mi">11</span><span class="o">/</span><span class="mi">26</span> <span class="mi">14</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span>
 <span class="n">Nov</span> <span class="mi">26</span> <span class="mi">14</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mi">20</span> <span class="n">homeserver</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">18560</span><span class="p">]:</span> <span class="n">INF</span> <span class="p">[</span><span class="n">Push</span> <span class="n">enabled</span> <span class="n">via</span> <span class="n">FCM</span><span class="p">]</span>
 <span class="n">Nov</span> <span class="mi">26</span> <span class="mi">14</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mi">20</span> <span class="n">homeserver</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">18560</span><span class="p">]:</span> <span class="n">INF</span> <span class="p">[</span><span class="n">Event</span> <span class="n">Notification</span> <span class="n">daemon</span> <span class="n">v</span> <span class="mf">0.95</span> <span class="n">starting</span><span class="p">]</span>
 <span class="n">Nov</span> <span class="mi">26</span> <span class="mi">14</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mi">20</span> <span class="n">homeserver</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">18560</span><span class="p">]:</span> <span class="n">INF</span> <span class="p">[</span><span class="n">Total</span> <span class="n">event</span> <span class="n">client</span> <span class="n">connections</span><span class="p">:</span> <span class="mi">3</span><span class="p">]</span>
@@ -560,7 +556,7 @@ command line like so <code class="docutils literal notranslate"><span class="pre
 <li>Check that when you save the event server connections in zmNinja, you
 see logs in the log window like this</li>
 </ul>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Oct</span> <span class="mi">20</span> <span class="mi">10</span><span class="p">:</span><span class="mi">23</span><span class="p">:</span><span class="mi">18</span> <span class="n">homeserver</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">27789</span><span class="p">]:</span> <span class="n">INF</span> <span class="p">[</span><span class="n">got</span> <span class="n">a</span> <span class="n">websocket</span> <span class="n">connection</span> <span class="kn">from</span> <span class="nn">XX.XX.XX.XX</span> <span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="n">active</span> <span class="n">connections</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Oct</span> <span class="mi">20</span> <span class="mi">10</span><span class="p">:</span><span class="mi">23</span><span class="p">:</span><span class="mi">18</span> <span class="n">homeserver</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">27789</span><span class="p">]:</span> <span class="n">INF</span> <span class="p">[</span><span class="n">got</span> <span class="n">a</span> <span class="n">websocket</span> <span class="n">connection</span> <span class="kn">from</span> <span class="nn">XX.XX.XX.XX</span> <span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="n">active</span> <span class="n">connections</span><span class="p">]</span>
 <span class="n">Oct</span> <span class="mi">20</span> <span class="mi">10</span><span class="p">:</span><span class="mi">23</span><span class="p">:</span><span class="mi">18</span> <span class="n">homeserver</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">27789</span><span class="p">]:</span> <span class="n">INF</span> <span class="p">[</span><span class="n">Websockets</span><span class="p">:</span> <span class="n">New</span> <span class="n">Connection</span> <span class="n">Handshake</span> <span class="n">requested</span> <span class="kn">from</span> <span class="nn">XX.XX.XX.XX</span><span class="p">:</span><span class="mi">55189</span> <span class="n">state</span><span class="o">=</span><span class="n">pending</span> <span class="n">auth</span><span class="p">]</span>
 <span class="n">Oct</span> <span class="mi">20</span> <span class="mi">10</span><span class="p">:</span><span class="mi">23</span><span class="p">:</span><span class="mi">18</span> <span class="n">homeserver</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">27789</span><span class="p">]:</span> <span class="n">INF</span> <span class="p">[</span><span class="n">Correct</span> <span class="n">authentication</span> <span class="n">provided</span> <span class="n">byXX</span><span class="o">.</span><span class="n">XX</span><span class="o">.</span><span class="n">XX</span><span class="o">.</span><span class="n">XX</span><span class="p">]</span>
 <span class="n">Oct</span> <span class="mi">20</span> <span class="mi">10</span><span class="p">:</span><span class="mi">23</span><span class="p">:</span><span class="mi">18</span> <span class="n">homeserver</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">27789</span><span class="p">]:</span> <span class="n">INF</span> <span class="p">[</span><span class="n">Storing</span> <span class="n">token</span> <span class="o">...</span><span class="mi">9</span><span class="n">f665f182b</span><span class="p">,</span><span class="n">monlist</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">intlist</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">pushstate</span><span class="p">:</span><span class="n">enabled</span><span class="p">]</span>
@@ -574,7 +570,7 @@ above</p>
 <li>Open up ZM console and force an alarm, you should see logs in your
 log window above like so:</li>
 </ul>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Oct</span> <span class="mi">20</span> <span class="mi">10</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">55</span> <span class="n">homeserver</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">27789</span><span class="p">]:</span> <span class="n">INF</span> <span class="p">[</span><span class="n">New</span> <span class="n">event</span> <span class="mi">32910</span> <span class="n">reported</span> <span class="k">for</span> <span class="n">Garage</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Oct</span> <span class="mi">20</span> <span class="mi">10</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">55</span> <span class="n">homeserver</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">27789</span><span class="p">]:</span> <span class="n">INF</span> <span class="p">[</span><span class="n">New</span> <span class="n">event</span> <span class="mi">32910</span> <span class="n">reported</span> <span class="k">for</span> <span class="n">Garage</span><span class="p">]</span>
 <span class="n">Oct</span> <span class="mi">20</span> <span class="mi">10</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">55</span> <span class="n">homeserver</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">27789</span><span class="p">]:</span> <span class="n">INF</span> <span class="p">[</span><span class="n">Broadcasting</span> <span class="n">new</span> <span class="n">events</span> <span class="n">to</span> <span class="nb">all</span> <span class="mi">12</span> <span class="n">websocket</span> <span class="n">clients</span><span class="p">]</span>
 <span class="n">Oct</span> <span class="mi">20</span> <span class="mi">10</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">55</span> <span class="n">homeserver</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">27789</span><span class="p">]:</span> <span class="n">INF</span> <span class="p">[</span><span class="n">Checking</span> <span class="n">alarm</span> <span class="n">rules</span> <span class="k">for</span>  <span class="n">token</span> <span class="n">ending</span> <span class="ow">in</span><span class="p">:</span><span class="o">...</span><span class="mi">2</span><span class="n">baa57e387</span><span class="p">]</span>
 <span class="n">Oct</span> <span class="mi">20</span> <span class="mi">10</span><span class="p">:</span><span class="mi">28</span><span class="p">:</span><span class="mi">55</span> <span class="n">homeserver</span> <span class="n">zmeventnotification</span><span class="p">[</span><span class="mi">27789</span><span class="p">]:</span> <span class="n">INF</span> <span class="p">[</span><span class="n">Monitor</span> <span class="mi">1</span> <span class="n">event</span><span class="p">:</span> <span class="n">last</span> <span class="n">time</span> <span class="ow">not</span> <span class="n">found</span><span class="p">,</span> <span class="n">so</span> <span class="n">sending</span><span class="p">]</span>
@@ -588,7 +584,7 @@ zmNinja mobile, then replicate the following scenario:</li>
 <li>Run the event server in manual mode as described above</li>
 <li>Kill zmNinja</li>
 <li>Start zmNinja</li>
-<li>At this point, in the <code class="docutils literal notranslate"><span class="pre">zmeventnotification</span></code> logs you should
+<li>At this point, in the <code class="docutils literal"><span class="pre">zmeventnotification</span></code> logs you should
 registration messages (refer to logs example above). If you don’t
 you’ve either not configured zmNinja to use the eventserver, or it
 can’t reach the eventserver (very common problem)</li>
@@ -596,9 +592,9 @@ can’t reach the eventserver (very common problem)</li>
 (move it to background or kill it). When zmNinja is in the
 foreground, it uses websockets to get notifications</li>
 <li>Force an alarm like I described above. If you don’t see logs in
-<code class="docutils literal notranslate"><span class="pre">zmeventnotification</span></code> saying “Sending notification over PushProxy”
+<code class="docutils literal"><span class="pre">zmeventnotification</span></code> saying “Sending notification over PushProxy”
 then the eventserver, for some reason, does not have your app token.
-Inspeced <code class="docutils literal notranslate"><span class="pre">tokens.txt</span></code> (typically in <code class="docutils literal notranslate"><span class="pre">/etc/zm/</span></code>) to make sure an
+Inspeced <code class="docutils literal"><span class="pre">tokens.txt</span></code> (typically in <code class="docutils literal"><span class="pre">/etc/zm/</span></code>) to make sure an
 entry for your phone exists</li>
 <li>If you see that message, but your mobile phone is not receiving a
 push notification:</li>
@@ -638,20 +634,22 @@ token?</strong></p>
 </ul>
 <p><strong>Why WSS and not WS?</strong></p>
 <p>Not secure. Easy to snoop. Updated: As of 0.6, I’ve also added a non
-secure version - use <code class="docutils literal notranslate"><span class="pre">enable</span> <span class="pre">=</span> <span class="pre">0</span></code> in the <code class="docutils literal notranslate"><span class="pre">[ssl]</span></code> section of the
+secure version - use <code class="docutils literal"><span class="pre">enable</span> <span class="pre">=</span> <span class="pre">0</span></code> in the <code class="docutils literal"><span class="pre">[ssl]</span></code> section of the
 configuration file. As it turns out many folks don’t expose ZM to the
 WAN and for that, I guess WS instead of WSS is ok.</p>
 <p><strong>Why ZM auth in addition to WSS?</strong></p>
 <p>WSS offers encryption. We also want to make sure connections are
 authorized. Reusing ZM authentication credentials is the easiest. You
-can change it to some other credential match (modify <code class="docutils literal notranslate"><span class="pre">validateZM</span></code>
+can change it to some other credential match (modify <code class="docutils literal"><span class="pre">validateZM</span></code>
 function)</p>
 </div>
 </div>
 
 
            </div>
-           
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
@@ -660,7 +658,7 @@ function)</p>
         <a href="developers.html" class="btn btn-neutral float-right" title="For Developers writing their own consumers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="breaking.html" class="btn btn-neutral float-left" title="Breaking Changes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="breaking.html" class="btn btn-neutral" title="Breaking Changes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -669,11 +667,11 @@ function)</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, Pliable Pixels
+        &copy; Copyright 2019, Pliable Pixels.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -686,15 +684,36 @@ function)</p>
   
 
 
-  <script type="text/javascript">
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script>
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
 
   
   
-    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
    
 
 </body>
