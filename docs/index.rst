@@ -17,7 +17,6 @@ Event NotificationServer Documentation
         guides/plugins
          
  
-(Lcheck)
 
 `Github Repository <https://github.com/pliablepixels/zmeventnotification>`__        
 
