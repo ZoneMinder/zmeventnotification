@@ -17,6 +17,8 @@ Event NotificationServer Documentation
         guides/plugins
          
  
+(Lcheck)
+
 `Github Repository <https://github.com/pliablepixels/zmeventnotification>`__        
 
 :doc:`guides/install`
@@ -31,7 +33,7 @@ Event NotificationServer Documentation
         If you want to use the Event Notification Server to make your own app/client
 :doc:`guides/plugins`
         If you want to add your own algoritm to the machine learning hooks (Needs to be expanded)
-`zmNinja Documentation <http://pliablepixels.github.io/zmNinja/docgen/html/index.html>`__
+`zmNinja Documentation <https://zmninja.readthedocs.io/en/latest/index.html>`__
         Documentation for zmNinja
 
 
