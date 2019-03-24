@@ -10,6 +10,6 @@ Please don't ask me questions on how to use them. Please read the comments and f
 
 ### Installation
 
-Read the official docs [here](http://pliablepixels.github.io/zmeventnotification/docgen/html/guides/hooks.html#installation)
+Read the official docs [here](https://zmeventnotification.readthedocs.io/en/latest/guides/hooks.html)
 
 
