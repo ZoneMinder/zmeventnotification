@@ -192,6 +192,17 @@ for an explanation of how this works
 Troubleshooting common situations
 ---------------------------------
 
+LetsEncrypt certificates cannot be found when running as a web user
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When the notification server is run in web user mode (example ``sudo -u www-data``), the event notification
+server complains that it cannot find the certificate. The error is something like this:
+
+::
+
+        zmeventnotification[10090].ERR [main:547] [Failed starting server: SSL_cert_file /etc/letsencrypt/live/mysite.net-0001/fullchain.pem does not exist at /usr/share/perl5/vendor_perl/IO/Socket/SSL.pm line 402.]
+        
+The problem is read permissions, starting at the root level. Typically doing ``chown -R www-data:www-data /etc/letsencrypt`` solves this issue
+
 Picture notifications don't show images
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
