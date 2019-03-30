@@ -290,6 +290,10 @@ credentials (and in that case, you'll see an error message)
 
 10. Some other notes:
 
+-  If you are not using machine learning hooks, make sure you comment
+   out the ``hook_script`` line in ``[hook]``. If you have not setup
+   the scripts correctly, if will fail and not send a push.
+
 -  If you don't see an entry in ``tokens.txt`` (typically in
    ``/var/lib/zmeventnotification/push``) then your phone is not
    registered to get push. Kill zmNinja, start the app, make sure the

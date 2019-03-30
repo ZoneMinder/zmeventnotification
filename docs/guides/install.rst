@@ -10,6 +10,9 @@ Download the repo
    various parts of the configuration are explained later in this readme
 -  If you are behind a firewall, make sure you enable port ``9000``,
    TCP, bi-directional (unless you changed the port in the code)
+-  If you are _not_ using machine learning hooks, make sure you comment out the
+   ``hook_script`` attribute in the ``[hook]`` section of the ini file or 
+   you will see errors and you will not receive push
 -  We now need to install a bunch of dependencies (as described below)
 
 Install Dependencies
