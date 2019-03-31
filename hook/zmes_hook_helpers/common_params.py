@@ -102,6 +102,12 @@ config_vals = {
         },
 
         # YOLO
+        'yolo_type':{
+            'section':'yolo',
+            'default':'full',
+            'type':'string'
+
+        },
         'config':{
             'section': 'yolo',
             'default': '/var/lib/zmeventnotification/models/yolov3/yolov3.cfg',
@@ -132,7 +138,7 @@ config_vals = {
             'default': '/var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.txt',
             'type': 'string'
         },
-
+        
         # HOG
         'stride':{
             'section': 'hog',

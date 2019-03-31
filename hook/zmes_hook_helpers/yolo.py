@@ -18,7 +18,10 @@ class Yolo:
         self.classes = None
 
     def populate_class_labels(self):
-        class_file_abs_path = g.config['labels']
+        if g.config['yolo_type'] == 'tiny':
+            class_file_abs_path = g.config['tiny_labels']
+        else:
+            class_file_abs_path = g.config['labels']
         f = open(class_file_abs_path, 'r')
         self.classes = [line.strip() for line in f.readlines()]
 
@@ -33,8 +36,12 @@ class Yolo:
     def detect(self, image):
         Height, Width = image.shape[:2]
         scale = 0.00392
-        config_file_abs_path = g.config['config']
-        weights_file_abs_path = g.config['weights']
+        if g.config['yolo_type'] == 'tiny':
+            config_file_abs_path = g.config['tiny_config']
+            weights_file_abs_path = g.config['tiny_weights']
+        else:
+            config_file_abs_path = g.config['config']
+            weights_file_abs_path = g.config['weights']
 
         if self.initialize:
             self.populate_class_labels()
