@@ -182,7 +182,12 @@ def process_config(args, ctx):
     # internal function to parse all keys
         val = config_file[v['section']].get(k,v['default'])
         g.config[k] = _correct_type(val, v['type'])
-        g.logger.debug ('Config: setting {} to {}'.format(k,g.config[k]))
+
+        if k.find('password') == -1:
+            dval = g.config[k]
+        else:
+            dval = '***********'
+        g.logger.debug ('Config: setting {} to {}'.format(k,dval))
             
     try:
         config_file = ConfigParser()

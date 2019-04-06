@@ -75,10 +75,10 @@ class Face:
                 name = self.known_face_names[first_match_index]
                 matched_face_names.append(name)
                 # top right, lower left
-                loc = face_locations[idx]
-
-                # convert to left top, right bottom
-                matched_face_rects.append((loc[3], loc[0], loc[1], loc[2]))
-                conf.append('1')
+            loc = face_locations[idx]
+            # convert to left top, right bottom
+            matched_face_names.append('unknown')
+            matched_face_rects.append((loc[3], loc[0], loc[1], loc[2]))
+            conf.append('1')
         #rects = self._rescale_rects(matched_face_rects)
         return matched_face_rects, matched_face_names, conf

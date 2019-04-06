@@ -32,8 +32,6 @@ def append_suffix(filename, token):
 # main handler
 
 # set up logging to syslog
-log.init('detect')
-g.logger.info ('---------| app version: {} |------------'.format(__version__))
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -49,6 +47,12 @@ ap.add_argument('-f', '--file', help='internal testing use only - skips event do
 args, u = ap.parse_known_args()
 args = vars(args)
 
+if args['monitorid']:
+    log.init('detect',args['monitorid'])
+else:
+    log.init('detect')
+
+g.logger.info ('---------| app version: {} |------------'.format(__version__))
 if args['version']:
     print ('---------| app version: {} |------------'.format(__version__))
     exit(0)
@@ -155,6 +159,7 @@ for filename in [filename_alarm, filename_snapshot]:
         # check
         if model == 'face':
             g.logger.debug('Appending known faces to filter list')
+            match = match + ['unknown']
             for cls in m.get_classes():
                 if not cls in match:
                     match = match + [cls]
