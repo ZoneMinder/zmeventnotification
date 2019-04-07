@@ -128,6 +128,7 @@ for filename in [filename_alarm, filename_snapshot]:
 
     # Apply all configured models to each file
     for model in g.config['models']:
+        found_detection = False
         g.logger.debug('Using model: {}'.format(model))
         if model == 'yolo':
             m = yolo.Yolo()
@@ -159,7 +160,7 @@ for filename in [filename_alarm, filename_snapshot]:
         # check
         if model == 'face':
             g.logger.debug('Appending known faces to filter list')
-            match = match + ['unknown']
+            match = match + ['face']
             for cls in m.get_classes():
                 if not cls in match:
                     match = match + [cls]
@@ -172,6 +173,9 @@ for filename in [filename_alarm, filename_snapshot]:
             conf.append(c)
             classes.append(m.get_classes())
             g.logger.debug('labels found: {}'.format(l))
+            if g.config['detection_mode'] == 'first':
+                g.logger.debug('detection mode is set to first, breaking out of loop...')
+                break
         else:
             g.logger.debug('No matches found using model:{}'.format(model))
 

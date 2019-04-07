@@ -187,7 +187,7 @@ def process_config(args, ctx):
             dval = g.config[k]
         else:
             dval = '***********'
-        g.logger.debug ('Config: setting {} to {}'.format(k,dval))
+        #g.logger.debug ('Config: setting {} to {}'.format(k,dval))
             
     try:
         config_file = ConfigParser()

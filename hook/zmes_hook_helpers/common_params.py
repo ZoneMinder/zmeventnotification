@@ -90,6 +90,11 @@ config_vals = {
             'default': 'yolo',
             'type': 'str_split'
         },
+        'detection_mode': {
+            'section':'general',
+            'default':'all',
+            'type':'string'
+        },
         'import_zm_zones':{
             'section': 'general',
             'default': 'no',
