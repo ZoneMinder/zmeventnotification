@@ -88,7 +88,7 @@ image1 = cv2.imread(filename1)
 if image1 is None: # can't have this None, something went wrong
     g.logger.error('Error reading {}. It either does not exist or is invalid'.format(filename1))
     raise ValueError('Error reading file {}. It either does not exist or is invalid'.format(filename1))
-oldw, oldh = image1.shape[:2]
+oldh, oldw = image1.shape[:2]
 if filename2: # may be none
     image2 = cv2.imread(filename2)
     if image2 is None:
@@ -105,7 +105,7 @@ if g.config['resize']:
     if image2 is not None:
         image2 = imutils.resize(image2, width=min(int(g.config['resize']), image2.shape[1]))
     
-    neww, newh = image1.shape[:2]
+    newh, neww = image1.shape[:2]
     utils.rescale_polygons(neww / oldw, newh / oldh)
 
  # Apply all configured models to each file
