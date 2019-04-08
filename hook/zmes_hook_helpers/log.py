@@ -8,7 +8,7 @@ def init(process_name='process_name', mid=None):
     g.logger.setLevel(logging.INFO)
     handler = logging.handlers.SysLogHandler('/dev/log')
     if mid:
-        mon_id='[monitor_{}]'.format(mid)
+        mon_id='[monitor_m{}]'.format(mid)
     else:
         mon_id=''
     formatter = logging.Formatter(process_name + ':[%(process)d]'+mon_id+': %(levelname)s [%(message)s]')

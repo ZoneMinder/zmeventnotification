@@ -41,13 +41,18 @@ config_vals = {
         'detect_pattern':{
             'section': 'general',
             'default': '.*',
-            'type': 'string',
+            'type': 'string'
         },
 
         'frame_id':{
             'section': 'general',
             'default': 'snapshot',
             'type': 'string'
+        },
+        'wait': {
+            'section': 'general',
+            'default':'0',
+            'type': 'int'
         },
 
         'resize':{

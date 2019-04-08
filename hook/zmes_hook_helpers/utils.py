@@ -12,6 +12,7 @@ import datetime
 import ssl
 import urllib
 import json
+import time
 
 from configparser import ConfigParser
 import zmes_hook_helpers.common_params as g
@@ -90,6 +91,10 @@ def import_zm_zones(mid):
 
 # downloaded ZM image files for future analysis
 def download_files(args):
+    if g.config['wait'] > 0:
+        g.logger.debug ('sleeping for {} seconds before downloading'.format(g.config['wait']))
+        time.sleep(g.config['wait'])
+
     if g.config['portal'].lower().startswith('https://'):
         main_handler = urllib.request.HTTPSHandler(context=g.ctx)
     else:
