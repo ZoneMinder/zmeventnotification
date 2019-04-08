@@ -184,7 +184,7 @@ for model in g.config['models']:
             found_match = False
         # file loop
     # model loop
-    if g.config['detection_mode'] == 'first':
+    if matched_file and g.config['detection_mode'] == 'first':
         g.logger.debug('detection mode is set to first, breaking out of model loop...')
         break
 
