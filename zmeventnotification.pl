@@ -1799,6 +1799,7 @@ sub processAlarms {
                 if ($use_hook_description) {
                   
                     $alarm->{Cause} = $resTxt;
+		    $alarm->{Cause} = substr ($alarm->{Cause},4) if (!$keep_frame_match_type && $alarm->{Cause} =~ /^\[.\]/);
                     # This updated the ZM DB with the detected description
                     print WRITER "event_description--TYPE--".$alarm->{MonitorId}."--SPLIT--".$alarm->{EventId}."--SPLIT--".$resTxt."\n";
                 }
