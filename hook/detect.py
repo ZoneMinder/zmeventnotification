@@ -105,7 +105,7 @@ if g.config['resize']:
     if image2 is not None:
         image2 = imutils.resize(image2, width=min(int(g.config['resize']), image2.shape[1]))
     
-    newh, neww = image1.shape[:2]
+    neww, newh = image1.shape[:2]
     utils.rescale_polygons(neww / oldw, newh / oldh)
 
  # Apply all configured models to each file
