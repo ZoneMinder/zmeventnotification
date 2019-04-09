@@ -121,6 +121,8 @@ for model in g.config['models']:
     # instaniate the right model
     # after instantiation run all files with it, 
     # so no need to do 2x instantiations
+
+    t_start = datetime.datetime.now()
     
     if model == 'yolo':
         m = yolo.Yolo()
@@ -140,6 +142,8 @@ for model in g.config['models']:
         g.logger.error('Invalid model {}'.format(model))
         raise ValueError('Invalid model {}'.format(model))
 
+    g.logger.debug('|--> model:{} init took: {}s'.format(model, (datetime.datetime.now() - t_start).total_seconds()))
+    t_start = datetime.datetime.now()
     # read the detection pattern we need to apply as a filter
     r = re.compile(g.config['detect_pattern'])
     
@@ -156,6 +160,8 @@ for model in g.config['models']:
         g.logger.debug('Using model: {} with {}'.format(model, filename))
         image = image1 if filename==filename1 else image2
         b, l, c = m.detect(image)
+        g.logger.debug('|--> model:{} detection took: {}s'.format(model,(datetime.datetime.now() - t_start).total_seconds()))
+        t_start = datetime.datetime.now()
         # Now look for matched patterns in bounding boxes
         match = list(filter(r.match, l))
         # If you want face recognition, we need to add the list of found faces
