@@ -64,7 +64,8 @@ Option 1: Automatic install
 
 ::
 
-    sudo -H pip install face_recognition
+    sudo apt-get install libopenblas-dev liblapack-dev libblas-dev  # not mandatory, but gives a good speed boost!
+    sudo -H pip install face_recognition # mandatory
 
 Takes a while and installs a gob of stuff, which is why I did not add it
 automatically, especially if you don't need face recognition.
