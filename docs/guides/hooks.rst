@@ -64,10 +64,20 @@ Option 1: Automatic install
 
 ::
 
-    sudo -H pip install face_recognition
+    sudo apt-get install libopenblas-dev liblapack-dev libblas-dev  # not mandatory, but gives a good speed boost!
+    sudo -H pip install face_recognition # mandatory
 
 Takes a while and installs a gob of stuff, which is why I did not add it
 automatically, especially if you don't need face recognition.
+
+Note, if you installed ``face_recognition`` without blas, do this:
+
+::
+        sudo -H pip uninstall dlib
+        sudo -H pip uninstall face-recognition
+        sudo apt-get install libopenblas-dev liblapack-dev libblas-dev # this is the important part
+        sudo -H pip install dlib --verbose --no-cache-dir # make sure it finds openblas
+        sudo -H pip install face_recognition
 
 Option 2: Manual install
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -95,7 +105,21 @@ If automatic install fails for you, or you like to be in control:
 
 ::
 
-    sudo -H pip install face_recognition
+    sudo apt-get install libopenblas-dev liblapack-dev libblas-dev  # not mandatory, but gives a good speed boost!
+    sudo -H pip install face_recognition # mandatory
+
+Takes a while and installs a gob of stuff, which is why I did not add it
+automatically, especially if you don't need face recognition.
+
+Note, if you installed ``face_recognition`` without blas, do this:
+
+::
+        sudo -H pip uninstall dlib
+        sudo -H pip uninstall face-recognition
+        sudo apt-get install libopenblas-dev liblapack-dev libblas-dev # this is the important part
+        sudo -H pip install dlib --verbose --no-cache-dir # make sure it finds openblas
+        sudo -H pip install face_recognition
+
 
 -  You now need to download configuration and weight files that are
    required by the machine learning magic. Note that you don't have to
@@ -263,7 +287,7 @@ dependencies that takes time (including dlib) and not everyone wants it.
         facing poses) and does not work for full profiles or completely overhead
         faces. Take a look at the `accuracy
         wiki <https://github.com/ageitgey/face_recognition/wiki/Face-Recognition-Accuracy-Problems>`__
-        of this library to know more about its limitations.
+        of this library to know more about its limitations. Also note that I found `cnn` mode is much more accurage than `hog` mode. However, `cnn` comes with a speed and memory tradeoff.
 
 Configuring face recognition
 ''''''''''''''''''''''''''''
@@ -308,6 +332,44 @@ Yo, it can't recognize faces
 -  Experiment. Read the accuracy wiki link I posted in the previous
    section
 
+
+Performance comparison
+~~~~~~~~~~~~~~~~~~~~~~
+
+DNNs perform very well on a GPU. My ZM server doesn't have a GPU. On a
+Intel Xeon 3.16GHz 4Core machine:
+
+With BLAS installed, here are my performance stats:
+All tests are with a 600px wide image
+
+- Face Detection with CNN:
+
+::
+
+    [|--> model:face init took: 1.901829s]
+    [|--> model:face detection took: 4.218463s] (Fyi, this varies, from 4.x - 6.xs)
+
+
+- Face Detection with HOG:
+
+::
+
+    [|--> model:face init took: 1.866364s]
+    [|--> model:face detection took: 0.263436s]
+
+- YoloV3 object detection (with full yolov3 weights)
+
+::
+
+    [|--> model:yolo init took: 1.9e-05s]
+    [|--> model:yolo detection took: 2.487402s]
+
+
+
+As always, if you are trying to figure out how this works, do this in 3
+steps:
+
+
 Manually testing if detection is working well
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -321,15 +383,6 @@ The ``--monitorid <mid>`` is optional and is the monitor ID. If you do
 specify it, it will pick up the right mask to apply (if it is in your
 config)
 
-Performance comparison
-~~~~~~~~~~~~~~~~~~~~~~
-
-DNNs perform very well on a GPU. My ZM server doesn't have a GPU. On a
-Intel Xeon 3.16GHz 4Core machine: - HOG takes 0.24s - YOLOv3 with
-tiny-yolo takes 0.32s - YOLOv3 takes 2.4s
-
-As always, if you are trying to figure out how this works, do this in 3
-steps:
 
 **STEP 1: Make sure the scripts(s) work** 
 
