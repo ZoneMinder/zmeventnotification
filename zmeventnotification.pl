@@ -58,7 +58,7 @@ use IO::Select;
 # ==========================================================================
 
 
-my $app_version="3.1";
+my $app_version="3.4";
 
 # ==========================================================================
 #
@@ -76,23 +76,23 @@ use constant {
     DEFAULT_CONFIG_FILE                             => "/etc/zm/zmeventnotification.ini",
     DEFAULT_PORT                                    => 9000,
     DEFAULT_ADDRESS                                 => '[::]',
-    DEFAULT_AUTH_ENABLE                             => 1,
+    DEFAULT_AUTH_ENABLE                             => 'yes',
     DEFAULT_AUTH_TIMEOUT                            => 20,
-    DEFAULT_FCM_ENABLE                              => 1,
-    DEFAULT_MQTT_ENABLE                             => 0,
+    DEFAULT_FCM_ENABLE                              => 'yes',
+    DEFAULT_MQTT_ENABLE                             => 'no',
     DEFAULT_MQTT_SERVER                             => '127.0.0.1',
     DEFAULT_FCM_TOKEN_FILE                          => '/var/lib/zmeventnotification/push/tokens.txt',
-    DEFAULT_SSL_ENABLE                              => 1,
-    DEFAULT_CUSTOMIZE_VERBOSE                       => 0,
+    DEFAULT_SSL_ENABLE                              => 'yes',
+    DEFAULT_CUSTOMIZE_VERBOSE                       => 'no',
     DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL          => 5,
     DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL       => 300,
-    DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE              => 0,
-    DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID            => 0,
-    DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND => 0,
-    DEFAULT_CUSTOMIZE_INCLUDE_PICTURE               => 0,
-    DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE              => 1,
-    DEFAULT_HOOK_USE_HOOK_DESCRIPTION               => 0,
-    DEFAULT_HOOK_STORE_FRAME_IN_ZM                  => 0,
+    DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE              => 'no',
+    DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID            => 'no',
+    DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND => 'no',
+    DEFAULT_CUSTOMIZE_INCLUDE_PICTURE               => 'no',
+    DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE              => 'yes',
+    DEFAULT_HOOK_USE_HOOK_DESCRIPTION               => 'no',
+    DEFAULT_HOOK_STORE_FRAME_IN_ZM                  => 'no',
 };
 
 
@@ -151,7 +151,7 @@ my $hook;
 my $use_hook_description;
 my $keep_frame_match_type;
 my $skip_monitors;
-my $store_frame_in_zm;
+my $hook_pass_image_path;
 
 my $picture_url;
 my $include_picture;
@@ -190,52 +190,6 @@ Usage: zmeventnotification.pl [OPTION]...
 
   --check-config                      Print configuration and exit.
 
-  --port=PORT                         Port for Websockets connection (default: 9000).
-  --address=ADDRESS                   Address for Websockets server (default: [::]).
-
-  --enable-auth                       Check username/password against ZoneMinder database (default: true).
-  --no-enable-auth                    Don't check username/password against ZoneMinder database (default: false).
-
-  --enable-fcm                        Use FCM for messaging (default: true).
-  --no-enable-fcm                     Don't use FCM for messaging (default: false).
-  --enable-mqtt                       Use MQTT for messaging (default: false).
-  --mqtt-server=SERVER                MQTT messaging server (default: 127.0.0.1). 
-  --mqtt-username=USERNAME            MQTT username (default: unset)
-  --mqtt-password=PASSWORD            MQTT password (default: unset)   
-  --no-enable-mqtt                    Disable MQTT for messaging (default: true).
-  --fcm-api-key=KEY                   API key for FCM (default: zmNinja FCM key).
-  --token-file=FILE                   Auth token store location (default: /etc/private/tokens.txt).
-
-  --enable-ssl                        Enable SSL (default: true).
-  --no-enable-ssl                     Disable SSL (default: false).
-  --ssl-cert-file=FILE                Location to SSL cert file.
-  --ssl-key-file=FILE                 Location to SSL key file.
-
-  --verbose                           Display messages to console (default: false).
-  --no-verbose                        Don't display messages to console (default: true).
-  --event-check-interval=SECONDS      Interval, in seconds, after which we will check for new events (default: 5).
-  --monitor-reload-interval=SECONDS   Interval, in seconds, to reload known monitors (default: 300).
-  --read-alarm-cause                  Read monitor alarm cause (Requires ZoneMinder >= 1.31.2, default: false).
-  --no-read-alarm-cause               Don't read monitor alarm cause (default: true).
-  --tag-alarm-event-id                Tag event IDs with the alarm (default: false).
-  --no-tag-alarm-event-id             Don't tag event IDs with the alarm (default: true).
-  --use-custom-notification-sound     Use custom notification sound (default: true).
-  --no-use-custom-notification-sound  Don't use custom notification sound (default: false).
-
-  --hook-script=FILE                  Intercept events before they are reported to do custom processing.
-  --use-hook-description              Overwrite alarm text with content returned by hook script (default: true).
-  --no-use-hook-description           Do not overwrite alarm text with content returned by hook script (default: false).
-
-  --keep-frame-match-type             Retain identify of matched frame ([a]larm, [s]napshot, [x])
-  --no-keep-frame-match-type          Do not retain identity of matched frame
-
-  --skip-monitors=LIST                Comma separated list of monitors that will be skipped for hooks
-
-
-  --include-picture                   Add alarm frame image in notification (only for Android) (default: false).
-  --no-include-picture                Do not add alarm frame image in notification (only for Android) (default: true).
-  --picture-url=URL                   URL for image with template EVENTID tag that will be replaced with actual event id.
-
 USAGE
 
 GetOptions(
@@ -243,40 +197,6 @@ GetOptions(
 
   "config=s"                       => \$config_file,
   "check-config"                   => \$check_config,
-
-  "port=i"                         => \$port,
-  "address=s"                      => \$address,
-
-  "enable-auth!"                   => \$auth_enabled,
-  
-  "enable-mqtt!"                    => \$use_mqtt,
-  "mqtt-server=s"                  => \$mqtt_server,
-  "mqtt-username=s"                  => \$mqtt_username,
-  "mqtt-password=s"                  => \$mqtt_password,
-
-  "enable-fcm!"                    => \$use_fcm,
-  "fcm-api-key=s"                  => \$fcm_api_key,
-  "token-file=s"                   => \$token_file,
-
-  "enable-ssl!"                    => \$ssl_enabled,
-  "ssl-cert-file=s"                => \$ssl_cert_file,
-  "ssl-key-file=s"                 => \$ssl_key_file,
-
-  "verbose!"                       => \$verbose,
-  "event-check-interval=i"         => \$event_check_interval,
-  "monitor-reload-interval=i"      => \$monitor_reload_interval,
-  "read-alarm-cause!"              => \$read_alarm_cause,
-  "tag-alarm-event-id!"            => \$tag_alarm_event_id,
-  "use-custom-notification-sound!" => \$use_custom_notification_sound,
-
-  "hook-script=s"                  => \$hook,
-  "use-hook-description!"          => \$use_hook_description,
-  "keep-frame-match-type!"         => \$keep_frame_match_type,
-  "store_frame_in_zm!"             => \$store_frame_in_zm,
-  "skip-monitors=s"                => \$skip_monitors,
-
-  "picture-url=s"                  => \$picture_url,
-  "include-picture!"               => \$include_picture
 );
 
 exit(print(USAGE)) if $help;
@@ -349,7 +269,7 @@ $hook                         //= config_get_val($config, "hook", "hook_script")
 $use_hook_description         //= config_get_val($config, "hook", "use_hook_description", DEFAULT_HOOK_USE_HOOK_DESCRIPTION);
 $keep_frame_match_type        //= config_get_val($config, "hook", "keep_frame_match_type", DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE);
 $skip_monitors                //= config_get_val($config, "hook", "skip_monitors");
-$store_frame_in_zm            //= config_get_val($config, "hook", "store_frame_in_zm");
+$hook_pass_image_path            //= config_get_val($config, "hook", "hook_pass_image_path");
 
 
 my %ssl_push_opts = ();
@@ -365,12 +285,19 @@ my $notId = 1;
 sub config_get_val {
     my ( $config, $sect, $parm, $def ) = @_;
     my $val = $config->val($sect, $parm);
-    return defined($val)? $val:$def;
+            
+    my $final_val = defined($val)? $val:$def;
+
+    # compatibility hack, lets use yes/no in config to maintain
+    # parity with hook config
+    if (lc($final_val) eq 'yes') {$final_val=1;}
+    elsif (lc($final_val) eq 'no') {$final_val=0;}
+    return $final_val;
 }
 
 # helper routines to print config status in help
-sub true_or_false {
-  return $_[0] ? "true" : "false";
+sub yes_or_no {
+  return $_[0] ? "yes" : "no";
 }
 
 sub value_or_undefined {
@@ -398,36 +325,36 @@ Address ....................... ${\(value_or_undefined($address))}
 Event check interval .......... ${\(value_or_undefined($event_check_interval))}
 Monitor reload interval ....... ${\(value_or_undefined($monitor_reload_interval))}
 
-Auth enabled .................. ${\(true_or_false($auth_enabled))}
+Auth enabled .................. ${\(yes_or_no($auth_enabled))}
 Auth timeout .................. ${\(value_or_undefined($auth_timeout))}
 
-Use FCM ....................... ${\(true_or_false($use_fcm))}
+Use FCM ....................... ${\(yes_or_no($use_fcm))}
 FCM API key ................... ${\(present_or_not($fcm_api_key))}
 Token file .................... ${\(value_or_undefined($token_file))}
 
-Use MQTT .......................${\(true_or_false($use_mqtt))}
+Use MQTT .......................${\(yes_or_no($use_mqtt))}
 MQTT Server ....................${\(value_or_undefined($mqtt_server))}
 MQTT Username ..................${\(value_or_undefined($mqtt_username))}
 MQTT Password ..................${\(present_or_not($mqtt_password))}
 
-SSL enabled ................... ${\(true_or_false($ssl_enabled))}
+SSL enabled ................... ${\(yes_or_no($ssl_enabled))}
 SSL cert file ................. ${\(value_or_undefined($ssl_cert_file))}
 SSL key file .................. ${\(value_or_undefined($ssl_key_file))}
 
-Verbose ....................... ${\(true_or_false($verbose))}
-Read alarm cause .............. ${\(true_or_false($read_alarm_cause))}
-Tag alarm event id ............ ${\(true_or_false($tag_alarm_event_id))}
-Use custom notification sound . ${\(true_or_false($use_custom_notification_sound))}
+Verbose ....................... ${\(yes_or_no($verbose))}
+Read alarm cause .............. ${\(yes_or_no($read_alarm_cause))}
+Tag alarm event id ............ ${\(yes_or_no($tag_alarm_event_id))}
+Use custom notification sound . ${\(yes_or_no($use_custom_notification_sound))}
 
 Hook .......................... ${\(value_or_undefined($hook))}
-Use Hook Description........... ${\(true_or_false($use_hook_description))}
-Keep frame match type.......... ${\(true_or_false($keep_frame_match_type))}
+Use Hook Description........... ${\(yes_or_no($use_hook_description))}
+Keep frame match type.......... ${\(yes_or_no($keep_frame_match_type))}
 Skipped monitors............... ${\(value_or_undefined($skip_monitors))}
-Store Frame in ZM...............${\(true_or_false($store_frame_in_zm))}
+Store Frame in ZM...............${\(yes_or_no($hook_pass_image_path))}
 
 
 Picture URL ................... ${\(value_or_undefined($picture_url))}
-Include picture................ ${\(true_or_false($include_picture))}
+Include picture................ ${\(yes_or_no($include_picture))}
 
 EOF
   )
@@ -695,7 +622,7 @@ sub checkNewEvents()
                 # It is possible we missed STATE_IDLE due to b2b events, so we may need to process it here 
                 # as well
 
-                if ($last_event_for_monitors{$monitor->{Id}}{"state"}== "recording") 
+                if ($last_event_for_monitors{$monitor->{Id}}{"state"} eq "recording") 
                 {
                    my $hooktext = $last_event_for_monitors{$monitor->{Id}}{"hook_text"};
                    if ($hooktext) {
@@ -1118,7 +1045,7 @@ sub processJobs
                 # b) that mid is now idling
 
                 if ( ($last_event_for_monitors{$mid}{"eid"} != $eid) ||
-                     ($last_event_for_monitors{$mid}{"state"} == "idle")) {
+                     ($last_event_for_monitors{$mid}{"state"} eq "idle")) {
                          printDebug ("HOOK: script for eid:$eid returned after the alarm closed, so writing hook text:$desc now...");
                          updateEventinZmDB($eid, $desc);
                 } 
@@ -1853,7 +1780,7 @@ sub processAlarms {
             else {
                 my $cmd = $hook." ".$alarm->{EventId}." ".$alarm->{MonitorId}." \"".$alarm->{Name}."\""." \"".$alarm->{Cause}."\"";
                 # new ZM 1.33 feature - lets me extract event path so I can store the hook detection image
-                if ($store_frame_in_zm) {
+                if ($hook_pass_image_path) {
                     if (!try_use ("ZoneMinder::Event")) {
                         Error ("ZoneMinder::Event missing, you may be using an old version");
                     } else {
@@ -1871,8 +1798,15 @@ sub processAlarms {
                 next if ($resCode !=0);
                 if ($use_hook_description) {
                   
-                    $alarm->{Cause} = $resTxt;
-                    # This updated the ZM DB with the detected description
+                    # lets append it to any existing motion notes
+                    # note that this is in the fork. We are only passing hook text
+                    # to parent, so it can be appended to the full motion text on event close
+                    $alarm->{Cause} = $resTxt." ".$alarm->{Cause};
+                    printDebug ("after appending motion text, alarm->cause is now:". $alarm->{Cause});
+		       
+                    # This updates the ZM DB with the detected description
+                    # we are writing resTxt not alarm cause which is only detection text
+                    # when we write to DB, we will add the latest notes, which may have more zones
                     print WRITER "event_description--TYPE--".$alarm->{MonitorId}."--SPLIT--".$alarm->{EventId}."--SPLIT--".$resTxt."\n";
                 }
            } 

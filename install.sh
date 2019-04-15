@@ -21,18 +21,23 @@ TARGET_CONFIG='/etc/zm'
 TARGET_DATA='/var/lib/zmeventnotification'
 
 WGET=$(which wget)
-WEB_OWNER=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $1}')
+WEB_OWNER_FROM_PS=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $1}')
 #WEB_OWNER='www-data' # uncomment this if the above mechanism fails
 
-WEB_GROUP=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $2}')
-WEB_GROUP='www-data' # uncomment if above line fails
+WEB_GROUP_FROM_PS=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $2}')
+#WEB_GROUP='www-data' # uncomment if above line fails
 # make this empty if you don't want backups
 MAKE_CONFIG_BACKUP='-b'
 
 # --- end of change these ---
 
 # set default values 
+# if we have a value from ps use it, otherwise look in env
+WEB_OWNER=${WEB_OWNER_FROM_PS:-$WEB_OWNER}
+WEB_GROUP=${WEB_GROUP_FROM_PS:-$WEB_GROUP}
+# if we don't have a value from ps or env, use default
 WEB_OWNER=${WEB_OWNER:-www-data}
+WEB_GROUP=${WEB_GROUP:-www-data}
 WGET=${WGET:-/usr/bin/wget}
 
 
