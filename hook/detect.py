@@ -256,6 +256,6 @@ if (args['time']):
 
 if g.config['delete_after_analyze'] == 'yes':
     if filename1:
-        os.remove(filename_alarm)
+        os.remove(filename1)
     if filename2:
-        os.remove(filename_snapshot)
+        os.remove(filename2)

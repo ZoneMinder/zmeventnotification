@@ -1798,9 +1798,12 @@ sub processAlarms {
                 next if ($resCode !=0);
                 if ($use_hook_description) {
                   
-                    $alarm->{Cause} = $resTxt;
-		    $alarm->{Cause} = substr ($alarm->{Cause},4) if (!$keep_frame_match_type && $alarm->{Cause} =~ /^\[.\]/);
-                    # This updated the ZM DB with the detected description
+                    # note this is in the fork, so alarm->cause will remain to motion in parents
+                    $alarm->{Cause} = $resTxt." ".$alarm->{Cause};
+		            $alarm->{Cause} = substr ($alarm->{Cause},4) if (!$keep_frame_match_type && $alarm->{Cause} =~ /^\[.\]/);
+                    # This updates the ZM DB with the detected description
+                    # we are writing resTxt not alarm cause which is only detection text
+                    # when we write to DB, we will add the latest notes, which may have more zones
                     print WRITER "event_description--TYPE--".$alarm->{MonitorId}."--SPLIT--".$alarm->{EventId}."--SPLIT--".$resTxt."\n";
                 }
            } 
