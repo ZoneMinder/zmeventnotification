@@ -149,8 +149,8 @@ def download_files(args):
         # only download one
         filename1 = g.config['image_path'] + '/' + args['eventid'] + '.jpg'
         filename1_bbox = g.config['image_path'] + '/' + args['eventid'] + '-bbox.jpg'
-        filename2 = ''
-        filename2_bbox = ''
+        filename2 = None
+        filename2_bbox = None
         url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=' + g.config['frame_id'] + \
             '&username=' + g.config['user'] + '&password=' + g.config['password']
         durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=' + g.config['frame_id'] + \
