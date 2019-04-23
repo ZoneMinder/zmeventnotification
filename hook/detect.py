@@ -228,7 +228,7 @@ else:
         if matched_file == filename1:
             prefix = '[a] '  # we will first analyze alarm
         else:
-            prefix = '[s]'
+            prefix = '[s] '
     else:
         prefix = '[x] '
 
