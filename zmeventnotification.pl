@@ -614,8 +614,9 @@ sub checkNewEvents()
                  ]
             );
 
-	    #if ($state == STATE_ALARM || $state == STATE_ALERT)
-        if ($state == STATE_ALARM)
+	# The alarm may have moved from ALARM to ALERT by the time ES got to it...
+	if ($state == STATE_ALARM || $state == STATE_ALERT)
+	#if ($state == STATE_ALARM)
         {
             if ( !defined($monitor->{LastEvent})
                  || ($last_event != $last_event_for_monitors{$monitor->{Id}}{"eid"}))
