@@ -396,7 +396,7 @@ config)
 **STEP 2: run zmeventnotification in MANUAL mode** 
 
 - ``sudo zmdc.pl stop zmeventnotification.pl`` 
-- change verbose to 1 in ``zmeventnotification.ini``
+- change console_logs to yes in ``zmeventnotification.ini``
 -  ``sudo -u www-data ./zmeventnotification.pl  --config ./zmeventnotification.ini``
 -  Force an alarm, look at logs
 
