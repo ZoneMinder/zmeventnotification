@@ -129,7 +129,7 @@ configuration as follows:
     SSL cert file ................. /etc/zm/apache2/ssl/zoneminder.crt
     SSL key file .................. /etc/zm/apache2/ssl/zoneminder.key
 
-    Verbose ....................... false
+    console_logs .................. false
     Read alarm cause .............. true
     Tag alarm event id ............ false
     Use custom notification sound . false
@@ -236,7 +236,7 @@ the output:
 2. Do a ``ps -aef | grep zmevent`` and make sure no stale processes are
    running
 3. Edit your ``/etc/zm/zmeventnotification.ini`` and make sure
-   ``verbose = 1`` to get verbose logs
+   ``console_logs = yes`` to get console debug logs
 4. Run the server manually by doing
    ``sudo -u www-data /usr/bin/zmeventnotification.pl`` (replace with
    ``www-data`` with ``apache`` depending on your OS)
@@ -396,7 +396,7 @@ Here is how to debug and report:
    doesn't show existing processes (ignore the one that says
    ``grep <something>``)
 -  Edit ``zmeventnotification.ini`` (typically in ``/etc/zm/``) and make
-   sure ``verbose = 1`` is set. This will print more logs on the
+   sure ``console_logs = yes`` is set. This will print more logs on the
    console. Make sure you turn this off again before switching back to
    daemon mode.
 -  Start a terminal (lets call it Terminal-Log) to tail logs like so

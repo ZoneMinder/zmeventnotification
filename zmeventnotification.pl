@@ -58,7 +58,7 @@ use IO::Select;
 # ==========================================================================
 
 
-my $app_version="3.6";
+my $app_version="3.7";
 
 # ==========================================================================
 #
@@ -140,7 +140,7 @@ my $ssl_enabled;
 my $ssl_cert_file;
 my $ssl_key_file;
 
-my $verbose;
+my $console_logs;
 my $event_check_interval;
 my $monitor_reload_interval;
 my $read_alarm_cause;
@@ -255,7 +255,7 @@ $ssl_enabled   //= config_get_val($config, "ssl", "enable", DEFAULT_SSL_ENABLE);
 $ssl_cert_file //= config_get_val($config, "ssl", "cert");
 $ssl_key_file  //= config_get_val($config, "ssl", "key");
 
-$verbose                       //= config_get_val($config, "customize", "verbose", DEFAULT_CUSTOMIZE_VERBOSE);
+$console_logs                       //= config_get_val($config, "customize", "console_logs", DEFAULT_CUSTOMIZE_VERBOSE);
 $event_check_interval          //= config_get_val($config, "customize", "event_check_interval", DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL);
 $monitor_reload_interval       //= config_get_val($config, "customize", "monitor_reload_interval", DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL);
 $read_alarm_cause              //= config_get_val($config, "customize", "read_alarm_cause", DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE);
@@ -341,7 +341,7 @@ SSL enabled ................... ${\(yes_or_no($ssl_enabled))}
 SSL cert file ................. ${\(value_or_undefined($ssl_cert_file))}
 SSL key file .................. ${\(value_or_undefined($ssl_key_file))}
 
-Verbose ....................... ${\(yes_or_no($verbose))}
+Verbose ....................... ${\(yes_or_no($console_logs))}
 Read alarm cause .............. ${\(yes_or_no($read_alarm_cause))}
 Tag alarm event id ............ ${\(yes_or_no($tag_alarm_event_id))}
 Use custom notification sound . ${\(yes_or_no($use_custom_notification_sound))}
@@ -361,7 +361,7 @@ EOF
 }
 
 exit(print_config()) if $check_config;
-print_config() if $verbose;
+print_config() if $console_logs;
 
  
 # Lets now load all the optional dependent libraries in a failsafe way
@@ -522,28 +522,28 @@ sub printDebug
 {
 	my $str = shift;
     my $now = strftime('%Y-%m-%d,%H:%M:%S',localtime);
-    print($now," ",$str, "\n") if $verbose;
+    print('CONSOLE DEBUG:', $now," ",$str, "\n") if $console_logs;
     Debug($str);
 }
 sub printInfo
 {
 	my $str = shift;
     my $now = strftime('%Y-%m-%d,%H:%M:%S',localtime);
-    print($now," ",$str, "\n") if $verbose;
+    print('CONSOLE INFO:', $now," ",$str, "\n") if $console_logs;
     Info($str);
 }
 sub printWarning
 {
 	my $str = shift;
     my $now = strftime('%Y-%m-%d,%H:%M:%S',localtime);
-    #print($now," ",$str, "\n") if $verbose;
+    print('CONSOLE WARNING:', $now," ",$str, "\n") if $console_logs;
     Warning($str);
 }
 sub printError
 {
 	my $str = shift;
     my $now = strftime('%Y-%m-%d,%H:%M:%S',localtime);
-    #print($now," ",$str, "\n") if $verbose;
+    print('CONSOLE ERROR:', $now," ",$str, "\n") if $console_logs;
     Error($str);
 }
 
@@ -614,56 +614,56 @@ sub checkNewEvents()
                  ]
             );
 
-	# The alarm may have moved from ALARM to ALERT by the time ES got to it...
-	if ($state == STATE_ALARM || $state == STATE_ALERT)
-	#if ($state == STATE_ALARM)
+    # The alarm may have moved from ALARM to ALERT by the time ES got to it...
+    if ($state == STATE_ALARM || $state == STATE_ALERT)
+    {
+        if ( !defined($monitor->{LastEvent})
+              || ($last_event != $last_event_for_monitors{$monitor->{Id}}{"eid"}))
         {
-            if ( !defined($monitor->{LastEvent})
-                 || ($last_event != $last_event_for_monitors{$monitor->{Id}}{"eid"}))
+            # It is possible we missed STATE_IDLE due to b2b events, so we may need to process it here 
+            # as well
+
+            if ($last_event_for_monitors{$monitor->{Id}}{"state"} eq "recording") 
             {
-                # It is possible we missed STATE_IDLE due to b2b events, so we may need to process it here 
-                # as well
-
-                if ($last_event_for_monitors{$monitor->{Id}}{"state"} eq "recording") 
-                {
-                   my $hooktext = $last_event_for_monitors{$monitor->{Id}}{"hook_text"};
-                   if ($hooktext) {
-                        printDebug ("HOOK: (concurrent-event) ".$last_event_for_monitors{$monitor->{Id}}{"eid"}. " writing hook to DB with hook text=".$hooktext);
-                        updateEventinZmDB($last_event_for_monitors{$monitor->{Id}}{"eid"},$hooktext) if $hooktext;
-                   }
-
-                }
-                $alarm_cause=zmMemRead($monitor,"shared_data:alarm_cause") if ($read_alarm_cause);
-                $alarm_cause = $trigger_cause if (defined($trigger_cause) && $alarm_cause eq "" && $trigger_cause ne "");
-                printInfo( "New event $last_event reported for ".$monitor->{Name}." ".$alarm_cause."\n");
-                $monitor->{LastState} = $state;
-                $monitor->{LastEvent} = $last_event;
-                $last_event_for_monitors{$monitor->{Id}}{"eid"}= $last_event;
-                $last_event_for_monitors{$monitor->{Id}}{"state"}= "recording";
-                my $name = $monitor->{Name};
-                my $mid = $monitor->{Id};
-                my $eid = $last_event;
-                printDebug ("HOOK: $last_event Creating event object for ".$monitor->{Name}.", setting state to recording");
-                push @events, {Name => $name, MonitorId => $mid, EventId => $last_event, Cause=> $alarm_cause};
-                $eventFound = 1;
-            }
-            
-        }
-        elsif ($state == STATE_IDLE &&  $last_event_for_monitors{$monitor->{Id}}{"state"} eq "recording") 
-        {
                 my $hooktext = $last_event_for_monitors{$monitor->{Id}}{"hook_text"};
-                printDebug ("Alarm ".$monitor->{LastEvent}." for monitor:".$monitor->{Id}." has ended ".$hooktext);
                 if ($hooktext) {
-                    printDebug ("HOOK: ".$monitor->{LastEvent}." writing hook to DB with hook text=".$hooktext);
+                    printDebug ("HOOK: (concurrent-event) ".$last_event_for_monitors{$monitor->{Id}}{"eid"}. " writing hook to DB with hook text=".$hooktext);
+                    updateEventinZmDB($last_event_for_monitors{$monitor->{Id}}{"eid"},$hooktext) if $hooktext;
+                    $last_event_for_monitors{$monitor->{Id}}{"hook_text"}=undef;
                 }
-                else {
-                    printDebug ("HOOK: ".$monitor->{LastEvent}." NOT writing hook to DB as hook text was empty");
-                }
-                updateEventinZmDB($monitor->{LastEvent},$hooktext) if $hooktext;
-                $last_event_for_monitors{$monitor->{Id}}{"state"}="idle";
-                $last_event_for_monitors{$monitor->{Id}}{"hook_text"}=undef;
-                
+
+            }
+            $alarm_cause=zmMemRead($monitor,"shared_data:alarm_cause") if ($read_alarm_cause);
+            $alarm_cause = $trigger_cause if (defined($trigger_cause) && $alarm_cause eq "" && $trigger_cause ne "");
+            printInfo( "New event $last_event reported for Monitor:".$monitor->{Id}." (Name:".$monitor->{Name}.") ".$alarm_cause."\n");
+            $monitor->{LastState} = $state;
+            $monitor->{LastEvent} = $last_event;
+            $last_event_for_monitors{$monitor->{Id}}{"eid"}= $last_event;
+            $last_event_for_monitors{$monitor->{Id}}{"state"}= "recording";
+            my $name = $monitor->{Name};
+            my $mid = $monitor->{Id};
+            my $eid = $last_event;
+            printDebug ("HOOK: $last_event Creating event object for ".$monitor->{Name}.", setting state to recording");
+            push @events, {Name => $name, MonitorId => $mid, EventId => $last_event, Cause=> $alarm_cause};
+            $eventFound = 1;
         }
+        
+    }
+    elsif ($state == STATE_IDLE &&  $last_event_for_monitors{$monitor->{Id}}{"state"} eq "recording") 
+    {
+            my $hooktext = $last_event_for_monitors{$monitor->{Id}}{"hook_text"};
+            printDebug ("Alarm ".$monitor->{LastEvent}." for monitor:".$monitor->{Id}." has ended ".$hooktext);
+            if ($hooktext) {
+                printDebug ("HOOK: ".$monitor->{LastEvent}." writing hook to DB with hook text=".$hooktext);
+            }
+            else {
+                printDebug ("HOOK: ".$monitor->{LastEvent}." NOT writing hook to DB as hook text was empty");
+            }
+            updateEventinZmDB($monitor->{LastEvent},$hooktext) if $hooktext;
+            $last_event_for_monitors{$monitor->{Id}}{"state"}="idle";
+            $last_event_for_monitors{$monitor->{Id}}{"hook_text"}=undef;
+            
+    }
     }
     printDebug ("checkEvents() events found=$eventFound");
     # Send out dummy events for testing
@@ -1050,6 +1050,7 @@ sub processJobs
                      ($last_event_for_monitors{$mid}{"state"} eq "idle")) {
                          printDebug ("HOOK: script for eid:$eid returned after the alarm closed, so writing hook text:$desc now...");
                          updateEventinZmDB($eid, $desc);
+                         $last_event_for_monitors{$mid}{"hook_text"}=undef;
                 } 
 
                 #  hook returned before the alarm closed, so we will catch it in the
@@ -1796,7 +1797,7 @@ sub processAlarms {
                 my $resTxt = `$cmd`;
                 my $resCode = $? >> 8;
                 chomp($resTxt);
-                printInfo("hook script returned with text:".$resTxt." exit:".$resCode);
+                printInfo("For Monitor:".$alarm->{MonitorId}." event:".$alarm->{EventId}. ", hook script returned with text:".$resTxt." exit:".$resCode);
                 next if ($resCode !=0);
                 if ($use_hook_description) {
                   
