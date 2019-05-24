@@ -17,8 +17,10 @@ Limitations
 ~~~~~~~~~~~
 
 -  Only tested with ZM 1.32+. May or may not work with older versions
--  Tested with Python3. Should also work with Python2, but you should know,
+-  Needs Python3 (I used to support Python2, but not any more)
    Python2 will be deprecated in 2020. May as well update.
+- If you are using Python3, you can use ``python`` and ``pip``. They will point to python3 versions. You typically need to use ``python3`` and ``pip3`` when you have a mixed Python 2.x and 3.x install
+
 
 What
 ~~~~
@@ -40,8 +42,8 @@ Installation
 Option 1: Automatic install
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
--  You need to have ``pip`` installed. On ubuntu, it is
-   ``sudo apt install python-pip``, or see
+-  You need to have ``pip3`` installed. On ubuntu, it is
+   ``sudo apt install python3-pip``, or see
    `this <https://pip.pypa.io/en/stable/installing/>`__
 -  Clone the event server and go to the ``hook`` directory
 
@@ -65,7 +67,7 @@ Option 1: Automatic install
 ::
 
     sudo apt-get install libopenblas-dev liblapack-dev libblas-dev  # not mandatory, but gives a good speed boost!
-    sudo -H pip install face_recognition # mandatory
+    sudo -H pip3 install face_recognition # mandatory
 
 Takes a while and installs a gob of stuff, which is why I did not add it
 automatically, especially if you don't need face recognition.
@@ -73,11 +75,11 @@ automatically, especially if you don't need face recognition.
 Note, if you installed ``face_recognition`` without blas, do this:
 
 ::
-        sudo -H pip uninstall dlib
-        sudo -H pip uninstall face-recognition
+        sudo -H pip3 uninstall dlib
+        sudo -H pip3 uninstall face-recognition
         sudo apt-get install libopenblas-dev liblapack-dev libblas-dev # this is the important part
-        sudo -H pip install dlib --verbose --no-cache-dir # make sure it finds openblas
-        sudo -H pip install face_recognition
+        sudo -H pip3 install dlib --verbose --no-cache-dir # make sure it finds openblas
+        sudo -H pip3 install face_recognition
 
 Option 2: Manual install
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -93,20 +95,20 @@ If automatic install fails for you, or you like to be in control:
 
    .. code:: bash
 
-       sudo -H pip install -r  hook/requirements.txt 
+       sudo -H pip3 install -r  hook/requirements.txt 
 
 -  Install object detection files:
 
    .. code:: bash
 
-       sudo -H pip install hook
+       sudo -H pip3 install hook
 
 **Note:** if you want to add "face recognition" you also need to do
 
 ::
 
     sudo apt-get install libopenblas-dev liblapack-dev libblas-dev  # not mandatory, but gives a good speed boost!
-    sudo -H pip install face_recognition # mandatory
+    sudo -H pip3 install face_recognition # mandatory
 
 Takes a while and installs a gob of stuff, which is why I did not add it
 automatically, especially if you don't need face recognition.
@@ -114,11 +116,11 @@ automatically, especially if you don't need face recognition.
 Note, if you installed ``face_recognition`` without blas, do this:
 
 ::
-        sudo -H pip uninstall dlib
-        sudo -H pip uninstall face-recognition
+        sudo -H pip3 uninstall dlib
+        sudo -H pip3 uninstall face-recognition
         sudo apt-get install libopenblas-dev liblapack-dev libblas-dev # this is the important part
-        sudo -H pip install dlib --verbose --no-cache-dir # make sure it finds openblas
-        sudo -H pip install face_recognition
+        sudo -H pip3 install dlib --verbose --no-cache-dir # make sure it finds openblas
+        sudo -H pip3 install face_recognition
 
 
 -  You now need to download configuration and weight files that are
@@ -276,7 +278,7 @@ How to use face recognition
 Face Recognition uses
 `this <https://github.com/ageitgey/face_recognition>`__ library. Before
 you try and use face recognition, please make sure you did a
-``sudo -H pip install face_recognition`` The reason this is not
+``sudo -H pip3 install face_recognition`` The reason this is not
 automatically done during setup is that it installs a lot of
 dependencies that takes time (including dlib) and not everyone wants it.
 

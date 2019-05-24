@@ -174,7 +174,6 @@ if (!try_use ("Config::IniFiles")) {Fatal ("Config::Inifiles missing");}
 if (!try_use ("Getopt::Long")) {Fatal ("Getopt::Long missing");}
 if (!try_use ("File::Basename")) {Fatal ("File::Basename missing");}
 if (!try_use ("File::Spec")) {Fatal ("File::Spec missing");}
-if (!try_use ("Crypt::MySQL qw(password password41)")) {Fatal ("Crypt::MySQL  missing");}
 
 #if (!try_use ("threads")) {Fatal ("threads library/support  missing");}
 
@@ -750,9 +749,27 @@ sub validateZmAuth
     or Fatal( "Can't execute: ".$sth->errstr() );
     if (my ($state) = $sth->fetchrow_hashref())
     {
-        my $encryptedPassword = password41($p);
-        $sth->finish();
-        return $state->{Password} eq $encryptedPassword ? 1:0; 
+        my $scheme = substr($state->{Password}, 0, 1);
+	if ($scheme eq "*") { # mysql decode
+		printDebug ("Comparing using mysql hash");
+		if (!try_use ("Crypt::MySQL qw(password password41)")) {Fatal ("Crypt::MySQL  missing, cannot validate password"); return 0;}
+		my $encryptedPassword = password41($p);
+		$sth->finish();
+		return $state->{Password} eq $encryptedPassword;
+        }
+	else { # try bcrypt
+		if (!try_use ("Crypt::Eksblowfish::Bcrypt"))
+		{
+			Fatal ("Crypt::Eksblowfish::Bcrypt missing, cannot validate password");
+			return 0;
+		}
+		my $saved_pass = $state->{Password};
+		# perl bcrypt libs can't handle $2b$ or $2y$
+		$saved_pass =~ s/^\$2.\$/\$2a\$/;
+		my $new_hash = Crypt::Eksblowfish::Bcrypt::bcrypt($p, $saved_pass);
+		printDebug ("Comparing using bcrypt $new_hash to $saved_pass");
+		return $new_hash eq $saved_pass;
+	}
     }
     else
     {
