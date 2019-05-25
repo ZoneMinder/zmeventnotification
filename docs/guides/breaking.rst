@@ -1,6 +1,12 @@
 Breaking Changes
 ----------------
 
+
+Version 3.7 onwards
+~~~~~~~~~~~~~~~~~~~
+- There were some significant changes to ZM (will be part of 1.34), which includes migration to Bcrypt for passwords. Changes were made to support Bcrypt,
+  which means you will have to add additional libraries. See the installation guide.
+
 version 3.3 onwards
 ~~~~~~~~~~~~~~~~~~~
 
