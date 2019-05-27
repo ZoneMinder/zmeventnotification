@@ -13,6 +13,7 @@ import numpy as np
 import re
 import imutils
 import ssl
+import pickle
 #import hashlib
 
 import zmes_hook_helpers.log as log
@@ -176,6 +177,10 @@ for model in g.config['models']:
 
         # now filter these with polygon areas
         b, l, c = img.processIntersection(b, l, c, match)
+        if g.config['match_past_detections']:
+            # remove past matches
+            g.logger.debug ('Removing matches to past detections')
+            b, l, c = img.processPastDetection(b,l,c, args['monitorid'])
         if b:
             bbox.append(b)
             label.append(l)
@@ -195,6 +200,8 @@ for model in g.config['models']:
         break
 
 # all models loops, all files looped
+
+
 
 if not matched_file:
         g.logger.debug('No patterns found using any models in all files')
@@ -224,6 +231,14 @@ else:
             g.logger.error('Could not write image to ZoneMinder as eventpath not present')
     # Now create prediction string
 
+    if g.config['match_past_detections'] == 'yes':
+            g.logger.debug ('Saving detections for monitor {} for future match'.format(args['monitorid']))
+            mon_file = g.config['image_path'] + '/monitor-'+args['monitorid'] +'-data.pkl'
+            f = open(mon_file, "wb")
+            pickle.dump(b,f)
+            pickle.dump(l,f)
+            pickle.dump(c,f)            
+            
     if g.config['frame_id'] == 'bestmatch':
         if matched_file == filename1:
             prefix = '[a] '  # we will first analyze alarm

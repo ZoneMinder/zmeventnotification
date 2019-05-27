@@ -3,6 +3,7 @@ import zmes_hook_helpers.common_params as g
 from shapely.geometry import Polygon
 import cv2
 import numpy as np
+import pickle
 
 # Generic image related algorithms
 
@@ -10,6 +11,23 @@ import numpy as np
 # intersect the polygons, if specified
 # it also makes sure only patterns specified in detect_pattern are drawn
 
+
+def processPastDetection (bbox, label, conf,mid):
+#b, l, c = img.processPastDetection(b,l,c)
+    mon_file = g.config['image_path'] + '/monitor-'+mid +'-data.pkl' 
+    g.logger.debug ('Looking for '+mon_file) 
+    f = None
+    try:
+        f = open(mon_file, "rb")
+    except FileNotFoundError:
+        g.logger.debug ('No history data found')
+        return bbox, label, conf
+    
+    b_saved = pickle.load(f)
+    l_saved = pickle.load(f)
+    c_saved = pickle.load(f)
+    g.logger.debug ('loaded: bbox={}, labels={}'.format(b_saved, l_saved));
+    return bbox, label, conf
 
 def processIntersection(bbox, label, conf, match):
 

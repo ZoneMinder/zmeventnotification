@@ -43,6 +43,11 @@ config_vals = {
             'default': '.*',
             'type': 'string'
         },
+        'match_past_detections':{
+            'section': 'general',
+            'default': 'no',
+            'type': 'string'
+        },
 
         'frame_id':{
             'section': 'general',
