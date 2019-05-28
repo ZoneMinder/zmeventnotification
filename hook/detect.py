@@ -200,7 +200,7 @@ for model in g.config['models']:
 
 # all models loops, all files looped
 
-g.logger.debug ('FINAL LIST={} AND {}'.format(bbox,label))
+#g.logger.debug ('FINAL LIST={} AND {}'.format(bbox,label))
 
 if not matched_file:
         g.logger.debug('No patterns found using any models in all files')
