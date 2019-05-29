@@ -40,7 +40,7 @@ def processPastDetection (bbox, label, conf,mid):
         
         b.insert(1, (b[1][0], b[0][1]))
         b.insert(3, (b[0][0], b[1][1]))
-        g.logger.debug ("polygon in past={}".format(b))
+        #g.logger.debug ("Past detection: {}@{}".format(saved_ls[idx],b))
         #g.logger.debug ('BOBK={}'.format(b))
         obj = Polygon(b)
         foundMatch = False
@@ -52,13 +52,13 @@ def processPastDetection (bbox, label, conf,mid):
             saved_b.insert(1,
              (saved_b[1][0], saved_b[0][1]))
             saved_b.insert(3, (saved_b[0][0], saved_b[1][1]))
-            saved_obj = Polygon(b)
+            saved_obj = Polygon(saved_b)
             if obj.equals(saved_obj):
-                g.logger.debug ('past detection also found {} with matching boundaries, removing'.format(label[idx]))
+                g.logger.debug ('past detection {}@{} exactly matches {}@{} removing'.format(saved_ls[saved_idx],saved_b, label[idx],b))
                 foundMatch = True
                 break
             if obj.almost_equals(saved_obj):
-                g.logger.debug ('past detection also found {} with approximately matching boundaries, removing'.format(label[idx]))
+                g.logger.debug ('past detection {}@{} approximately matches {}@{} removing'.format(saved_ls[saved_idx],saved_b, label[idx],b))
                 foundMatch = True
                 break
         if not foundMatch:
@@ -121,7 +121,7 @@ def processIntersection(bbox, label, conf, match):
 
 def draw_bbox(img, bbox, labels, classes, confidence, color=None, write_conf=False):
 
-    g.logger.debug ("DRAW BBOX={} LAB={}".format(bbox,labels))
+   # g.logger.debug ("DRAW BBOX={} LAB={}".format(bbox,labels))
     slate_colors = [ 
             (39, 174, 96),
             (142, 68, 173),
