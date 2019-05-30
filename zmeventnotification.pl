@@ -58,7 +58,7 @@ use IO::Select;
 # ==========================================================================
 
 
-my $app_version="3.7";
+my $app_version="3.8";
 
 # ==========================================================================
 #
@@ -766,8 +766,8 @@ sub validateZmAuth
 		my $saved_pass = $state->{Password};
 		# perl bcrypt libs can't handle $2b$ or $2y$
 		$saved_pass =~ s/^\$2.\$/\$2a\$/;
-		my $new_hash = Crypt::Eksblowfish::Bcrypt::bcrypt($p, $saved_pass);
 		printDebug ("Comparing using bcrypt $new_hash to $saved_pass");
+		my $new_hash = Crypt::Eksblowfish::Bcrypt::bcrypt($p, $saved_pass);
 		return $new_hash eq $saved_pass;
 	}
     }
