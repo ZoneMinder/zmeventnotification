@@ -245,8 +245,7 @@ else:
                         pred = pred + l + ':{}'.format(c) + ' '
                     else:
                         pred = pred + l + ':{:.0%}'.format(c) + ' '
-
-                seen[l] = 1
+                    seen[l] = 1
     if pred != '':
         pred = pred.rstrip(',')
         pred = prefix + 'detected:' + pred
