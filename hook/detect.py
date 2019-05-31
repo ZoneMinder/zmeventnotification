@@ -13,6 +13,7 @@ import numpy as np
 import re
 import imutils
 import ssl
+import pickle
 #import hashlib
 
 import zmes_hook_helpers.log as log
@@ -175,11 +176,15 @@ for model in g.config['models']:
                     match = match + [cls]
 
         # now filter these with polygon areas
+        #g.logger.debug ("INTERIM BOX = {} {}".format(b,l))
         b, l, c = img.processIntersection(b, l, c, match)
+  
+        
         if b:
-            bbox.append(b)
-            label.append(l)
-            conf.append(c)
+            #g.logger.debug ('ADDING {} and {}'.format(b,l))
+            bbox.extend(b)
+            label.extend(l)
+            conf.extend(c)
             classes.append(m.get_classes())
             g.logger.debug('labels found: {}'.format(l))
             g.logger.debug ('match found in {}, breaking file loop...'.format(filename))
@@ -196,6 +201,8 @@ for model in g.config['models']:
 
 # all models loops, all files looped
 
+#g.logger.debug ('FINAL LIST={} AND {}'.format(bbox,label))
+
 if not matched_file:
         g.logger.debug('No patterns found using any models in all files')
 
@@ -208,9 +215,10 @@ else:
         image = image2
         bbox_f = filename2_bbox
   
-    for idx, b in enumerate(bbox):
-        out = img.draw_bbox(image, b, label[idx], classes[idx], conf[idx], None, False)
-        image = out
+    #for idx, b in enumerate(bbox):
+    #g.logger.debug ("DRAWING {}".format(b))
+    out = img.draw_bbox(image, bbox, label, classes, conf, None, False)
+    image = out
 
     if g.config['write_debug_image'] == 'yes':
         g.logger.debug('Writing out debug bounding box image to {}...'.format(bbox_f))
@@ -224,6 +232,21 @@ else:
             g.logger.error('Could not write image to ZoneMinder as eventpath not present')
     # Now create prediction string
 
+    if g.config['match_past_detections'] == 'yes':
+            # point detections to post processed data set
+            g.logger.debug ('Removing matches to past detections')
+            bbox_t, label_t, conf_t = img.processPastDetection(bbox, label, conf, args['monitorid'])   
+            # save current objects for future comparisons
+            g.logger.debug ('Saving detections for monitor {} for future match'.format(args['monitorid']))
+            mon_file = g.config['image_path'] + '/monitor-'+args['monitorid'] +'-data.pkl'
+            f = open(mon_file, "wb")
+            pickle.dump(bbox,f)
+            pickle.dump(label,f)
+            pickle.dump(conf,f)  
+            bbox = bbox_t
+            label = label_t
+            conf = conf_t
+            
     if g.config['frame_id'] == 'bestmatch':
         if matched_file == filename1:
             prefix = '[a] '  # we will first analyze alarm
@@ -233,15 +256,16 @@ else:
         prefix = '[x] '
 
     pred = ''
-    for idx, la in enumerate(label):
-        seen = {}
-        for l, c in zip(la, conf[idx]):
-            if l not in seen:
-                if g.config['show_percent'] == 'no':
-                    pred = pred + l + ','
-                else:
-                    pred = pred + l + ':{:.0%}'.format(c) + ' '
-                seen[l] = 1
+    seen = {}
+    #g.logger.debug ('CONFIDENCE ARRAY:{}'.format(conf))
+    for idx, l in enumerate(label):
+        if  l not in seen:
+            if g.config['show_percent'] == 'no':
+                pred = pred + l + ','
+            else:
+                pred = pred + l + ':{:.0%}'.format(conf[idx]) + ' '
+            seen[l]=1 
+  
     if pred != '':
         pred = pred.rstrip(',')
         pred = prefix + 'detected:' + pred

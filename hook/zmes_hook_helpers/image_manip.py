@@ -3,6 +3,7 @@ import zmes_hook_helpers.common_params as g
 from shapely.geometry import Polygon
 import cv2
 import numpy as np
+import pickle
 
 # Generic image related algorithms
 
@@ -11,16 +12,74 @@ import numpy as np
 # it also makes sure only patterns specified in detect_pattern are drawn
 
 
+def processPastDetection (bbox, label, conf,mid):
+    mon_file = g.config['image_path'] + '/monitor-'+mid +'-data.pkl' 
+    g.logger.debug ('trying to load '+mon_file) 
+    try:
+        fh = open(mon_file, "rb")
+        saved_bs = pickle.load(fh)
+        saved_ls = pickle.load(fh)
+        saved_cs = pickle.load(fh)
+    except FileNotFoundError:
+        g.logger.debug ('No history data file found for monitor {}'.format(mid))
+        return bbox, label, conf
+    # load past detection
+ 
+   
+    #g.logger.debug ('loaded past: bbox={}, labels={}'.format(saved_bs, saved_ls));
+
+    new_label = []
+    new_bbox = []
+    new_conf = []
+
+    for idx, b in enumerate(bbox): 
+        # iterate list of detections
+        old_b = b
+        it = iter(b)
+        b = list(zip(it,it))
+        
+        b.insert(1, (b[1][0], b[0][1]))
+        b.insert(3, (b[0][0], b[1][1]))
+        #g.logger.debug ("Past detection: {}@{}".format(saved_ls[idx],b))
+        #g.logger.debug ('BOBK={}'.format(b))
+        obj = Polygon(b)
+        foundMatch = False
+        for saved_idx, saved_b in enumerate(saved_bs):
+            # compare current detection element with saved list from file
+            if saved_ls[saved_idx] != label[idx]: continue
+            it = iter(saved_b)
+            saved_b = list(zip(it,it))
+            saved_b.insert(1,
+             (saved_b[1][0], saved_b[0][1]))
+            saved_b.insert(3, (saved_b[0][0], saved_b[1][1]))
+            saved_obj = Polygon(saved_b)
+            if obj.equals(saved_obj):
+                g.logger.debug ('past detection {}@{} exactly matches {}@{} removing'.format(saved_ls[saved_idx],saved_b, label[idx],b))
+                foundMatch = True
+                break
+            if obj.almost_equals(saved_obj):
+                g.logger.debug ('past detection {}@{} approximately matches {}@{} removing'.format(saved_ls[saved_idx],saved_b, label[idx],b))
+                foundMatch = True
+                break
+        if not foundMatch:
+            new_bbox.append(old_b)
+            new_label.append(label[idx])
+            new_conf.append(conf[idx])
+
+    return new_bbox, new_label, new_conf
+
+
 def processIntersection(bbox, label, conf, match):
 
     # bbox is the set of bounding boxes
     # labels are set of corresponding object names
     # conf are set of confidence scores (for hog and face this is set to 1)
     # match contains the list of labels that will be allowed based on detect_pattern
-
+    #g.logger.debug ("PROCESS INTERSECTION {} AND {}".format(bbox,label))
     new_label = []
     new_bbox = []
     new_conf = []
+    #g.logger.debug ("INTERSECTION GOT: {}".format(bbox))
 
     for idx, b in enumerate(bbox):
         doesIntersect = False
@@ -31,8 +90,10 @@ def processIntersection(bbox, label, conf, match):
         old_b = b
         it = iter(b)
         b = list(zip(it, it))
+        #g.logger.debug ("BB={}".format(b))
         b.insert(1, (b[1][0], b[0][1]))
         b.insert(3, (b[0][0], b[1][1]))
+        g.logger.debug ("polygon in process={}".format(b))
         obj = Polygon(b)
 
         for p in g.polygons:
@@ -52,6 +113,7 @@ def processIntersection(bbox, label, conf, match):
             else:  # of poly intersects
                 g.logger.debug('object:{} at {} does not fall into any polygons, removing...'
                                .format(label[idx], obj))
+    #g.logger.debug ("INTERSECTION RETURNING: {} {}".format(new_bbox, new_label))
     return new_bbox, new_label, new_conf
 
 
@@ -59,6 +121,7 @@ def processIntersection(bbox, label, conf, match):
 
 def draw_bbox(img, bbox, labels, classes, confidence, color=None, write_conf=False):
 
+   # g.logger.debug ("DRAW BBOX={} LAB={}".format(bbox,labels))
     slate_colors = [ 
             (39, 174, 96),
             (142, 68, 173),
@@ -82,11 +145,12 @@ def draw_bbox(img, bbox, labels, classes, confidence, color=None, write_conf=Fal
 
     arr_len = len(bgr_slate_colors)
     for i, label in enumerate(labels):
-        #g.logger.debug ('drawing box for: {}'.format(label))
+        #=g.logger.debug ('drawing box for: {}'.format(label))
         color = bgr_slate_colors[i % arr_len]
         if write_conf and confidence:
             label += ' ' + str(format(confidence[i] * 100, '.2f')) + '%'
         # draw bounding box around object
+        #g.logger.debug ("DRAWING RECT={},{} {},{}".format(bbox[i][0], bbox[i][1],bbox[i][2], bbox[i][3]))
         cv2.rectangle(img, (bbox[i][0], bbox[i][1]), (bbox[i][2], bbox[i][3]), color, 2)
 
         # write text 
