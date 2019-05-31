@@ -239,8 +239,13 @@ else:
             if l not in seen:
                 if g.config['show_percent'] == 'no':
                     pred = pred + l + ','
+
                 else:
-                    pred = pred + l + ':{:.0%}'.format(c) + ' '
+                    if type(c) == str:
+                        pred = pred + l + ':{}'.format(c) + ' '
+                    else:
+                        pred = pred + l + ':{:.0%}'.format(c) + ' '
+
                 seen[l] = 1
     if pred != '':
         pred = pred.rstrip(',')
