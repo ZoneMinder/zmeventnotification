@@ -181,6 +181,7 @@ for model in g.config['models']:
   
         
         if b:
+            #g.logger.debug ('ADDING {} and {}'.format(b,l))
             bbox.extend(b)
             label.extend(l)
             conf.extend(c)
@@ -216,7 +217,7 @@ else:
   
     #for idx, b in enumerate(bbox):
     #g.logger.debug ("DRAWING {}".format(b))
-    out = img.draw_bbox(image, b, label, classes, conf, None, False)
+    out = img.draw_bbox(image, bbox, label, classes, conf, None, False)
     image = out
 
     if g.config['write_debug_image'] == 'yes':
@@ -256,12 +257,13 @@ else:
 
     pred = ''
     seen = {}
+    #g.logger.debug ('CONFIDENCE ARRAY:{}'.format(conf))
     for idx, l in enumerate(label):
         if  l not in seen:
             if g.config['show_percent'] == 'no':
                 pred = pred + l + ','
             else:
-                pred = pred + l + ':{:.0%}'.format(c[idx]) + ' '
+                pred = pred + l + ':{:.0%}'.format(conf[idx]) + ' '
             seen[l]=1 
   
     if pred != '':
