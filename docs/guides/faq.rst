@@ -58,6 +58,23 @@ You will also need to install the following module for this work
 ::
 
     perl -MCPAN -e "install Net::MQTT::Simple"
+    
+The MQTT::Simple module is known to work only with Mosquitto as of 10 Jun 2019.  It does not work correctly with the RabbitMQ MQTT plugin.  The easiest workaround if you have an unsupported MQTT system is to install Mosquitto on the Zoneminder system itself and bridge that to RabbitMQ.  You can bind Mosquitto to 127.0.0.1 and disable authentication to keep it simple. The eventserver.pl is then configured to send events to the local Mosquitto.  This is an example known working bridge set up (on Ubuntu, for example, this is put into /etc/mosquitto/conf.d/local.conf):
+
+::
+
+  bind_address 127.0.0.1
+  allow_anonymous true
+  connection bridge-zm2things
+  address 10.10.1.20:1883
+  bridge_protocol_version mqttv311
+  remote_clientid bridge-zm2things
+  remote_username zm
+  remote_password my_mqtt_zm_password
+  try_private false
+  topic # out 0
+
+Set the address, remote_username and remote_password for Mosquitto to use on the RabbitMQ.  Note that this is a one way bridge, so there is only a topic # out 0.  try_private false is needed to avoid a similar error to using MQTT::Simple.  
 
 Disabling security
 ------------------
