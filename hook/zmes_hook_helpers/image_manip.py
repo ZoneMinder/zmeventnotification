@@ -13,6 +13,12 @@ import pickle
 
 
 def processPastDetection (bbox, label, conf,mid):
+
+    try:
+        FileNotFoundError
+    except NameError:
+        FileNotFoundError = IOError
+
     mon_file = g.config['image_path'] + '/monitor-'+mid +'-data.pkl' 
     g.logger.debug ('trying to load '+mon_file) 
     try:
