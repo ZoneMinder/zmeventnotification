@@ -232,7 +232,7 @@ else:
             g.logger.error('Could not write image to ZoneMinder as eventpath not present')
     # Now create prediction string
 
-    if g.config['match_past_detections'] == 'yes':
+    if g.config['match_past_detections'] == 'yes' and args['monitorid']:
             # point detections to post processed data set
             g.logger.debug ('Removing matches to past detections')
             bbox_t, label_t, conf_t = img.processPastDetection(bbox, label, conf, args['monitorid'])   

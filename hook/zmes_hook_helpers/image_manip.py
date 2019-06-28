@@ -19,6 +19,9 @@ def processPastDetection (bbox, label, conf,mid):
     except NameError:
         FileNotFoundError = IOError
 
+    if not mid:
+        g.logger.debug ('Monitor ID not specified, cannot match past detections')
+        return bbox, label, conf
     mon_file = g.config['image_path'] + '/monitor-'+mid +'-data.pkl' 
     g.logger.debug ('trying to load '+mon_file) 
     try:
