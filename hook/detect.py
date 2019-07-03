@@ -23,6 +23,7 @@ import zmes_hook_helpers.common_params as g
 
 import zmes_hook_helpers.yolo as yolo
 import zmes_hook_helpers.hog as hog
+import zmes_hook_helpers.alpr as alpr
 from zmes_hook_helpers.__init__ import __version__
 
 
@@ -77,8 +78,8 @@ else:
     g.logger.debug('TESTING ONLY: reading image from {}'.format(args['file']))
     filename1 = args['file']
     filename1_bbox = append_suffix(filename1, '-bbox')
-    filename2 = ''
-    filename2_bbox = ''
+    filename2 = None
+    filename2_bbox = None
 
 
 start = datetime.datetime.now()
@@ -118,6 +119,11 @@ label = []
 conf = []
 classes = []
 
+use_alpr = True if 'alpr' in g.config['models'] else False
+g.logger.debug ('User ALPR if vehicle found: {}'.format(use_alpr))
+# labels that could have license plates. See https://github.com/pjreddie/darknet/blob/master/data/coco.names
+vehicle_labels = ['car','motorbike', 'bus','truck', 'boat']
+
 for model in g.config['models']:
     # instaniate the right model
     # after instantiation run all files with it, 
@@ -139,6 +145,11 @@ for model in g.config['models']:
         m = face.Face(upsample_times=g.config['face_upsample_times'], 
                         num_jitters=g.config['face_num_jitters'],
                         model=g.config['face_model'])
+    elif model == 'alpr':
+        if g.config['alpr_use_after_detection_only'] == 'yes':
+            g.logger.debug ('Skipping ALPR as it is configured to only be used after object detection')
+            continue # we would have handled it after YOLO
+        
     else:
         g.logger.error('Invalid model {}'.format(model))
         raise ValueError('Invalid model {}'.format(model))
@@ -178,10 +189,21 @@ for model in g.config['models']:
         # now filter these with polygon areas
         #g.logger.debug ("INTERIM BOX = {} {}".format(b,l))
         b, l, c = img.processIntersection(b, l, c, match)
-  
+        if not set(l).isdisjoint(vehicle_labels): 
+            # if this is true, that ,means l has vehicle labels
+            g.logger.debug ('ALPR NEEDS TO BE INVOKED---------------------')
+            alpr = alpr.ALPRPlateRecognizer(apikey=g.config['alpr_key'])
+            alpr_b, alpr_l, alpr_c = alpr.detect(image)
+            g.logger.debug ('ALPR returned: {}, {}, {}'.format(alpr_b, alpr_l, alpr_c))
+            for i, al in enumerate(alpr_l):
+                    g.logger.debug ('ALPR Found {} at {} with score:{}'.format(al, alpr_b[i], alpr_c[i]))
+                    b.append(alpr_b[i])
+                    l.append(al)
+                    c.append(alpr_c[i])
         
         if b:
-            #g.logger.debug ('ADDING {} and {}'.format(b,l))
+            g.logger.debug ('ADDING {} and {}'.format(b,l))
+            # lets do a license plate check now
             bbox.extend(b)
             label.extend(l)
             conf.extend(c)

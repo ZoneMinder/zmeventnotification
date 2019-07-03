@@ -4,3 +4,4 @@ imutils>=0.4.6
 configparser>=3.7.1
 Shapely>=1.6.4.post2
 future
+requests

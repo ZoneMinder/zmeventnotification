@@ -159,6 +159,7 @@ def draw_bbox(img, bbox, labels, classes, confidence, color=None, write_conf=Fal
         if write_conf and confidence:
             label += ' ' + str(format(confidence[i] * 100, '.2f')) + '%'
         # draw bounding box around object
+        
         #g.logger.debug ("DRAWING RECT={},{} {},{}".format(bbox[i][0], bbox[i][1],bbox[i][2], bbox[i][3]))
         cv2.rectangle(img, (bbox[i][0], bbox[i][1]), (bbox[i][2], bbox[i][3]), color, 2)
 
