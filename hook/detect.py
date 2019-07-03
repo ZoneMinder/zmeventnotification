@@ -149,6 +149,9 @@ for model in g.config['models']:
         if g.config['alpr_use_after_detection_only'] == 'yes':
             g.logger.debug ('Skipping ALPR as it is configured to only be used after object detection')
             continue # we would have handled it after YOLO
+        else:
+            g.logger.info ('Standalone ALPR will come later. Please use after yolo')
+            continue
         
     else:
         g.logger.error('Invalid model {}'.format(model))
@@ -191,9 +194,10 @@ for model in g.config['models']:
         b, l, c = img.processIntersection(b, l, c, match)
         if not set(l).isdisjoint(vehicle_labels): 
             # if this is true, that ,means l has vehicle labels
-            g.logger.debug ('ALPR NEEDS TO BE INVOKED---------------------')
+            g.logger.debug ('Invoking ALPR as detected object is a vehicle')
             alpr = alpr.ALPRPlateRecognizer(apikey=g.config['alpr_key'])
-            alpr_b, alpr_l, alpr_c = alpr.detect(image)
+            # don't pass resized image - may be too small
+            alpr_b, alpr_l, alpr_c = alpr.detect(filename)
             g.logger.debug ('ALPR returned: {}, {}, {}'.format(alpr_b, alpr_l, alpr_c))
             for i, al in enumerate(alpr_l):
                     g.logger.debug ('ALPR Found {} at {} with score:{}'.format(al, alpr_b[i], alpr_c[i]))
