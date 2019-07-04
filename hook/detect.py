@@ -122,7 +122,6 @@ classes = []
 use_alpr = True if 'alpr' in g.config['models'] else False
 g.logger.debug ('User ALPR if vehicle found: {}'.format(use_alpr))
 # labels that could have license plates. See https://github.com/pjreddie/darknet/blob/master/data/coco.names
-vehicle_labels = ['car','motorbike', 'bus','truck', 'boat']
 
 for model in g.config['models']:
     # instaniate the right model
@@ -162,6 +161,14 @@ for model in g.config['models']:
     # read the detection pattern we need to apply as a filter
     r = re.compile(g.config['detect_pattern'])
     
+    
+    try_next_image = False # take the best of both images, currently used only by alpr
+    # temporary holders, incase alpr is used but not found
+    saved_bbox = []
+    saved_labels = []
+    saved_conf = []
+    saved_classes = []
+    saved_image = None
     # Apply the model to all files
     for filename in [filename1, filename2]:
         if filename is None: 
@@ -192,33 +199,65 @@ for model in g.config['models']:
         # now filter these with polygon areas
         #g.logger.debug ("INTERIM BOX = {} {}".format(b,l))
         b, l, c = img.processIntersection(b, l, c, match)
-        if not set(l).isdisjoint(vehicle_labels): 
-            # if this is true, that ,means l has vehicle labels
-            g.logger.debug ('Invoking ALPR as detected object is a vehicle')
-            alpr = alpr.ALPRPlateRecognizer(apikey=g.config['alpr_key'])
-            # don't pass resized image - may be too small
-            alpr_b, alpr_l, alpr_c = alpr.detect(filename)
-            g.logger.debug ('ALPR returned: {}, {}, {}'.format(alpr_b, alpr_l, alpr_c))
-            for i, al in enumerate(alpr_l):
-                    g.logger.debug ('ALPR Found {} at {} with score:{}'.format(al, alpr_b[i], alpr_c[i]))
-                    b.append(alpr_b[i])
-                    l.append(al)
-                    c.append(alpr_c[i])
-        
+        if use_alpr:
+            vehicle_labels = ['car','motorbike', 'bus','truck', 'boat']
+            if not set(l).isdisjoint(vehicle_labels): 
+                # if this is true, that ,means l has vehicle labels
+                # this happens after match, so no need to add license plates to filter
+                g.logger.debug ('Invoking ALPR as detected object is a vehicle')
+                alpr_obj = alpr.ALPRPlateRecognizer(apikey=g.config['alpr_key'])
+                # don't pass resized image - may be too small
+                alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)
+                if len (alpr_l):
+                    g.logger.debug ('ALPR returned: {}, {}, {}'.format(alpr_b, alpr_l, alpr_c))
+                    try_next_image = False
+                    for i, al in enumerate(alpr_l):
+                            g.logger.debug ('ALPR Found {} at {} with score:{}'.format(al, alpr_b[i], alpr_c[i]))
+                            b.append(alpr_b[i])
+                            l.append(al)
+                            c.append(alpr_c[i])
+                elif filename == filename1 and filename2: # no plates, but another image to try
+                    g.logger.debug ('We did not find license plates in vehicles, but there is another image to try')
+                    saved_bbox = b
+                    saved_labels = l
+                    saved_conf = c
+                    saved_classes = m.get_classes()
+                    saved_image = image.copy()
+                    try_next_image = True
+                else: # no plates, no more to try
+                    g.logger.debug ('We did not find license plates, and there are no more images to try')
+                    if saved_bbox:
+                        g.logger.debug ('Going back to matches in first image')
+                        b = saved_bbox = b
+                        l = saved_labels = l
+                        c = saved_conf = c
+                        image = saved_image
+                    try_next_image = False
+            else: # objects, no vehicles 
+                g.logger.debug ('There was no vehicle detected here')
+                try_next_image = True
+                saved_bbox = b
+                saved_labels = l
+                saved_conf = c
+                saved_classes = m.get_classes()
+                saved_image = image.copy()
+        else: # usealpr
+            g.logger.debug ('ALPR not in use, no need for look aheads in processing')
         if b:
-            g.logger.debug ('ADDING {} and {}'.format(b,l))
-            # lets do a license plate check now
-            bbox.extend(b)
-            label.extend(l)
-            conf.extend(c)
-            classes.append(m.get_classes())
-            g.logger.debug('labels found: {}'.format(l))
-            g.logger.debug ('match found in {}, breaking file loop...'.format(filename))
-            matched_file = filename
-            break # if we found a match, no need to process the next file
+           # g.logger.debug ('ADDING {} and {}'.format(b,l))
+            if not try_next_image:
+                bbox.extend(b)
+                label.extend(l)
+                conf.extend(c)
+                classes.append(m.get_classes())
+                g.logger.debug('labels found: {}'.format(l))
+                g.logger.debug ('match found in {}, breaking file loop...'.format(filename))
+                matched_file = filename
+                break # if we found a match, no need to process the next file
+            else:
+                g.logger.debug ('Going to try next image before we decide the best one to use')
         else:
             g.logger.debug('No match found in {} using model:{}'.format(filename,model))
-            found_match = False
         # file loop
     # model loop
     if matched_file and g.config['detection_mode'] == 'first':
