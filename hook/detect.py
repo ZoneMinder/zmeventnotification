@@ -259,13 +259,24 @@ for model in g.config['models']:
                             })
                     try_next_image = False
             else: # objects, no vehicles 
-                g.logger.debug ('There was no vehicle detected here')
-                try_next_image = True
-                saved_bbox = b
-                saved_labels = l
-                saved_conf = c
-                saved_classes = m.get_classes()
-                saved_image = image.copy()
+                if filename == filename1 and filename2:
+                    g.logger.debug ('There was no vehicle detected here, but we have another image to try')
+                    try_next_image = True
+                    saved_bbox = b
+                    saved_labels = l
+                    saved_conf = c
+                    saved_classes = m.get_classes()
+                    saved_image = image.copy()
+                else:
+                    g.logger.debug ('No vehicle detected, and no more images to try')
+                    try_next_image = False
+                    for idx, t_l in enumerate(l):
+                        obj_json.append({
+                            'type': 'object',
+                            'label': t_l,
+                            'box': b[idx],
+                            'confidence': c[idx]
+                        })
         else: # usealpr
             g.logger.debug ('ALPR not in use, no need for look aheads in processing')
             # store objects
