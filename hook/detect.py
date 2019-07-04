@@ -329,6 +329,18 @@ else:
     out = img.draw_bbox(image, bbox, label, classes, conf, None, False)
     image = out
 
+    if g.config['frame_id'] == 'bestmatch':
+        if matched_file == filename1:
+            prefix = '[a] '  # we will first analyze alarm
+            frame_type = 'alarm'
+        else:
+            prefix = '[s] '
+            frame_type = 'snapshot'
+    else:
+        prefix = '[x] '
+        frame_type = g.config['frameid']
+
+
     if g.config['write_debug_image'] == 'yes':
         g.logger.debug('Writing out debug bounding box image to {}...'.format(bbox_f))
         cv2.imwrite(bbox_f, image)
@@ -338,9 +350,13 @@ else:
             g.logger.debug('Writing detected image to {}/objdetect.jpg'.format(args['eventpath']))
             cv2.imwrite(args['eventpath'] + '/objdetect.jpg', image)
             jf = args['eventpath'] + '/objects.json'
+            final_json = {
+                'frame': frame_type,
+                'detections': obj_json
+            }
             g.logger.debug ('Writing JSON output to {}'.format(jf))
             with open (jf, 'w') as jo:
-                json.dump(obj_json,jo)
+                json.dump(final_json,jo)
 
 
         else:
@@ -362,14 +378,7 @@ else:
             label = label_t
             conf = conf_t
             
-    if g.config['frame_id'] == 'bestmatch':
-        if matched_file == filename1:
-            prefix = '[a] '  # we will first analyze alarm
-        else:
-            prefix = '[s] '
-    else:
-        prefix = '[x] '
-
+  
     pred = ''
     seen = {}
     #g.logger.debug ('CONFIDENCE ARRAY:{}'.format(conf))
