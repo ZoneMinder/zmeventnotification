@@ -14,6 +14,7 @@ import re
 import imutils
 import ssl
 import pickle
+import json
 #import hashlib
 
 import zmes_hook_helpers.log as log
@@ -84,6 +85,7 @@ else:
 
 start = datetime.datetime.now()
 
+obj_json = []
 # Read images to analyze
 image2 = None
 image1 = cv2.imread(filename1)
@@ -211,11 +213,26 @@ for model in g.config['models']:
                 if len (alpr_l):
                     g.logger.debug ('ALPR returned: {}, {}, {}'.format(alpr_b, alpr_l, alpr_c))
                     try_next_image = False
+                    # First get non plate objects
+                    for idx, t_l in enumerate(l):
+                        obj_json.append( {
+                            'type': 'object',
+                            'label': t_l,
+                            'box':  b[idx],
+                            'confidence': c[idx]
+                        })
+                    # Now add plate objects
                     for i, al in enumerate(alpr_l):
-                            g.logger.debug ('ALPR Found {} at {} with score:{}'.format(al, alpr_b[i], alpr_c[i]))
-                            b.append(alpr_b[i])
-                            l.append(al)
-                            c.append(alpr_c[i])
+                        g.logger.debug ('ALPR Found {} at {} with score:{}'.format(al, alpr_b[i], alpr_c[i]))
+                        b.append(alpr_b[i])
+                        l.append(al)
+                        c.append(alpr_c[i])
+                        obj_json.append( {
+                            'type': 'licenseplate',
+                            'label': al,
+                            'box': alpr_b[i],
+                            'confidence': alpr_c[i]
+                        })
                 elif filename == filename1 and filename2: # no plates, but another image to try
                     g.logger.debug ('We did not find license plates in vehicles, but there is another image to try')
                     saved_bbox = b
@@ -228,10 +245,18 @@ for model in g.config['models']:
                     g.logger.debug ('We did not find license plates, and there are no more images to try')
                     if saved_bbox:
                         g.logger.debug ('Going back to matches in first image')
-                        b = saved_bbox = b
-                        l = saved_labels = l
-                        c = saved_conf = c
+                        b = saved_bbox
+                        l = saved_labels
+                        c = saved_conf
                         image = saved_image
+                        # store non plate objects
+                        for idx, t_l in enumerate(l):
+                            obj_json.append( {
+                                'type': 'object',
+                                'label': t_l,
+                                'box': b[idx],
+                                'confidence': c[idx]
+                            })
                     try_next_image = False
             else: # objects, no vehicles 
                 g.logger.debug ('There was no vehicle detected here')
@@ -243,6 +268,14 @@ for model in g.config['models']:
                 saved_image = image.copy()
         else: # usealpr
             g.logger.debug ('ALPR not in use, no need for look aheads in processing')
+            # store objects
+            for idx, t_l in enumerate(l):
+                obj_json.append( {
+                    'type': 'object',
+                    'label': t_l,
+                    'box': b[idx],
+                    'confidence': c[idx]
+                })
         if b:
            # g.logger.debug ('ADDING {} and {}'.format(b,l))
             if not try_next_image:
@@ -291,8 +324,14 @@ else:
 
     if g.config['write_image_to_zm'] == 'yes':
         if (args['eventpath']):
-            g.logger.debug('Writing detected image to {}'.format(args['eventpath']))
+            g.logger.debug('Writing detected image to {}/objdetect.jpg'.format(args['eventpath']))
             cv2.imwrite(args['eventpath'] + '/objdetect.jpg', image)
+            jf = args['eventpath'] + '/objects.json'
+            g.logger.debug ('Writing JSON output to {}'.format(jf))
+            with open (jf, 'w') as jo:
+                json.dump(obj_json,jo)
+
+
         else:
             g.logger.error('Could not write image to ZoneMinder as eventpath not present')
     # Now create prediction string
