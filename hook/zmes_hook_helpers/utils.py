@@ -187,13 +187,13 @@ def process_config(args, ctx):
     # internal function to parse all keys
         val = config_file[v['section']].get(k,v['default'])
         g.config[k] = _correct_type(val, v['type'])
-
         if k.find('password') == -1:
             dval = g.config[k]
         else:
             dval = '***********'
         #g.logger.debug ('Config: setting {} to {}'.format(k,dval))
-            
+
+    # main        
     try:
         config_file = ConfigParser()
         config_file.read(args['config'])
@@ -211,7 +211,9 @@ def process_config(args, ctx):
         g.logger.info('Log level set to:{}'.format(g.config['log_level']))
         # now read config values
         for k,v in g.config_vals.items():
+            #g.logger.debug ('processing {} {}'.format(k,v))
             _set_config_val(k,v)
+            #g.logger.debug ("done")
         
         
         if g.config['allow_self_signed'] == 'yes':

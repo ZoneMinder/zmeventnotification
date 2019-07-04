@@ -272,6 +272,33 @@ If you select yolo, you can add a ``model_type=tiny`` to use tiny YOLO
 instead of full yolo weights. Again, please readd the comments in
 ``objectconfig.ini``
 
+How to use license plate recognition
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+I use `Plate Recognizer <https://platerecognizer.com>`__ for license plate recognition. It uses a deep learning model that does a far better job than OpenALPR (based on my tests). The class is abstracted, obviously, so in future I may add local models. For now, you will have to get a license key from them (they have a `free tier <https://platerecognizer.com/pricing/>`__ that allows 2500 lookups per month)
+
+To enable alpr, simple add `alpr` to `models`. You will also have to add your license key to the ``[alpr]`` section of ``objdetect.ini``
+
+Note that since this is a remote service hosted by a 3rd party, you can't use ALPR without an internet connection. 
+
+::
+
+  models = yolo,alpr
+
+  [alpr]
+  alpr_service=plate_recognizer
+  alpr_key=<the key>
+  alpr_use_after_detection_only=yes
+
+Leave ``alpr_service`` and ``alpr_use_after_detection_only`` to the default values. 
+
+How license plate recognition will work
+''''''''''''''''''''''''''''''''''''''''
+
+- To save on platerecognizer API calls, the code will only invoke remote APIs if a vehicle is detected
+- This also means you MUST specify yolo along with alpr
+
+
 How to use face recognition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

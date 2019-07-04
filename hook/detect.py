@@ -14,6 +14,7 @@ import re
 import imutils
 import ssl
 import pickle
+import json
 #import hashlib
 
 import zmes_hook_helpers.log as log
@@ -23,6 +24,7 @@ import zmes_hook_helpers.common_params as g
 
 import zmes_hook_helpers.yolo as yolo
 import zmes_hook_helpers.hog as hog
+import zmes_hook_helpers.alpr as alpr
 from zmes_hook_helpers.__init__ import __version__
 
 
@@ -77,12 +79,13 @@ else:
     g.logger.debug('TESTING ONLY: reading image from {}'.format(args['file']))
     filename1 = args['file']
     filename1_bbox = append_suffix(filename1, '-bbox')
-    filename2 = ''
-    filename2_bbox = ''
+    filename2 = None
+    filename2_bbox = None
 
 
 start = datetime.datetime.now()
 
+obj_json = []
 # Read images to analyze
 image2 = None
 image1 = cv2.imread(filename1)
@@ -118,6 +121,10 @@ label = []
 conf = []
 classes = []
 
+use_alpr = True if 'alpr' in g.config['models'] else False
+g.logger.debug ('User ALPR if vehicle found: {}'.format(use_alpr))
+# labels that could have license plates. See https://github.com/pjreddie/darknet/blob/master/data/coco.names
+
 for model in g.config['models']:
     # instaniate the right model
     # after instantiation run all files with it, 
@@ -139,6 +146,14 @@ for model in g.config['models']:
         m = face.Face(upsample_times=g.config['face_upsample_times'], 
                         num_jitters=g.config['face_num_jitters'],
                         model=g.config['face_model'])
+    elif model == 'alpr':
+        if g.config['alpr_use_after_detection_only'] == 'yes':
+            g.logger.debug ('Skipping ALPR as it is configured to only be used after object detection')
+            continue # we would have handled it after YOLO
+        else:
+            g.logger.info ('Standalone ALPR will come later. Please use after yolo')
+            continue
+        
     else:
         g.logger.error('Invalid model {}'.format(model))
         raise ValueError('Invalid model {}'.format(model))
@@ -148,6 +163,14 @@ for model in g.config['models']:
     # read the detection pattern we need to apply as a filter
     r = re.compile(g.config['detect_pattern'])
     
+    
+    try_next_image = False # take the best of both images, currently used only by alpr
+    # temporary holders, incase alpr is used but not found
+    saved_bbox = []
+    saved_labels = []
+    saved_conf = []
+    saved_classes = []
+    saved_image = None
     # Apply the model to all files
     for filename in [filename1, filename2]:
         if filename is None: 
@@ -178,21 +201,107 @@ for model in g.config['models']:
         # now filter these with polygon areas
         #g.logger.debug ("INTERIM BOX = {} {}".format(b,l))
         b, l, c = img.processIntersection(b, l, c, match)
-  
-        
+        if use_alpr:
+            vehicle_labels = ['car','motorbike', 'bus','truck', 'boat']
+            if not set(l).isdisjoint(vehicle_labels): 
+                # if this is true, that ,means l has vehicle labels
+                # this happens after match, so no need to add license plates to filter
+                g.logger.debug ('Invoking ALPR as detected object is a vehicle')
+                alpr_obj = alpr.ALPRPlateRecognizer(apikey=g.config['alpr_key'])
+                # don't pass resized image - may be too small
+                alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)
+                if len (alpr_l):
+                    g.logger.debug ('ALPR returned: {}, {}, {}'.format(alpr_b, alpr_l, alpr_c))
+                    try_next_image = False
+                    # First get non plate objects
+                    for idx, t_l in enumerate(l):
+                        obj_json.append( {
+                            'type': 'object',
+                            'label': t_l,
+                            'box':  b[idx],
+                            'confidence': c[idx]
+                        })
+                    # Now add plate objects
+                    for i, al in enumerate(alpr_l):
+                        g.logger.debug ('ALPR Found {} at {} with score:{}'.format(al, alpr_b[i], alpr_c[i]))
+                        b.append(alpr_b[i])
+                        l.append(al)
+                        c.append(alpr_c[i])
+                        obj_json.append( {
+                            'type': 'licenseplate',
+                            'label': al,
+                            'box': alpr_b[i],
+                            'confidence': alpr_c[i]
+                        })
+                elif filename == filename1 and filename2: # no plates, but another image to try
+                    g.logger.debug ('We did not find license plates in vehicles, but there is another image to try')
+                    saved_bbox = b
+                    saved_labels = l
+                    saved_conf = c
+                    saved_classes = m.get_classes()
+                    saved_image = image.copy()
+                    try_next_image = True
+                else: # no plates, no more to try
+                    g.logger.debug ('We did not find license plates, and there are no more images to try')
+                    if saved_bbox:
+                        g.logger.debug ('Going back to matches in first image')
+                        b = saved_bbox
+                        l = saved_labels
+                        c = saved_conf
+                        image = saved_image
+                        # store non plate objects
+                        for idx, t_l in enumerate(l):
+                            obj_json.append( {
+                                'type': 'object',
+                                'label': t_l,
+                                'box': b[idx],
+                                'confidence': c[idx]
+                            })
+                    try_next_image = False
+            else: # objects, no vehicles 
+                if filename == filename1 and filename2:
+                    g.logger.debug ('There was no vehicle detected here, but we have another image to try')
+                    try_next_image = True
+                    saved_bbox = b
+                    saved_labels = l
+                    saved_conf = c
+                    saved_classes = m.get_classes()
+                    saved_image = image.copy()
+                else:
+                    g.logger.debug ('No vehicle detected, and no more images to try')
+                    try_next_image = False
+                    for idx, t_l in enumerate(l):
+                        obj_json.append({
+                            'type': 'object',
+                            'label': t_l,
+                            'box': b[idx],
+                            'confidence': c[idx]
+                        })
+        else: # usealpr
+            g.logger.debug ('ALPR not in use, no need for look aheads in processing')
+            # store objects
+            for idx, t_l in enumerate(l):
+                obj_json.append( {
+                    'type': 'object',
+                    'label': t_l,
+                    'box': b[idx],
+                    'confidence': c[idx]
+                })
         if b:
-            #g.logger.debug ('ADDING {} and {}'.format(b,l))
-            bbox.extend(b)
-            label.extend(l)
-            conf.extend(c)
-            classes.append(m.get_classes())
-            g.logger.debug('labels found: {}'.format(l))
-            g.logger.debug ('match found in {}, breaking file loop...'.format(filename))
-            matched_file = filename
-            break # if we found a match, no need to process the next file
+           # g.logger.debug ('ADDING {} and {}'.format(b,l))
+            if not try_next_image:
+                bbox.extend(b)
+                label.extend(l)
+                conf.extend(c)
+                classes.append(m.get_classes())
+                g.logger.debug('labels found: {}'.format(l))
+                g.logger.debug ('match found in {}, breaking file loop...'.format(filename))
+                matched_file = filename
+                break # if we found a match, no need to process the next file
+            else:
+                g.logger.debug ('Going to try next image before we decide the best one to use')
         else:
             g.logger.debug('No match found in {} using model:{}'.format(filename,model))
-            found_match = False
         # file loop
     # model loop
     if matched_file and g.config['detection_mode'] == 'first':
@@ -220,14 +329,36 @@ else:
     out = img.draw_bbox(image, bbox, label, classes, conf, None, False)
     image = out
 
+    if g.config['frame_id'] == 'bestmatch':
+        if matched_file == filename1:
+            prefix = '[a] '  # we will first analyze alarm
+            frame_type = 'alarm'
+        else:
+            prefix = '[s] '
+            frame_type = 'snapshot'
+    else:
+        prefix = '[x] '
+        frame_type = g.config['frameid']
+
+
     if g.config['write_debug_image'] == 'yes':
         g.logger.debug('Writing out debug bounding box image to {}...'.format(bbox_f))
         cv2.imwrite(bbox_f, image)
 
     if g.config['write_image_to_zm'] == 'yes':
         if (args['eventpath']):
-            g.logger.debug('Writing detected image to {}'.format(args['eventpath']))
+            g.logger.debug('Writing detected image to {}/objdetect.jpg'.format(args['eventpath']))
             cv2.imwrite(args['eventpath'] + '/objdetect.jpg', image)
+            jf = args['eventpath'] + '/objects.json'
+            final_json = {
+                'frame': frame_type,
+                'detections': obj_json
+            }
+            g.logger.debug ('Writing JSON output to {}'.format(jf))
+            with open (jf, 'w') as jo:
+                json.dump(final_json,jo)
+
+
         else:
             g.logger.error('Could not write image to ZoneMinder as eventpath not present')
     # Now create prediction string
@@ -247,14 +378,7 @@ else:
             label = label_t
             conf = conf_t
             
-    if g.config['frame_id'] == 'bestmatch':
-        if matched_file == filename1:
-            prefix = '[a] '  # we will first analyze alarm
-        else:
-            prefix = '[s] '
-    else:
-        prefix = '[x] '
-
+  
     pred = ''
     seen = {}
     #g.logger.debug ('CONFIDENCE ARRAY:{}'.format(conf))

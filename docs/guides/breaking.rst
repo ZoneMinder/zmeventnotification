@@ -1,6 +1,10 @@
 Breaking Changes
 ----------------
 
+Version 3.9 onwards
+~~~~~~~~~~~~~~~~~~~~
+- Hooks now add ALPR, so you need to run `sudo -H pip install -r requirements.txt` again
+- See modified objectconfig.ini if you want to add ALPR. Currently works with platerecognizer.com, so you will need an API key. See hooks docs for more info
 
 Version 3.7 onwards
 ~~~~~~~~~~~~~~~~~~~

@@ -197,6 +197,23 @@ config_vals = {
             'section': 'face',
             'default': '/var/lib/zmeventnotification/known_faces',
             'type': 'string',
+        },
+
+        # ALPR
+        'alpr_service': {
+            'section': 'alpr',
+            'default': 'plate_recognizer',
+            'type': 'string',
+        },
+        'alpr_key': {
+            'section': 'alpr',
+            'default': '',
+            'type': 'string',
+        },
+        'alpr_use_after_detection_only': {
+            'section': 'alpr',
+            'type': 'string',
+            'default': 'yes',
         }
 
 

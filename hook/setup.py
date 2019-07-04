@@ -40,6 +40,7 @@ setup(name = NAME,
                     'zmes_hook_helpers.yolo',
                     'zmes_hook_helpers.hog',
                     'zmes_hook_helpers.face',
+                    'zmes_hook_helpers.alpr',
                     'zmes_hook_helpers.image_manip',
                     'zmes_hook_helpers.utils']
       )
