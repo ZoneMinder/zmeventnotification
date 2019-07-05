@@ -65,7 +65,7 @@ class ALPRPlateRecognizer:
                     g.logger.debug ('ALPR JSON: {}'.format(response))
 
         rescale = False
-        if g.config['resize']:    
+        if g.config['resize'] != 'no':    
             img = cv2.imread(filename)
             img_new = imutils.resize(img, width=min(int(g.config['resize']), img.shape[1]))
             oldh,oldw,_ = img.shape

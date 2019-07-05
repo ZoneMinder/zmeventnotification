@@ -62,7 +62,7 @@ config_vals = {
 
         'resize':{
             'section': 'general',
-            'default': '1600',
+            'default': 'no',
             'type': 'string'
         },
         'delete_after_analyze':{

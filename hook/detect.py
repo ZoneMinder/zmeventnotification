@@ -102,8 +102,7 @@ if filename2: # may be none
 if not g.polygons:
         g.polygons.append({'name': 'full_image', 'value': [(0, 0), (oldw, 0), (oldw, oldh), (0, oldh)]})
         g.logger.debug('No polygon area specfied, so adding a full image polygon:{}'.format(g.polygons))
-if g.config['resize']:
-    
+if g.config['resize'] != 'no':
     g.logger.debug('resizing to {} before analysis...'.format(g.config['resize']))
     image1 = imutils.resize(image1, width=min(int(g.config['resize']), image1.shape[1]))
     if image2 is not None:
