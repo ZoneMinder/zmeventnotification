@@ -29,7 +29,9 @@ class ALPRPlateRecognizer:
                             )
         except requests.exceptions.RequestException as e:
             response = {'error': str(e)}
-        return response.json()
+        else:
+            response = response.json()
+        return response
 
     def detect(self,object):
         bbox = []
