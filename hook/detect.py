@@ -148,10 +148,10 @@ for model in g.config['models']:
                         model=g.config['face_model'])
     elif model == 'alpr':
         if g.config['alpr_use_after_detection_only'] == 'yes':
-            g.logger.debug ('Skipping ALPR as it is configured to only be used after object detection')
+            #g.logger.debug ('Skipping ALPR as it is configured to only be used after object detection')
             continue # we would have handled it after YOLO
         else:
-            g.logger.info ('Standalone ALPR will come later. Please use after yolo')
+            g.logger.info ('Standalone ALPR is not supported today. Please use after yolo')
             continue
         
     else:
@@ -171,6 +171,7 @@ for model in g.config['models']:
     saved_conf = []
     saved_classes = []
     saved_image = None
+    saved_file = None
     # Apply the model to all files
     for filename in [filename1, filename2]:
         if filename is None: 
@@ -210,8 +211,9 @@ for model in g.config['models']:
                 alpr_obj = alpr.ALPRPlateRecognizer(apikey=g.config['alpr_key'])
                 # don't pass resized image - may be too small
                 alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)
+                alpr_b, alpr_l, alpr_c = img.getValidPlateDetections(alpr_b, alpr_l, alpr_c)
                 if len (alpr_l):
-                    g.logger.debug ('ALPR returned: {}, {}, {}'.format(alpr_b, alpr_l, alpr_c))
+                    #g.logger.debug ('ALPR returned: {}, {}, {}'.format(alpr_b, alpr_l, alpr_c))
                     try_next_image = False
                     # First get non plate objects
                     for idx, t_l in enumerate(l):
@@ -240,6 +242,7 @@ for model in g.config['models']:
                     saved_conf = c
                     saved_classes = m.get_classes()
                     saved_image = image.copy()
+                    saved_file = filename
                     try_next_image = True
                 else: # no plates, no more to try
                     g.logger.debug ('We did not find license plates, and there are no more images to try')
@@ -249,6 +252,7 @@ for model in g.config['models']:
                         l = saved_labels
                         c = saved_conf
                         image = saved_image
+                        filename = saved_file
                         # store non plate objects
                         for idx, t_l in enumerate(l):
                             obj_json.append( {
@@ -267,8 +271,16 @@ for model in g.config['models']:
                     saved_conf = c
                     saved_classes = m.get_classes()
                     saved_image = image.copy()
+                    saved_file = filename
                 else:
                     g.logger.debug ('No vehicle detected, and no more images to try')
+                    if saved_bbox:
+                        g.logger.debug ('Going back to matches in first image')
+                        b = saved_bbox
+                        l = saved_labels
+                        c = saved_conf
+                        image = saved_image
+                        filename = saved_file
                     try_next_image = False
                     for idx, t_l in enumerate(l):
                         obj_json.append({
