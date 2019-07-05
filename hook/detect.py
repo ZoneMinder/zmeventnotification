@@ -331,10 +331,10 @@ if not matched_file:
 else:
     # we have matches
     if matched_file == filename1:
-        image = image1
+        #image = image1
         bbox_f = filename1_bbox
     else:
-        image = image2
+        #image = image2
         bbox_f = filename2_bbox
   
     #for idx, b in enumerate(bbox):
