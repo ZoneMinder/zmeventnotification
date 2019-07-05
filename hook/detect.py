@@ -182,7 +182,9 @@ for model in g.config['models']:
             g.logger.debug ('Skipping {} as we earlier matched {}'.format(filename, matched_file))
             continue
         g.logger.debug('Using model: {} with {}'.format(model, filename))
-        image = image1 if filename==filename1 else image2
+
+        image = image1 if filename==filename2 else image2
+
         b, l, c = m.detect(image)
         g.logger.debug('|--> model:{} detection took: {}s'.format(model,(datetime.datetime.now() - t_start).total_seconds()))
         t_start = datetime.datetime.now()
@@ -203,10 +205,10 @@ for model in g.config['models']:
         b, l, c = img.processIntersection(b, l, c, match)
         if use_alpr:
             vehicle_labels = ['car','motorbike', 'bus','truck', 'boat']
-            if not set(l).isdisjoint(vehicle_labels): 
+            if not set(l).isdisjoint(vehicle_labels) or try_next_image: 
                 # if this is true, that ,means l has vehicle labels
                 # this happens after match, so no need to add license plates to filter
-                g.logger.debug ('Invoking ALPR as detected object is a vehicle')
+                g.logger.debug ('Invoking ALPR as detected object is a vehicle or, we are trying hard to look for plates...')
                 alpr_obj = alpr.ALPRPlateRecognizer(url=g.config['alpr_url'], apikey=g.config['alpr_key'], regions=g.config['alpr_regions'])
                 # don't pass resized image - may be too small
                 alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)
