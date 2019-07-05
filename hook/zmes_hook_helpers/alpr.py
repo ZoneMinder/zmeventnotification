@@ -5,18 +5,30 @@ import cv2
 import requests
 import os
 import imutils
+import json
 
 class ALPRPlateRecognizer:
-    def __init__(self, apikey=None, tempdir='/tmp'):
+    def __init__(self, apikey=None, regions=None, tempdir='/tmp'):
         if not apikey:
             raise ValueError ('Invalid or missing API key passed')
         self.apikey = apikey
         self.tempdir = tempdir
-        g.logger.debug ('Plate Recognizer initialized')
+        self.regions = regions
+        g.logger.debug ('Plate Recognizer initialized with regions:{}'.format(self.regions))
 
     def setkey(self, key=None):
         self.apikey = key
         g.logger.debug ('Key changed')
+    
+    def stats(self):
+        try:
+            response = requests.get(
+                            'https://api.platerecognizer.com/v1/statistics/',
+                            headers={'Authorization': 'Token ' + self.apikey}
+                            )
+        except requests.exceptions.RequestException as e:
+            response = {'error': str(e)}
+        return response.json()
 
     def detect(self,object):
         bbox = []
@@ -32,11 +44,15 @@ class ALPRPlateRecognizer:
             g.logger.debug ('supplied object is a file')
             filename = object
             remove_temp = False
+        if g.config['alpr_stats'] == 'yes':
+            g.logger.debug ('Plate Recognizer API usage stats: {}'.format(json.dumps(self.stats())))
         with open (filename, 'rb') as fp:
             try:
+                payload = self.regions
                 response = requests.post(
                         'https://api.platerecognizer.com/v1/plate-reader/',
                         files=dict(upload=fp),
+                        data=payload,
                         headers={'Authorization': 'Token ' + self.apikey})
             except requests.exceptions.RequestException as e: 
                     response = {'error': 'Plate recognizer rejected the upload. You either have a bad API key or a bad image', 'results': []}

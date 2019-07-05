@@ -214,7 +214,18 @@ config_vals = {
             'section': 'alpr',
             'type': 'string',
             'default': 'yes',
-        }
+        },
+        'alpr_regions':{
+            'section': 'alpr',
+            'default': 'None',
+            'type': 'eval'
+        },
+        'alpr_stats':{
+            'section': 'alpr',
+            'default': 'no',
+            'type': 'string'
+        },
+
 
 
     }
