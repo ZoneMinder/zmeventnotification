@@ -338,7 +338,7 @@ else:
             frame_type = 'snapshot'
     else:
         prefix = '[x] '
-        frame_type = g.config['frameid']
+        frame_type = g.config['frame_id']
 
 
     if g.config['write_debug_image'] == 'yes':
