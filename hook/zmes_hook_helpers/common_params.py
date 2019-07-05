@@ -205,6 +205,11 @@ config_vals = {
             'default': 'plate_recognizer',
             'type': 'string',
         },
+        'alpr_url': {
+            'section': 'alpr',
+            'default': 'https://api.platerecognizer.com/v1',
+            'type': 'string',
+        },
         'alpr_key': {
             'section': 'alpr',
             'default': '',

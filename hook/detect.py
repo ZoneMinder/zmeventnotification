@@ -208,7 +208,7 @@ for model in g.config['models']:
                 # if this is true, that ,means l has vehicle labels
                 # this happens after match, so no need to add license plates to filter
                 g.logger.debug ('Invoking ALPR as detected object is a vehicle')
-                alpr_obj = alpr.ALPRPlateRecognizer(apikey=g.config['alpr_key'], regions=g.config['alpr_regions'])
+                alpr_obj = alpr.ALPRPlateRecognizer(url=g.config['alpr_url'], apikey=g.config['alpr_key'], regions=g.config['alpr_regions'])
                 # don't pass resized image - may be too small
                 alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)
                 alpr_b, alpr_l, alpr_c = img.getValidPlateDetections(alpr_b, alpr_l, alpr_c)

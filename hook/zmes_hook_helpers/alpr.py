@@ -8,13 +8,14 @@ import imutils
 import json
 
 class ALPRPlateRecognizer:
-    def __init__(self, apikey=None, regions=None, tempdir='/tmp'):
+    def __init__(self, url=None, apikey=None, regions=None, tempdir='/tmp'):
         if not apikey:
             raise ValueError ('Invalid or missing API key passed')
         self.apikey = apikey
         self.tempdir = tempdir
         self.regions = regions
-        g.logger.debug ('Plate Recognizer initialized with regions:{}'.format(self.regions))
+        self.url = url
+        g.logger.debug ('Plate Recognizer initialized with regions:{} and base url:{}'.format(self.regions, self.url))
 
     def setkey(self, key=None):
         self.apikey = key
@@ -23,7 +24,7 @@ class ALPRPlateRecognizer:
     def stats(self):
         try:
             response = requests.get(
-                            'https://api.platerecognizer.com/v1/statistics/',
+                            self.url+'/statistics/',
                             headers={'Authorization': 'Token ' + self.apikey}
                             )
         except requests.exceptions.RequestException as e:
@@ -50,7 +51,7 @@ class ALPRPlateRecognizer:
             try:
                 payload = self.regions
                 response = requests.post(
-                        'https://api.platerecognizer.com/v1/plate-reader/',
+                        self.url+'/plate-reader/',
                         files=dict(upload=fp),
                         data=payload,
                         headers={'Authorization': 'Token ' + self.apikey})
