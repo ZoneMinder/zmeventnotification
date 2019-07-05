@@ -230,7 +230,20 @@ config_vals = {
             'default': 'no',
             'type': 'string'
         },
-
-
+        'alpr_min_dscore':{
+            'section': 'alpr',
+            'default': '0.3',
+            'type': 'float'
+        },
+        'alpr_min_dscore':{
+            'section': 'alpr',
+            'default': '0.5',
+            'type': 'float'
+        },
+        'alpr_min_score':{
+            'section': 'alpr',
+            'default': '0.5',
+            'type': 'float'
+        },
 
     }

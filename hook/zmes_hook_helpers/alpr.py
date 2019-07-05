@@ -85,11 +85,16 @@ class ALPRPlateRecognizer:
 
         for plates in response['results']:
             label = plates['plate']
-            x1 = round(int(plates['box']['xmin']) * xfactor)
-            y1 = round(int(plates['box']['ymin']) * yfactor)
-            x2 = round(int(plates['box']['xmax']) * xfactor)
-            y2 = round(int(plates['box']['ymax']) * yfactor)
-            labels.append(label)
-            bbox.append( [x1,y1,x2,y2])
-            confs.append(plates['score'])
+            dscore = plates['dscore']
+            score = plates['score']
+            if dscore >= g.config['alpr_min_dscore'] and score >= g.config['alpr_min_score']:
+                x1 = round(int(plates['box']['xmin']) * xfactor)
+                y1 = round(int(plates['box']['ymin']) * yfactor)
+                x2 = round(int(plates['box']['xmax']) * xfactor)
+                y2 = round(int(plates['box']['ymax']) * yfactor)
+                labels.append(label)
+                bbox.append( [x1,y1,x2,y2])
+                confs.append(plates['score'])
+            else:
+                g.logger.debug ('ALPR: discarding plate:{} because its dscore:{}/score:{} are not in range of configured dscore:{} score:{}'.format(label,dscore,score, g.config['alpr_min_dscore'], g.config['alpr_min_score']))
         return (bbox, labels, confs)
