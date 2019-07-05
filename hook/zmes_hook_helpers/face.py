@@ -97,6 +97,6 @@ class Face:
             # convert to left top, right bottom
             matched_face_names.append('face')
             matched_face_rects.append((loc[3], loc[0], loc[1], loc[2]))
-            conf.append('1')
+            conf.append(1)
         #rects = self._rescale_rects(matched_face_rects)
         return matched_face_rects, matched_face_names, conf

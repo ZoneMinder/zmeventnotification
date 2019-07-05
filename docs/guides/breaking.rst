@@ -1,6 +1,15 @@
 Breaking Changes
 ----------------
 
+Version 3.9 onwards
+~~~~~~~~~~~~~~~~~~~~
+- Hooks now add ALPR, so you need to run `sudo -H pip install -r requirements.txt` again
+- See modified objectconfig.ini if you want to add ALPR. Currently works with platerecognizer.com, so you will need an API key. See hooks docs for more info
+
+Version 3.7 onwards
+~~~~~~~~~~~~~~~~~~~
+- There were some significant changes to ZM (will be part of 1.34), which includes migration to Bcrypt for passwords. Changes were made to support Bcrypt, which means you will have to add additional libraries. See the installation guide.
+
 version 3.3 onwards
 ~~~~~~~~~~~~~~~~~~~
 

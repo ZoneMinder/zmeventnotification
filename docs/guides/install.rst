@@ -30,16 +30,18 @@ to get into the CPAN shell and install it from the shell as a 2 step
 process. You'd do that using ``sudo perl -MCPAN -e shell`` and then
 whilst inside the shell, ``install Module::Name``)
 
--  Crypt::MySQL
+-  Crypt::MySQL (if you have updated to ZM 1.34, this is no longer needed)
 -  Net::WebSocket::Server
 -  Config::IniFiles (you may already have this installed)
+-  Crypt::Eksblowfish::Bcrypt (if you have updated to ZM 1.34, you will already have this)
 
 Installing these dependencies is as simple as:
 
 ::
 
-    perl -MCPAN -e "install Crypt::MySQL"
-    perl -MCPAN -e "install Config::IniFiles"
+    sudo perl -MCPAN -e "install Crypt::MySQL"
+    sudo perl -MCPAN -e "install Config::IniFiles"
+    sudo perl -MCPAN -e "install Crypt::Eksblowfish::Bcrypt"
 
 If after installing them you still see errors about these libraries
 missing, please launch a CPAN shell - see General Note above.
@@ -50,6 +52,13 @@ aaronl)
 ::
 
     sudo apt-get install libcrypt-mysql-perl
+    
+If you face issues installing Crypt::Eksblowfish::Bcrypt, this this instead:
+
+::
+
+    sudo apt-get install libcrypt-eksblowfish-perl
+
 
 If there are issues installing Config::IniFiles and the errors are
 related to Module::Build missing, use following command to get this

@@ -31,6 +31,6 @@ class Hog:
         for i in r:
             labels.append('person')
             classes.append('person')
-            conf.append('1')
+            conf.append(1)
 
         return r, labels, conf

@@ -58,6 +58,23 @@ You will also need to install the following module for this work
 ::
 
     perl -MCPAN -e "install Net::MQTT::Simple"
+    
+The MQTT::Simple module is known to work only with Mosquitto as of 10 Jun 2019.  It does not work correctly with the RabbitMQ MQTT plugin.  The easiest workaround if you have an unsupported MQTT system is to install Mosquitto on the Zoneminder system itself and bridge that to RabbitMQ.  You can bind Mosquitto to 127.0.0.1 and disable authentication to keep it simple. The eventserver.pl is then configured to send events to the local Mosquitto.  This is an example known working bridge set up (on Ubuntu, for example, this is put into /etc/mosquitto/conf.d/local.conf):
+
+::
+
+  bind_address 127.0.0.1
+  allow_anonymous true
+  connection bridge-zm2things
+  address 10.10.1.20:1883
+  bridge_protocol_version mqttv311
+  remote_clientid bridge-zm2things
+  remote_username zm
+  remote_password my_mqtt_zm_password
+  try_private false
+  topic # out 0
+
+Set the address, remote_username and remote_password for Mosquitto to use on the RabbitMQ.  Note that this is a one way bridge, so there is only a topic # out 0.  try_private false is needed to avoid a similar error to using MQTT::Simple.  
 
 Disabling security
 ------------------
@@ -129,7 +146,7 @@ configuration as follows:
     SSL cert file ................. /etc/zm/apache2/ssl/zoneminder.crt
     SSL key file .................. /etc/zm/apache2/ssl/zoneminder.key
 
-    Verbose ....................... false
+    console_logs .................. false
     Read alarm cause .............. true
     Tag alarm event id ............ false
     Use custom notification sound . false
@@ -236,7 +253,7 @@ the output:
 2. Do a ``ps -aef | grep zmevent`` and make sure no stale processes are
    running
 3. Edit your ``/etc/zm/zmeventnotification.ini`` and make sure
-   ``verbose = 1`` to get verbose logs
+   ``console_logs = yes`` to get console debug logs
 4. Run the server manually by doing
    ``sudo -u www-data /usr/bin/zmeventnotification.pl`` (replace with
    ``www-data`` with ``apache`` depending on your OS)
@@ -396,7 +413,7 @@ Here is how to debug and report:
    doesn't show existing processes (ignore the one that says
    ``grep <something>``)
 -  Edit ``zmeventnotification.ini`` (typically in ``/etc/zm/``) and make
-   sure ``verbose = 1`` is set. This will print more logs on the
+   sure ``console_logs = yes`` is set. This will print more logs on the
    console. Make sure you turn this off again before switching back to
    daemon mode.
 -  Start a terminal (lets call it Terminal-Log) to tail logs like so

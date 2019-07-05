@@ -89,9 +89,9 @@ class Yolo:
             y = box[1]
             w = box[2]
             h = box[3]
-            bbox.append([int(round(x)), int(round(y)), int(round(x + w)), int(round(y + h))])
+            bbox.append( [int(round(x)), int(round(y)), int(round(x + w)), int(round(y + h))])
             label.append(str(self.classes[class_ids[i]]))
             conf.append(confidences[i])
-
+        #g.logger.debug ("YOLO bbox={}".format(bbox))
         return bbox, label, conf                                   
 
