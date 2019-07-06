@@ -265,7 +265,11 @@ for model in g.config['models']:
                     try_next_image = False
             else: # objects, no vehicles 
                 if filename == filename1 and filename2:
-                    g.logger.debug ('There was no vehicle detected here, but we have another image to try')
+                    g.logger.debug ('There was no vehicle detected by Yolo in this image')
+                    '''
+                    # For now, don't force ALPR in the next (snapshot image) 
+                    # only do it if yolo gets a vehicle there
+                    # may change this later
                     try_next_image = True
                     saved_bbox = b
                     saved_labels = l
@@ -273,6 +277,7 @@ for model in g.config['models']:
                     saved_classes = m.get_classes()
                     saved_image = image.copy()
                     saved_file = filename
+                    '''
                 else:
                     g.logger.debug ('No vehicle detected, and no more images to try')
                     if saved_bbox:
