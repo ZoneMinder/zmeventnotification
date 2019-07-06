@@ -183,7 +183,7 @@ for model in g.config['models']:
             continue
         g.logger.debug('Using model: {} with {}'.format(model, filename))
 
-        image = image1 if filename==filename2 else image2
+        image = image1 if filename==filename1 else image2
 
         b, l, c = m.detect(image)
         g.logger.debug('|--> model:{} detection took: {}s'.format(model,(datetime.datetime.now() - t_start).total_seconds()))
