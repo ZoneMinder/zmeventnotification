@@ -245,5 +245,10 @@ config_vals = {
             'default': '0.5',
             'type': 'float'
         },
+        'alpr_country':{
+            'section': 'alpr',
+            'default': 'us',
+            'type': 'string'
+        },
 
     }
