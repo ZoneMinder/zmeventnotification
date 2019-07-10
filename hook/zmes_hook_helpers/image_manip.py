@@ -79,7 +79,6 @@ def processPastDetection (bbox, label, conf,mid):
 
 
 def processIntersection(bbox, label, conf, match):
-
     # bbox is the set of bounding boxes
     # labels are set of corresponding object names
     # conf are set of confidence scores (for hog and face this is set to 1)
@@ -100,11 +99,11 @@ def processIntersection(bbox, label, conf, match):
         it = iter(b)
         b = list(zip(it, it))
         #g.logger.debug ("BB={}".format(b))
+        #g.logger.debug ("BEFORE INSERT: {}".format(b))
         b.insert(1, (b[1][0], b[0][1]))
-        b.insert(3, (b[0][0], b[1][1]))
-        g.logger.debug ("polygon in process={}".format(b))
+        b.insert(3, (b[0][0], b[2][1]))
+        g.logger.debug ("intersection: polygon in process={}".format(b))
         obj = Polygon(b)
-
         for p in g.polygons:
             poly = Polygon(p['value'])
             if obj.intersects(poly):
@@ -118,11 +117,54 @@ def processIntersection(bbox, label, conf, match):
                                    .format(p['name'], label[idx], b, g.config['detect_pattern']))
                 doesIntersect = True
                 break
+        # out of poly loop
+        if not doesIntersect:
+            g.logger.debug('object:{} at {} does not fall into any polygons, removing...'
+                            .format(label[idx], obj))
+    #out of object loop
+    return new_bbox, new_label, new_conf
 
-            else:  # of poly intersects
-                g.logger.debug('object:{} at {} does not fall into any polygons, removing...'
-                               .format(label[idx], obj))
-    #g.logger.debug ("INTERSECTION RETURNING: {} {}".format(new_bbox, new_label))
+
+def getValidPlateDetections(bbox, label, conf):
+    # FIXME: merge this into the function above and do it correctly
+    # bbox is the set of bounding boxes
+    # labels are set of corresponding object names
+    # conf are set of confidence scores 
+    new_label = []
+    new_bbox = []
+    new_conf = []
+    g.logger.debug ('Checking vehicle plates for validity')
+    for idx, b in enumerate(bbox):
+        old_b = b
+        it = iter(b)
+        b = list(zip(it, it))
+        #g.logger.debug ("BB={}".format(b))
+        b.insert(1, (b[1][0], b[0][1]))
+        b.insert(3, (b[0][0], b[2][1]))
+        #g.logger.debug ("valid plate: polygon in process={}".format(b))
+        obj = Polygon(b)
+        doesIntersect = False
+        for p in g.polygons:
+           # g.logger.debug ("valid plate: mask in process={}".format(p['value']))
+            poly = Polygon(p['value'])
+            # Lets make sure the license plate doesn't cover the full polygon area
+            # if it did, its very likey a bogus reading
+            if obj.intersects(poly):
+                res = 'Plate:{} at {} intersects polygon:{} at {} '.format(label[idx], obj, p['name'], poly)
+                if not obj.contains(poly):
+                    res = res + 'but does not contain polgyon, assuming it to be VALID'
+                    new_label.append(label[idx])
+                    new_bbox.append(old_b)
+                    new_conf.append(conf[idx])
+                    doesIntersect = True
+                else:
+                    res = res + 'but also contains polygon, assuming it to be INVALID'
+                g.logger.debug(res)
+                if doesIntersect: break
+        # out of poly loop
+        if not doesIntersect:
+            g.logger.debug('plate:{} at {} does not fall into any polygons, removing...'.format(label[idx], obj))
+    #out of object loop
     return new_bbox, new_label, new_conf
 
 

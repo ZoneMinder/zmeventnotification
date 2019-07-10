@@ -178,7 +178,12 @@ def process_config(args, ctx):
         elif t == 'str_split':
             return str_split(val)
         elif t  == 'string':
-            return val
+            if t == 'None':
+                return None
+            else:
+                return val
+        elif t == 'float':
+            return float(val)
         else:
             g.logger.error ('Unknown conversion type {} for config key:{}'.format(e['type'], e['key']))
             return val

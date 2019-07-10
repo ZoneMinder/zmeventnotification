@@ -5,18 +5,33 @@ import cv2
 import requests
 import os
 import imutils
+import json
 
 class ALPRPlateRecognizer:
-    def __init__(self, apikey=None, tempdir='/tmp'):
+    def __init__(self, url=None, apikey=None, regions=None, tempdir='/tmp'):
         if not apikey:
             raise ValueError ('Invalid or missing API key passed')
         self.apikey = apikey
         self.tempdir = tempdir
-        g.logger.debug ('Plate Recognizer initialized')
+        self.regions = regions
+        self.url = url
+        g.logger.debug ('Plate Recognizer initialized with regions:{} and base url:{}'.format(self.regions, self.url))
 
     def setkey(self, key=None):
         self.apikey = key
         g.logger.debug ('Key changed')
+    
+    def stats(self):
+        try:
+            response = requests.get(
+                            self.url+'/statistics/',
+                            headers={'Authorization': 'Token ' + self.apikey}
+                            )
+        except requests.exceptions.RequestException as e:
+            response = {'error': str(e)}
+        else:
+            response = response.json()
+        return response
 
     def detect(self,object):
         bbox = []
@@ -32,11 +47,15 @@ class ALPRPlateRecognizer:
             g.logger.debug ('supplied object is a file')
             filename = object
             remove_temp = False
+        if g.config['alpr_stats'] == 'yes':
+            g.logger.debug ('Plate Recognizer API usage stats: {}'.format(json.dumps(self.stats())))
         with open (filename, 'rb') as fp:
             try:
+                payload = self.regions
                 response = requests.post(
-                        'https://api.platerecognizer.com/v1/plate-reader/',
+                        self.url+'/plate-reader/',
                         files=dict(upload=fp),
+                        data=payload,
                         headers={'Authorization': 'Token ' + self.apikey})
             except requests.exceptions.RequestException as e: 
                     response = {'error': 'Plate recognizer rejected the upload. You either have a bad API key or a bad image', 'results': []}
@@ -46,7 +65,7 @@ class ALPRPlateRecognizer:
                     g.logger.debug ('ALPR JSON: {}'.format(response))
 
         rescale = False
-        if g.config['resize']:    
+        if g.config['resize'] != 'no':    
             img = cv2.imread(filename)
             img_new = imutils.resize(img, width=min(int(g.config['resize']), img.shape[1]))
             oldh,oldw,_ = img.shape
@@ -66,11 +85,16 @@ class ALPRPlateRecognizer:
 
         for plates in response['results']:
             label = plates['plate']
-            x1 = round(int(plates['box']['xmin']) * xfactor)
-            y1 = round(int(plates['box']['ymin']) * yfactor)
-            x2 = round(int(plates['box']['xmax']) * xfactor)
-            y2 = round(int(plates['box']['ymax']) * yfactor)
-            labels.append(label)
-            bbox.append( [x1,y1,x2,y2])
-            confs.append(plates['score'])
+            dscore = plates['dscore']
+            score = plates['score']
+            if dscore >= g.config['alpr_min_dscore'] and score >= g.config['alpr_min_score']:
+                x1 = round(int(plates['box']['xmin']) * xfactor)
+                y1 = round(int(plates['box']['ymin']) * yfactor)
+                x2 = round(int(plates['box']['xmax']) * xfactor)
+                y2 = round(int(plates['box']['ymax']) * yfactor)
+                labels.append(label)
+                bbox.append( [x1,y1,x2,y2])
+                confs.append(plates['score'])
+            else:
+                g.logger.debug ('ALPR: discarding plate:{} because its dscore:{}/score:{} are not in range of configured dscore:{} score:{}'.format(label,dscore,score, g.config['alpr_min_dscore'], g.config['alpr_min_score']))
         return (bbox, labels, confs)

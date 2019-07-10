@@ -62,7 +62,7 @@ config_vals = {
 
         'resize':{
             'section': 'general',
-            'default': '1600',
+            'default': 'no',
             'type': 'string'
         },
         'delete_after_analyze':{
@@ -205,6 +205,11 @@ config_vals = {
             'default': 'plate_recognizer',
             'type': 'string',
         },
+        'alpr_url': {
+            'section': 'alpr',
+            'default': 'https://api.platerecognizer.com/v1',
+            'type': 'string',
+        },
         'alpr_key': {
             'section': 'alpr',
             'default': '',
@@ -214,7 +219,31 @@ config_vals = {
             'section': 'alpr',
             'type': 'string',
             'default': 'yes',
-        }
-
+        },
+        'alpr_regions':{
+            'section': 'alpr',
+            'default': 'None',
+            'type': 'eval'
+        },
+        'alpr_stats':{
+            'section': 'alpr',
+            'default': 'no',
+            'type': 'string'
+        },
+        'alpr_min_dscore':{
+            'section': 'alpr',
+            'default': '0.3',
+            'type': 'float'
+        },
+        'alpr_min_dscore':{
+            'section': 'alpr',
+            'default': '0.5',
+            'type': 'float'
+        },
+        'alpr_min_score':{
+            'section': 'alpr',
+            'default': '0.5',
+            'type': 'float'
+        },
 
     }

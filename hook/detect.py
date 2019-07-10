@@ -102,8 +102,7 @@ if filename2: # may be none
 if not g.polygons:
         g.polygons.append({'name': 'full_image', 'value': [(0, 0), (oldw, 0), (oldw, oldh), (0, oldh)]})
         g.logger.debug('No polygon area specfied, so adding a full image polygon:{}'.format(g.polygons))
-if g.config['resize']:
-    
+if g.config['resize'] != 'no':
     g.logger.debug('resizing to {} before analysis...'.format(g.config['resize']))
     image1 = imutils.resize(image1, width=min(int(g.config['resize']), image1.shape[1]))
     if image2 is not None:
@@ -148,10 +147,10 @@ for model in g.config['models']:
                         model=g.config['face_model'])
     elif model == 'alpr':
         if g.config['alpr_use_after_detection_only'] == 'yes':
-            g.logger.debug ('Skipping ALPR as it is configured to only be used after object detection')
+            #g.logger.debug ('Skipping ALPR as it is configured to only be used after object detection')
             continue # we would have handled it after YOLO
         else:
-            g.logger.info ('Standalone ALPR will come later. Please use after yolo')
+            g.logger.info ('Standalone ALPR is not supported today. Please use after yolo')
             continue
         
     else:
@@ -171,6 +170,7 @@ for model in g.config['models']:
     saved_conf = []
     saved_classes = []
     saved_image = None
+    saved_file = None
     # Apply the model to all files
     for filename in [filename1, filename2]:
         if filename is None: 
@@ -182,7 +182,9 @@ for model in g.config['models']:
             g.logger.debug ('Skipping {} as we earlier matched {}'.format(filename, matched_file))
             continue
         g.logger.debug('Using model: {} with {}'.format(model, filename))
+
         image = image1 if filename==filename1 else image2
+
         b, l, c = m.detect(image)
         g.logger.debug('|--> model:{} detection took: {}s'.format(model,(datetime.datetime.now() - t_start).total_seconds()))
         t_start = datetime.datetime.now()
@@ -203,15 +205,16 @@ for model in g.config['models']:
         b, l, c = img.processIntersection(b, l, c, match)
         if use_alpr:
             vehicle_labels = ['car','motorbike', 'bus','truck', 'boat']
-            if not set(l).isdisjoint(vehicle_labels): 
+            if not set(l).isdisjoint(vehicle_labels) or try_next_image: 
                 # if this is true, that ,means l has vehicle labels
                 # this happens after match, so no need to add license plates to filter
-                g.logger.debug ('Invoking ALPR as detected object is a vehicle')
-                alpr_obj = alpr.ALPRPlateRecognizer(apikey=g.config['alpr_key'])
+                g.logger.debug ('Invoking ALPR as detected object is a vehicle or, we are trying hard to look for plates...')
+                alpr_obj = alpr.ALPRPlateRecognizer(url=g.config['alpr_url'], apikey=g.config['alpr_key'], regions=g.config['alpr_regions'])
                 # don't pass resized image - may be too small
                 alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)
+                alpr_b, alpr_l, alpr_c = img.getValidPlateDetections(alpr_b, alpr_l, alpr_c)
                 if len (alpr_l):
-                    g.logger.debug ('ALPR returned: {}, {}, {}'.format(alpr_b, alpr_l, alpr_c))
+                    #g.logger.debug ('ALPR returned: {}, {}, {}'.format(alpr_b, alpr_l, alpr_c))
                     try_next_image = False
                     # First get non plate objects
                     for idx, t_l in enumerate(l):
@@ -240,6 +243,7 @@ for model in g.config['models']:
                     saved_conf = c
                     saved_classes = m.get_classes()
                     saved_image = image.copy()
+                    saved_file = filename
                     try_next_image = True
                 else: # no plates, no more to try
                     g.logger.debug ('We did not find license plates, and there are no more images to try')
@@ -249,6 +253,7 @@ for model in g.config['models']:
                         l = saved_labels
                         c = saved_conf
                         image = saved_image
+                        filename = saved_file
                         # store non plate objects
                         for idx, t_l in enumerate(l):
                             obj_json.append( {
@@ -260,15 +265,28 @@ for model in g.config['models']:
                     try_next_image = False
             else: # objects, no vehicles 
                 if filename == filename1 and filename2:
-                    g.logger.debug ('There was no vehicle detected here, but we have another image to try')
+                    g.logger.debug ('There was no vehicle detected by Yolo in this image')
+                    '''
+                    # For now, don't force ALPR in the next (snapshot image) 
+                    # only do it if yolo gets a vehicle there
+                    # may change this later
                     try_next_image = True
                     saved_bbox = b
                     saved_labels = l
                     saved_conf = c
                     saved_classes = m.get_classes()
                     saved_image = image.copy()
+                    saved_file = filename
+                    '''
                 else:
                     g.logger.debug ('No vehicle detected, and no more images to try')
+                    if saved_bbox:
+                        g.logger.debug ('Going back to matches in first image')
+                        b = saved_bbox
+                        l = saved_labels
+                        c = saved_conf
+                        image = saved_image
+                        filename = saved_file
                     try_next_image = False
                     for idx, t_l in enumerate(l):
                         obj_json.append({
@@ -318,10 +336,10 @@ if not matched_file:
 else:
     # we have matches
     if matched_file == filename1:
-        image = image1
+        #image = image1
         bbox_f = filename1_bbox
     else:
-        image = image2
+        #image = image2
         bbox_f = filename2_bbox
   
     #for idx, b in enumerate(bbox):
