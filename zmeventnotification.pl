@@ -410,7 +410,6 @@ else
 #
 # ==========================================================================
 
-use lib '/usr/local/lib/x86_64-linux-gnu/perl5';
 use ZoneMinder;
 use POSIX;
 use DBI;
