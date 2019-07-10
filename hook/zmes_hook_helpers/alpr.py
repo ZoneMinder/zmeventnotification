@@ -106,9 +106,9 @@ class OpenALPR:
             raise ValueError ('Invalid or missing API key passed')
         self.apikey = apikey
         self.tempdir = tempdir
-        self.country = country
+        self.regions = regions
         self.url = url
-        g.logger.debug ('OpenALPR initialized with country:{} and base url:{}'.format(self.country, self.url))
+        g.logger.debug ('Plate Recognizer initialized with regions:{} and base url:{}'.format(self.regions, self.url))
 
     def setkey(self, key=None):
         self.apikey = key
@@ -132,7 +132,7 @@ class OpenALPR:
         
         with open (filename, 'rb') as fp:
             try:
-                rurl = 'https://api.openalpr.com/v2/recognize_bytes?recognize_vehicle=1&country=%s&secret_key=%s' % (self.country, self.apikey)
+                rurl = 'https://api.openalpr.com/v2/recognize_bytes?recognize_vehicle=1&country=%s&secret_key=%s' % (self.regions, self.apikey)
                 g.logger.debug ('Trying OpenALPR with url:' + rurl)
                 
                 img_base64 = base64.b64encode(fp.read())
