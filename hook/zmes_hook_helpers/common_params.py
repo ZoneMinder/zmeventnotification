@@ -199,7 +199,7 @@ config_vals = {
             'type': 'string',
         },
 
-        # ALPR
+        # generic ALPR
         'alpr_service': {
             'section': 'alpr',
             'default': 'plate_recognizer',
@@ -207,7 +207,7 @@ config_vals = {
         },
         'alpr_url': {
             'section': 'alpr',
-            'default': 'https://api.platerecognizer.com/v1',
+            'default': None,
             'type': 'string',
         },
         'alpr_key': {
@@ -220,30 +220,52 @@ config_vals = {
             'type': 'string',
             'default': 'yes',
         },
-        'alpr_regions':{
-            'section': 'alpr',
-            'default': 'None',
-            'type': 'eval'
-        },
-        'alpr_stats':{
+
+        # Plate recognition specific
+        'platerec_stats':{
             'section': 'alpr',
             'default': 'no',
             'type': 'string'
         },
-        'alpr_min_dscore':{
+        'platerec_regions':{
+            'section': 'alpr',
+            'default': None,
+            'type': 'eval'
+        },
+        'platerec_min_dscore':{
             'section': 'alpr',
             'default': '0.3',
             'type': 'float'
         },
-        'alpr_min_dscore':{
+       
+        'platerec_min_score':{
             'section': 'alpr',
             'default': '0.5',
             'type': 'float'
         },
-        'alpr_min_score':{
+
+        # OpenALPR specific
+        'openalpr_recognize_vehicle':{
             'section': 'alpr',
-            'default': '0.5',
-            'type': 'float'
+            'default': '0',
+            'type': 'int'
         },
+        'openalpr_country':{
+            'section': 'alpr',
+            'default': 'us',
+            'type': 'string'
+        },
+        'openalpr_state':{
+            'section': 'alpr',
+            'default': None,
+            'type': 'string'
+        },
+
+        'openalpr_min_confidence': {
+            'section': 'alpr',
+            'default': '0.3',
+            'type': 'float'
+        }
+       
 
     }

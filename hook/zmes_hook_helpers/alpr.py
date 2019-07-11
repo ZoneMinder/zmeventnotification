@@ -8,20 +8,59 @@ import imutils
 import json
 import base64
 
-class ALPRPlateRecognizer:
-    def __init__(self, url=None, apikey=None, regions=None, tempdir='/tmp'):
+class AlprBase:
+    def __init__(self, url=None, apikey=None, tempdir='/tmp'):
         if not apikey:
             raise ValueError ('Invalid or missing API key passed')
         self.apikey = apikey
         self.tempdir = tempdir
-        self.regions = regions
         self.url = url
-        g.logger.debug ('Plate Recognizer initialized with regions:{} and base url:{}'.format(self.regions, self.url))
 
     def setkey(self, key=None):
         self.apikey = key
         g.logger.debug ('Key changed')
     
+    def stats(self):
+        g.logger.debug ('stats not implemented in base class')
+
+    def detect (self, object):
+        g.logger.debug ('detect not implemented in base class')
+
+    def prepare(self, object):
+        if not isinstance(object, str):
+            g.logger.debug ('Supplied object is not a file, assuming blob and creating file')
+            self.filename = self.tempdir + '/temp-plate-rec.jpg'
+            cv2.imwrite (filename,object)
+            self.remove_temp = True
+        else:
+            g.logger.debug ('supplied object is a file')
+            self.filename = object
+            self.remove_temp = False
+
+    def getscale(self):
+        if g.config['resize'] != 'no':    
+            img = cv2.imread(self.filename)
+            img_new = imutils.resize(img, width=min(int(g.config['resize']), img.shape[1]))
+            oldh,oldw,_ = img.shape
+            newh, neww,_ = img_new.shape
+            rescale = True
+            xfactor = neww/oldw
+            yfactor = newh/oldh
+            img = None
+            img_new = None
+            g.logger.debug ('ALPR will use {}x{} but Yolo uses {}x{} so ALPR boxes will be scaled {}x and {}y'.format(oldw,oldh, neww, newh, xfactor, yfactor))
+        else:
+            xfactor = 1
+            yfactor = 1
+        return (xfactor, yfactor)
+
+class PlateRecognizer (AlprBase):
+    def __init__(self, url=None, apikey=None, options={}, tempdir='/tmp'):
+        AlprBase.__init__(self, url, apikey, tempdir)
+        if not url: self.url = 'https://api.platerecognizer.com/v1'
+        
+        g.logger.debug ('PlateRecognizer ALPR initialized with options: {} and url: {}'.format(options,self.url))
+        self.options = options
     def stats(self):
         try:
             response = requests.get(
@@ -38,21 +77,13 @@ class ALPRPlateRecognizer:
         bbox = []
         labels = []
         confs = []
-
-        if not isinstance(object, str):
-            g.logger.debug ('Supplied object is not a file, assuming blob and creating file')
-            filename = self.tempdir + '/temp-plate-rec.jpg'
-            cv2.imwrite (filename,object)
-            remove_temp = True
-        else:
-            g.logger.debug ('supplied object is a file')
-            filename = object
-            remove_temp = False
-        if g.config['alpr_stats'] == 'yes':
+        options = self.options
+        self.prepare(object)
+        if options.get('stats')=='yes':
             g.logger.debug ('Plate Recognizer API usage stats: {}'.format(json.dumps(self.stats())))
-        with open (filename, 'rb') as fp:
+        with open (self.filename, 'rb') as fp:
             try:
-                payload = self.regions
+                payload = self.options.get('regions')
                 response = requests.post(
                         self.url+'/plate-reader/',
                         files=dict(upload=fp),
@@ -65,30 +96,17 @@ class ALPRPlateRecognizer:
                     response = response.json()
                     g.logger.debug ('ALPR JSON: {}'.format(response))
 
-        rescale = False
-        if g.config['resize'] != 'no':    
-            img = cv2.imread(filename)
-            img_new = imutils.resize(img, width=min(int(g.config['resize']), img.shape[1]))
-            oldh,oldw,_ = img.shape
-            newh, neww,_ = img_new.shape
-            rescale = True
-            xfactor = neww/oldw
-            yfactor = newh/oldh
-            img = None
-            img_new = None
-            g.logger.debug ('ALPR will use {}x{} but Yolo uses {}x{} so ALPR boxes will be scaled {}x and {}y'.format(oldw,oldh, neww, newh, xfactor, yfactor))
-        else:
-            xfactor = 1
-            yfactor = 1
+        (xfactor, yfactor) = self.getscale()
+        
 
-        if remove_temp:
+        if self.remove_temp:
             os.remove(filename)
 
         for plates in response['results']:
             label = plates['plate']
             dscore = plates['dscore']
             score = plates['score']
-            if dscore >= g.config['alpr_min_dscore'] and score >= g.config['alpr_min_score']:
+            if dscore >=options.get('min_dscore') and score >= options.get('min_score'):
                 x1 = round(int(plates['box']['xmin']) * xfactor)
                 y1 = round(int(plates['box']['ymin']) * yfactor)
                 x2 = round(int(plates['box']['xmax']) * xfactor)
@@ -97,86 +115,70 @@ class ALPRPlateRecognizer:
                 bbox.append( [x1,y1,x2,y2])
                 confs.append(plates['score'])
             else:
-                g.logger.debug ('ALPR: discarding plate:{} because its dscore:{}/score:{} are not in range of configured dscore:{} score:{}'.format(label,dscore,score, g.config['alpr_min_dscore'], g.config['alpr_min_score']))
+                g.logger.debug ('ALPR: discarding plate:{} because its dscore:{}/score:{} are not in range of configured dscore:{} score:{}'.format(label,dscore,score, options.get('min_dscore'), options.get('min_score')))
         return (bbox, labels, confs)
 
-class OpenALPR:
-    def __init__(self, url=None, apikey=None, country=None, tempdir='/tmp'):
-        if not apikey:
-            raise ValueError ('Invalid or missing API key passed')
-        self.apikey = apikey
-        self.tempdir = tempdir
-        self.regions = regions
-        self.url = url
-        g.logger.debug ('Plate Recognizer initialized with regions:{} and base url:{}'.format(self.regions, self.url))
+class OpenAlpr (AlprBase):
+    def __init__(self, url=None, apikey=None, options={}, tempdir='/tmp'):
+        
+        AlprBase.__init__(self, url, apikey, tempdir)
+        if not url: self.url = 'https://api.openalpr.com/v2/recognize'
+       
+        g.logger.debug ('PlateRecognizer ALPR initialized with options {} and url: {}'.format(options, self.url))
+        self.options = options;
 
-    def setkey(self, key=None):
-        self.apikey = key
-        g.logger.debug ('Key changed')
-    
    
     def detect(self,object):
         bbox = []
         labels = []
         confs = []
 
-        if not isinstance(object, str):
-            g.logger.debug ('Supplied object is not a file, assuming blob and creating file')
-            filename = self.tempdir + '/temp-plate-rec.jpg'
-            cv2.imwrite (filename,object)
-            remove_temp = True
-        else:
-            g.logger.debug ('supplied object is a file')
-            filename = object
-            remove_temp = False
-        
-        with open (filename, 'rb') as fp:
+        self.prepare(object)
+        with open (self.filename, 'rb') as fp:
             try:
-                rurl = 'https://api.openalpr.com/v2/recognize_bytes?recognize_vehicle=1&country=%s&secret_key=%s' % (self.regions, self.apikey)
-                g.logger.debug ('Trying OpenALPR with url:' + rurl)
-                
-                img_base64 = base64.b64encode(fp.read())
+                options = self.options
+                params = '';
+                if options.get('country'): params = params + '&country='+options.get('country')
+                if options.get('state'): params = params + '&state='+options.get('state')
+                if options.get('recognize_vehicle'): params = params + '&recognize_vehicle='+str(options.get('recognize_vehicle'))
 
-                response = requests.post(rurl, img_base64)
+                rurl = '{}?secret_key={}{}'.format(self.url, self.apikey, params)
+                g.logger.debug ('Trying OpenALPR with url:' + rurl)
+                response = requests.post(rurl, files={'image':fp})
             except requests.exceptions.RequestException as e: 
-                    response = {'error': 'Plate recognizer rejected the upload. You either have a bad API key or a bad image', 'results': []}
-                    g.logger.debug ('Plate recognizer rejected the upload. You either have a bad API key or a bad image')
+                    response = {'error': 'Open ALPR rejected the upload. You either have a bad API key or a bad image', 'results': []}
+                    g.logger.debug ('Open APR rejected the upload. You either have a bad API key or a bad image')
             else:
                     response = response.json()
-                    g.logger.debug ('ALPR JSON: {}'.format(response))
+                    g.logger.debug ('OpenALPR JSON: {}'.format(response))
+
+        (xfactor, yfactor) = self.getscale()
 
         rescale = False
-        if g.config['resize'] != 'no':    
-            img = cv2.imread(filename)
-            img_new = imutils.resize(img, width=min(int(g.config['resize']), img.shape[1]))
-            oldh,oldw,_ = img.shape
-            newh, neww,_ = img_new.shape
-            rescale = True
-            xfactor = neww/oldw
-            yfactor = newh/oldh
-            img = None
-            img_new = None
-            g.logger.debug ('ALPR will use {}x{} but Yolo uses {}x{} so ALPR boxes will be scaled {}x and {}y'.format(oldw,oldh, neww, newh, xfactor, yfactor))
-        else:
-            xfactor = 1
-            yfactor = 1
 
-        if remove_temp:
+        if self.remove_temp:
             os.remove(filename)
 
         for plates in response['results']:
+
             label = plates['plate']
-            colour = plates['vehicle']['color'][0]['name']
-            make = plates['vehicle']['make'][0]['name']
-            model = plates['vehicle']['make_model'][0]['name']
-            year = plates['vehicle']['year'][0]['name']
+            if float(plates['confidence']) < options.get('min_confidence'):
+                g.logger ('OpenALPR: discarding plate: {} because detected confidence {} is less than configured min confidence: {}'.format(label, plates['confidence'], options.get('min_confidence') ))
+                continue
+
+            
+            if plates.get('vehicle'): # won't exist if recognize_vehicle is off
+                veh = plates.get('vehicle')
+                for attribute in ['color','make','make_model','year']:
+                    if veh[attribute]:
+                        print ('HERE ',veh[attribute][0]['name'])
+                        label = label + ',' + veh[attribute][0]['name'] 
+     
             x1 = round(int(plates['coordinates'][0]['x']) * xfactor)
             y1 = round(int(plates['coordinates'][0]['y']) * yfactor)
             x2 = round(int(plates['coordinates'][2]['x']) * xfactor)
             y2 = round(int(plates['coordinates'][2]['y']) * yfactor)
-            g.logger.debug (colour)
-            labels.append(label + ', ' + colour + ', ' + make + ', ' + year)
-            g.logger.debug (labels)
+            labels.append(label)
             bbox.append( [x1,y1,x2,y2])
             confs.append(plates['confidence'])
         
