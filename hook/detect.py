@@ -175,7 +175,7 @@ for model in g.config['models']:
     for filename in [filename1, filename2]:
         if filename is None: 
             continue
-        filename = './car.jpg'
+        #filename = './car.jpg'
         if matched_file and  filename != matched_file:
         # this will only happen if we tried model A, we found a match
         # and then we looped to model B to find more matches (that is, detection_mode is all)
