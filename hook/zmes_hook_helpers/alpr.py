@@ -159,27 +159,27 @@ class OpenAlpr (AlprBase):
         if self.remove_temp:
             os.remove(filename)
 
-        for plates in response['results']:
+        if response.get('results'):
+            for plates in response.get('results'):
+                label = plates['plate']
+                conf = float(plates['confidence'])/100 
+                if conf < options.get('min_confidence'):
+                    g.logger.debug ('OpenALPR: discarding plate: {} because detected confidence {} is less than configured min confidence: {}'.format(label, conf, options.get('min_confidence') ))
+                    continue
 
-            label = plates['plate']
-            if float(plates['confidence']) < options.get('min_confidence'):
-                g.logger ('OpenALPR: discarding plate: {} because detected confidence {} is less than configured min confidence: {}'.format(label, plates['confidence'], options.get('min_confidence') ))
-                continue
-
-            
-            if plates.get('vehicle'): # won't exist if recognize_vehicle is off
-                veh = plates.get('vehicle')
-                for attribute in ['color','make','make_model','year']:
-                    if veh[attribute]:
-                        print ('HERE ',veh[attribute][0]['name'])
-                        label = label + ',' + veh[attribute][0]['name'] 
-     
-            x1 = round(int(plates['coordinates'][0]['x']) * xfactor)
-            y1 = round(int(plates['coordinates'][0]['y']) * yfactor)
-            x2 = round(int(plates['coordinates'][2]['x']) * xfactor)
-            y2 = round(int(plates['coordinates'][2]['y']) * yfactor)
-            labels.append(label)
-            bbox.append( [x1,y1,x2,y2])
-            confs.append(plates['confidence'])
+                
+                if plates.get('vehicle'): # won't exist if recognize_vehicle is off
+                    veh = plates.get('vehicle')
+                    for attribute in ['color','make','make_model','year']:
+                        if veh[attribute]:
+                            label = label + ',' + veh[attribute][0]['name'] 
+        
+                x1 = round(int(plates['coordinates'][0]['x']) * xfactor)
+                y1 = round(int(plates['coordinates'][0]['y']) * yfactor)
+                x2 = round(int(plates['coordinates'][2]['x']) * xfactor)
+                y2 = round(int(plates['coordinates'][2]['y']) * yfactor)
+                labels.append(label)
+                bbox.append( [x1,y1,x2,y2])
+                confs.append(conf)
         
         return (bbox, labels, confs)
