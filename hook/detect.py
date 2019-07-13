@@ -175,6 +175,7 @@ for model in g.config['models']:
     for filename in [filename1, filename2]:
         if filename is None: 
             continue
+        #filename = './car.jpg'
         if matched_file and  filename != matched_file:
         # this will only happen if we tried model A, we found a match
         # and then we looped to model B to find more matches (that is, detection_mode is all)
@@ -209,7 +210,24 @@ for model in g.config['models']:
                 # if this is true, that ,means l has vehicle labels
                 # this happens after match, so no need to add license plates to filter
                 g.logger.debug ('Invoking ALPR as detected object is a vehicle or, we are trying hard to look for plates...')
-                alpr_obj = alpr.ALPRPlateRecognizer(url=g.config['alpr_url'], apikey=g.config['alpr_key'], regions=g.config['alpr_regions'])
+                if g.config['alpr_service'] == 'plate_recognizer':
+                    options = {
+                        'regions': g.config['platerec_regions'],
+                        'stats': g.config['platerec_stats'],
+                        'min_dscore': g.config['platerec_min_dscore'],
+                        'min_score': g.config['platerec_min_score'],
+                    }
+                    alpr_obj = alpr.PlateRecognizer(url=g.config['alpr_url'], apikey=g.config['alpr_key'], options=options)
+                elif g.config['alpr_service'] == 'open_alpr':
+                    options = {
+                        'min_confidence': g.config['openalpr_min_confidence'],
+                        'country': g.config['openalpr_country'],
+                        'state': g.config['openalpr_state'],
+                        'recognize_vehicle': g.config['openalpr_recognize_vehicle']
+                    }
+                    alpr_obj = alpr.OpenAlpr(url=g.config['alpr_url'], apikey=g.config['alpr_key'], options=options)
+                else:
+                    raise ValueError('ALPR service "{}" not known'.format(g.config['alpr_service']))
                 # don't pass resized image - may be too small
                 alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)
                 alpr_b, alpr_l, alpr_c = img.getValidPlateDetections(alpr_b, alpr_l, alpr_c)

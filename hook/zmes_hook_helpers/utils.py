@@ -174,14 +174,11 @@ def process_config(args, ctx):
         if t == 'int':
              return int(val)
         elif t == 'eval':
-            return eval(val)
+            return eval(val) if val else None
         elif t == 'str_split':
-            return str_split(val)
+            return str_split(val) if val else None
         elif t  == 'string':
-            if t == 'None':
-                return None
-            else:
-                return val
+            return val
         elif t == 'float':
             return float(val)
         else:
