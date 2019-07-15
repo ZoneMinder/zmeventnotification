@@ -91,11 +91,6 @@ If automatic install fails for you, or you like to be in control:
     git clone https://github.com/pliablepixels/zmeventnotification # if you don't already have it downloaded
     cd zmeventnotification/
 
--  Install the object detection dependencies:
-
-   .. code:: bash
-
-       sudo -H pip3 install -r  hook/requirements.txt 
 
 -  Install object detection files:
 

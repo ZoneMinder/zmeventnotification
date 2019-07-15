@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # Main detection script that loads different detection models
 # look at zmes_hook_helpers for different detectors
