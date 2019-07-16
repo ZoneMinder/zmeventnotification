@@ -53,9 +53,9 @@ args, u = ap.parse_known_args()
 args = vars(args)
 
 if args['monitorid']:
-    log.init('detect',args['monitorid'])
+    log.init(process_name='zmesdetect_'+'m'+args['monitorid'])
 else:
-    log.init('detect')
+    log.init(process_name='zmesdetect')
 
 g.logger.info ('---------| app version: {} |------------'.format(__version__))
 if args['version']:

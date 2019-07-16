@@ -75,11 +75,6 @@ config_vals = {
             'default': 'no',
             'type': 'string'
         },
-        'log_level':{
-            'section': 'general',
-            'default': 'info',
-            'type': 'string'
-        },
         'allow_self_signed':{
             'section': 'general',
             'default': 'yes',
