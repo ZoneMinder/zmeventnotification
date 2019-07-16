@@ -392,10 +392,6 @@ else
 if ($use_mqtt)
 {
     if (!try_use ("Net::MQTT::Simple")) {Fatal ("Net::MQTT::Simple  missing");exit (-1);}
-    if (defined $mqtt_username)
-    {
-        if (!try_use ("Net::MQTT::Simple::Auth")) {Fatal ("Net::MQTT::Simple::Auth  missing");exit (-1);}
-    }
     printInfo ("MQTT Enabled");
 
 }
@@ -841,6 +837,7 @@ sub sendOverMQTTBroker
    # based on the library docs, if this fails, it will try and reconnect 
    # before the next message is sent (with a retry timer of 5 s)
    $ac->{mqtt_conn}->publish(join('/','zoneminder',$alarm->{MonitorId}) => $json);
+   $ac->{mqtt_conn}->disconnect
     
 
 }
@@ -1442,7 +1439,8 @@ sub initMQTT {
     # Note this does not actually connect to the MQTT server. That happens later during publish
     if (defined $mqtt_username && defined $mqtt_password)
     {
-        if ($mqtt_connection = Net::MQTT::Simple::Auth->new($mqtt_server, $mqtt_username, $mqtt_password)) {
+        if ($mqtt_connection = Net::MQTT::Simple->new($mqtt_server)) {
+		    $mqtt_connection->login($mqtt_username,$mqtt_password);
 		    printInfo ("Intialized MQTT with auth");
 	    }
     }
