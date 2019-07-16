@@ -8,7 +8,7 @@ Machine Learning Hooks
 
 .. important::
 
-        Please don't ask me basic questions like "pip command not found" or
+        Please don't ask me basic questions like "pip3 command not found" or
         "cv2 not found" - what do I do? Hooks require some terminal
         knowledge and familiarity with troubleshooting. I don't plan to
         provide support for these hooks. They are for reference only
@@ -16,11 +16,8 @@ Machine Learning Hooks
 Limitations
 ~~~~~~~~~~~
 
--  Only tested with ZM 1.32+. May or may not work with older versions
--  Needs Python3 (I used to support Python2, but not any more)
-   Python2 will be deprecated in 2020. May as well update.
-- If you are using Python3, you can use ``python`` and ``pip``. They will point to python3 versions. You typically need to use ``python3`` and ``pip3`` when you have a mixed Python 2.x and 3.x install
-
+- Only tested with ZM 1.32+. May or may not work with older versions
+- Needs Python3 (I used to support Python2, but not any more). Python2 will be deprecated in 2020. May as well update.
 
 What
 ~~~~
@@ -216,6 +213,32 @@ If it doesn't work, go back and figure out where you have a problem
       -  If you are running ZM >= 1.33, you can use all fid modes
          without requiring to enable frames in storage
 
+
+.. _hooks-logging:
+
+Logging
+~~~~~~~~~
+
+Starting version 4.0.x, the hooks now use ZM logging, thanks to a `python wrapper <https://pypi.org/project/pyzmutils/>`__ I wrote recently that taps into ZM's logging system. This also means it is no longer as easy as enabling ``log_level=debug`` in ``objdetect.ini``. Infact, that option has been removed. Follow standard ZM logging options for the hooks. Here is what I do:
+
+- In ``ZM->Options->Logs:``
+
+  - LOG_LEVEL_FILE = debug
+  - LOG_LEVEL_SYSLOG = Info
+  - LOG_LEVEL_DATABASE = Info
+  - LOG_DEBUG is on
+  - LOG_DEBUG_TARGET = ``_zmesdetect`` (if you have other targets, just separate them with ``|`` - example, ``_zmc|_zmesdetect``)
+
+  The above config. will store debug logs in my ``/var/log/zm`` directory, while Info level logs will be recorded in syslog and DB.
+
+  So now, to view hooks/detect logs, all I do is:
+
+  ::
+
+    tail -f  /var/log/zm/zmesdetect*.log
+
+  Note that the detection code registers itself as ``zmesdetect`` with ZM. When it is invoked with a specific monitor ID (usually the case), then the component is named ``zmesdetect_mX.log`` where ``X`` is the monitor ID. In other words, that now gives you one log per monitor (just like ``/var/log/zm/zmc_mX.log``) which makes it easy to debug/isolate. 
+
 Troubleshooting
 ~~~~~~~~~~~~~~~
 
@@ -223,10 +246,8 @@ Troubleshooting
    questions without investigating logs yourself
 -  Always run ``detect_wrapper.sh`` in manual mode first to make sure it
    works
--  Set ``log_level`` to ``debug`` in ``objdetect.ini`` before you run it
-   manually
--  When you run in manually, view system logs in another window to look
-   for errors (``tail -f /var/log/syslog | grep yolo``)
+-  To get debug logs, Make sure your ``LOG_DEBUG`` in ZM Options->Logs is set to on and your ``LOG_DEBUG_TARGET`` option includes ``_zmesdetect`` (or is empty)
+-  You can view debug logs for detection by doing ``tail -f  /var/log/zm/zmesdetect*.log``
 -  One of the big reasons why object detection fails is because the hook
    is not able to download the image to check. This may be because your
    ZM version is old or other errors. Some common issues:
@@ -270,11 +291,14 @@ instead of full yolo weights. Again, please readd the comments in
 How to use license plate recognition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-I use `Plate Recognizer <https://platerecognizer.com>`__ for license plate recognition. It uses a deep learning model that does a far better job than OpenALPR (based on my tests). The class is abstracted, obviously, so in future I may add local models. For now, you will have to get a license key from them (they have a `free tier <https://platerecognizer.com/pricing/>`__ that allows 2500 lookups per month)
+Two ALPR options are provided: 
+
+- `Plate Recognizer <https://platerecognizer.com>`__ . It uses a deep learning model that does a far better job than OpenALPR (based on my tests). The class is abstracted, obviously, so in future I may add local models. For now, you will have to get a license key from them (they have a `free tier <https://platerecognizer.com/pricing/>`__ that allows 2500 lookups per month)
+- `OpenALPR <https://www.openalpr.com>`__ . While OpenALPR's detection is not as good as Plate Recognizer, when it does detect, it provides a lot more information (like car make/model/year etc.)
 
 To enable alpr, simple add `alpr` to `models`. You will also have to add your license key to the ``[alpr]`` section of ``objdetect.ini``
 
-Note that since this is a remote service hosted by a 3rd party, you can't use ALPR without an internet connection. 
+This is an example config that uses plate recognizer:
 
 ::
 
@@ -282,15 +306,43 @@ Note that since this is a remote service hosted by a 3rd party, you can't use AL
 
   [alpr]
   alpr_service=plate_recognizer
-  alpr_key=<the key>
-  alpr_use_after_detection_only=yes
+  # If you want to host a local SDK https://app.platerecognizer.com/sdk/
+  #alpr_url=https://localhost:8080
+  # Plate recog replace with your api key
+  alpr_key=KEY
+  # if yes, then it will log usage statistics of the ALPR service
+  platerec_stats=no
+  # If you want to specify regions. See http://docs.platerecognizer.com/#regions-supported
+  #platerec_regions=['us','cn','kr']
+  # minimal confidence for actually detecting a plate
+  platerec_min_dscore=0.1
+  # minimal confidence for the translated text
+  platerec_min_score=0.2
 
-Leave ``alpr_service`` and ``alpr_use_after_detection_only`` to the default values. 
+
+This is an example config that uses OpenALPR:
+
+::
+
+  models = yolo,alpr
+
+  [alpr]
+  alpr_service=open_alpr
+  alpr_key=SECRET
+
+  # For an explanation of params, see http://doc.openalpr.com/api/?api=cloudapi
+  openalpr_recognize_vehicle=1
+  openalpr_country=us
+  openalpr_state=ca
+  openalpr returns percents, but we convert to between 0 and 1
+  openalpr_min_confidence=0.3
+
+Leave ``alpr_use_after_detection_only`` to the default values. 
 
 How license plate recognition will work
 ''''''''''''''''''''''''''''''''''''''''
 
-- To save on platerecognizer API calls, the code will only invoke remote APIs if a vehicle is detected
+- To save on  API calls, the code will only invoke remote APIs if a vehicle is detected
 - This also means you MUST specify yolo along with alpr
 
 
@@ -337,7 +389,7 @@ known faces images
 
 -  Only put in one image per person
 -  Make sure the face is recognizable
--  crop it to around 200 pixels width (doesn't seem to need bigger
+-  crop it to around 400 pixels width (doesn't seem to need bigger
    images, but experiment. Larger the image, the larger the memory
    requirements)
 
