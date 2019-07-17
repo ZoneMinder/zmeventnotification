@@ -72,6 +72,7 @@ automatically, especially if you don't need face recognition.
 Note, if you installed ``face_recognition`` without blas, do this:
 
 ::
+
         sudo -H pip3 uninstall dlib
         sudo -H pip3 uninstall face-recognition
         sudo apt-get install libopenblas-dev liblapack-dev libblas-dev # this is the important part
