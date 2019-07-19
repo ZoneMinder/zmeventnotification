@@ -232,7 +232,7 @@ for model in g.config['models']:
                 alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)
                 alpr_b, alpr_l, alpr_c = img.getValidPlateDetections(alpr_b, alpr_l, alpr_c)
                 if len (alpr_l):
-                    g.logger.debug ('ALPR returned: {}, {}, {}'.format(alpr_b, alpr_l, alpr_c))
+                    #g.logger.debug ('ALPR returned: {}, {}, {}'.format(alpr_b, alpr_l, alpr_c))
                     try_next_image = False
                     # First get non plate objects
                     for idx, t_l in enumerate(l):
@@ -448,3 +448,4 @@ if g.config['delete_after_analyze'] == 'yes':
         os.remove(filename1)
     if filename2:
         os.remove(filename2)
+        
