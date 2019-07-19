@@ -232,7 +232,7 @@ for model in g.config['models']:
                 alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)
                 alpr_b, alpr_l, alpr_c = img.getValidPlateDetections(alpr_b, alpr_l, alpr_c)
                 if len (alpr_l):
-                    #g.logger.debug ('ALPR returned: {}, {}, {}'.format(alpr_b, alpr_l, alpr_c))
+                    g.logger.debug ('ALPR returned: {}, {}, {}'.format(alpr_b, alpr_l, alpr_c))
                     try_next_image = False
                     # First get non plate objects
                     for idx, t_l in enumerate(l):
@@ -244,16 +244,21 @@ for model in g.config['models']:
                         })
                     # Now add plate objects
                     for i, al in enumerate(alpr_l):
-                        g.logger.debug ('ALPR Found {} at {} with score:{}'.format(al, alpr_b[i], alpr_c[i]))
-                        b.append(alpr_b[i])
-                        l.append(al)
-                        c.append(alpr_c[i])
-                        obj_json.append( {
-                            'type': 'licenseplate',
-                            'label': al,
-                            'box': alpr_b[i],
-                            'confidence': alpr_c[i]
-                        })
+                        ignorelist = g.config['alpr_ignore_plates'].split(',')
+                        if al.split(',',1)[0] in str(ignorelist):
+                            g.logger.debug ('ALPR Found {} but it is on the ignore list, ignoring'.format(al.split(',',1)[0]))
+                            continue
+                        else:
+                            g.logger.debug ('ALPR Found {} at {} with score:{}'.format(al, alpr_b[i], alpr_c[i]))
+                            b.append(alpr_b[i])
+                            l.append(al)
+                            c.append(alpr_c[i])
+                            obj_json.append( {
+                                'type': 'licenseplate',
+                                'label': al,
+                                'box': alpr_b[i],
+                                'confidence': alpr_c[i]
+                            })
                 elif filename == filename1 and filename2: # no plates, but another image to try
                     g.logger.debug ('We did not find license plates in vehicles, but there is another image to try')
                     saved_bbox = b

@@ -220,6 +220,11 @@ config_vals = {
             'type': 'string',
             'default': 'yes',
         },
+        'alpr_ignore_plates': {
+            'section': 'alpr',
+            'type': 'string',
+            'default': '',
+        },
 
         # Plate recognition specific
         'platerec_stats':{
