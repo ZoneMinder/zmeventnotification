@@ -244,7 +244,7 @@ for model in g.config['models']:
                         })
                     # Now add plate objects
                     for i, al in enumerate(alpr_l):
-                        g.logger.debug ('ALPR Found {} at {} with score:{}'.format(al, alpr_b[i], alpr_c[i]))
+                        g.logger.info ('ALPR Found {} at {} with score:{}'.format(al, alpr_b[i], alpr_c[i]))
                         b.append(alpr_b[i])
                         l.append(al)
                         c.append(alpr_c[i])
@@ -264,7 +264,7 @@ for model in g.config['models']:
                     saved_file = filename
                     try_next_image = True
                 else: # no plates, no more to try
-                    g.logger.debug ('We did not find license plates, and there are no more images to try')
+                    g.logger.info ('We did not find license plates, and there are no more images to try')
                     if saved_bbox:
                         g.logger.debug ('Going back to matches in first image')
                         b = saved_bbox
@@ -330,7 +330,7 @@ for model in g.config['models']:
                 label.extend(l)
                 conf.extend(c)
                 classes.append(m.get_classes())
-                g.logger.debug('labels found: {}'.format(l))
+                g.logger.info('labels found: {}'.format(l))
                 g.logger.debug ('match found in {}, breaking file loop...'.format(filename))
                 matched_file = filename
                 break # if we found a match, no need to process the next file
@@ -349,7 +349,7 @@ for model in g.config['models']:
 #g.logger.debug ('FINAL LIST={} AND {}'.format(bbox,label))
 
 if not matched_file:
-        g.logger.debug('No patterns found using any models in all files')
+        g.logger.info('No patterns found using any models in all files')
 
 else:
     # we have matches
@@ -402,7 +402,7 @@ else:
 
     if g.config['match_past_detections'] == 'yes' and args['monitorid']:
             # point detections to post processed data set
-            g.logger.debug ('Removing matches to past detections')
+            g.logger.info ('Removing matches to past detections')
             bbox_t, label_t, conf_t = img.processPastDetection(bbox, label, conf, args['monitorid'])   
             # save current objects for future comparisons
             g.logger.debug ('Saving detections for monitor {} for future match'.format(args['monitorid']))
@@ -430,7 +430,7 @@ else:
     if pred != '':
         pred = pred.rstrip(',')
         pred = prefix + 'detected:' + pred
-        g.logger.debug('Prediction string:{}'.format(pred))
+        g.logger.info('Prediction string:{}'.format(pred))
         print (pred)
 
     # end of matched_file

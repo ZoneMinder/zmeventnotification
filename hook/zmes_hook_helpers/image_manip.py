@@ -117,13 +117,14 @@ def processFilters(bbox, label, conf, match):
                     new_bbox.append(old_b)
                     new_conf.append(conf[idx])
                 else:
+                    g.logger.info ('discarding "{}" as it does not match your filters'.format(label[idx]))
                     g.logger.debug('{} intersects object:{}[{}] but does NOT match your detect_pattern filter of {}'
                                    .format(p['name'], label[idx], b, g.config['detect_pattern']))
                 doesIntersect = True
                 break
         # out of poly loop
         if not doesIntersect:
-            g.logger.debug('object:{} at {} does not fall into any polygons, removing...'
+            g.logger.info('object:{} at {} does not fall into any polygons, removing...'
                             .format(label[idx], obj))
     #out of object loop
     return new_bbox, new_label, new_conf
