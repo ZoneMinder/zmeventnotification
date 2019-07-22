@@ -203,7 +203,7 @@ for model in g.config['models']:
 
         # now filter these with polygon areas
         #g.logger.debug ("INTERIM BOX = {} {}".format(b,l))
-        b, l, c = img.processIntersection(b, l, c, match)
+        b, l, c = img.processFilters(b, l, c, match)
         if use_alpr:
             vehicle_labels = ['car','motorbike', 'bus','truck', 'boat']
             if not set(l).isdisjoint(vehicle_labels) or try_next_image: 
@@ -362,7 +362,8 @@ else:
   
     #for idx, b in enumerate(bbox):
     #g.logger.debug ("DRAWING {}".format(b))
-    out = img.draw_bbox(image, bbox, label, classes, conf, None, False)
+
+    out = img.draw_bbox(image, bbox, label, classes, conf, None, g.config['show_percent']=='yes')
     image = out
 
     if g.config['frame_id'] == 'bestmatch':

@@ -78,7 +78,7 @@ def processPastDetection (bbox, label, conf,mid):
     return new_bbox, new_label, new_conf
 
 
-def processIntersection(bbox, label, conf, match):
+def processFilters(bbox, label, conf, match):
     # bbox is the set of bounding boxes
     # labels are set of corresponding object names
     # conf are set of confidence scores (for hog and face this is set to 1)
@@ -90,6 +90,10 @@ def processIntersection(bbox, label, conf, match):
     #g.logger.debug ("INTERSECTION GOT: {}".format(bbox))
 
     for idx, b in enumerate(bbox):
+        if conf[idx] < g.config['yolo_min_confidence']:
+            g.logger.info ('object:{} at {} has a lower confidence:{} than min confidence of: {}, ignoring'.format(label[idx], b, conf[idx], g.config['yolo_min_confidence']))
+            continue
+
         doesIntersect = False
         # cv2 rectangle only needs top left and bottom right
         # but to check for polygon intersection, we need all 4 corners
@@ -170,7 +174,7 @@ def getValidPlateDetections(bbox, label, conf):
 
 # draws bounding boxes of identified objects and polygons
 
-def draw_bbox(img, bbox, labels, classes, confidence, color=None, write_conf=False):
+def draw_bbox(img, bbox, labels, classes, confidence, color=None, write_conf=True):
 
    # g.logger.debug ("DRAW BBOX={} LAB={}".format(bbox,labels))
     slate_colors = [ 

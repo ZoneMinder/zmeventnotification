@@ -148,6 +148,12 @@ config_vals = {
             'default': '/var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.txt',
             'type': 'string'
         },
+
+        'yolo_min_confidence': {
+            'section': 'yolo',
+            'default': '0.4',
+            'type': 'float'
+        },
         
         # HOG
         'stride':{
