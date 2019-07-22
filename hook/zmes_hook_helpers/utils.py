@@ -92,7 +92,7 @@ def import_zm_zones(mid):
 # downloaded ZM image files for future analysis
 def download_files(args):
     if g.config['wait'] > 0:
-        g.logger.debug ('sleeping for {} seconds before downloading'.format(g.config['wait']))
+        g.logger.info ('Sleeping for {} seconds before downloading'.format(g.config['wait']))
         time.sleep(g.config['wait'])
 
     if g.config['portal'].lower().startswith('https://'):
