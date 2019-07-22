@@ -75,11 +75,6 @@ config_vals = {
             'default': 'no',
             'type': 'string'
         },
-        'log_level':{
-            'section': 'general',
-            'default': 'info',
-            'type': 'string'
-        },
         'allow_self_signed':{
             'section': 'general',
             'default': 'yes',
@@ -152,6 +147,12 @@ config_vals = {
             'section': 'yolo',
             'default': '/var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.txt',
             'type': 'string'
+        },
+
+        'yolo_min_confidence': {
+            'section': 'yolo',
+            'default': '0.4',
+            'type': 'float'
         },
         
         # HOG
