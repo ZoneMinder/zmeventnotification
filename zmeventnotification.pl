@@ -837,7 +837,6 @@ sub sendOverMQTTBroker
    # based on the library docs, if this fails, it will try and reconnect 
    # before the next message is sent (with a retry timer of 5 s)
    $ac->{mqtt_conn}->publish(join('/','zoneminder',$alarm->{MonitorId}) => $json);
-   $ac->{mqtt_conn}->disconnect
     
 
 }
