@@ -1440,6 +1440,9 @@ sub initMQTT {
     {
         if ($mqtt_connection = Net::MQTT::Simple->new($mqtt_server)) {
 		    $mqtt_connection->login($mqtt_username,$mqtt_password);
+
+            # Setting up allow insecure connections
+            $ENV{'MQTT_SIMPLE_ALLOW_INSECURE_LOGIN'} = 'true';
 		    printInfo ("Intialized MQTT with auth");
 	    }
     }
