@@ -33,9 +33,22 @@ def processPastDetection (bbox, label, conf,mid):
     except FileNotFoundError:
         g.logger.debug ('No history data file found for monitor {}'.format(mid))
         return bbox, label, conf
-    # load past detection
- 
+    # load past detection 
    
+    m = re.match('(\d+)(px|%)?$', g.config['match_past_detections_max_difference_area'],
+                 re.IGNORECASE)
+    if m:
+        max_difference_area = int(m.group(1))
+        use_percent = m.group(2) == '%'
+    else:
+        g.logger.error('match_past_detections_max_difference_area misformatted: {}'.format(g.config['match_past_detections_max_difference_area']))
+        return bbox, label, conf
+
+    # it's very easy to forget to add 'px' when using pixels
+    if use_percent and (max_difference_area < 0 or max_difference_area > 100):
+        g.logger.error('match_past_detections_max_difference_area must be in the range 0-100 when using percentages: {}'.format(g.config['match_past_detections_max_difference_area']))
+        return bbox, label, conf
+
     #g.logger.debug ('loaded past: bbox={}, labels={}'.format(saved_bs, saved_ls));
 
     new_label = []
@@ -63,14 +76,22 @@ def processPastDetection (bbox, label, conf,mid):
              (saved_b[1][0], saved_b[0][1]))
             saved_b.insert(3, (saved_b[0][0], saved_b[1][1]))
             saved_obj = Polygon(saved_b)
-            if obj.equals(saved_obj):
-                g.logger.debug ('past detection {}@{} exactly matches {}@{} removing'.format(saved_ls[saved_idx],saved_b, label[idx],b))
-                foundMatch = True
-                break
-            if obj.almost_equals(saved_obj):
-                g.logger.debug ('past detection {}@{} approximately matches {}@{} removing'.format(saved_ls[saved_idx],saved_b, label[idx],b))
-                foundMatch = True
-                break
+            max_diff_pixels = max_difference_area
+            
+            if saved_obj.intersects(obj):
+                if obj.contains(saved_obj):
+                    diff_area = obj.difference(saved_obj).area
+                    if use_percent:
+                        max_diff_pixels = obj.area * max_difference_area / 100;
+                else:
+                    diff_area = saved_obj.difference(obj).area
+                    if use_percent:
+                        max_diff_pixels = saved_obj.area * max_difference_area / 100;
+                
+                if diff_area <= max_diff_pixels:
+                    g.logger.debug ('past detection {}@{} approximately matches {}@{} removing'.format(saved_ls[saved_idx],saved_b, label[idx],b))
+                    foundMatch = True
+                    break
         if not foundMatch:
             new_bbox.append(old_b)
             new_label.append(label[idx])
