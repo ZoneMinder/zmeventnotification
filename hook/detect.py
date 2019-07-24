@@ -200,7 +200,7 @@ for model in g.config['models']:
         # check
         if model == 'face':
             g.logger.debug('Appending known faces to filter list')
-            match = match + ['unknown face'] # unknown face
+            match = match + [g.config['unknown_face_name']] # unknown face
             for cls in m.get_classes():
                 if not cls in match:
                     match = match + [cls]

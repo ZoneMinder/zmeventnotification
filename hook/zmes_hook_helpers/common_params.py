@@ -199,6 +199,11 @@ config_vals = {
             'default': '/var/lib/zmeventnotification/known_faces',
             'type': 'string',
         },
+        'unknown_face_name':{
+            'section': 'face',
+            'default': 'unknown face',
+            'type': 'string',
+        },
 
         # generic ALPR
         'alpr_service': {

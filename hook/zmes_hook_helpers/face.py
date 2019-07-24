@@ -95,7 +95,7 @@ class Face:
                 # top right, lower left
             loc = face_locations[idx]
             # convert to left top, right bottom
-            matched_face_names.append('face')
+            matched_face_names.append(g.config['unknown_face_name'])
             matched_face_rects.append((loc[3], loc[0], loc[1], loc[2]))
             conf.append(1)
         #rects = self._rescale_rects(matched_face_rects)
