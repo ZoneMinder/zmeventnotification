@@ -92,7 +92,7 @@ def import_zm_zones(mid):
 # downloaded ZM image files for future analysis
 def download_files(args):
     if g.config['wait'] > 0:
-        g.logger.debug ('sleeping for {} seconds before downloading'.format(g.config['wait']))
+        g.logger.info ('Sleeping for {} seconds before downloading'.format(g.config['wait']))
         time.sleep(g.config['wait'])
 
     if g.config['portal'].lower().startswith('https://'):
@@ -197,20 +197,8 @@ def process_config(args, ctx):
 
     # main        
     try:
-        config_file = ConfigParser()
+        config_file = ConfigParser(interpolation=None)
         config_file.read(args['config'])
-
-        # First, process log level, so we can see config read logs if needed
-        # Yes, it will be processed later too. Big deal.
-        g.config['log_level'] = config_file['general'].get('log_level', 'info')
-        if g.config['log_level'] == 'debug':
-            g.logger.setLevel(logging.DEBUG)
-        elif g.config['log_level'] == 'info':
-            g.logger.setLevel(logging.INFO)
-        elif g.config['log_level'] == 'error':
-            g.logger.setLevel(logging.ERROR)
-
-        g.logger.info('Log level set to:{}'.format(g.config['log_level']))
         # now read config values
         for k,v in g.config_vals.items():
             #g.logger.debug ('processing {} {}'.format(k,v))

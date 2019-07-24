@@ -189,7 +189,7 @@ Running it as a daemon so it starts automatically along with ZoneMinder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  You can now move the ES to the right place by simply doing
-   ``./sudo install.sh`` and following prompts. Other options are below:
+   ``sudo ./install.sh`` and following prompts. Other options are below:
 -  Execute ``sudo ./install.sh --no-install-hook`` to move the ES to the
    right place without installing machine learning hooks
 -  In ZM 1.32.0 and above, go to your web interface, and go to

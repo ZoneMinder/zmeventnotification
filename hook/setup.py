@@ -14,7 +14,7 @@ URL = 'https://github.com/pliablepixels/zmeventserver/'
 AUTHOR_EMAIL = 'pliablepixels@gmail.com'
 AUTHOR = 'Pliable Pixels'
 LICENSE = 'GPL'
-INSTALL_REQUIRES=['opencv_contrib_python', 'numpy', 'requests', 'Shapely', 'imutils']
+INSTALL_REQUIRES=['opencv_contrib_python', 'numpy', 'requests', 'Shapely', 'imutils', 'pyzmutils']
 
 
 here = os.path.abspath(os.path.dirname(__file__))

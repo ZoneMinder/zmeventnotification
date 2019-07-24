@@ -1,6 +1,14 @@
 Breaking Changes
 ----------------
 
+Version 4.0 onwards
+~~~~~~~~~~~~~~~~~~~~
+- Hook versions will now always be ``<ES version>.x``, so in this case ``4.0.1``
+- Hooks have now migrated to using a `proper python ZM logger module <https://pypi.org/project/pyzmutils/>`__ so it better integrates with ZM logging 
+- To view detection logs, you now need to follow the standard ZM logging process. See :ref:`hooks-logging` documentation for more details)
+- You no longer have to manually install python requirements, the setup process should automatically install them
+
+
 Version 3.9 onwards
 ~~~~~~~~~~~~~~~~~~~~
 - Hooks now add ALPR, so you need to run `sudo -H pip install -r requirements.txt` again
