@@ -95,6 +95,13 @@ If you want to enable MQTT:
 
     perl -MCPAN -e "install Net::MQTT::Simple"
 
+
+Some notes on MQTT:
+
+ - A minimum version of MQTT 3.1.1 is required
+ - If your ``MQTT:Simple`` library was installed a while ago, you may need to update it. A new ``login`` method was added
+   to that library on Dec 2018 which is required (`ref <https://github.com/Juerd/Net-MQTT-Simple/blob/cf01b43c27893a07185d4b58ff87db183d08b0e9/Changes#L21>`__)
+
 Note that starting 1.0, we also use ``File::Spec``, ``Getopt::Long`` and
 ``Config::IniFiles`` as additional libraries. My ubuntu installation
 seemed to include all of this by default (even though
