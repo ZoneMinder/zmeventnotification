@@ -48,7 +48,11 @@ config_vals = {
             'default': 'no',
             'type': 'string'
         },
-
+        'match_past_detections_max_difference_area':{
+            'section': 'general',
+            'default': '0%',
+            'type': 'string'
+        },
         'frame_id':{
             'section': 'general',
             'default': 'snapshot',
