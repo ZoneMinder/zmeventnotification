@@ -222,6 +222,12 @@ config_vals = {
             'default': 'yes',
         },
 
+         'alpr_pattern':{
+            'section': 'general',
+            'default': '.*',
+            'type': 'string'
+        },
+
         # Plate recognition specific
         'platerec_stats':{
             'section': 'alpr',

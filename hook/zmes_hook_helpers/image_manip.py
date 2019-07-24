@@ -4,6 +4,7 @@ from shapely.geometry import Polygon
 import cv2
 import numpy as np
 import pickle
+import re
 
 # Generic image related algorithms
 
@@ -135,11 +136,27 @@ def getValidPlateDetections(bbox, label, conf):
     # bbox is the set of bounding boxes
     # labels are set of corresponding object names
     # conf are set of confidence scores 
+
+    if not len(label):
+        return bbox, label, conf
     new_label = []
     new_bbox = []
     new_conf = []
     g.logger.debug ('Checking vehicle plates for validity')
+
+    try:
+        r = re.compile(g.config['alpr_pattern'])
+    except re.error:
+        g.logger.error ('invalid pattern {}, using .*'.format(g.config['alpr_pattern']))
+        r = re.compile('.*')
+
+    match = list(filter(r.match, label))
+
     for idx, b in enumerate(bbox):
+        if not label[idx] in match:
+            g.logger.debug ('discarding plate:{} as it does not match alpr filter pattern:{}'.format(label[idx], g.config['alpr_pattern']))
+            continue
+
         old_b = b
         it = iter(b)
         b = list(zip(it, it))

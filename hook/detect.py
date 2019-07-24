@@ -160,8 +160,12 @@ for model in g.config['models']:
     g.logger.debug('|--> model:{} init took: {}s'.format(model, (datetime.datetime.now() - t_start).total_seconds()))
     t_start = datetime.datetime.now()
     # read the detection pattern we need to apply as a filter
-    r = re.compile(g.config['detect_pattern'])
-    
+    try:
+        r = re.compile(g.config['detect_pattern'])
+    except re.error:
+        g.logger.error ('invalid pattern {}, using .*'.format(g.config['detect_pattern']))
+        r = re.compile('.*')
+
     
     try_next_image = False # take the best of both images, currently used only by alpr
     # temporary holders, incase alpr is used but not found
@@ -196,7 +200,7 @@ for model in g.config['models']:
         # check
         if model == 'face':
             g.logger.debug('Appending known faces to filter list')
-            match = match + ['face'] # unknown face
+            match = match + ['unknown face'] # unknown face
             for cls in m.get_classes():
                 if not cls in match:
                     match = match + [cls]
