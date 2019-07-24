@@ -119,7 +119,7 @@ def download_files(args):
         filename2_bbox = g.config['image_path'] + '/' + args['eventid'] + '-snapshot-bbox.jpg'
 
         url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=alarm' + \
-            '&username=' + g.config['user'] + '&password=' + g.config['password']
+            '&username=' + g.config['user'] + '&password=' + urllib.parse.quote(g.config['password'],safe='')
         durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=alarm' + \
             '&username=' + g.config['user'] + '&password=*****'
 
