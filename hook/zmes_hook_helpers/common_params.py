@@ -48,7 +48,11 @@ config_vals = {
             'default': 'no',
             'type': 'string'
         },
-
+        'past_det_max_diff_area':{
+            'section': 'general',
+            'default': '0%',
+            'type': 'string'
+        },
         'frame_id':{
             'section': 'general',
             'default': 'snapshot',
