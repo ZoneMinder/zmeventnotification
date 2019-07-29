@@ -189,8 +189,8 @@ Running it as a daemon so it starts automatically along with ZoneMinder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **NOTE** : By default ``install.sh`` moves the ES script to ``/usr/bin``. 
-If your ZM install is elsewhere, like ``/usr/local/bin`` please modify the `TARGET_BIN` variable
-in ``install.sh` before executing it.
+If your ZM install is elsewhere, like ``/usr/local/bin`` please modify the ``TARGET_BIN`` variable
+in ``install.shi`` before executing it.
 
 -  You can now move the ES to the right place by simply doing
    ``sudo ./install.sh`` and following prompts. Other options are below:
