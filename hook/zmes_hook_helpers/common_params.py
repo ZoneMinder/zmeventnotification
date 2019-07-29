@@ -50,7 +50,7 @@ config_vals = {
         },
         'past_det_max_diff_area':{
             'section': 'general',
-            'default': '0%',
+            'default': '5%',
             'type': 'string'
         },
         'frame_id':{
