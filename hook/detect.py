@@ -139,7 +139,7 @@ for model in g.config['models']:
         try:
             import zmes_hook_helpers.face as face
         except ImportError:
-            g.logger.error ('Error importing face recognition. Make sure you did sudo -H pip install face_recognition')
+            g.logger.error ('Error importing face recognition. Make sure you did sudo -H pip3 install face_recognition')
             raise
 
         m = face.Face(upsample_times=g.config['face_upsample_times'], 
