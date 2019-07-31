@@ -87,14 +87,14 @@ If automatic install fails for you, or you like to be in control:
 .. code:: bash
 
     git clone https://github.com/pliablepixels/zmeventnotification # if you don't already have it downloaded
-    cd zmeventnotification/
 
 
 -  Install object detection files:
 
    .. code:: bash
 
-       sudo -H pip3 install hook
+       cd zmeventnotification/
+       sudo -H pip3 install hook/
 
 **Note:** if you want to add "face recognition" you also need to do
 
