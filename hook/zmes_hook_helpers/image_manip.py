@@ -109,12 +109,14 @@ def processFilters(bbox, label, conf, match):
     new_label = []
     new_bbox = []
     new_conf = []
-    #g.logger.debug ("INTERSECTION GOT: {}".format(bbox))
 
     for idx, b in enumerate(bbox):
         if conf[idx] < g.config['yolo_min_confidence']:
             g.logger.info ('object:{} at {} has a lower confidence:{} than min confidence of: {}, ignoring'.format(label[idx], b, conf[idx], g.config['yolo_min_confidence']))
             continue
+        else:
+            g.logger.info ('object:{} at {} has an acceptable confidence:{} (min confidence={})'.format(label[idx], b, conf[idx], g.config['yolo_min_confidence']))
+
 
         doesIntersect = False
         # cv2 rectangle only needs top left and bottom right
