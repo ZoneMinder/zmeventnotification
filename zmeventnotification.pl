@@ -1684,10 +1684,10 @@ sub initMQTT {
 # Note this does not actually connect to the MQTT server. That happens later during publish
     if ( defined $mqtt_username && defined $mqtt_password ) {
         if ( $mqtt_connection = Net::MQTT::Simple->new( $mqtt_server ) ) {
-            $mqtt_connection->login( $mqtt_username, $mqtt_password ) ;
-
             # Setting up allow insecure connections
             $ENV{ 'MQTT_SIMPLE_ALLOW_INSECURE_LOGIN' } = 'true' ;
+            
+            $mqtt_connection->login( $mqtt_username, $mqtt_password ) ;
             printInfo( "Intialized MQTT with auth" ) ;
             }
         }
