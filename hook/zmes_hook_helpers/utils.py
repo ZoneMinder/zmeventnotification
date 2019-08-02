@@ -132,10 +132,11 @@ def download_files(args):
         with open(filename1, 'wb') as output_file:
             output_file.write(input_file.read())
 
-        url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
-            '&username=' + g.config['user'] + '&password=' + g.config['password']
-        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
-            '&username=' + g.config['user'] + '&password=*****'
+        url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' 
+        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' 
+        if g.config['user']:
+            url = url + '&username=' + g.config['user'] + '&password=' + g.config['password']
+            durl = durl + '&username=' + g.config['user'] + '&password=*****'
         g.logger.debug('Trying to download {}'.format(durl))
         try:
             input_file = opener.open(url)
