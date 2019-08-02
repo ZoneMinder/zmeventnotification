@@ -118,10 +118,11 @@ def download_files(args):
         filename2 = g.config['image_path'] + '/' + args['eventid'] + '-snapshot.jpg'
         filename2_bbox = g.config['image_path'] + '/' + args['eventid'] + '-snapshot-bbox.jpg'
 
-        url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=alarm' + \
-            '&username=' + g.config['user'] + '&password=' + urllib.parse.quote(g.config['password'],safe='')
-        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=alarm' + \
-            '&username=' + g.config['user'] + '&password=*****'
+        url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=alarm' 
+        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=alarm' 
+        if g.config['user']:
+            url = url + '&username=' + g.config['user'] + '&password=' + urllib.parse.quote(g.config['password'],safe='')
+            durl = durl + '&username=' + g.config['user'] + '&password=*****'
 
         g.logger.debug('Trying to download {}'.format(durl))
         try:
@@ -135,7 +136,7 @@ def download_files(args):
         url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' 
         durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' 
         if g.config['user']:
-            url = url + '&username=' + g.config['user'] + '&password=' + g.config['password']
+            url = url + '&username=' + g.config['user'] + '&password=' + urllib.parse.quote(g.config['password'],safe='')
             durl = durl + '&username=' + g.config['user'] + '&password=*****'
         g.logger.debug('Trying to download {}'.format(durl))
         try:
@@ -152,10 +153,12 @@ def download_files(args):
         filename1_bbox = g.config['image_path'] + '/' + args['eventid'] + '-bbox.jpg'
         filename2 = None
         filename2_bbox = None
-        url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=' + g.config['frame_id'] + \
-            '&username=' + g.config['user'] + '&password=' + g.config['password']
-        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=' + g.config['frame_id'] + \
-            '&username=' + g.config['user'] + '&password=*****'
+
+        url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=' + g.config['frame_id'] 
+        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=' + g.config['frame_id'] 
+        if g.config['user']:
+            url = url + '&username=' + g.config['user'] + '&password=' + urllib.parse.quote(g.config['password'],safe='')
+            durl = durl + '&username=' + g.config['user'] + '&password=*****'
         g.logger.debug('Trying to download {}'.format(durl))
         input_file = opener.open(url)
         with open(filename1, 'wb') as output_file:
