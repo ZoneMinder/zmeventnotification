@@ -15,12 +15,12 @@ config_vals = {
         },
         'user':{
             'section': 'general',
-            'default': 'admin',
+            'default': None,
             'type': 'string'
         },
         'password':{
             'section': 'general',
-            'default': 'admin',
+            'default': None,
             'type': 'string'
         },
         'basic_user':{
