@@ -335,7 +335,7 @@ This is an example config that uses OpenALPR:
   openalpr_recognize_vehicle=1
   openalpr_country=us
   openalpr_state=ca
-  openalpr returns percents, but we convert to between 0 and 1
+  # openalpr returns percents, but we convert to between 0 and 1
   openalpr_min_confidence=0.3
 
 Leave ``alpr_use_after_detection_only`` to the default values. 
