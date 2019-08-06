@@ -243,7 +243,7 @@ for model in g.config['models']:
                         obj_json.append( {
                             'type': 'object',
                             'label': t_l,
-                            'box':  b[idx],
+                            'box':  b[idx].tolist(),
                             'confidence': c[idx]
                         })
                     # Now add plate objects
@@ -255,7 +255,7 @@ for model in g.config['models']:
                         obj_json.append( {
                             'type': 'licenseplate',
                             'label': al,
-                            'box': alpr_b[i],
+                            'box': alpr_b[i].tolist(),
                             'confidence': alpr_c[i]
                         })
                 elif filename == filename1 and filename2: # no plates, but another image to try
@@ -281,7 +281,7 @@ for model in g.config['models']:
                             obj_json.append( {
                                 'type': 'object',
                                 'label': t_l,
-                                'box': b[idx],
+                                'box': b[idx].tolist(),
                                 'confidence': c[idx]
                             })
                     try_next_image = False
@@ -314,7 +314,7 @@ for model in g.config['models']:
                         obj_json.append({
                             'type': 'object',
                             'label': t_l,
-                            'box': b[idx],
+                            'box': b[idx].tolist(),
                             'confidence': c[idx]
                         })
         else: # usealpr
@@ -324,7 +324,7 @@ for model in g.config['models']:
                 obj_json.append( {
                     'type': 'object',
                     'label': t_l,
-                    'box': b[idx],
+                    'box': b[idx].tolist(),
                     'confidence': c[idx]
                 })
         if b:
