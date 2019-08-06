@@ -184,7 +184,7 @@ Usage: zmeventnotification.pl [OPTION]...
 
   --help                              Print this page.
 
-  --config=FILE                       Read options from configuration file (default: /etc/zmeventnotification.ini).
+  --config=FILE                       Read options from configuration file (default: /etc/zm/zmeventnotification.ini).
                                       Any CLI options used below will override config settings.
 
   --check-config                      Print configuration and exit.
