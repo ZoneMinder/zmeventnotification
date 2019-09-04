@@ -58,7 +58,7 @@ use IO::Select ;
 # ==========================================================================
 
 
-my $app_version="4.1";
+my $app_version="4.2";
 
 
 # ==========================================================================
@@ -1181,28 +1181,34 @@ sub processJobs {
                         . " description:"
                         . $desc ) ;
 
+		printInfo("Force updating event $eid with desc:$desc");
+	        updateEventinZmDB( $eid, $desc ) ;
+		# Edited Sep 4 2019: Lets write it immediately
+		# There are issues with post writing I haven't figured out yet
+		# Should not be an issue - we add to front, while new notes go to the end
+		#
                 # If the hook took too long and the alarm already closed,
                 # we need to handle it here. Two situations:
                 # a) that mid is now handling a new alarm
                 # b) that mid is now idling
 
-                if (   ( $last_event_for_monitors{ $mid }{ "eid" } != $eid )
-                    || ( $last_event_for_monitors{ $mid }{ "state" } eq "idle" )
-                    ) {
-                    printDebug(
-                        "HOOK: script for eid:$eid returned after the alarm closed, so writing hook text:$desc now..."
-                        ) ;
-                    updateEventinZmDB( $eid, $desc ) ;
-                    $last_event_for_monitors{ $mid }{ "hook_text" } = undef ;
-                    }
+		#if (   ( $last_event_for_monitors{ $mid }{ "eid" } != $eid )
+		#    || ( $last_event_for_monitors{ $mid }{ "state" } eq "idle" )
+		#    ) {
+		#    printDebug(
+		#        "HOOK: script for eid:$eid returned after the alarm closed, so writing hook text:$desc now..."
+		#        ) ;
+		#    updateEventinZmDB( $eid, $desc ) ;
+		#    $last_event_for_monitors{ $mid }{ "hook_text" } = undef ;
+		#    }
 
             #  hook returned before the alarm closed, so we will catch it in the
             # main loop
-                else {
-                    $last_event_for_monitors{ $mid }{ "hook_text" } = $desc ;
-                    }
+	    # else {
+	    #        $last_event_for_monitors{ $mid }{ "hook_text" } = $desc ;
+	    #        }
 
-                }
+	    }
 
         # marks the latest time an event was sent out. Needed for interval mgmt.
             elsif ( $job eq "timestamp" ) {
