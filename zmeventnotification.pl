@@ -492,7 +492,7 @@ my $proxy_reach_time    = 0 ;
 my $wss ;
 my @events             = () ;
 my @active_connections = () ;
-my @needsReload        = 0 ;
+my @needsReload        = () ;
 
 # Main entry point
 
@@ -601,14 +601,19 @@ sub checkNewEvents() {
             zmMemInvalidate( $monitor ) ;
             }
         loadMonitors() ;
-        @needsReload = () ;
+        
         }
     elsif ( @needsReload ) {
-        foreach my $monitor ( @needsReload ) {
-            loadMonitor( $monitor ) ;
-            }
-        @needsReload = () ;
+        my @failedReloads = ();
+        while (@needsReload) {
+          my $monitor = shift @needsReload;
+          if (!loadMonitor($monitor)) {
+            printError ('Failed re-loading monitor:'.$monitor->{Id}.' adding back to reload list for next iteration');
+            push(@failedReloads, $monitor);
+          }
         }
+        @needsReload = @failedReloads;
+    }
 
     @events = () ;
 
@@ -768,18 +773,21 @@ sub checkNewEvents() {
 
 sub loadMonitor {
     my $monitor = shift ;
-    printInfo( "re-loading monitor " . $monitor->{ Name } ) ;
+    printInfo( "loadMonitor: re-loading monitor " . $monitor->{ Name } ) ;
     zmMemInvalidate( $monitor ) ;
     if ( zmMemVerify( $monitor ) ) {    # This will re-init shared memory
         $monitor->{ LastState } = zmGetMonitorState( $monitor ) ;
         $monitor->{ LastEvent } = zmGetLastEvent( $monitor ) ;
-        }
+        return 1;
     }
+    return 0; # coming here means verify failed
+  }
 
 # Refreshes list of monitors from DB
 #
 sub loadMonitors {
-    printInfo( "Loading monitors\n" ) ;
+    printInfo( "Re-loading monitors, emptying needsReload() list\n" ) ;
+    @needsReload = () ;
     $monitor_reload_time = time() ;
 
     my %new_monitors = () ;
@@ -797,8 +805,13 @@ sub loadMonitors {
         if ( zmMemVerify( $monitor ) ) {
             $monitor->{ LastState } = zmGetMonitorState( $monitor ) ;
             $monitor->{ LastEvent } = zmGetLastEvent( $monitor ) ;
+       	    $new_monitors{ $monitor->{ Id } } = $monitor ;
             }
-        $new_monitors{ $monitor->{ Id } } = $monitor ;
+	    else {
+          printError ("loadMonitors: zmMemVerify for monitor:".$monitor->{Id}." failed, setting up for reload in next iteration");
+          push @needsReload, $monitor;
+
+	    }
         }    # end while fetchrow
     %monitors = %new_monitors ;
     }
