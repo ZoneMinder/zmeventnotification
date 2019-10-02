@@ -1,24 +1,27 @@
 import logging
 import logging.handlers
 import zmes_hook_helpers.common_params as g
-import pyzmutils.logger as zmlog
+import pyzm.ZMLog as zmlog
 from inspect import getframeinfo,stack
 
-class wrapperLogger(zmlog.ZMLogger):
+class wrapperLogger():
     
+    def __init__(self,name):
+       zmlog.init(name=name)
+
     def debug(self, msg):
         idx = min(len(stack()), 1) 
         caller = getframeinfo(stack()[idx][0])
-        self.Debug(1,msg,caller)
+        zmlog.Debug(1,msg,caller)
 
     def info(self, msg):
         idx = min(len(stack()), 1) 
         caller = getframeinfo(stack()[idx][0])
-        self.Info(msg,caller)
+        zmlog.Info(msg,caller)
     def error(self,msg):
         idx = min(len(stack()), 1) 
         caller = getframeinfo(stack()[idx][0])
-        self.Error(msg,caller)
+        zmlog.Error(msg,caller)
     def setLevel(self,level):
         pass
 
