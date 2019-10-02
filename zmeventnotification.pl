@@ -41,7 +41,7 @@ use Time::HiRes qw/gettimeofday/ ;
 use Symbol qw(qualify_to_ref) ;
 use IO::Select ;
 
-# debugging only
+# debugging only.
 #use Data::Dumper;
 
 # ==========================================================================
@@ -621,6 +621,7 @@ sub checkNewEvents() {
         my $alarm_cause = "" ;
         if ( !zmMemVerify( $monitor ) ) {
 
+          #printDebug ('Monitor '.$monitor->{ Id }.' memverify FAILED');
 # Our attempt to verify the memory handle failed. We should reload the monitors.
 # Don't need to zmMemInvalidate because the monitor reload will do it.
             push @needsReload, $monitor ;
@@ -630,6 +631,9 @@ sub checkNewEvents() {
                     . ")" ) ;
             next ;
             }
+          else {
+            #printDebug ('Monitor '.$monitor->{ Id }.' memverify is ok');
+          }
 
         my ( $state, $last_event, $trigger_cause, $trigger_text ) = zmMemRead(
             $monitor,
