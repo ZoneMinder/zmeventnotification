@@ -41,6 +41,7 @@ use Time::HiRes qw/gettimeofday/ ;
 use Symbol qw(qualify_to_ref) ;
 use IO::Select ;
 
+
 # debugging only.
 #use Data::Dumper;
 
@@ -58,7 +59,7 @@ use IO::Select ;
 # ==========================================================================
 
 
-my $app_version="4.3";
+my $app_version="4.4";
 
 
 # ==========================================================================
@@ -153,6 +154,8 @@ my $hook_pass_image_path ;
 
 my $picture_url ;
 my $include_picture ;
+my $picture_portal_username;
+my $picture_portal_password;
 
 #default key. Please don't change this
 use constant NINJA_API_KEY =>
@@ -175,6 +178,8 @@ if ( !try_use( "Config::IniFiles" ) ) { Fatal( "Config::Inifiles missing" ) ; }
 if ( !try_use( "Getopt::Long" ) )     { Fatal( "Getopt::Long missing" ) ; }
 if ( !try_use( "File::Basename" ) )   { Fatal( "File::Basename missing" ) ; }
 if ( !try_use( "File::Spec" ) )       { Fatal( "File::Spec missing" ) ; }
+if ( !try_use( "URI::Escape" ) )       { Fatal( "URI::Escape missing" ) ; }
+
 
 #if (!try_use ("threads")) {Fatal ("threads library/support  missing");}
 
@@ -281,6 +286,9 @@ $picture_url //= config_get_val( $config, "customize", "picture_url" ) ;
 $include_picture //= config_get_val( $config, "customize", "include_picture",
     DEFAULT_CUSTOMIZE_INCLUDE_PICTURE ) ;
 
+$picture_portal_username //= config_get_val( $config, "customize", "picture_portal_username" ) ;
+$picture_portal_password //= config_get_val( $config, "customize", "picture_portal_password" ) ;
+
 $hook //= config_get_val( $config, "hook", "hook_script" ) ;
 $use_hook_description //=
     config_get_val( $config, "hook", "use_hook_description",
@@ -375,6 +383,8 @@ Store Frame in ZM...............${\(yes_or_no($hook_pass_image_path))}
 
 Picture URL ................... ${\(value_or_undefined($picture_url))}
 Include picture................ ${\(yes_or_no($include_picture))}
+Picture username .............. ${\(value_or_undefined($picture_portal_username))}
+Picture password .............. ${\(present_or_not($picture_portal_password))}
 
 EOF
         );
@@ -988,6 +998,8 @@ sub sendOverFCM {
     my $mname = $alarm->{ Name } ;
 
     my $pic = $picture_url =~ s/EVENTID/$eid/gr ;
+    $pic = $pic.'&username='.$picture_portal_username if ($picture_portal_username);
+    $pic = $pic.'&password='.uri_escape($picture_portal_password) if ($picture_portal_password);
 
     # if we used best match we will use the right image in notification
     if ( substr( $alarm->{ Cause }, 0, 3 ) eq "[a]" ) {
