@@ -92,20 +92,45 @@ the following
 How do I safely upgrade zmeventnotification to new versions?
 ------------------------------------------------------------
 
+STEP 1: get the latest code
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Download the latest version & change dir to it:
+
+::
+
+  git clone https://github.com/pliablepixels/zmeventnotification.git
+  cd zmeventnotification/
+
+STEP 2: stop the current ES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 ::
 
     sudo zmdc.pl stop zmeventnotification.pl
 
+STEP 3: Make a backup of your config files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now assuming you have downloaded/updated the new version of the ES, simply do a:
+Before you execute the next step make sure you create a backup of your existing ``zmeventnotification.ini`` and ``objectconfig.ini`` config files. The script will prompt you to overwrite. If you say 'Y' then your old configs will be overwritten.
+
+
+STEP 4: Execute the install script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**NOTE** : By default ``install.sh`` moves the ES script to ``/usr/bin``. 
+If your ZM install is elsewhere, like ``/usr/local/bin`` please modify the ``TARGET_BIN`` variable
+in ``install.sh`` before executing it.
 
 ::
 
   sudo ./install.sh
 
 
-and follow prompts. Note that just copying the ES perl file to ``/usr/bin`` is not sufficient. You also have to install the updated machine learning hook files if you are using them. That is why ``install.sh`` is better. If you are updating, make sure not to overwrite your config files (but please read breaking changes to see if any config files have changed)
+Follow prompts. Note that just copying the ES perl file to ``/usr/bin`` is not sufficient. You also have to install the updated machine learning hook files if you are using them. That is why ``install.sh`` is better. If you are updating, make sure not to overwrite your config files (but please read breaking changes to see if any config files have changed)
 
+STEP 5: Start the new updated server
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
