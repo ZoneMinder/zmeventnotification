@@ -96,10 +96,16 @@ How do I safely upgrade zmeventnotification to new versions?
 
     sudo zmdc.pl stop zmeventnotification.pl
 
-Now copy the new zmeventnotification.pl to the right place (usually
-``/usr/bin``) If you need to, copy the new zmeventnotification.ini to
-the right place (usually ``/etc/zm``) (Note: this will replace your old
-config file and you shouldn't need to do this)
+
+Now assuming you have downloaded/updated the new version of the ES, simply do a:
+
+::
+
+  ``sudo ./install.sh`` 
+
+  
+and follow prompts. Note that just copying the ES perl file to ``/usr/bin`` is not sufficient. You also have to install the updated machine learning hook files if you are using them. That is why ``install.sh`` is better. If you are updating, make sure not to overwrite your config files (but please read breaking changes to see if any config files have changed)
+
 
 ::
 
