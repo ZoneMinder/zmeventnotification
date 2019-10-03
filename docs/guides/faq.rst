@@ -101,9 +101,9 @@ Now assuming you have downloaded/updated the new version of the ES, simply do a:
 
 ::
 
-  ``sudo ./install.sh`` 
+  sudo ./install.sh
 
-  
+
 and follow prompts. Note that just copying the ES perl file to ``/usr/bin`` is not sufficient. You also have to install the updated machine learning hook files if you are using them. That is why ``install.sh`` is better. If you are updating, make sure not to overwrite your config files (but please read breaking changes to see if any config files have changed)
 
 
