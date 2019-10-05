@@ -27,7 +27,7 @@ WEB_OWNER_FROM_PS=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apa
 WEB_GROUP_FROM_PS=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $2}')
 #WEB_GROUP='www-data' # uncomment if above line fails
 # make this empty if you don't want backups
-MAKE_CONFIG_BACKUP='-b'
+MAKE_CONFIG_BACKUP='--backup=numbered'
 
 # --- end of change these ---
 

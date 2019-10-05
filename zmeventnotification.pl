@@ -1000,6 +1000,7 @@ sub sendOverFCM {
     my $pic = $picture_url =~ s/EVENTID/$eid/gr ;
     $pic = $pic.'&username='.$picture_portal_username if ($picture_portal_username);
     $pic = $pic.'&password='.uri_escape($picture_portal_password) if ($picture_portal_password);
+    #printInfo ("Using URL: $pic with password=$picture_portal_password");
 
     # if we used best match we will use the right image in notification
     if ( substr( $alarm->{ Cause }, 0, 3 ) eq "[a]" ) {
