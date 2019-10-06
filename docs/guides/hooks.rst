@@ -217,7 +217,7 @@ If it doesn't work, go back and figure out where you have a problem
 
 Upgrading
 ~~~~~~~~~
-To upgrade at a later stage, see :ref:`_upgrade_es_hooks`.
+To upgrade at a later stage, see :ref:`upgrade_es_hooks`.
 
 .. _hooks-logging:
 
