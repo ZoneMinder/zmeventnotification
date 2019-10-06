@@ -1,5 +1,5 @@
-Installation
-------------
+Installation of the Event Server (ES)
+--------------------------------------
 
 Download the repo
 ~~~~~~~~~~~~~~~~~
@@ -114,8 +114,10 @@ missing ones like so:
 
     perl -MCPAN -e "install XXXX" # where XXX is Config::IniFiles, for example
 
-SSL certificate (Generate new, or use ZoneMinder certs if you are already using HTTPS)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Configure SSL certificate (Generate new, or use ZoneMinder certs if you are already using HTTPS)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**NOTE:** If you plan on using picture messaging in zmNinja, then you cannot use self signed certificates. You will need to generate a proper certificate. LetsEncrypt is free and perfect for this.
 
 If you are using secure mode (default) you **also need to make sure you
 generate SSL certificates otherwise the script won't run** If you are
@@ -185,8 +187,8 @@ Making sure everything is running (in manual mode)
    wrong. See :ref:`this section <debug_reporting_es>` later that describes how to make sure its all working fine
    from command line.
 
-Running it as a daemon so it starts automatically along with ZoneMinder
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Install the server (optionally along with hooks) 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **NOTE** : By default ``install.sh`` moves the ES script to ``/usr/bin``. 
 If your ZM install is elsewhere, like ``/usr/local/bin`` please modify the ``TARGET_BIN`` variable
