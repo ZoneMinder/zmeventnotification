@@ -232,9 +232,11 @@ Starting version 4.0.x, the hooks now use ZM logging, thanks to a `python wrappe
   - LOG_LEVEL_SYSLOG = Info
   - LOG_LEVEL_DATABASE = Info
   - LOG_DEBUG is on
-  - LOG_DEBUG_TARGET = ``_zmesdetect`` (if you have other targets, just separate them with ``|`` - example, ``_zmc|_zmesdetect``)
+  - LOG_DEBUG_TARGET = ``_zmesdetect`` (if you have other targets, just separate them with ``|`` - example, ``_zmc|_zmesdetect``). If you want to enable debug logs for both the ES and the hooks, your target will look like ``_zmesdetect|_zmeventnotification``. You can also enabled debug logs for just one monitor's hooks like so: ``_zmesdetect_m5|_zmeventnotification``. This will enable debug logs only when hooks are run for monitor 5.
 
   The above config. will store debug logs in my ``/var/log/zm`` directory, while Info level logs will be recorded in syslog and DB.
+
+  You will likely need to restart ZM after this.
 
   So now, to view hooks/detect logs, all I do is:
 
