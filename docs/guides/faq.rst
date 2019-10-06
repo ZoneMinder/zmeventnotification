@@ -474,64 +474,35 @@ Here is how to debug and report:
   10/06/19 06:48:42 zmesdetect_m10[13732] DBG detect.py:189 [Using model: yolo with /var/lib/zmeventnotification/images/33990-snapshot.jpg]
   10/06/19 06:48:46 zmesdetect_m10[13732] DBG detect.py:194 [|--> model:yolo detection took: 3.541227s]
 
--  Open up zmNinja, clear logs
--  Enable event server in zmNinja
--  Check that when you save the event server connections in zmNinja, you
-   see logs in the log window like this
-
-::
-
-    Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [got a websocket connection from XX.XX.XX.XX (11) active connections]
-    Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [Websockets: New Connection Handshake requested from XX.XX.XX.XX:55189 state=pending auth]
-    Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [Correct authentication provided byXX.XX.XX.XX]
-    Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [Storing token ...9f665f182b,monlist:-1,intlist:-1,pushstate:enabled]
-    Oct 20 10:23:19 homeserver zmeventnotification[27789]: INF [Contrl: Storing token ...9f665f182b,monlist:1,2,4,5,6,7,10,intlist:0,0,0,0,0,0,0,pushstate:enabled]
-
-If you don't see anything there is a connection problem. Review SSL
-guidelines above, or temporarily turn off websocket SSL as described
-above
-
--  Open up ZM console and force an alarm, you should see logs in your
-   log window above like so:
-
-::
-
-    Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [New event 32910 reported for Garage]
-    Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Broadcasting new events to all 12 websocket clients]
-    Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Checking alarm rules for  token ending in:...2baa57e387]
-    Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Monitor 1 event: last time not found, so sending]
-    Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Sending notification over PushProxy]
-    Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push message success ]
-
 -  If you are debugging problems with receiving push notifications on
    zmNinja mobile, then replicate the following scenario:
 
--  Run the event server in manual mode as described above
--  Kill zmNinja
--  Start zmNinja
--  At this point, in the ``zmeventnotification`` logs you should
-   registration messages (refer to logs example above). If you don't
-   you've either not configured zmNinja to use the eventserver, or it
-   can't reach the eventserver (very common problem)
--  Next up, make sure you are not running zmNinja in the foreground
-   (move it to background or kill it). When zmNinja is in the
-   foreground, it uses websockets to get notifications
--  Force an alarm like I described above. If you don't see logs in
-   ``zmeventnotification`` saying "Sending notification over PushProxy"
-   then the eventserver, for some reason, does not have your app token.
-   Inspeced ``tokens.txt`` (typically in ``/etc/zm/``) to make sure an
-   entry for your phone exists
--  If you see that message, but your mobile phone is not receiving a
-   push notification:
--  Make sure you haven't disable push notifications on your phone (lots
-   of people do this by mistake and wonder why)
--  Make sure you haven't muted notifications (again, lots of people...)
--  Sometimes, the push servers of Apple and Google stop forwarding
-   messages for a day or two. I have no idea why. Give it a day or two?
--  Open up zmNinja, go right to logs and send it to me
+  -  Run the event server in manual mode as described above
+  -  Kill zmNinja
+  -  Start zmNinja
+  -  At this point, in the ``zmeventnotification`` logs you should
+    registration messages (refer to logs example above). If you don't
+    you've either not configured zmNinja to use the eventserver, or it
+    can't reach the eventserver (very common problem)
+  -  Next up, make sure you are not running zmNinja in the foreground
+    (move it to background or kill it). When zmNinja is in the
+    foreground, it uses websockets to get notifications
+  -  Force an alarm like I described above. If you don't see logs in
+    ``zmeventnotification`` saying "Sending notification over FCM"
+    then the eventserver, for some reason, does not have your app token.
+    Inspect ``tokens.txt`` (typically in ``/etc/zm/``) to make sure an
+    entry for your phone exists
+  -  If you see that message, but your mobile phone is not receiving a
+    push notification:
+    -  Make sure you haven't disable push notifications on your phone (lots
+      of people do this by mistake and wonder why)
+    -  Make sure you haven't muted notifications (again, lots of people...)
+    -  Sometimes, the push servers of Apple and Google stop forwarding
+      messages for a day or two. I have no idea why. Give it a day or two?
+    -  Open up zmNinja, go right to logs and send it to me
 
--  If you have issues, please send me a copy of your zmeventnotification
-   logs generated above from Terminal-Log, as well as zmNinja debug logs
+    -  If you have issues, please send me a copy of your zmeventnotification
+      logs generated above from Terminal-Log, as well as zmNinja debug logs
 
 
 Brickbats
