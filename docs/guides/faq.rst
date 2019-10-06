@@ -388,7 +388,7 @@ The server runs fine when manually executed, but fails when run in daemon mode (
 
 -  Make sure your certificates are readable by ``www-data`` for
    Ubuntu/Debian, or ``apache`` for Fedora/CentOS (thanks to
-   `@jagee <https://github.com/pliablepixels/zmeventnotification/issues/8>`_.
+   `@jagee <https://github.com/pliablepixels/zmeventnotification/issues/8>`_).
 -  Make sure the *path* to the certificates are readable by ``www-data``
    for Ubuntu/Debian, or ``apache`` for Fedora/CentOS
 
