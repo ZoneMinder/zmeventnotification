@@ -69,15 +69,15 @@ Option 1: Automatic install
 Takes a while and installs a gob of stuff, which is why I did not add it
 automatically, especially if you don't need face recognition.
 
-Note, if you installed ``face_recognition`` without blas, do this:
+Note, if you installed ``face_recognition`` earlier without blas, do this:
 
-::
+.. code:: bash
 
-        sudo -H pip3 uninstall dlib
-        sudo -H pip3 uninstall face-recognition
-        sudo apt-get install libopenblas-dev liblapack-dev libblas-dev # this is the important part
-        sudo -H pip3 install dlib --verbose --no-cache-dir # make sure it finds openblas
-        sudo -H pip3 install face_recognition
+  sudo -H pip3 uninstall dlib
+  sudo -H pip3 uninstall face-recognition
+  sudo apt-get install libopenblas-dev liblapack-dev libblas-dev # this is the important part
+  sudo -H pip3 install dlib --verbose --no-cache-dir # make sure it finds openblas
+  sudo -H pip3 install face_recognition
 
 Option 2: Manual install
 ^^^^^^^^^^^^^^^^^^^^^^^^
