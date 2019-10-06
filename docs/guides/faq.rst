@@ -89,6 +89,9 @@ the following
    Internet) use ``enable = 0`` in the ``[auth]`` section of the
    configuration file.
 
+
+.. _upgrade_es_hooks:
+
 How do I safely upgrade zmeventnotification to new versions?
 ------------------------------------------------------------
 

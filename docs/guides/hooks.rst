@@ -215,6 +215,10 @@ If it doesn't work, go back and figure out where you have a problem
          without requiring to enable frames in storage
 
 
+Upgrading
+~~~~~~~~~
+To upgrade at a later stage, see :ref:`_upgrade_es_hooks`.
+
 .. _hooks-logging:
 
 Logging
