@@ -202,6 +202,8 @@ in ``install.sh`` before executing it.
 
 **The rest of this section is NOT NEEDED for 1.32.0 and above!**
 
+..deprecated:: 1.32.0
+
 **WARNING** : Do NOT do this before you run it manually as I've
 mentioned above to test. Make sure it works, all packages are present
 etc. before you add it as a daemon as if you don't and it crashes you
