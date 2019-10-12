@@ -448,7 +448,7 @@ Here is how to debug and report:
    ``grep <something>``)
 
 - Make sure ES debug logs are on. 
-  - Enable ZM debug logs for both ES (and hooks if you use them) as described in :ref:`_hooks-logging`. Note that ES debug logs are different from hooks debug logs. You need to enable both if you use them. 
+  - Enable ZM debug logs for both ES (and hooks if you use them) as described in :ref:`hooks-logging`. Note that ES debug logs are different from hooks debug logs. You need to enable both if you use them. 
 -  Start a terminal and start zmeventnotification manually from
    command line like so ``sudo -u www-data /usr/bin/zmeventnotification.pl``
 - Start another terminal and tail logs like so ``tail -f /var/log/zm/zmeventnotification.log /var/log/zm/zmesdetect_m*.log``. If you are NOT using hooks, simply do ``tail -f /var/log/zm/zmeventnotification.log``
