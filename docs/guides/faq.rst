@@ -402,6 +402,12 @@ mode. Try ``sudo zmdc.pl stop zmeventnotification.pl``. Also do
 running and if you do find one running, you'll have to kill it before
 you can start it from command line again.
 
+Running hooks manually detects the objects I want but fails to detect via ES (daemon mode)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There may be multiple reasons, but a common one is of timing. When the ES invokes the hook, it is invoked almost immediately upon event detection. In some cases, ZoneMinder still has not had time to create an alarmed frame, or the right snapshot frame. So what happens is that when the ES invokes the hook, it runs detection on a different image from the one you run later when invoked manually. Try adding a ``wait = 5`` to ``objectconfig.ini`` to that monitor section and see if it helps
+
+
 Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
