@@ -27,7 +27,7 @@ WEB_OWNER_FROM_PS=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apa
 WEB_GROUP_FROM_PS=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $2}')
 #WEB_GROUP='www-data' # uncomment if above line fails
 # make this empty if you don't want backups
-MAKE_CONFIG_BACKUP='-b'
+MAKE_CONFIG_BACKUP='--backup=numbered'
 
 # --- end of change these ---
 
@@ -113,7 +113,7 @@ verify_config() {
     echo "Install Hooks config: ${INSTALL_HOOK_CONFIG}"
     echo
     [[ ${INSTALL_ES} != 'no' ]] && echo "The Event Server will be installed to ${TARGET_BIN}"
-    [[ ${INSTALL_ES_CONFIG} != 'no' ]] && echo "The Event Server config will be installed to ${TARGET_ZMES_CONFIG}"
+    [[ ${INSTALL_ES_CONFIG} != 'no' ]] && echo "The Event Server config will be installed to ${TARGET_CONFIG}"
 
     [[ ${INSTALL_HOOK} != 'no' ]] && echo "The hook data files will be installed to ${TARGET_DATA} sub-folders"
     [[ ${INSTALL_HOOK_CONFIG} != 'no' ]] && echo "The hook config files will be installed to ${TARGET_CONFIG}"
@@ -183,11 +183,11 @@ install_hook() {
     chown -R ${WEB_OWNER}:${WEB_GROUP} "${TARGET_DATA}"
 
     # Now install the ML hooks
-    pip install -r  hook/requirements.txt 
+    #pip install -r  hook/requirements.txt 
     install -m 755 -o "${WEB_OWNER}" hook/detect_wrapper.sh "${TARGET_BIN}"
     install -m 755 -o "${WEB_OWNER}" hook/detect.py "${TARGET_BIN}"
     #python setup.py install && print_success "Done" || print_error "python setup failed"
-    pip install hook/ && print_success "Done" || print_error "python setup failed"
+    pip3 install hook/ && print_success "Done" || print_error "python setup failed"
 }
 
 

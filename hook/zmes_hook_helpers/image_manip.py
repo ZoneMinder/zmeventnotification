@@ -4,6 +4,7 @@ from shapely.geometry import Polygon
 import cv2
 import numpy as np
 import pickle
+import re
 
 # Generic image related algorithms
 
@@ -32,9 +33,22 @@ def processPastDetection (bbox, label, conf,mid):
     except FileNotFoundError:
         g.logger.debug ('No history data file found for monitor {}'.format(mid))
         return bbox, label, conf
-    # load past detection
- 
+    # load past detection 
    
+    m = re.match('(\d+)(px|%)?$', g.config['past_det_max_diff_area'],
+                 re.IGNORECASE)
+    if m:
+        max_diff_area = int(m.group(1))
+        use_percent = True if m.group(2) is None or m.group(2) == '%' else False
+    else:
+        g.logger.error('past_det_max_diff_area misformatted: {}'.format(g.config['past_det_max_diff_area']))
+        return bbox, label, conf
+
+    # it's very easy to forget to add 'px' when using pixels
+    if use_percent and (max_diff_area < 0 or max_diff_area > 100):
+        g.logger.error('past_det_max_diff_area must be in the range 0-100 when using percentages: {}'.format(g.config['past_det_max_diff_area']))
+        return bbox, label, conf
+
     #g.logger.debug ('loaded past: bbox={}, labels={}'.format(saved_bs, saved_ls));
 
     new_label = []
@@ -62,14 +76,22 @@ def processPastDetection (bbox, label, conf,mid):
              (saved_b[1][0], saved_b[0][1]))
             saved_b.insert(3, (saved_b[0][0], saved_b[1][1]))
             saved_obj = Polygon(saved_b)
-            if obj.equals(saved_obj):
-                g.logger.debug ('past detection {}@{} exactly matches {}@{} removing'.format(saved_ls[saved_idx],saved_b, label[idx],b))
-                foundMatch = True
-                break
-            if obj.almost_equals(saved_obj):
-                g.logger.debug ('past detection {}@{} approximately matches {}@{} removing'.format(saved_ls[saved_idx],saved_b, label[idx],b))
-                foundMatch = True
-                break
+            max_diff_pixels = max_diff_area
+            
+            if saved_obj.intersects(obj):
+                if obj.contains(saved_obj):
+                    diff_area = obj.difference(saved_obj).area
+                    if use_percent:
+                        max_diff_pixels = obj.area * max_diff_area / 100;
+                else:
+                    diff_area = saved_obj.difference(obj).area
+                    if use_percent:
+                        max_diff_pixels = saved_obj.area * max_diff_area / 100;
+                
+                if diff_area <= max_diff_pixels:
+                    g.logger.debug ('past detection {}@{} approximately matches {}@{} removing'.format(saved_ls[saved_idx],saved_b, label[idx],b))
+                    foundMatch = True
+                    break
         if not foundMatch:
             new_bbox.append(old_b)
             new_label.append(label[idx])
@@ -78,7 +100,7 @@ def processPastDetection (bbox, label, conf,mid):
     return new_bbox, new_label, new_conf
 
 
-def processIntersection(bbox, label, conf, match):
+def processFilters(bbox, label, conf, match):
     # bbox is the set of bounding boxes
     # labels are set of corresponding object names
     # conf are set of confidence scores (for hog and face this is set to 1)
@@ -87,9 +109,15 @@ def processIntersection(bbox, label, conf, match):
     new_label = []
     new_bbox = []
     new_conf = []
-    #g.logger.debug ("INTERSECTION GOT: {}".format(bbox))
 
     for idx, b in enumerate(bbox):
+        if conf[idx] < g.config['yolo_min_confidence']:
+            g.logger.info ('object:{} at {} has a lower confidence:{} than min confidence of: {}, ignoring'.format(label[idx], b, conf[idx], g.config['yolo_min_confidence']))
+            continue
+        else:
+            g.logger.info ('object:{} at {} has an acceptable confidence:{} (min confidence={})'.format(label[idx], b, conf[idx], g.config['yolo_min_confidence']))
+
+
         doesIntersect = False
         # cv2 rectangle only needs top left and bottom right
         # but to check for polygon intersection, we need all 4 corners
@@ -113,13 +141,14 @@ def processIntersection(bbox, label, conf, match):
                     new_bbox.append(old_b)
                     new_conf.append(conf[idx])
                 else:
+                    g.logger.info ('discarding "{}" as it does not match your filters'.format(label[idx]))
                     g.logger.debug('{} intersects object:{}[{}] but does NOT match your detect_pattern filter of {}'
                                    .format(p['name'], label[idx], b, g.config['detect_pattern']))
                 doesIntersect = True
                 break
         # out of poly loop
         if not doesIntersect:
-            g.logger.debug('object:{} at {} does not fall into any polygons, removing...'
+            g.logger.info('object:{} at {} does not fall into any polygons, removing...'
                             .format(label[idx], obj))
     #out of object loop
     return new_bbox, new_label, new_conf
@@ -130,11 +159,27 @@ def getValidPlateDetections(bbox, label, conf):
     # bbox is the set of bounding boxes
     # labels are set of corresponding object names
     # conf are set of confidence scores 
+
+    if not len(label):
+        return bbox, label, conf
     new_label = []
     new_bbox = []
     new_conf = []
     g.logger.debug ('Checking vehicle plates for validity')
+
+    try:
+        r = re.compile(g.config['alpr_pattern'])
+    except re.error:
+        g.logger.error ('invalid pattern {}, using .*'.format(g.config['alpr_pattern']))
+        r = re.compile('.*')
+
+    match = list(filter(r.match, label))
+
     for idx, b in enumerate(bbox):
+        if not label[idx] in match:
+            g.logger.debug ('discarding plate:{} as it does not match alpr filter pattern:{}'.format(label[idx], g.config['alpr_pattern']))
+            continue
+
         old_b = b
         it = iter(b)
         b = list(zip(it, it))
@@ -170,7 +215,7 @@ def getValidPlateDetections(bbox, label, conf):
 
 # draws bounding boxes of identified objects and polygons
 
-def draw_bbox(img, bbox, labels, classes, confidence, color=None, write_conf=False):
+def draw_bbox(img, bbox, labels, classes, confidence, color=None, write_conf=True):
 
    # g.logger.debug ("DRAW BBOX={} LAB={}".format(bbox,labels))
     slate_colors = [ 

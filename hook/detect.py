@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # Main detection script that loads different detection models
 # look at zmes_hook_helpers for different detectors
@@ -53,9 +53,9 @@ args, u = ap.parse_known_args()
 args = vars(args)
 
 if args['monitorid']:
-    log.init('detect',args['monitorid'])
+    log.init(process_name='zmesdetect_'+'m'+args['monitorid'])
 else:
-    log.init('detect')
+    log.init(process_name='zmesdetect')
 
 g.logger.info ('---------| app version: {} |------------'.format(__version__))
 if args['version']:
@@ -139,7 +139,7 @@ for model in g.config['models']:
         try:
             import zmes_hook_helpers.face as face
         except ImportError:
-            g.logger.error ('Error importing face recognition. Make sure you did sudo -H pip install face_recognition')
+            g.logger.error ('Error importing face recognition. Make sure you did sudo -H pip3 install face_recognition')
             raise
 
         m = face.Face(upsample_times=g.config['face_upsample_times'], 
@@ -160,8 +160,12 @@ for model in g.config['models']:
     g.logger.debug('|--> model:{} init took: {}s'.format(model, (datetime.datetime.now() - t_start).total_seconds()))
     t_start = datetime.datetime.now()
     # read the detection pattern we need to apply as a filter
-    r = re.compile(g.config['detect_pattern'])
-    
+    try:
+        r = re.compile(g.config['detect_pattern'])
+    except re.error:
+        g.logger.error ('invalid pattern {}, using .*'.format(g.config['detect_pattern']))
+        r = re.compile('.*')
+
     
     try_next_image = False # take the best of both images, currently used only by alpr
     # temporary holders, incase alpr is used but not found
@@ -175,6 +179,7 @@ for model in g.config['models']:
     for filename in [filename1, filename2]:
         if filename is None: 
             continue
+        #filename = './car.jpg'
         if matched_file and  filename != matched_file:
         # this will only happen if we tried model A, we found a match
         # and then we looped to model B to find more matches (that is, detection_mode is all)
@@ -195,21 +200,38 @@ for model in g.config['models']:
         # check
         if model == 'face':
             g.logger.debug('Appending known faces to filter list')
-            match = match + ['face'] # unknown face
+            match = match + [g.config['unknown_face_name']] # unknown face
             for cls in m.get_classes():
                 if not cls in match:
                     match = match + [cls]
 
         # now filter these with polygon areas
         #g.logger.debug ("INTERIM BOX = {} {}".format(b,l))
-        b, l, c = img.processIntersection(b, l, c, match)
+        b, l, c = img.processFilters(b, l, c, match)
         if use_alpr:
             vehicle_labels = ['car','motorbike', 'bus','truck', 'boat']
             if not set(l).isdisjoint(vehicle_labels) or try_next_image: 
                 # if this is true, that ,means l has vehicle labels
                 # this happens after match, so no need to add license plates to filter
                 g.logger.debug ('Invoking ALPR as detected object is a vehicle or, we are trying hard to look for plates...')
-                alpr_obj = alpr.ALPRPlateRecognizer(url=g.config['alpr_url'], apikey=g.config['alpr_key'], regions=g.config['alpr_regions'])
+                if g.config['alpr_service'] == 'plate_recognizer':
+                    options = {
+                        'regions': g.config['platerec_regions'],
+                        'stats': g.config['platerec_stats'],
+                        'min_dscore': g.config['platerec_min_dscore'],
+                        'min_score': g.config['platerec_min_score'],
+                    }
+                    alpr_obj = alpr.PlateRecognizer(url=g.config['alpr_url'], apikey=g.config['alpr_key'], options=options)
+                elif g.config['alpr_service'] == 'open_alpr':
+                    options = {
+                        'min_confidence': g.config['openalpr_min_confidence'],
+                        'country': g.config['openalpr_country'],
+                        'state': g.config['openalpr_state'],
+                        'recognize_vehicle': g.config['openalpr_recognize_vehicle']
+                    }
+                    alpr_obj = alpr.OpenAlpr(url=g.config['alpr_url'], apikey=g.config['alpr_key'], options=options)
+                else:
+                    raise ValueError('ALPR service "{}" not known'.format(g.config['alpr_service']))
                 # don't pass resized image - may be too small
                 alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)
                 alpr_b, alpr_l, alpr_c = img.getValidPlateDetections(alpr_b, alpr_l, alpr_c)
@@ -226,7 +248,7 @@ for model in g.config['models']:
                         })
                     # Now add plate objects
                     for i, al in enumerate(alpr_l):
-                        g.logger.debug ('ALPR Found {} at {} with score:{}'.format(al, alpr_b[i], alpr_c[i]))
+                        g.logger.info ('ALPR Found {} at {} with score:{}'.format(al, alpr_b[i], alpr_c[i]))
                         b.append(alpr_b[i])
                         l.append(al)
                         c.append(alpr_c[i])
@@ -246,7 +268,7 @@ for model in g.config['models']:
                     saved_file = filename
                     try_next_image = True
                 else: # no plates, no more to try
-                    g.logger.debug ('We did not find license plates, and there are no more images to try')
+                    g.logger.info ('We did not find license plates, and there are no more images to try')
                     if saved_bbox:
                         g.logger.debug ('Going back to matches in first image')
                         b = saved_bbox
@@ -312,7 +334,7 @@ for model in g.config['models']:
                 label.extend(l)
                 conf.extend(c)
                 classes.append(m.get_classes())
-                g.logger.debug('labels found: {}'.format(l))
+                g.logger.info('labels found: {}'.format(l))
                 g.logger.debug ('match found in {}, breaking file loop...'.format(filename))
                 matched_file = filename
                 break # if we found a match, no need to process the next file
@@ -331,7 +353,7 @@ for model in g.config['models']:
 #g.logger.debug ('FINAL LIST={} AND {}'.format(bbox,label))
 
 if not matched_file:
-        g.logger.debug('No patterns found using any models in all files')
+        g.logger.info('No patterns found using any models in all files')
 
 else:
     # we have matches
@@ -344,7 +366,8 @@ else:
   
     #for idx, b in enumerate(bbox):
     #g.logger.debug ("DRAWING {}".format(b))
-    out = img.draw_bbox(image, bbox, label, classes, conf, None, False)
+
+    out = img.draw_bbox(image, bbox, label, classes, conf, None, g.config['show_percent']=='yes')
     image = out
 
     if g.config['frame_id'] == 'bestmatch':
@@ -383,7 +406,7 @@ else:
 
     if g.config['match_past_detections'] == 'yes' and args['monitorid']:
             # point detections to post processed data set
-            g.logger.debug ('Removing matches to past detections')
+            g.logger.info ('Removing matches to past detections')
             bbox_t, label_t, conf_t = img.processPastDetection(bbox, label, conf, args['monitorid'])   
             # save current objects for future comparisons
             g.logger.debug ('Saving detections for monitor {} for future match'.format(args['monitorid']))
@@ -411,7 +434,7 @@ else:
     if pred != '':
         pred = pred.rstrip(',')
         pred = prefix + 'detected:' + pred
-        g.logger.debug('Prediction string:{}'.format(pred))
+        g.logger.info('Prediction string:{}'.format(pred))
         print (pred)
 
     # end of matched_file

@@ -15,12 +15,12 @@ config_vals = {
         },
         'user':{
             'section': 'general',
-            'default': 'admin',
+            'default': None,
             'type': 'string'
         },
         'password':{
             'section': 'general',
-            'default': 'admin',
+            'default': None,
             'type': 'string'
         },
         'basic_user':{
@@ -48,7 +48,11 @@ config_vals = {
             'default': 'no',
             'type': 'string'
         },
-
+        'past_det_max_diff_area':{
+            'section': 'general',
+            'default': '5%',
+            'type': 'string'
+        },
         'frame_id':{
             'section': 'general',
             'default': 'snapshot',
@@ -73,11 +77,6 @@ config_vals = {
         'show_percent':{
             'section': 'general',
             'default': 'no',
-            'type': 'string'
-        },
-        'log_level':{
-            'section': 'general',
-            'default': 'info',
             'type': 'string'
         },
         'allow_self_signed':{
@@ -153,6 +152,12 @@ config_vals = {
             'default': '/var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.txt',
             'type': 'string'
         },
+
+        'yolo_min_confidence': {
+            'section': 'yolo',
+            'default': '0.4',
+            'type': 'float'
+        },
         
         # HOG
         'stride':{
@@ -198,8 +203,13 @@ config_vals = {
             'default': '/var/lib/zmeventnotification/known_faces',
             'type': 'string',
         },
+        'unknown_face_name':{
+            'section': 'face',
+            'default': 'unknown face',
+            'type': 'string',
+        },
 
-        # ALPR
+        # generic ALPR
         'alpr_service': {
             'section': 'alpr',
             'default': 'plate_recognizer',
@@ -207,7 +217,7 @@ config_vals = {
         },
         'alpr_url': {
             'section': 'alpr',
-            'default': 'https://api.platerecognizer.com/v1',
+            'default': None,
             'type': 'string',
         },
         'alpr_key': {
@@ -220,30 +230,58 @@ config_vals = {
             'type': 'string',
             'default': 'yes',
         },
-        'alpr_regions':{
-            'section': 'alpr',
-            'default': 'None',
-            'type': 'eval'
+
+         'alpr_pattern':{
+            'section': 'general',
+            'default': '.*',
+            'type': 'string'
         },
-        'alpr_stats':{
+
+        # Plate recognition specific
+        'platerec_stats':{
             'section': 'alpr',
             'default': 'no',
             'type': 'string'
         },
-        'alpr_min_dscore':{
+        'platerec_regions':{
+            'section': 'alpr',
+            'default': None,
+            'type': 'eval'
+        },
+        'platerec_min_dscore':{
             'section': 'alpr',
             'default': '0.3',
             'type': 'float'
         },
-        'alpr_min_dscore':{
+       
+        'platerec_min_score':{
             'section': 'alpr',
             'default': '0.5',
             'type': 'float'
         },
-        'alpr_min_score':{
+
+        # OpenALPR specific
+        'openalpr_recognize_vehicle':{
             'section': 'alpr',
-            'default': '0.5',
-            'type': 'float'
+            'default': '0',
+            'type': 'int'
         },
+        'openalpr_country':{
+            'section': 'alpr',
+            'default': 'us',
+            'type': 'string'
+        },
+        'openalpr_state':{
+            'section': 'alpr',
+            'default': None,
+            'type': 'string'
+        },
+
+        'openalpr_min_confidence': {
+            'section': 'alpr',
+            'default': '0.3',
+            'type': 'float'
+        }
+       
 
     }

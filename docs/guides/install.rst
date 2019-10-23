@@ -1,5 +1,5 @@
-Installation
-------------
+Installation of the Event Server (ES)
+--------------------------------------
 
 Download the repo
 ~~~~~~~~~~~~~~~~~
@@ -95,6 +95,13 @@ If you want to enable MQTT:
 
     perl -MCPAN -e "install Net::MQTT::Simple"
 
+
+Some notes on MQTT:
+
+ - A minimum version of MQTT 3.1.1 is required
+ - If your ``MQTT:Simple`` library was installed a while ago, you may need to update it. A new ``login`` method was added
+   to that library on Dec 2018 which is required (`ref <https://github.com/Juerd/Net-MQTT-Simple/blob/cf01b43c27893a07185d4b58ff87db183d08b0e9/Changes#L21>`__)
+
 Note that starting 1.0, we also use ``File::Spec``, ``Getopt::Long`` and
 ``Config::IniFiles`` as additional libraries. My ubuntu installation
 seemed to include all of this by default (even though
@@ -107,8 +114,10 @@ missing ones like so:
 
     perl -MCPAN -e "install XXXX" # where XXX is Config::IniFiles, for example
 
-SSL certificate (Generate new, or use ZoneMinder certs if you are already using HTTPS)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Configure SSL certificate (Generate new, or use ZoneMinder certs if you are already using HTTPS)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**NOTE:** If you plan on using picture messaging in zmNinja, then you cannot use self signed certificates. You will need to generate a proper certificate. LetsEncrypt is free and perfect for this.
 
 If you are using secure mode (default) you **also need to make sure you
 generate SSL certificates otherwise the script won't run** If you are
@@ -178,11 +187,15 @@ Making sure everything is running (in manual mode)
    wrong. See :ref:`this section <debug_reporting_es>` later that describes how to make sure its all working fine
    from command line.
 
-Running it as a daemon so it starts automatically along with ZoneMinder
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Install the server (optionally along with hooks) 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**NOTE** : By default ``install.sh`` moves the ES script to ``/usr/bin``. 
+If your ZM install is elsewhere, like ``/usr/local/bin`` please modify the ``TARGET_BIN`` variable
+in ``install.sh`` before executing it.
 
 -  You can now move the ES to the right place by simply doing
-   ``./sudo install.sh`` and following prompts. Other options are below:
+   ``sudo ./install.sh`` and following prompts. Other options are below:
 -  Execute ``sudo ./install.sh --no-install-hook`` to move the ES to the
    right place without installing machine learning hooks
 -  In ZM 1.32.0 and above, go to your web interface, and go to
@@ -190,6 +203,8 @@ Running it as a daemon so it starts automatically along with ZoneMinder
    are all set.
 
 **The rest of this section is NOT NEEDED for 1.32.0 and above!**
+
+.. deprecated:: 1.32.0
 
 **WARNING** : Do NOT do this before you run it manually as I've
 mentioned above to test. Make sure it works, all packages are present

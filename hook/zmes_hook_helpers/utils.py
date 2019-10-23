@@ -55,9 +55,9 @@ def str_split(my_str):
 # Imports zone definitions from ZM
 def import_zm_zones(mid):
     url = g.config['portal'] + '/api/zones/forMonitor/' + mid + '.json'
-    g.logger.debug('Getting ZM zones using {}?username=xxx&password=yyy'.format(url))
-    url = url + '?username=' + g.config['user']
-    url = url + '&password=' + g.config['password']
+    g.logger.debug('Getting ZM zones using {}?user=xxx&pass=yyy'.format(url))
+    url = url + '?user=' + g.config['user']
+    url = url + '&pass=' + g.config['password']
 
     if g.config['portal'].lower().startswith('https://'):
         main_handler = urllib.request.HTTPSHandler(context=g.ctx)
@@ -92,7 +92,7 @@ def import_zm_zones(mid):
 # downloaded ZM image files for future analysis
 def download_files(args):
     if g.config['wait'] > 0:
-        g.logger.debug ('sleeping for {} seconds before downloading'.format(g.config['wait']))
+        g.logger.info ('Sleeping for {} seconds before downloading'.format(g.config['wait']))
         time.sleep(g.config['wait'])
 
     if g.config['portal'].lower().startswith('https://'):
@@ -118,10 +118,11 @@ def download_files(args):
         filename2 = g.config['image_path'] + '/' + args['eventid'] + '-snapshot.jpg'
         filename2_bbox = g.config['image_path'] + '/' + args['eventid'] + '-snapshot-bbox.jpg'
 
-        url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=alarm' + \
-            '&username=' + g.config['user'] + '&password=' + g.config['password']
-        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=alarm' + \
-            '&username=' + g.config['user'] + '&password=*****'
+        url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=alarm' 
+        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=alarm' 
+        if g.config['user']:
+            url = url + '&username=' + g.config['user'] + '&password=' + urllib.parse.quote(g.config['password'],safe='')
+            durl = durl + '&username=' + g.config['user'] + '&password=*****'
 
         g.logger.debug('Trying to download {}'.format(durl))
         try:
@@ -132,10 +133,11 @@ def download_files(args):
         with open(filename1, 'wb') as output_file:
             output_file.write(input_file.read())
 
-        url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
-            '&username=' + g.config['user'] + '&password=' + g.config['password']
-        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' + \
-            '&username=' + g.config['user'] + '&password=*****'
+        url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' 
+        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=snapshot' 
+        if g.config['user']:
+            url = url + '&username=' + g.config['user'] + '&password=' + urllib.parse.quote(g.config['password'],safe='')
+            durl = durl + '&username=' + g.config['user'] + '&password=*****'
         g.logger.debug('Trying to download {}'.format(durl))
         try:
             input_file = opener.open(url)
@@ -151,10 +153,12 @@ def download_files(args):
         filename1_bbox = g.config['image_path'] + '/' + args['eventid'] + '-bbox.jpg'
         filename2 = None
         filename2_bbox = None
-        url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=' + g.config['frame_id'] + \
-            '&username=' + g.config['user'] + '&password=' + g.config['password']
-        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=' + g.config['frame_id'] + \
-            '&username=' + g.config['user'] + '&password=*****'
+
+        url = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=' + g.config['frame_id'] 
+        durl = g.config['portal'] + '/index.php?view=image&eid=' + args['eventid'] + '&fid=' + g.config['frame_id'] 
+        if g.config['user']:
+            url = url + '&username=' + g.config['user'] + '&password=' + urllib.parse.quote(g.config['password'],safe='')
+            durl = durl + '&username=' + g.config['user'] + '&password=*****'
         g.logger.debug('Trying to download {}'.format(durl))
         input_file = opener.open(url)
         with open(filename1, 'wb') as output_file:
@@ -174,14 +178,11 @@ def process_config(args, ctx):
         if t == 'int':
              return int(val)
         elif t == 'eval':
-            return eval(val)
+            return eval(val) if val else None
         elif t == 'str_split':
-            return str_split(val)
+            return str_split(val) if val else None
         elif t  == 'string':
-            if t == 'None':
-                return None
-            else:
-                return val
+            return val
         elif t == 'float':
             return float(val)
         else:
@@ -200,20 +201,8 @@ def process_config(args, ctx):
 
     # main        
     try:
-        config_file = ConfigParser()
+        config_file = ConfigParser(interpolation=None)
         config_file.read(args['config'])
-
-        # First, process log level, so we can see config read logs if needed
-        # Yes, it will be processed later too. Big deal.
-        g.config['log_level'] = config_file['general'].get('log_level', 'info')
-        if g.config['log_level'] == 'debug':
-            g.logger.setLevel(logging.DEBUG)
-        elif g.config['log_level'] == 'info':
-            g.logger.setLevel(logging.INFO)
-        elif g.config['log_level'] == 'error':
-            g.logger.setLevel(logging.ERROR)
-
-        g.logger.info('Log level set to:{}'.format(g.config['log_level']))
         # now read config values
         for k,v in g.config_vals.items():
             #g.logger.debug ('processing {} {}'.format(k,v))

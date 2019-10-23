@@ -89,23 +89,57 @@ the following
    Internet) use ``enable = 0`` in the ``[auth]`` section of the
    configuration file.
 
+
+.. _upgrade_es_hooks:
+
 How do I safely upgrade zmeventnotification to new versions?
 ------------------------------------------------------------
+
+STEP 1: get the latest code
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Download the latest version & change dir to it:
+
+::
+
+  git clone https://github.com/pliablepixels/zmeventnotification.git
+  cd zmeventnotification/
+
+STEP 2: stop the current ES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
     sudo zmdc.pl stop zmeventnotification.pl
 
-Now copy the new zmeventnotification.pl to the right place (usually
-``/usr/bin``) If you need to, copy the new zmeventnotification.ini to
-the right place (usually ``/etc/zm``) (Note: this will replace your old
-config file and you shouldn't need to do this)
+STEP 3: Make a backup of your config files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Before you execute the next step you may want to create a backup of your existing ``zmeventnotification.ini`` and ``objectconfig.ini`` config files. The script will prompt you to overwrite. If you say 'Y' then your old configs will be overwritten. Note that old configs are backed up using suffixes like ``~1``, ``~2`` etc. but it is always good to backup on your own.
+
+
+STEP 4: Execute the install script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**NOTE** : By default ``install.sh`` moves the ES script to ``/usr/bin``. 
+If your ZM install is elsewhere, like ``/usr/local/bin`` please modify the ``TARGET_BIN`` variable
+in ``install.sh`` before executing it.
+
+::
+
+  sudo ./install.sh
+
+
+Follow prompts. Note that just copying the ES perl file to ``/usr/bin`` is not sufficient. You also have to install the updated machine learning hook files if you are using them. That is why ``install.sh`` is better. If you are updating, make sure not to overwrite your config files (but please read breaking changes to see if any config files have changed). Note that the install script makes a backup of your old config files using ``~n`` suffixes where ``n`` is the backup number. However, never hurts to make your own backup first. 
+
+STEP 5: Start the new updated server
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
     sudo zmdc.pl start zmeventnotification.pl
 
-Make sure you look at the syslogs to make sure its started properly
+Make sure you look at the logs to make sure its started properly
 
 Configuring the notification server
 -----------------------------------
@@ -114,7 +148,7 @@ Understanding zmeventnotification configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Starting v1.0, `@synthead <https://github.com/synthead>`__ reworked the
-configuration as follows:
+configuration (brilliantly) as follows:
 
 -  If you just run ``zmeventnotification.pl`` it will try and load
    ``/etc/zm/zmeventnotification.ini``. If it doesn't find it, it will
@@ -354,7 +388,7 @@ The server runs fine when manually executed, but fails when run in daemon mode (
 
 -  Make sure your certificates are readable by ``www-data`` for
    Ubuntu/Debian, or ``apache`` for Fedora/CentOS (thanks to
-   [@jagee](https://github.com/pliablepixels/zmeventnotification/issues/8))
+   `@jagee <https://github.com/pliablepixels/zmeventnotification/issues/8>`_).
 -  Make sure the *path* to the certificates are readable by ``www-data``
    for Ubuntu/Debian, or ``apache`` for Fedora/CentOS
 
@@ -367,6 +401,12 @@ mode. Try ``sudo zmdc.pl stop zmeventnotification.pl``. Also do
 ``ps -aef | grep zmeventnotification`` to check if another copy is not
 running and if you do find one running, you'll have to kill it before
 you can start it from command line again.
+
+Running hooks manually detects the objects I want but fails to detect via ES (daemon mode)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There may be multiple reasons, but a common one is of timing. When the ES invokes the hook, it is invoked almost immediately upon event detection. In some cases, ZoneMinder still has not had time to create an alarmed frame, or the right snapshot frame. So what happens is that when the ES invokes the hook, it runs detection on a different image from the one you run later when invoked manually. Try adding a ``wait = 5`` to ``objectconfig.ini`` to that monitor section and see if it helps
+
 
 Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -405,105 +445,71 @@ Here is how to debug and report:
 
 -  Enable Debug logs in zmNinja (Setting->Developer Options->Enable
    Debug Log)
--  telnet/ssh into your zoneminder server
+-  SSH into your zoneminder server
 -  Stop the zmeventnotification doing
    ``sudo zmdc.pl stop zmeventnotification.pl``
 -  Make sure there are no stale processes running of zmeventnotification
    by doing ``ps -aef | grep zmeventnotification`` and making sure it
    doesn't show existing processes (ignore the one that says
    ``grep <something>``)
--  Edit ``zmeventnotification.ini`` (typically in ``/etc/zm/``) and make
-   sure ``console_logs = yes`` is set. This will print more logs on the
-   console. Make sure you turn this off again before switching back to
-   daemon mode.
--  Start a terminal (lets call it Terminal-Log) to tail logs like so
-   ``tail -f /var/log/syslog | grep zmeventnotification``
--  Start another terminal and start zmeventnotification manually from
-   command line like so ``sudo /usr/bin/zmeventnotification.pl``
--  Make sure you see logs like this in the logs window like so:
+
+- Make sure ES debug logs are on. 
+  - Enable ZM debug logs for both ES (and hooks if you use them) as described in :ref:`hooks-logging`. Note that ES debug logs are different from hooks debug logs. You need to enable both if you use them. 
+-  Start a terminal and start zmeventnotification manually from
+   command line like so ``sudo -u www-data /usr/bin/zmeventnotification.pl``
+- Start another terminal and tail logs like so ``tail -f /var/log/zm/zmeventnotification.log /var/log/zm/zmesdetect_m*.log``. If you are NOT using hooks, simply do ``tail -f /var/log/zm/zmeventnotification.log``
+-  Make sure you see logs like this in the logs window like so: (this example shows logs from both ES and hooks)
 
 ::
 
-    Nov 26 14:27:20 homeserver zmdc[18560]: INF ['zmeventnotification.pl' started at 17/11/26 14:27:20]
-    Nov 26 14:27:20 homeserver zmeventnotification[18560]: INF [Push enabled via FCM]
-    Nov 26 14:27:20 homeserver zmeventnotification[18560]: INF [Event Notification daemon v 0.95 starting]
-    Nov 26 14:27:20 homeserver zmeventnotification[18560]: INF [Total event client connections: 3]
-    Nov 26 14:27:20 homeserver zmeventnotification[18560]: INF [Reloading Monitors...]
-    Nov 26 14:27:21 homeserver zmeventnotification[18560]: INF [Loading monitors]
-    Nov 26 14:27:21 homeserver zmeventnotification[18560]: INF [About to start listening to socket]
-    Nov 26 14:27:21 homeserver zmeventnotification[18560]: INF [Secure WS(WSS) is enabled...]
-    Nov 26 14:27:21 homeserver zmeventnotification[18560]: INF [Web Socket Event Server listening on port 9000]
+  pp@homeserver:~/fiddle/zmeventnotification$ tail -f /var/log/zm/zmeventnotification.log /var/log/zm/zmesdetect_m*.log
+  ==> /var/log/zm/zmeventnotification.log <==
+  10/06/2019 06:48:29.200008 zmeventnotification[13694].INF [main:557] [Invoking hook:'/usr/bin/detect_wrapper.sh' 33989 2 "DoorBell" " front" "/var/cache/zoneminder/events/2/2019-10-06/33989"]
+  10/06/2019 06:48:34.013490 zmeventnotification[29913].INF [main:557] [New event 33990 reported for Monitor:10 (Name:FrontLawn)  front steps]
+  10/06/2019 06:48:34.020958 zmeventnotification[13728].INF [main:557] [Forking process:13728 to handle 1 alarms]
+  10/06/2019 06:48:34.021347 zmeventnotification[13728].INF [main:557] [processAlarms: EID:33990 Monitor:FrontLawn (id):10 cause: front steps]
+  10/06/2019 06:48:34.237147 zmeventnotification[13728].INF [main:557] [Adding event path:/var/cache/zoneminder/events/10/2019-10-06/33990 to hook for image storage]
+  10/06/2019 06:48:34.237418 zmeventnotification[13728].INF [main:557] [Invoking hook:'/usr/bin/detect_wrapper.sh' 33990 10 "FrontLawn" " front steps" "/var/cache/zoneminder/events/10/2019-10-06/33990"]
+  10/06/2019 06:48:46.529693 zmeventnotification[13728].INF [main:557] [For Monitor:10 event:33990, hook script returned with text: exit:1]
+  10/06/2019 06:48:46.529896 zmeventnotification[13728].INF [main:557] [Ending process:13728 to handle alarms]
+  10/06/2019 06:48:47.640414 zmeventnotification[13694].INF [main:557] [For Monitor:2 event:33989, hook script returned with text: exit:1]
+  10/06/2019 06:48:47.640668 zmeventnotification[13694].INF [main:557] [Ending process:13694 to handle alarms]
 
--  Open up zmNinja, clear logs
--  Enable event server in zmNinja
--  Check that when you save the event server connections in zmNinja, you
-   see logs in the log window like this
-
-::
-
-    Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [got a websocket connection from XX.XX.XX.XX (11) active connections]
-    Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [Websockets: New Connection Handshake requested from XX.XX.XX.XX:55189 state=pending auth]
-    Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [Correct authentication provided byXX.XX.XX.XX]
-    Oct 20 10:23:18 homeserver zmeventnotification[27789]: INF [Storing token ...9f665f182b,monlist:-1,intlist:-1,pushstate:enabled]
-    Oct 20 10:23:19 homeserver zmeventnotification[27789]: INF [Contrl: Storing token ...9f665f182b,monlist:1,2,4,5,6,7,10,intlist:0,0,0,0,0,0,0,pushstate:enabled]
-
-If you don't see anything there is a connection problem. Review SSL
-guidelines above, or temporarily turn off websocket SSL as described
-above
-
--  Open up ZM console and force an alarm, you should see logs in your
-   log window above like so:
-
-::
-
-    Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [New event 32910 reported for Garage]
-    Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Broadcasting new events to all 12 websocket clients]
-    Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Checking alarm rules for  token ending in:...2baa57e387]
-    Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Monitor 1 event: last time not found, so sending]
-    Oct 20 10:28:55 homeserver zmeventnotification[27789]: INF [Sending notification over PushProxy]
-    Oct 20 10:28:56 homeserver zmeventnotification[27789]: INF [Pushproxy push message success ]
+  ==> /var/log/zm/zmesdetect_m10.log <==
+  10/06/19 06:48:42 zmesdetect_m10[13732] DBG detect.py:344 [No match found in /var/lib/zmeventnotification/images/33990-alarm.jpg using model:yolo]
+  10/06/19 06:48:42 zmesdetect_m10[13732] DBG detect.py:189 [Using model: yolo with /var/lib/zmeventnotification/images/33990-snapshot.jpg]
+  10/06/19 06:48:46 zmesdetect_m10[13732] DBG detect.py:194 [|--> model:yolo detection took: 3.541227s]
 
 -  If you are debugging problems with receiving push notifications on
    zmNinja mobile, then replicate the following scenario:
 
--  Run the event server in manual mode as described above
--  Kill zmNinja
--  Start zmNinja
--  At this point, in the ``zmeventnotification`` logs you should
-   registration messages (refer to logs example above). If you don't
-   you've either not configured zmNinja to use the eventserver, or it
-   can't reach the eventserver (very common problem)
--  Next up, make sure you are not running zmNinja in the foreground
-   (move it to background or kill it). When zmNinja is in the
-   foreground, it uses websockets to get notifications
--  Force an alarm like I described above. If you don't see logs in
-   ``zmeventnotification`` saying "Sending notification over PushProxy"
-   then the eventserver, for some reason, does not have your app token.
-   Inspeced ``tokens.txt`` (typically in ``/etc/zm/``) to make sure an
-   entry for your phone exists
--  If you see that message, but your mobile phone is not receiving a
-   push notification:
--  Make sure you haven't disable push notifications on your phone (lots
-   of people do this by mistake and wonder why)
--  Make sure you haven't muted notifications (again, lots of people...)
--  Sometimes, the push servers of Apple and Google stop forwarding
-   messages for a day or two. I have no idea why. Give it a day or two?
--  Open up zmNinja, go right to logs and send it to me
+  -  Run the event server in manual mode as described above
+  -  Kill zmNinja
+  -  Start zmNinja
+  -  At this point, in the ``zmeventnotification`` logs you should
+    registration messages (refer to logs example above). If you don't
+    you've either not configured zmNinja to use the eventserver, or it
+    can't reach the eventserver (very common problem)
+  -  Next up, make sure you are not running zmNinja in the foreground
+    (move it to background or kill it). When zmNinja is in the
+    foreground, it uses websockets to get notifications
+  -  Force an alarm like I described above. If you don't see logs in
+    ``zmeventnotification`` saying "Sending notification over FCM"
+    then the eventserver, for some reason, does not have your app token.
+    Inspect ``tokens.txt`` (typically in ``/etc/zm/``) to make sure an
+    entry for your phone exists
+  -  If you see that message, but your mobile phone is not receiving a
+    push notification:
+    -  Make sure you haven't disable push notifications on your phone (lots
+      of people do this by mistake and wonder why)
+    -  Make sure you haven't muted notifications (again, lots of people...)
+    -  Sometimes, the push servers of Apple and Google stop forwarding
+      messages for a day or two. I have no idea why. Give it a day or two?
+    -  Open up zmNinja, go right to logs and send it to me
 
--  If you have issues, please send me a copy of your zmeventnotification
-   logs generated above from Terminal-Log, as well as zmNinja debug logs
+    -  If you have issues, please send me a copy of your zmeventnotification
+      logs generated above from Terminal-Log, as well as zmNinja debug logs
 
-How scalable is it?
--------------------
-
-It's a lightweight single threaded process. I really don't see a need
-for launching a zillion threads or a process per monitor etc for what it
-does. I'd argue its simplicity is its scalability. Plus I don't expect
-more than a handful of consumers to connect to it. I really don't see
-why it won't be able to scale to for what is does. But if you are facing
-scalability issues, let me know. There is
-`Mojolicious <http://mojolicio.us/>`__ I can use to make it more
-scalable if I am proven wrong about scalability.
 
 Brickbats
 ---------
@@ -518,8 +524,7 @@ from the source when accessing another URL via the Referral header
 **So it's encrypted, but passing password is a bad idea. Why not some
 token?**
 
--  Too much work.
--  Plus I'm an unskilled programmer. Pull Requests welcome
+-  Well, now that ZM supports login tokens (starting 1.33), I'll get to supporting it.
 
 **Why WSS and not WS?**
 
