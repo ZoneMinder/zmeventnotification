@@ -400,21 +400,6 @@ known faces images
    images, but experiment. Larger the image, the larger the memory
    requirements)
 
-Yo, it can't recognize faces
-''''''''''''''''''''''''''''
-
--  Look at debug logs.
-
-   -  If it says "no faces loaded" that means your known images don't
-      have recognizable faces
-   -  If it says "no faces found" that means your alarmed image doesn't
-      have a face that is recognizable
-   -  Read comments about ``num_jitters``, ``model``, ``upsample_times``
-      in ``objectconfig.ini``
-
--  Experiment. Read the accuracy wiki link I posted in the previous
-   section
-
 
 Performance comparison
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -485,3 +470,7 @@ config)
 
 **STEP 3: integrate with the actual daemon** 
 - You should know how to do this already
+
+Questions
+~~~~~~~~~~~
+See :doc:`hooks_faq`

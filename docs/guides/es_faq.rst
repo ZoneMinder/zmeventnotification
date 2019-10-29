@@ -1,5 +1,5 @@
-FAQ
-===
+Event Notification Server FAQ
+===============================
 
 Machine Learning! Mmm..Machine Learning!
 ----------------------------------------
@@ -9,6 +9,8 @@ this server along with zoneminder. Once it works well, you can explore
 how to enable Machine Learning based object detection that can be used
 along with ZoneMinder alarms. If you already have this server figured
 out, you can skip directly to the machine learning part (:doc:`hooks`)
+
+If you have questions on the machine learning part, see :doc:`hooks_faq`
 
 
 What is it?
@@ -480,29 +482,16 @@ Here is how to debug and report:
   -  Run the event server in manual mode as described above
   -  Kill zmNinja
   -  Start zmNinja
-  -  At this point, in the ``zmeventnotification`` logs you should
-    registration messages (refer to logs example above). If you don't
-    you've either not configured zmNinja to use the eventserver, or it
-    can't reach the eventserver (very common problem)
-  -  Next up, make sure you are not running zmNinja in the foreground
-    (move it to background or kill it). When zmNinja is in the
-    foreground, it uses websockets to get notifications
-  -  Force an alarm like I described above. If you don't see logs in
-    ``zmeventnotification`` saying "Sending notification over FCM"
-    then the eventserver, for some reason, does not have your app token.
-    Inspect ``tokens.txt`` (typically in ``/etc/zm/``) to make sure an
-    entry for your phone exists
-  -  If you see that message, but your mobile phone is not receiving a
-    push notification:
-    -  Make sure you haven't disable push notifications on your phone (lots
-      of people do this by mistake and wonder why)
-    -  Make sure you haven't muted notifications (again, lots of people...)
-    -  Sometimes, the push servers of Apple and Google stop forwarding
-      messages for a day or two. I have no idea why. Give it a day or two?
-    -  Open up zmNinja, go right to logs and send it to me
+  -  At this point, in the ``zmeventnotification`` logs you should registration messages (refer to logs example above). If you don't you've either not configured zmNinja to use the eventserver, or it can't reach the eventserver (very common problem)
+  -  Next up, make sure you are not running zmNinja in the foreground (move it to background or kill it). When zmNinja is in the foreground, it uses websockets to get notifications
+  -  Force an alarm like I described above. If you don't see logs in ``zmeventnotification`` saying "Sending notification over FCM" then the eventserver, for some reason, does not have your app token. Inspect ``tokens.txt`` (typically in ``/etc/zm/``) to make sure an entry for your phone exists
+  -  If you see that message, but your mobile phone is not receiving a push notification:
 
-    -  If you have issues, please send me a copy of your zmeventnotification
-      logs generated above from Terminal-Log, as well as zmNinja debug logs
+    -  Make sure you haven't disable push notifications on your phone (lots of people do this by mistake and wonder why)
+    -  Make sure you haven't muted notifications (again, lots of people...)
+    -  Sometimes, the push servers of Apple and Google stop forwarding messages for a day or two. I have no idea why. Give it a day or two?
+    -  Open up zmNinja, go right to logs and send it to me
+    -  If you have issues, please send me a copy of your zmeventnotification logs generated above from Terminal-Log, as well as zmNinja debug logs
 
 
 Brickbats
