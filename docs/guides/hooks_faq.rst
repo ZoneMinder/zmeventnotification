@@ -10,11 +10,11 @@ How do the hooks actually work?
 
 * When the Event Notification Server detects an event, it invokes a script called ``detect_wrapper.sh``. This is invoked only if you have configured ``hook_script`` in your ``zmeventnotification.ini``.
 
-* ``detect_wrapper.sh``in turn invokes `detect.py` that does the actual machine learning. Upon exit, it either returns a `1` that means object found, or a `0` which means nothing found. Based on how you have configured your settings, this information is then stored in ZM and/or pushed to your mobile device as a notification.
+* ``detect_wrapper.sh``in turn invokes ``detect.py`` that does the actual machine learning. Upon exit, it either returns a ``1`` that means object found, or a ``0`` which means nothing found. Based on how you have configured your settings, this information is then stored in ZM and/or pushed to your mobile device as a notification.
 
 * `zmeventnotification.ini` has an attribute called ``hook_script``. If you enable that field, that is the beginning of how this kicks in.
 
-How To Debug Sssues
+How To Debug Issues
 ---------------------
 * Refer to :ref:`hooks-logging`
 
@@ -60,7 +60,6 @@ I'm having issues with accuracy of Face Recognition
    -  Read comments about ``num_jitters``, ``model``, ``upsample_times``
       in ``objectconfig.ini``
 
--  Experiment. Read the `accuracy
-        wiki <https://github.com/ageitgey/face_recognition/wiki/Face-Recognition-Accuracy-Problems>`__ link 
+-  Experiment. Read the `accuracy wiki <https://github.com/ageitgey/face_recognition/wiki/Face-Recognition-Accuracy-Problems>`__ link.
 
 
