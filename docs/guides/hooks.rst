@@ -106,15 +106,13 @@ If automatic install fails for you, or you like to be in control:
 Takes a while and installs a gob of stuff, which is why I did not add it
 automatically, especially if you don't need face recognition.
 
-Note, if you installed ``face_recognition`` without blas, do this:
+Note, if you installed ``face_recognition`` without blas, do this::
 
-::
-        sudo -H pip3 uninstall dlib
-        sudo -H pip3 uninstall face-recognition
-        sudo apt-get install libopenblas-dev liblapack-dev libblas-dev # this is the important part
-        sudo -H pip3 install dlib --verbose --no-cache-dir # make sure it finds openblas
-        sudo -H pip3 install face_recognition
-
+    sudo -H pip3 uninstall dlib
+    sudo -H pip3 uninstall face-recognition
+    sudo apt-get install libopenblas-dev liblapack-dev libblas-dev # this is the important part
+    sudo -H pip3 install dlib --verbose --no-cache-dir # make sure it finds openblas
+    sudo -H pip3 install face_recognition
 
 -  You now need to download configuration and weight files that are
    required by the machine learning magic. Note that you don't have to
