@@ -27,7 +27,7 @@ This is a very common situation. Here is what is likely happening:
 * If you have configured ``BESTMATCH`` then the hooks will search for both your "alarmed" frame and the "snapshot" frame for objects. If you have configured ``snapshot``, ``alarm`` or a specfic ``fid=xx`` only that frame will be searched
 
 * An 'alarm' frame is the first frame that caused the motion trigger
-* A 'snapshot' frame is the frame with the _highest_ score in the event
+* A 'snapshot' frame is the frame with the *highest* score in the event
 
 The way ZM works is that the 'snapshot' frame may keep changing till the full event is over. This is because as event frames are analyzed, if their 'score' is higher than the current snapshot score, the frame is replaced.
 
@@ -44,7 +44,7 @@ How do I make sure this is what is happening?
 
 How do I solve this issue?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-- If you are running ZM 1.32 upgrade to 1.34 (1.33 master as of Oct 2019). This _should_ fix the issue of delayed alarm frame writes
+- If you are running ZM 1.32 upgrade to 1.34 (1.33 master as of Oct 2019). This *should* fix the issue of delayed alarm frame writes
 - Add a ``wait: 5`` to that monitor in ``objectconfig.ini`` (again, please read the ini file to understand). This delays hook execution by 5 seconds. The hope here is that the time specified is sufficient for the alarmed frame and the right snapshot to be written to disk
 - Fix your zone triggers. This is really the right way. If you use object detection, re-look at how your zone triggers to be able to capture the object of interest as soon as possible. If you do that, chances are high that by the time the script runs, the image containing the object will be written to disk. 
 
