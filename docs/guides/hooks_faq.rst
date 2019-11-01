@@ -22,7 +22,7 @@ How To Debug Issues
 It looks like when ES invokes the hooks, it misses objects, but when I run it manually, it detects it just fine
 ------------------------------------------------------------------------------------------------------------------
 
-This is a very common situation. Here is what is likely happening:
+This is a very common situation and prior to ZM 1.34 there was also a bug. Here is what is likely happening:
 
 * If you have configured ``BESTMATCH`` then the hooks will search for both your "alarmed" frame and the "snapshot" frame for objects. If you have configured ``snapshot``, ``alarm`` or a specfic ``fid=xx`` only that frame will be searched
 
@@ -45,7 +45,7 @@ How do I make sure this is what is happening?
 How do I solve this issue?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 - If you are running ZM 1.32 or below, upgrade to 1.34 (1.33 master as of Oct 2019). This *should* fix the issue of delayed alarm frame writes
-- If you are running ZM 1.32 or below, turning off JPEG store will help. When JPEG store is enabled, snapshots are written later 
+- If you are running ZM 1.32 or below, turning off JPEG store will help. When JPEG store is enabled, snapshots are written later. This bug was fixed in 1.34 (see `this issue <https://github.com/ZoneMinder/zoneminder/issues/2745>`__).
 - Add a ``wait: 5`` to that monitor in ``objectconfig.ini`` (again, please read the ini file to understand). This delays hook execution by 5 seconds. The hope here is that the time specified is sufficient for the alarmed frame and the right snapshot to be written to disk
 - Fix your zone triggers. This is really the right way. If you use object detection, re-look at how your zone triggers to be able to capture the object of interest as soon as possible. If you do that, chances are high that by the time the script runs, the image containing the object will be written to disk. 
 
