@@ -158,6 +158,7 @@ my $picture_portal_username;
 my $picture_portal_password;
 
 my $secrets;
+my $secrets_filename;
 
 #default key. Please don't change this
 use constant NINJA_API_KEY =>
@@ -239,7 +240,7 @@ else {
     printInfo( "No config file found, using inbuilt defaults" ) ;
     }
 
-my $secrets_filename //= config_get_val($config, "general", "secrets");
+$secrets_filename //= config_get_val($config, "general", "secrets");
 if ($secrets_filename) {
   printInfo( "using secrets file: $secrets_filename" ) ;
   $secrets = Config::IniFiles->new( -file => $secrets_filename ) ;
@@ -375,6 +376,8 @@ ${\(
   "Configuration (read $abs_config_file)" :
   "Default configuration ($abs_config_file doesn't exist)"
 )}:
+
+Secrets file................... ${\(value_or_undefined($secrets_filename))}
 
 Port .......................... ${\(value_or_undefined($port))}
 Address ....................... ${\(value_or_undefined($address))}
