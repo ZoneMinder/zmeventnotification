@@ -12,6 +12,7 @@ Event NotificationServer Documentation
         guides/breaking
         guides/install
         guides/hooks      
+        guides/config
         guides/es_faq
         guides/hooks_faq
         guides/developers
@@ -28,6 +29,8 @@ Event NotificationServer Documentation
         How to configure the machine learning hooks *after* you install the Event Server
 :doc:`guides/install`
         How to install the Event Notification Server
+:doc:`guides/config`
+        How to use config files
 :doc:`guides/es_faq`
         Event Notification Server FAQ covering common scenarios/issues
 :doc:`guides/hooks_faq`
