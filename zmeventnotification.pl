@@ -77,7 +77,7 @@ my $app_version="4.4";
 use constant {
     DEFAULT_CONFIG_FILE       => "/etc/zm/zmeventnotification.ini",
     DEFAULT_PORT              => 9000,
-    DEFAULT_ADDRESS           => '[::]',
+    DEFAULT_ADDRESS           => '0.0.0.0',
     DEFAULT_AUTH_ENABLE       => 'yes',
     DEFAULT_AUTH_TIMEOUT      => 20,
     DEFAULT_FCM_ENABLE        => 'yes',
