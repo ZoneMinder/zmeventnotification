@@ -24,7 +24,7 @@ RUN cd /opt/zmeventnotification \
 	&& /opt/zmeventnotification/install.sh --no-interactive --install-es --install-hook --install-config
 
 # Setup Volumes
-VOLUME /var/lib/zoneminder/events /var/lib/zoneminder/images /var/lib/mysql /var/log/zm
+VOLUME /etc/zm /var/lib/zoneminder/events /var/lib/zoneminder/images /var/lib/mysql /var/log/zm
 
 # Expose ports
 EXPOSE 80
