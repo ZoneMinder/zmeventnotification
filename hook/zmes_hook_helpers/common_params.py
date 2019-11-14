@@ -203,7 +203,7 @@ config_vals = {
             'default': 'hog',
             'type': 'string',
         },
-         'face_min_confidence': {
+         'face_recog_min_confidence': {
             'section': 'face',
             'default': '0.5',
             'type': 'float'

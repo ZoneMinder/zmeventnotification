@@ -142,7 +142,7 @@ class Face:
             best_pred = preds[best_pred_ndx]
             loc = face_locations[idx]
 
-            if best_pred >= g.config['face_min_confidence']:
+            if best_pred >= g.config['face_recog_min_confidence']:
                  matched_face_names.append(self.svm_model.classes_[best_pred_ndx])
                  g.logger.debug('face:{} matched with confidence: {}'.format(self.svm_model.classes_[best_pred_ndx], best_pred))
             else:     
