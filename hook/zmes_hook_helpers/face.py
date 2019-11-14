@@ -140,15 +140,15 @@ class Face:
             preds = self.svm_model.predict_proba([face_encoding])[0]
             best_pred_ndx = np.argmax(preds)
             best_pred = preds[best_pred_ndx]
-
-            g.logger.debug('face:{} matched with: {}'.format(self.svm_model.classes_[best_pred_ndx], best_pred))
             loc = face_locations[idx]
+
             if best_pred >= g.config['face_min_confidence']:
                  matched_face_names.append(self.svm_model.classes_[best_pred_ndx])
+                 g.logger.debug('face:{} matched with confidence: {}'.format(self.svm_model.classes_[best_pred_ndx], best_pred))
             else:     
                 g.logger.debug ('face confidence is less than {}, marking it unknown'.format(g.config['face_min_confidence']))
                 matched_face_names.append(g.config['unknown_face_name'])
+                best_pred = 1 # if unknown, don't carry over pred prob
             matched_face_rects.append((loc[3], loc[0], loc[1], loc[2]))
             conf.append(best_pred)
-
         return matched_face_rects, matched_face_names, conf
