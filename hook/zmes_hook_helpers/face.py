@@ -45,7 +45,7 @@ class Face:
             directory = g.config['known_images_path']
             ext = ['.jpg', '.jpeg', '.png', '.gif']
             known_face_encodings = []
-            self.known_face_names = []
+            known_face_names = []
 
             try:
                 for entry in os.listdir(directory):
@@ -69,7 +69,7 @@ class Face:
                                 else:
                                     face_encodings = face_recognition.face_encodings(known_face, known_face_locations=face_locations, num_jitters=self.num_jitters)
                                     known_face_encodings.append(face_encodings[0])
-                                    self.known_face_names.append(person_dir)
+                                    known_face_names.append(person_dir)
                                     #g.logger.debug ('Adding image:{} as known person: {}'.format(person, person_dir))     
 
 
@@ -87,7 +87,7 @@ class Face:
 
                             face_encodings = face_recognition.face_encodings(known_face, known_face_locations=face_locations, num_jitters=self.num_jitters)
                             known_face_encodings.append(face_encodings[0])
-                            self.known_face_names.append(os.path.splitext(entry)[0])
+                            known_face_names.append(os.path.splitext(entry)[0])
                         
             except Exception as e:
                 g.logger.error('Error initializing face recognition: {}'.format(e))
@@ -95,12 +95,12 @@ class Face:
 
             # Now we've finished iterating all files/dirs
             # lets create the svm
-            if not len(self.known_face_names):
+            if not len(known_face_names):
                 g.logger.error('No known faces found to train, encoding file not created')
             else:
                 self.svm_model = svm.SVC(probability=True, gamma='scale')
-                g.logger.debug ('Fitting {}'.format(self.known_face_names))
-                self.svm_model.fit(known_face_encodings, self.known_face_names)
+                g.logger.debug ('Fitting {}'.format(known_face_names))
+                self.svm_model.fit(known_face_encodings, known_face_names)
                 f = open(encoding_file_name, "wb")
                 pickle.dump(self.svm_model,f)
                 f.close()
