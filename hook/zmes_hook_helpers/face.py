@@ -49,27 +49,28 @@ class Face:
 
             try:
                 for entry in os.listdir(directory):
-                    if os.path.isdir(entry):
+                    if os.path.isdir(directory+'/'+entry):
+
                     # multiple images for this person,
                     # so we need to iterate that subdir
                         g.logger.debug ('{} is a directory. Processing all images inside it'.format(entry))
-                        person_dir = os.listdir(entry)
+                        person_dir = os.listdir(directory+'/'+entry)
                         for person in person_dir:
                             if person.endswith(tuple(ext)):
                                 g.logger.debug('loading face from  {}/{}'.format(entry,person))
-                                known_face = face_recognition.load_image_file('{}/{}'.format(entry, person))
+                                known_face = face_recognition.load_image_file('{}/{}/{}'.format(directory,entry, person))
                                 # Find all the faces and face encodings 
                                 # lets NOT use CNN for training. I dont think people will put in 
                                 # bad images for training
                                 train_model='hog' # change to self.model if you need
                                 face_locations = face_recognition.face_locations(known_face, 
-                                    model=train.model,number_of_times_to_upsample=self.upsample_times)
+                                    model=train_model,number_of_times_to_upsample=self.upsample_times)
                                 if len (face_locations) != 1:
                                     g.logger.error ('File {} has multiple faces, cannot use for training. Ignoring...'.format(person))
                                 else:
                                     face_encodings = face_recognition.face_encodings(known_face, known_face_locations=face_locations, num_jitters=self.num_jitters)
                                     known_face_encodings.append(face_encodings[0])
-                                    known_face_names.append(person_dir)
+                                    known_face_names.append(entry)
                                     #g.logger.debug ('Adding image:{} as known person: {}'.format(person, person_dir))     
 
 
