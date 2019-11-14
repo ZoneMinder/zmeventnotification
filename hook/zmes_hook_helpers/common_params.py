@@ -203,6 +203,11 @@ config_vals = {
             'default': 'hog',
             'type': 'string',
         },
+         'face_min_confidence': {
+            'section': 'face',
+            'default': '0.5',
+            'type': 'float'
+        },
         'known_images_path':{
             'section': 'face',
             'default': '/var/lib/zmeventnotification/known_faces',
