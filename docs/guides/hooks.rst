@@ -375,15 +375,24 @@ Configuring face recognition
 
 -  Make sure you have images of people you want to recognize in
    ``/var/lib/zmeventnotification/known_faces``
--  Only one image per person
--  For example, you may have the following image setup:
+- You can have multiple faces per person
+- Typical configuration:
 
-   ::
+:: 
+  known_faces/
+    +----------bruce_lee/
+                +------1.jpg
+                +------2.jpg
+    +----------david_gilmour/
+            +------1.jpg
+            +------img2.jpg
+            +------3.jpg
+    +----------ramanujan/
+            +------face1.jpg
+            +------face2.jpg
 
-       /var/lib/zmeventnotification/known_faces
-           + david_gilmour.jpg
-           + ramanujan.jpg
-           + bruce_lee.jpg
+
+In this example, you have 3 names, each with different images.
 
 -  When face recognition is triggered, it will load each of these files
    and if there are faces in them, will load them and compare them to
