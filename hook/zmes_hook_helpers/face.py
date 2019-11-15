@@ -147,6 +147,9 @@ class Face:
         face_locations = face_recognition.face_locations(rgb_image, model=self.model, number_of_times_to_upsample=self.upsample_times)
         face_encodings = face_recognition.face_encodings(rgb_image, known_face_locations=face_locations, num_jitters=self.num_jitters)
 
+        if not len(face_encodings):
+            return [],[],[]
+
         # Use the KNN model to find the best matches for the test face
         closest_distances = self.knn.kneighbors(face_encodings, n_neighbors=1)
         are_matches = [closest_distances[0][i][0] <= g.config['face_recog_dist_threshold'] for i in range(len(face_locations))]
