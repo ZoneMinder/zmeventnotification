@@ -146,7 +146,7 @@ class Face:
                  matched_face_names.append(self.svm_model.classes_[best_pred_ndx])
                  g.logger.debug('face:{} matched with confidence: {}'.format(self.svm_model.classes_[best_pred_ndx], best_pred))
             else:     
-                g.logger.debug ('face confidence is less than {}, marking it unknown'.format(g.config['face_min_confidence']))
+                g.logger.debug ('face confidence is less than {}, marking it unknown'.format(g.config['face_recog_min_confidence']))
                 matched_face_names.append(g.config['unknown_face_name'])
                 best_pred = 1 # if unknown, don't carry over pred prob
             matched_face_rects.append((loc[3], loc[0], loc[1], loc[2]))
