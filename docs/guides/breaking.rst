@@ -3,7 +3,7 @@ Breaking Changes
 
 Version 4.6 onwards
 ~~~~~~~~~~~~~~~~~~~~
-- The hook files ``detect.py`` and ``detect_wrapper.sh`` are now called ``zm_detect.py`` and ``zm_detect_wrapper.sh``. It occurred to me that no zm namespacing was not a good idea.
+- The hook files ``detect.py`` and ``detect_wrapper.sh`` are now called ``zm_detect.py`` and ``zm_detect_wrapper.sh``.  Furthermore, these scripts no longer reside in ``/usr/bin``. They will now reside in ``/var/lib/zmeventnotification/bin``. I suppose I did not need to namespace and move, but I thought of the latter after I did the namespace changing.
 
 Version 4.4 onwards
 ~~~~~~~~~~~~~~~~~~~~
