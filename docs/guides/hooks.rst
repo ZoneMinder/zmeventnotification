@@ -160,11 +160,11 @@ Note, if you installed ``face_recognition`` without blas, do this::
    -  ``CONFIG_FILE`` to point to the right config file, if you changed
       paths
 
--  Now copy your detection file to ``/usr/bin``
+-  Now copy your detection file to ``/var/lib/zmeventnotification/bin``
 
    ::
 
-       sudo cp zm_detect.py /usr/bin
+       sudo cp zm_detect.py /var/lib/zmeventnotification/bin
 
 Post install steps
 ~~~~~~~~~~~~~~~~~~
@@ -180,7 +180,7 @@ Test operation
 
 ::
 
-    sudo -u www-data /usr/bin/zm_detect_wrapper.sh <eid> <mid> # replace www-data with apache if needed
+    sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect_wrapper.sh <eid> <mid> # replace www-data with apache if needed
 
 This will try and download the configured frame for alarm and analyze
 it. Replace with your own EID (Example 123456) The files will be in
@@ -450,7 +450,7 @@ You can manually invoke the detection module to check if it works ok:
 
 .. code:: bash
 
-    ./sudo -u www-data /usr/bin/zm_detect.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
+    ./sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
 
 The ``--monitorid <mid>`` is optional and is the monitor ID. If you do
 specify it, it will pick up the right mask to apply (if it is in your

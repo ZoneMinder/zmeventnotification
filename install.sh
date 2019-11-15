@@ -15,10 +15,11 @@
 
 # --- Change these if you want --
 
-TARGET_BIN='/usr/bin'
+
 
 TARGET_CONFIG='/etc/zm'
 TARGET_DATA='/var/lib/zmeventnotification'
+TARGET_BIN='/var/lib/zmeventnotification/bin'
 
 WGET=$(which wget)
 WEB_OWNER_FROM_PS=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $1}')
@@ -134,10 +135,12 @@ install_es() {
 # install proc for ML hooks
 install_hook() {
     echo '***** Installing Hooks **********'
+    mkdir -p "${TARGET_DATA}/bin" 2>/dev/null
     mkdir -p "${TARGET_DATA}/images" 2>/dev/null
     mkdir -p "${TARGET_DATA}/known_faces" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/yolov3" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/tinyyolo" 2>/dev/null
+    
 
     # If you don't already have data files, get them
     # First YOLOV3
