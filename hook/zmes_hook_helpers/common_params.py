@@ -203,10 +203,15 @@ config_vals = {
             'default': 'hog',
             'type': 'string',
         },
-         'face_recog_min_confidence': {
+         'face_recog_dist_threshold': {
             'section': 'face',
-            'default': '0.5',
+            'default': '0.6',
             'type': 'float'
+        },
+        'face_recog_knn_algo': {
+            'section': 'face',
+            'default': 'ball_tree',
+            'type': 'string'
         },
         'known_images_path':{
             'section': 'face',

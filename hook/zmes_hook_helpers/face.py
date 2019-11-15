@@ -6,7 +6,9 @@ import os
 import cv2
 import face_recognition
 import pickle
-from sklearn import svm
+from sklearn import neighbors
+import imutils
+import math
 
 # Class to handle face recognition
 
@@ -19,13 +21,13 @@ class Face:
         self.upsample_times = upsample_times
         self.num_jitters = num_jitters
         self.model = model
-        self.svm_model = None
+        self.knn = None
 
-        encoding_file_name = g.config['known_images_path']+'/faces.svm'
+        encoding_file_name = g.config['known_images_path']+'/faces.dat'
         try:
             if (os.path.isfile(g.config['known_images_path']+'/faces.pickle')):
                 # old version, we no longer want it. begone
-                g.logger.debug ('removing old faces.pickle. We have moved onto SVMs')
+                g.logger.debug ('removing old faces.pickle, we have moved to clustering')
                 os.remove (g.config['known_images_path']+'/faces.pickle')
         except Exception as e:
             g.logger.error('Error deleting old pickle file: {}'.format(e))
@@ -35,7 +37,7 @@ class Face:
         if (os.path.isfile(encoding_file_name)):
             g.logger.debug ('pre-trained faces found, using that. If you want to add new images, remove: {}'.format(encoding_file_name))
             with open(encoding_file_name, 'rb') as f:
-                self.svm_model  = pickle.load(f)
+                self.knn  = pickle.load(f)
           
             #self.known_face_encodings = data["encodings"]
             #self.known_face_names = data["names"]
@@ -50,7 +52,6 @@ class Face:
             try:
                 for entry in os.listdir(directory):
                     if os.path.isdir(directory+'/'+entry):
-
                     # multiple images for this person,
                     # so we need to iterate that subdir
                         g.logger.debug ('{} is a directory. Processing all images inside it'.format(entry))
@@ -58,11 +59,17 @@ class Face:
                         for person in person_dir:
                             if person.endswith(tuple(ext)):
                                 g.logger.debug('loading face from  {}/{}'.format(entry,person))
-                                known_face = face_recognition.load_image_file('{}/{}/{}'.format(directory,entry, person))
+
+                                # imread seems to do a better job of color space conversion and orientation
+                                known_face = cv2.imread('{}/{}/{}'.format(directory,entry, person))
+                                #known_face = face_recognition.load_image_file('{}/{}/{}'.format(directory,entry, person))
+
+
                                 # Find all the faces and face encodings 
                                 # lets NOT use CNN for training. I dont think people will put in 
                                 # bad images for training
                                 train_model='hog' # change to self.model if you need
+                               
                                 face_locations = face_recognition.face_locations(known_face, 
                                     model=train_model,number_of_times_to_upsample=self.upsample_times)
                                 if len (face_locations) != 1:
@@ -77,7 +84,8 @@ class Face:
                     elif entry.endswith(tuple(ext)):
                     # this was old style. Lets still support it. The image is a single file with no directory
                         g.logger.debug('loading face from  {}'.format(entry))
-                        known_face = face_recognition.load_image_file('{}/{}'.format(directory, entry))
+                        #known_face = cv2.imread('{}/{}/{}'.format(directory,entry, person))
+                        known_face = cv2.imread('{}/{}'.format(directory, entry))
                         train_model = 'hog' # change to self.model if you want cnn
                         face_locations = face_recognition.face_locations(known_face, model=train_model,
                                   number_of_times_to_upsample=self.upsample_times)
@@ -99,16 +107,22 @@ class Face:
             if not len(known_face_names):
                 g.logger.error('No known faces found to train, encoding file not created')
             else:
-                self.svm_model = svm.SVC(probability=True, gamma='scale')
+                n_neighbors = int(round(math.sqrt(len(known_face_names))))
+                g.logger.debug ('Using n_neighbors to be: {}'.format(n_neighbors))
+                self.knn = neighbors.KNeighborsClassifier(n_neighbors=n_neighbors, algorithm=g.config['face_recog_knn_algo'], weights='distance')
+
                 g.logger.debug ('Fitting {}'.format(known_face_names))
-                self.svm_model.fit(known_face_encodings, known_face_names)
+                self.knn.fit(known_face_encodings, known_face_names)
+             
+                
+
                 f = open(encoding_file_name, "wb")
-                pickle.dump(self.svm_model,f)
+                pickle.dump(self.knn,f)
                 f.close()
                 g.logger.debug ('wrote encoding file: {}'.format(encoding_file_name))
 
     def get_classes(self):
-        return self.svm_model.classes_
+        return self.knn.classes_
 
     def _rescale_rects(self, a):
         rects = []
@@ -133,24 +147,17 @@ class Face:
         face_locations = face_recognition.face_locations(rgb_image, model=self.model, number_of_times_to_upsample=self.upsample_times)
         face_encodings = face_recognition.face_encodings(rgb_image, known_face_locations=face_locations, num_jitters=self.num_jitters)
 
+        # Use the KNN model to find the best matches for the test face
+        closest_distances = self.knn.kneighbors(face_encodings, n_neighbors=1)
+        are_matches = [closest_distances[0][i][0] <= g.config['face_recog_dist_threshold'] for i in range(len(face_locations))]
+
         matched_face_names = []
         matched_face_rects = []
 
-        for idx,face_encoding in enumerate(face_encodings):
-            preds = self.svm_model.predict_proba([face_encoding])[0]
-
-            print (preds, self.svm_model.classes_)
-            best_pred_ndx = np.argmax(preds)
-            best_pred = preds[best_pred_ndx]
-            loc = face_locations[idx]
-
-            if best_pred >= g.config['face_recog_min_confidence']:
-                 matched_face_names.append(self.svm_model.classes_[best_pred_ndx])
-                 g.logger.debug('face:{} matched with confidence: {}'.format(self.svm_model.classes_[best_pred_ndx], best_pred))
-            else:     
-                g.logger.debug ('face matched:{} but confidence of:{} is less than {}, marking it unknown'.format(self.svm_model.classes_[best_pred_ndx], best_pred, g.config['face_recog_min_confidence']))
-                matched_face_names.append(g.config['unknown_face_name'])
-                best_pred = 1 # if unknown, don't carry over pred prob
+        for pred, loc, rec in zip(self.knn.predict(face_encodings), face_locations, are_matches):
+            label = pred if rec else g.config['unknown_face_name']
             matched_face_rects.append((loc[3], loc[0], loc[1], loc[2]))
-            conf.append(best_pred)
+            matched_face_names.append(label)
+            conf.append(1)
+
         return matched_face_rects, matched_face_names, conf

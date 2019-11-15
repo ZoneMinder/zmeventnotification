@@ -400,8 +400,6 @@ In this example, you have 3 names, each with different images.
 
 known faces images
 ''''''''''''''''''
-
--  Only put in one image per person
 -  Make sure the face is recognizable
 -  crop it to around 400 pixels width (doesn't seem to need bigger
    images, but experiment. Larger the image, the larger the memory
