@@ -128,6 +128,7 @@ verify_config() {
 # move proc for zmeventnotification.pl
 install_es() {
     echo '***** Installing ES **********'
+    mkdir -p "${TARGET_DATA}/push" 2>/dev/null
     install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN_ES}" && 
             print_success "Completed, but you will still have to install ES dependencies as per https://github.com/pliablepixels/zmeventnotification/blob/master/README.md#install-dependencies"  || print_error "failed"
     #echo "Done, but you will still have to manually install all ES dependencies as per https://github.com/pliablepixels/zmeventnotification#how-do-i-install-it"
@@ -141,6 +142,8 @@ install_hook() {
     mkdir -p "${TARGET_DATA}/known_faces" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/yolov3" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/tinyyolo" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/misc" 2>/dev/null
+    echo "for future use" > "${TARGET_DATA}/misc/README.txt" 2>/dev/null
     
 
     # If you don't already have data files, get them
@@ -182,9 +185,6 @@ install_hook() {
         fi
     done
 
-
-    # Make sure webserver can access them
-    chown -R ${WEB_OWNER}:${WEB_GROUP} "${TARGET_DATA}"
 
     # Now install the ML hooks
     #pip install -r  hook/requirements.txt 
@@ -308,6 +308,7 @@ check_args() {
     [[ ${INSTALL_HOOK} == 'no' ]] && INSTALL_HOOK_CONFIG='no'
     [[ ${INSTALL_HOOK} == 'prompt' && ${INSTALL_HOOK_CONFIG} == 'yes' ]] && INSTALL_HOOK_CONFIG='prompt'
 
+   
 }
 
 
@@ -359,3 +360,5 @@ then
     confirm 'Install Hook Config' 'y/N' && install_hook_config || echo 'Skipping Hook config install'
 fi
 
+# Make sure webserver can access them
+chown -R ${WEB_OWNER}:${WEB_GROUP} "${TARGET_DATA}"
