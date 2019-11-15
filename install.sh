@@ -19,7 +19,8 @@
 
 TARGET_CONFIG='/etc/zm'
 TARGET_DATA='/var/lib/zmeventnotification'
-TARGET_BIN='/var/lib/zmeventnotification/bin'
+TARGET_BIN_ES='/usr/bin'
+TARGET_BIN_HOOK='/var/lib/zmeventnotification/bin'
 
 WGET=$(which wget)
 WEB_OWNER_FROM_PS=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $1}')
@@ -113,7 +114,7 @@ verify_config() {
     echo "Install Hooks: ${INSTALL_HOOK}"
     echo "Install Hooks config: ${INSTALL_HOOK_CONFIG}"
     echo
-    [[ ${INSTALL_ES} != 'no' ]] && echo "The Event Server will be installed to ${TARGET_BIN}"
+    [[ ${INSTALL_ES} != 'no' ]] && echo "The Event Server will be installed to ${TARGET_BIN_ES}"
     [[ ${INSTALL_ES_CONFIG} != 'no' ]] && echo "The Event Server config will be installed to ${TARGET_CONFIG}"
 
     [[ ${INSTALL_HOOK} != 'no' ]] && echo "The hook data files will be installed to ${TARGET_DATA} sub-folders"
@@ -127,7 +128,7 @@ verify_config() {
 # move proc for zmeventnotification.pl
 install_es() {
     echo '***** Installing ES **********'
-    install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN}" && 
+    install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN_ES}" && 
             print_success "Completed, but you will still have to install ES dependencies as per https://github.com/pliablepixels/zmeventnotification/blob/master/README.md#install-dependencies"  || print_error "failed"
     #echo "Done, but you will still have to manually install all ES dependencies as per https://github.com/pliablepixels/zmeventnotification#how-do-i-install-it"
 }
@@ -187,8 +188,8 @@ install_hook() {
 
     # Now install the ML hooks
     #pip install -r  hook/requirements.txt 
-    install -m 755 -o "${WEB_OWNER}" hook/zm_detect_wrapper.sh "${TARGET_BIN}"
-    install -m 755 -o "${WEB_OWNER}" hook/zm_detect.py "${TARGET_BIN}"
+    install -m 755 -o "${WEB_OWNER}" hook/zm_detect_wrapper.sh "${TARGET_BIN_HOOK}"
+    install -m 755 -o "${WEB_OWNER}" hook/zm_detect.py "${TARGET_BIN_HOOK}"
     #python setup.py install && print_success "Done" || print_error "python setup failed"
     pip3 install hook/ && print_success "Done" || print_error "python setup failed"
 }
@@ -216,7 +217,7 @@ install_hook_config() {
     install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.ini "${TARGET_CONFIG}" &&
         print_success "config copied" || print_error "could not copy config"
     echo "====> Remember to fill in the right values in the config files, or your system won't work! <============="
-    echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN}/zm_detect_wrapper.sh! <========"
+    echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN_HOOK}/zm_detect_wrapper.sh! <========"
     echo
 }
 
