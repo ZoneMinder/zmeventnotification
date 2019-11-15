@@ -68,7 +68,7 @@ class Face:
                                 # Find all the faces and face encodings 
                                 # lets NOT use CNN for training. I dont think people will put in 
                                 # bad images for training
-                                train_model='hog' # change to self.model if you need
+                                train_model=g.config['face_train_model'] 
                                
                                 face_locations = face_recognition.face_locations(known_face, 
                                     model=train_model,number_of_times_to_upsample=self.upsample_times)
@@ -86,7 +86,7 @@ class Face:
                         g.logger.debug('loading face from  {}'.format(entry))
                         #known_face = cv2.imread('{}/{}/{}'.format(directory,entry, person))
                         known_face = cv2.imread('{}/{}'.format(directory, entry))
-                        train_model = 'hog' # change to self.model if you want cnn
+                        train_model=g.config['face_train_model']
                         face_locations = face_recognition.face_locations(known_face, model=train_model,
                                   number_of_times_to_upsample=self.upsample_times)
                      
