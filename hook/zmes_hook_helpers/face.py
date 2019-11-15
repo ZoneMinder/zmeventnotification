@@ -146,7 +146,7 @@ class Face:
         # Find all the faces and face encodings in the target image
         face_locations = face_recognition.face_locations(rgb_image, model=self.model, number_of_times_to_upsample=self.upsample_times)
         face_encodings = face_recognition.face_encodings(rgb_image, known_face_locations=face_locations, num_jitters=self.num_jitters)
-
+        
         if not len(face_encodings):
             return [],[],[]
 
