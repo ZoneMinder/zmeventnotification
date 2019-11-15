@@ -1,6 +1,10 @@
 Breaking Changes
 ----------------
 
+Version 4.6 onwards
+~~~~~~~~~~~~~~~~~~~~
+- The hook files ``detect.py`` and ``detect_wrapper.sh`` are now called ``zm_detect.py`` and ``zm_detect_wrapper.sh``. It occurred to me that no zm namespacing was not a good idea.
+
 Version 4.4 onwards
 ~~~~~~~~~~~~~~~~~~~~
 - If you are using picture messaging, then the URL format has changed. Please REMOVE ``&username=<user>&password=<passwd>`` from the URL and put them into the ``picture_portal_username`` and ``picture_portal_password`` fields respectively

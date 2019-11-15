@@ -50,7 +50,7 @@ Option 1: Automatic install
 
     cd zmeventnotification
 
--  (OPTIONAL) Edit ``hook/detect_wrapper.sh`` and change:
+-  (OPTIONAL) Edit ``hook/zm_detect_wrapper.sh`` and change:
 
    -  ``CONFIG_FILE`` to point to the right config file, if you changed
       paths
@@ -117,7 +117,7 @@ Note, if you installed ``face_recognition`` without blas, do this::
 -  You now need to download configuration and weight files that are
    required by the machine learning magic. Note that you don't have to
    put them in ``/var/lib/zmeventnotification`` -> use whatever you want
-   (and change variables in ``detect_wrapper.sh`` script if you do)
+   (and change variables in ``zm_detect_wrapper.sh`` script if you do)
 
 .. code:: bash
 
@@ -155,7 +155,7 @@ Note, if you installed ``face_recognition`` without blas, do this::
 
        sudo chown -R www-data:www-data /var/lib/zmeventnotification/ #(change www-data to apache for CentOS/Fedora)
 
--  (OPTIONAL) Edit ``detect_wrapper.sh`` and change:
+-  (OPTIONAL) Edit ``zm_detect_wrapper.sh`` and change:
 
    -  ``CONFIG_FILE`` to point to the right config file, if you changed
       paths
@@ -164,7 +164,7 @@ Note, if you installed ``face_recognition`` without blas, do this::
 
    ::
 
-       sudo cp detect.py /usr/bin
+       sudo cp zm_detect.py /usr/bin
 
 Post install steps
 ~~~~~~~~~~~~~~~~~~
@@ -172,7 +172,7 @@ Post install steps
 -  Make sure you edit your installed ``objectconfig.ini`` to the right
    settings. You MUST change the ``[general]`` section for your own
    portal.
--  Make sure the ``CONFIG_FILE`` variable in ``detect_wrapper.sh`` is
+-  Make sure the ``CONFIG_FILE`` variable in ``zm_detect_wrapper.sh`` is
    correct
 
 Test operation
@@ -180,7 +180,7 @@ Test operation
 
 ::
 
-    sudo -u www-data /usr/bin/detect_wrapper.sh <eid> <mid> # replace www-data with apache if needed
+    sudo -u www-data /usr/bin/zm_detect_wrapper.sh <eid> <mid> # replace www-data with apache if needed
 
 This will try and download the configured frame for alarm and analyze
 it. Replace with your own EID (Example 123456) The files will be in
@@ -249,7 +249,7 @@ Troubleshooting
 
 -  In general, I expect you to debug properly. Please don't ask me basic
    questions without investigating logs yourself
--  Always run ``detect_wrapper.sh`` in manual mode first to make sure it
+-  Always run ``zm_detect_wrapper.sh`` in manual mode first to make sure it
    works
 -  To get debug logs, Make sure your ``LOG_DEBUG`` in ZM Options->Logs is set to on and your ``LOG_DEBUG_TARGET`` option includes ``_zmesdetect`` (or is empty)
 -  You can view debug logs for detection by doing ``tail -f  /var/log/zm/zmesdetect*.log``
@@ -450,7 +450,7 @@ You can manually invoke the detection module to check if it works ok:
 
 .. code:: bash
 
-    ./sudo -u www-data /usr/bin/detect.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
+    ./sudo -u www-data /usr/bin/zm_detect.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
 
 The ``--monitorid <mid>`` is optional and is the monitor ID. If you do
 specify it, it will pick up the right mask to apply (if it is in your
@@ -460,7 +460,7 @@ config)
 **STEP 1: Make sure the scripts(s) work** 
 
 - Run the python script manually to see if it works (refer to sections above on how to run them manually) 
-- ``./detect_wrapper.sh <eid> <mid>`` --> make sure it
+- ``./zm_detect_wrapper.sh <eid> <mid>`` --> make sure it
   downloads a proper image for that eid. Make sure it correctly invokes
   detect.py If not, fix it. (``<mid>`` is optional and is used to apply a
   crop mask if specified) 

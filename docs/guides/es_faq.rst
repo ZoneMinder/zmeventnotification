@@ -187,7 +187,7 @@ configuration (brilliantly) as follows:
     Tag alarm event id ............ false
     Use custom notification sound . false
 
-    Hook .......................... '/usr/bin/person_detect_wrapper.sh'
+    Hook .......................... '/usr/bin/zm_detect_wrapper.sh'
     Use Hook Description........... true
 
 What is the hook section ?
@@ -223,7 +223,7 @@ detection succeeded in the alarmed or snapshot frame.
 Here is an example: (Note: just an example, please don't ask me for
 support for person detection)
 
--  You will find a sample ``detect_wrapper.sh`` hook in the ``hook``
+-  You will find a sample ``zm_detect_wrapper.sh`` hook in the ``hook``
    directory. This script is invoked by the notification server when an
    event occurs.
 -  This script in turn invokes a python OpenCV based script that grabs
@@ -466,21 +466,21 @@ Here is how to debug and report:
 
   pp@homeserver:~/fiddle/zmeventnotification$ tail -f /var/log/zm/zmeventnotification.log /var/log/zm/zmesdetect_m*.log
   ==> /var/log/zm/zmeventnotification.log <==
-  10/06/2019 06:48:29.200008 zmeventnotification[13694].INF [main:557] [Invoking hook:'/usr/bin/detect_wrapper.sh' 33989 2 "DoorBell" " front" "/var/cache/zoneminder/events/2/2019-10-06/33989"]
+  10/06/2019 06:48:29.200008 zmeventnotification[13694].INF [main:557] [Invoking hook:'/usr/bin/zm_detect_wrapper.sh' 33989 2 "DoorBell" " front" "/var/cache/zoneminder/events/2/2019-10-06/33989"]
   10/06/2019 06:48:34.013490 zmeventnotification[29913].INF [main:557] [New event 33990 reported for Monitor:10 (Name:FrontLawn)  front steps]
   10/06/2019 06:48:34.020958 zmeventnotification[13728].INF [main:557] [Forking process:13728 to handle 1 alarms]
   10/06/2019 06:48:34.021347 zmeventnotification[13728].INF [main:557] [processAlarms: EID:33990 Monitor:FrontLawn (id):10 cause: front steps]
   10/06/2019 06:48:34.237147 zmeventnotification[13728].INF [main:557] [Adding event path:/var/cache/zoneminder/events/10/2019-10-06/33990 to hook for image storage]
-  10/06/2019 06:48:34.237418 zmeventnotification[13728].INF [main:557] [Invoking hook:'/usr/bin/detect_wrapper.sh' 33990 10 "FrontLawn" " front steps" "/var/cache/zoneminder/events/10/2019-10-06/33990"]
+  10/06/2019 06:48:34.237418 zmeventnotification[13728].INF [main:557] [Invoking hook:'/usr/bin/zm_detect_wrapper.sh' 33990 10 "FrontLawn" " front steps" "/var/cache/zoneminder/events/10/2019-10-06/33990"]
   10/06/2019 06:48:46.529693 zmeventnotification[13728].INF [main:557] [For Monitor:10 event:33990, hook script returned with text: exit:1]
   10/06/2019 06:48:46.529896 zmeventnotification[13728].INF [main:557] [Ending process:13728 to handle alarms]
   10/06/2019 06:48:47.640414 zmeventnotification[13694].INF [main:557] [For Monitor:2 event:33989, hook script returned with text: exit:1]
   10/06/2019 06:48:47.640668 zmeventnotification[13694].INF [main:557] [Ending process:13694 to handle alarms]
 
   ==> /var/log/zm/zmesdetect_m10.log <==
-  10/06/19 06:48:42 zmesdetect_m10[13732] DBG detect.py:344 [No match found in /var/lib/zmeventnotification/images/33990-alarm.jpg using model:yolo]
-  10/06/19 06:48:42 zmesdetect_m10[13732] DBG detect.py:189 [Using model: yolo with /var/lib/zmeventnotification/images/33990-snapshot.jpg]
-  10/06/19 06:48:46 zmesdetect_m10[13732] DBG detect.py:194 [|--> model:yolo detection took: 3.541227s]
+  10/06/19 06:48:42 zmesdetect_m10[13732] DBG zm_detect.py:344 [No match found in /var/lib/zmeventnotification/images/33990-alarm.jpg using model:yolo]
+  10/06/19 06:48:42 zmesdetect_m10[13732] DBG zm_detect.py:189 [Using model: yolo with /var/lib/zmeventnotification/images/33990-snapshot.jpg]
+  10/06/19 06:48:46 zmesdetect_m10[13732] DBG zm_detect.py:194 [|--> model:yolo detection took: 3.541227s]
 
 -  If you are debugging problems with receiving push notifications on
    zmNinja mobile, then replicate the following scenario:
