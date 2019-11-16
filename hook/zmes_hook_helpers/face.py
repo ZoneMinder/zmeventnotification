@@ -1,10 +1,11 @@
 import numpy as np
 import zmes_hook_helpers.common_params as g
 import zmes_hook_helpers.log as log
+import zmes_hook_helpers.face_train as train
+import face_recognition
 import sys
 import os
 import cv2
-import face_recognition
 import pickle
 from sklearn import neighbors
 import imutils
@@ -36,90 +37,18 @@ class Face:
         # to increase performance, read encodings from  file
         if (os.path.isfile(encoding_file_name)):
             g.logger.debug ('pre-trained faces found, using that. If you want to add new images, remove: {}'.format(encoding_file_name))
-            with open(encoding_file_name, 'rb') as f:
-                self.knn  = pickle.load(f)
           
             #self.known_face_encodings = data["encodings"]
             #self.known_face_names = data["names"]
         else:
             # no encodings, we have to read and train
             g.logger.debug ('trained file not found, reading from images and doing training...')
-            directory = g.config['known_images_path']
-            ext = ['.jpg', '.jpeg', '.png', '.gif']
-            known_face_encodings = []
-            known_face_names = []
+            g.logger.debug ('If you are using a GPU and run out of memory, do the training using zm_train_faces.py. In this case, other models like yolo may already take up a lot of GPU memory')
+            
+            train.train()
+        with open(encoding_file_name, 'rb') as f:
+            self.knn  = pickle.load(f)
 
-            try:
-                for entry in os.listdir(directory):
-                    if os.path.isdir(directory+'/'+entry):
-                    # multiple images for this person,
-                    # so we need to iterate that subdir
-                        g.logger.debug ('{} is a directory. Processing all images inside it'.format(entry))
-                        person_dir = os.listdir(directory+'/'+entry)
-                        for person in person_dir:
-                            if person.endswith(tuple(ext)):
-                                g.logger.debug('loading face from  {}/{}'.format(entry,person))
-
-                                # imread seems to do a better job of color space conversion and orientation
-                                known_face = cv2.imread('{}/{}/{}'.format(directory,entry, person))
-                                #known_face = face_recognition.load_image_file('{}/{}/{}'.format(directory,entry, person))
-
-
-                                # Find all the faces and face encodings 
-                                # lets NOT use CNN for training. I dont think people will put in 
-                                # bad images for training
-                                train_model=g.config['face_train_model'] 
-                               
-                                face_locations = face_recognition.face_locations(known_face, 
-                                    model=train_model,number_of_times_to_upsample=self.upsample_times)
-                                if len (face_locations) != 1:
-                                    g.logger.error ('File {} has multiple faces, cannot use for training. Ignoring...'.format(person))
-                                else:
-                                    face_encodings = face_recognition.face_encodings(known_face, known_face_locations=face_locations, num_jitters=self.num_jitters)
-                                    known_face_encodings.append(face_encodings[0])
-                                    known_face_names.append(entry)
-                                    #g.logger.debug ('Adding image:{} as known person: {}'.format(person, person_dir))     
-
-
-                    elif entry.endswith(tuple(ext)):
-                    # this was old style. Lets still support it. The image is a single file with no directory
-                        g.logger.debug('loading face from  {}'.format(entry))
-                        #known_face = cv2.imread('{}/{}/{}'.format(directory,entry, person))
-                        known_face = cv2.imread('{}/{}'.format(directory, entry))
-                        train_model=g.config['face_train_model']
-                        face_locations = face_recognition.face_locations(known_face, model=train_model,
-                                  number_of_times_to_upsample=self.upsample_times)
-                     
-                        if len (face_locations) != 1:
-                            g.logger.error ('File {} has multiple faces, cannot use for training. Ignoring...'.format(entry))
-                        else:
-
-                            face_encodings = face_recognition.face_encodings(known_face, known_face_locations=face_locations, num_jitters=self.num_jitters)
-                            known_face_encodings.append(face_encodings[0])
-                            known_face_names.append(os.path.splitext(entry)[0])
-                        
-            except Exception as e:
-                g.logger.error('Error initializing face recognition: {}'.format(e))
-                raise ValueError('Error opening known faces directory. Is the path correct?')
-
-            # Now we've finished iterating all files/dirs
-            # lets create the svm
-            if not len(known_face_names):
-                g.logger.error('No known faces found to train, encoding file not created')
-            else:
-                n_neighbors = int(round(math.sqrt(len(known_face_names))))
-                g.logger.debug ('Using n_neighbors to be: {}'.format(n_neighbors))
-                self.knn = neighbors.KNeighborsClassifier(n_neighbors=n_neighbors, algorithm=g.config['face_recog_knn_algo'], weights='distance')
-
-                g.logger.debug ('Fitting {}'.format(known_face_names))
-                self.knn.fit(known_face_encodings, known_face_names)
-             
-                
-
-                f = open(encoding_file_name, "wb")
-                pickle.dump(self.knn,f)
-                f.close()
-                g.logger.debug ('wrote encoding file: {}'.format(encoding_file_name))
 
     def get_classes(self):
         return self.knn.classes_

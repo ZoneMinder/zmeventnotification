@@ -126,7 +126,7 @@ Note, if you installed ``face_recognition`` without blas, do this::
 
     # if you are using face recognition, create this folder
     # after that you need to copy images of faces you want to detect
-    # to this folder
+    # to this folder and train them
     sudo mkdir -p /var/lib/zmeventnotification/known_faces
 
     # if you want to use YoloV3 (slower, accurate)
@@ -394,6 +394,15 @@ Configuring face recognition
 
 In this example, you have 3 names, each with different images.
 
+- It is recommended that you now train the images by doing:
+
+::
+
+  sudo -u www-data /var/lib/zmeventnotification/bin/zm_train_faces.py
+
+
+- Note that you do not necessarily have to train it first but I highly recommend it. When detection runs, it will look for the trained file and if missing, will auto-create it. However, detection may also load yolo and if you have limited GPU resources, you may run out of memory when training. 
+
 -  When face recognition is triggered, it will load each of these files
    and if there are faces in them, will load them and compare them to
    the alarmed image
@@ -401,7 +410,7 @@ In this example, you have 3 names, each with different images.
 known faces images
 ''''''''''''''''''
 -  Make sure the face is recognizable
--  crop it to around 400 pixels width (doesn't seem to need bigger
+-  crop it to around 800 pixels width (doesn't seem to need bigger
    images, but experiment. Larger the image, the larger the memory
    requirements)
 

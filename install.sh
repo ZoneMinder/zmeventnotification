@@ -117,7 +117,7 @@ verify_config() {
     [[ ${INSTALL_ES} != 'no' ]] && echo "The Event Server will be installed to ${TARGET_BIN_ES}"
     [[ ${INSTALL_ES_CONFIG} != 'no' ]] && echo "The Event Server config will be installed to ${TARGET_CONFIG}"
 
-    [[ ${INSTALL_HOOK} != 'no' ]] && echo "The hook data files will be installed to ${TARGET_DATA} sub-folders"
+    [[ ${INSTALL_HOOK} != 'no' ]] && echo "The hook files will be installed to ${TARGET_DATA} sub-folders"
     [[ ${INSTALL_HOOK_CONFIG} != 'no' ]] && echo "The hook config files will be installed to ${TARGET_CONFIG}"
     echo
      [[ ${INTERACTIVE} == 'yes' ]] && read -p "If any of this looks wrong, please hit Ctrl+C and edit the variables in this script..."
@@ -190,6 +190,7 @@ install_hook() {
     #pip install -r  hook/requirements.txt 
     install -m 755 -o "${WEB_OWNER}" hook/zm_detect_wrapper.sh "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_detect.py "${TARGET_BIN_HOOK}"
+    install -m 755 -o "${WEB_OWNER}" hook/zm_train_faces.py "${TARGET_BIN_HOOK}"
     #python setup.py install && print_success "Done" || print_error "python setup failed"
     pip3 install hook/ && print_success "Done" || print_error "python setup failed"
 }
