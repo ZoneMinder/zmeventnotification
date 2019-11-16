@@ -331,6 +331,7 @@ known faces images
 -  crop it to around 800 pixels width (doesn't seem to need bigger
    images, but experiment. Larger the image, the larger the memory
    requirements)
+- crop around the face - not a tight crop, but no need to add a full body. A typical "passport" photo crop, maybe with a bit more of shoulder is ideal.
 
 
 Performance comparison
