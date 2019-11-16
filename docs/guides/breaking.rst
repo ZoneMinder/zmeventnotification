@@ -3,7 +3,10 @@ Breaking Changes
 
 Version 4.6 onwards
 ~~~~~~~~~~~~~~~~~~~~
+- If you are using hooks, make sure you run ``sudo ./install.sh`` again - it will create additional files in ``/var/lib/zmeventnotification``
 - The hook files ``detect.py`` and ``detect_wrapper.sh`` are now called ``zm_detect.py`` and ``zm_detect_wrapper.sh``.  Furthermore, these scripts no longer reside in ``/usr/bin``. They will now reside in ``/var/lib/zmeventnotification/bin``. I suppose I did not need to namespace and move, but I thought of the latter after I did the namespace changing.
+- If you are using face recognition, 4.6.1 and above now allow multiple faces per person. Note that it is recommended you train them before you run detection. See the documentation for it in :doc:`hooks`.
+
 
 Version 4.4 onwards
 ~~~~~~~~~~~~~~~~~~~~
