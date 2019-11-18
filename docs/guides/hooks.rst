@@ -297,6 +297,7 @@ Configuring face recognition
 - Typical configuration:
 
 :: 
+
   known_faces/
     +----------bruce_lee/
                 +------1.jpg
