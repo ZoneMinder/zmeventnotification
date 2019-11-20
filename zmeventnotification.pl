@@ -320,6 +320,14 @@ if ( $ssl_enabled && ( !$ssl_cert_file || !$ssl_key_file ) ) {
 
 my $notId = 1;
 
+if ($hook_pass_image_path) {
+    if ( !try_use("ZoneMinder::Event") ) {
+        Fatal(
+            "ZoneMinder::Event missing, you may be using an old version. Please turn off hook_pass_image_path in yoyr config"
+        );
+    }
+}
+
 # this is just a wrapper around Config::IniFiles val
 # older versions don't support a default parameter
 sub config_get_val {
@@ -2058,6 +2066,8 @@ sub sendEvent {
         . "--SPLIT--"
         . $t . "\n";
 
+    printDebug('child finished writing to parent');
+
 }
 
 # Compares connection rules (monList/interval). Returns 1 if event should be send to this connection,
@@ -2166,19 +2176,12 @@ sub processAlarms {
 
 # new ZM 1.33 feature - lets me extract event path so I can store the hook detection image
                 if ($hook_pass_image_path) {
-                    if ( !try_use("ZoneMinder::Event") ) {
-                        Error(
-                            "ZoneMinder::Event missing, you may be using an old version"
-                        );
-                    }
-                    else {
-                        my $event
-                            = new ZoneMinder::Event( $alarm->{EventId} );
-                        $cmd = $cmd . " \"" . $event->Path() . "\"";
-                        printInfo("Adding event path:"
-                                . $event->Path()
-                                . " to hook for image storage" );
-                    }
+
+                    my $event = new ZoneMinder::Event( $alarm->{EventId} );
+                    $cmd = $cmd . " \"" . $event->Path() . "\"";
+                    printInfo("Adding event path:"
+                            . $event->Path()
+                            . " to hook for image storage" );
 
                 }
                 printInfo( "Invoking hook:" . $cmd );
