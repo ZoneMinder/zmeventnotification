@@ -196,6 +196,13 @@ install_es_config() {
     echo 'Replacing ES config file'
     install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 zmeventnotification.ini "${TARGET_CONFIG}" && 
         print_success "config copied" || print_error "could not copy config"
+    if [ ! -f "${TARGET_CONFIG}/secrets.ini" ]; then
+     install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 secrets.ini "${TARGET_CONFIG}" && 
+        print_success "secrets copied" || print_error "could not copy secrets"
+    fi
+   
+
+
     echo "====> Remember to fill in the right values in the config files, or your system won't work! <============="
     echo
 }

@@ -172,7 +172,8 @@ def process_config(args, ctx):
 # parse config file into a dictionary with defaults
 
     g.config = {}
-
+    has_secrets = False
+    secrets_file = None
 
     def _correct_type(val,t):
         if t == 'int':
@@ -192,6 +193,19 @@ def process_config(args, ctx):
     def _set_config_val(k,v):
     # internal function to parse all keys
         val = config_file[v['section']].get(k,v['default'])
+
+        if val and val[0] == '!': # its a secret token, so replace
+            g.logger.debug ('Secret token found in config: {}'.format(val));
+            if not has_secrets:
+                raise ValueError('Secret token found, but no secret file specified')
+            if secrets_file.has_option('secrets', val[1:]):
+                vn = secrets_file.get('secrets', val[1:])
+                #g.logger.debug ('Replacing {} with {}'.format(val,vn))
+                val = vn
+            else:
+                raise ValueError ('secret token {} not found in secrets file {}'.format(val,secrets_filename))
+
+
         g.config[k] = _correct_type(val, v['type'])
         if k.find('password') == -1:
             dval = g.config[k]
@@ -203,9 +217,28 @@ def process_config(args, ctx):
     try:
         config_file = ConfigParser(interpolation=None)
         config_file.read(args['config'])
+        
+
+        if config_file.has_option('general','secrets'):
+            secrets_filename = config_file.get('general', 'secrets')
+            g.logger.debug ('secret filename: {}'.format(secrets_filename))
+            has_secrets = True
+            secrets_file = ConfigParser(interpolation = None)
+            try:
+                with open(secrets_filename) as f:
+                    secrets_file.read_file(f)
+            except:
+                raise            
+        else:
+            g.logger.debug ('No secrets file configured')
         # now read config values
+       
         for k,v in g.config_vals.items():
             #g.logger.debug ('processing {} {}'.format(k,v))
+            if k == 'secrets':
+                continue
+           
+            
             _set_config_val(k,v)
             #g.logger.debug ("done")
         

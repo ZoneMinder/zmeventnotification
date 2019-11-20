@@ -59,7 +59,7 @@ use IO::Select ;
 # ==========================================================================
 
 
-my $app_version="4.4";
+my $app_version="4.5";
 
 
 # ==========================================================================
@@ -157,6 +157,9 @@ my $include_picture ;
 my $picture_portal_username;
 my $picture_portal_password;
 
+my $secrets;
+my $secrets_filename;
+
 #default key. Please don't change this
 use constant NINJA_API_KEY =>
     "AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h"
@@ -236,6 +239,17 @@ else {
     $config = Config::IniFiles->new ;
     printInfo( "No config file found, using inbuilt defaults" ) ;
     }
+
+$secrets_filename //= config_get_val($config, "general", "secrets");
+if ($secrets_filename) {
+  printInfo( "using secrets file: $secrets_filename" ) ;
+  $secrets = Config::IniFiles->new( -file => $secrets_filename ) ;
+  unless ( $secrets ) {
+      Fatal( "Encountered errors while reading $secrets_filename:\n"
+              . join( "\n", @Config::IniFiles::errors ) ) ;
+  }
+}
+
 
 # If an option set a value, leave it.  If there's a value in the config, use
 # it.  Otherwise, use a default value if it's available.
@@ -320,6 +334,21 @@ sub config_get_val {
     # parity with hook config
     if    ( lc( $final_val ) eq 'yes' ) { $final_val = 1 ; }
     elsif ( lc( $final_val ) eq 'no' )  { $final_val = 0 ; }
+
+    
+    my $fc = substr($final_val, 0,1);
+    #printInfo ("Parsing $final_val with X${fc}X");
+    if ($fc eq "!") {
+      my $token = substr($final_val, 1);
+      printDebug ('Got secret token !'.$token);
+      Fatal ('No secret file found') if (!$secrets);
+      my $secret_val = $secrets->val('secrets', $token);
+      Fatal ('Token:'.$token.' not found in secret file') if (!$secret_val);
+      #printInfo ('replacing with:'.$secret_val);
+      $final_val = $secret_val;
+    }    
+
+    #printInfo("RETURNING --> $final_val");
     return $final_val ;
     }
 
@@ -347,6 +376,8 @@ ${\(
   "Configuration (read $abs_config_file)" :
   "Default configuration ($abs_config_file doesn't exist)"
 )}:
+
+Secrets file................... ${\(value_or_undefined($secrets_filename))}
 
 Port .......................... ${\(value_or_undefined($port))}
 Address ....................... ${\(value_or_undefined($address))}

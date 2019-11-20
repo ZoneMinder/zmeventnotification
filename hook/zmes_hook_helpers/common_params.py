@@ -8,6 +8,11 @@ polygons = []  # will contain mask(s) for a monitor
 
 # valid config keys and defaults
 config_vals = {
+        'secrets':{
+            'section': 'general',
+            'default': None,
+            'type': 'string',
+        },
         'portal':{
             'section': 'general',
             'default': '',
