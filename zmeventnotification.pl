@@ -2281,8 +2281,8 @@ sub initSocketServer {
                     die "Cannot fork: $!";
                 }
                 elsif ( $pid == 0 ) {
-
                     # client
+                    logInit();
                     local $SIG{'CHLD'} = 'DEFAULT';
                     my $numAlarms = scalar @events;
                     printInfo(
