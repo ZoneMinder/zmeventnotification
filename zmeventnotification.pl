@@ -1424,7 +1424,7 @@ sub processIncomingMessage {
         );
         eval { $conn->send_utf8($str); };
         if ($@) {
-          Error("Error sending BADJSON: $@");
+            Error("Error sending BADJSON: $@");
         }
         return;
     }
@@ -1440,9 +1440,9 @@ sub processIncomingMessage {
         );
         eval { $conn->send_utf8($str); };
         if ($@) {
-                        Error("Error sending PUSHDISABLED: $@");
-                    
-                    }
+            Error("Error sending PUSHDISABLED: $@");
+
+        }
         return;
     }
 
@@ -1483,9 +1483,9 @@ sub processIncomingMessage {
                 );
                 eval { $conn->send_utf8($str); };
                 if ($@) {
-                        Error("Error sending MISSINGPLATFORM: $@");
-                      
-                    }
+                    Error("Error sending MISSINGPLATFORM: $@");
+
+                }
                 return;
             }
             foreach (@active_connections) {
@@ -1624,9 +1624,9 @@ sub processIncomingMessage {
                 );
                 eval { $conn->send_utf8($str); };
                 if ($@) {
-                        Error("Error sending MISSINGMONITORLIST: $@");
-                    
-                    }
+                    Error("Error sending MISSINGMONITORLIST: $@");
+
+                }
                 return;
             }
             if ( !exists( $json_string->{'data'}->{'intlist'} ) ) {
@@ -1639,9 +1639,9 @@ sub processIncomingMessage {
                 );
                 eval { $conn->send_utf8($str); };
                 if ($@) {
-                        Error("Error sending MISSINGINTERVALLIST: $@");
-                      
-                    }
+                    Error("Error sending MISSINGINTERVALLIST: $@");
+
+                }
                 return;
             }
             my $monlist = $json_string->{'data'}->{'monlist'};
@@ -1687,7 +1687,7 @@ sub processIncomingMessage {
                     eval { $_->{conn}->send_utf8($str); };
                     if ($@) {
                         Error("Error sending version: $@");
-                     
+
                     }
 
                 }
@@ -1729,7 +1729,7 @@ sub processIncomingMessage {
                     eval { $_->{conn}->send_utf8($str); };
                     if ($@) {
                         Error("Error sending BADAUTH: $@");
-                      
+
                     }
                     printInfo(
                         "marking for deletion - bad authentication provided by "
@@ -1754,7 +1754,7 @@ sub processIncomingMessage {
                     eval { $_->{conn}->send_utf8($str); };
                     if ($@) {
                         Error("Error sending auth success: $@");
-                    
+
                     }
                     printInfo( "Correct authentication provided by "
                             . $_->{conn}->ip() );
@@ -1773,9 +1773,9 @@ sub processIncomingMessage {
         );
         eval { $_->{conn}->send_utf8($str); };
         if ($@) {
-                        Error("Error sending NOTSUPPORTED: $@");
-                     
-                    }
+            Error("Error sending NOTSUPPORTED: $@");
+
+        }
     }
 }
 
@@ -2319,6 +2319,7 @@ sub initSocketServer {
                     die "Cannot fork: $!";
                 }
                 elsif ( $pid == 0 ) {
+
                     # client
                     $dbh = zmDbConnect(1);
                     logReinit();
