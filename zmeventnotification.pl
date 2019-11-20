@@ -2321,9 +2321,11 @@ sub initSocketServer {
                 elsif ( $pid == 0 ) {
 
                     # client
+                    # based on zmdc code, looks like we need to reinit
+                    # else there are issues
+                    local $SIG{'CHLD'} = 'DEFAULT';
                     $dbh = zmDbConnect(1);
                     logReinit();
-                    local $SIG{'CHLD'} = 'DEFAULT';
                     my $numAlarms = scalar @events;
                     printInfo(
                         "Forking process:$$ to handle $numAlarms alarms");
