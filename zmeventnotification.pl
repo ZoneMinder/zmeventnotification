@@ -2282,7 +2282,8 @@ sub initSocketServer {
                 }
                 elsif ( $pid == 0 ) {
                     # client
-                    logInit();
+                    $dbh = zmDbConnect(1);
+                    logReinit();
                     local $SIG{'CHLD'} = 'DEFAULT';
                     my $numAlarms = scalar @events;
                     printInfo(
