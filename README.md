@@ -1,3 +1,9 @@
+
+Note
+-----
+The master branch is always cutting edge. If you are packaging the ES into your own system/image it is recommended you use a stable release. See [this note] (https://zmeventnotification.readthedocs.io/en/latest/guides/install.html#installation-of-the-event-server-es)
+
+
 What
 ----
 The Event Notification Server sits along with ZoneMinder and offers real time notifications, support for push notifications as well as Machine Learning powered recognition.
