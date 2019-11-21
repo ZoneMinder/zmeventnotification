@@ -1,16 +1,14 @@
 # Change Log
 
-## [v4.6.1](https://github.com/pliablepixels/zmeventnotification/tree/v4.6.1) (2019-11-21)
-[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v4.5.8...v4.6.1)
-
 **Implemented enhancements:**
+
+- Support multiple faces per person  [\#173](https://github.com/pliablepixels/zmeventnotification/issues/173)
 
 - Allow for secret tokens to be used in ES and OD configs [\#167](https://github.com/pliablepixels/zmeventnotification/issues/167)
 
 **Fixed bugs:**
 
 - ZMES stops working after a few hours  [\#177](https://github.com/pliablepixels/zmeventnotification/issues/177)
-- ZMeventnotification stop without error [\#175](https://github.com/pliablepixels/zmeventnotification/issues/175)
 
 **Closed issues:**
 
