@@ -203,6 +203,21 @@ config_vals = {
             'default': 'hog',
             'type': 'string',
         },
+        'face_train_model':{
+            'section': 'face',
+            'default': 'hog',
+            'type': 'string',
+        },
+         'face_recog_dist_threshold': {
+            'section': 'face',
+            'default': '0.6',
+            'type': 'float'
+        },
+        'face_recog_knn_algo': {
+            'section': 'face',
+            'default': 'ball_tree',
+            'type': 'string'
+        },
         'known_images_path':{
             'section': 'face',
             'default': '/var/lib/zmeventnotification/known_faces',

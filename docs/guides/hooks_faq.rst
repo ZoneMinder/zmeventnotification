@@ -8,9 +8,9 @@ The sample configuration files, `zmeventnotification.ini <https://github.com/pli
 How do the hooks actually work?
 ---------------------------------
 
-* When the Event Notification Server detects an event, it invokes a script called ``detect_wrapper.sh``. This is invoked only if you have configured ``hook_script`` in your ``zmeventnotification.ini``.
+* When the Event Notification Server detects an event, it invokes a script called ``zm_detect_wrapper.sh``. This is invoked only if you have configured ``hook_script`` in your ``zmeventnotification.ini``.
 
-* ``detect_wrapper.sh`` in turn invokes ``detect.py`` that does the actual machine learning. Upon exit, it either returns a ``1`` that means object found, or a ``0`` which means nothing found. Based on how you have configured your settings, this information is then stored in ZM and/or pushed to your mobile device as a notification.
+* ``zm_detect_wrapper.sh`` in turn invokes ``zm_detect.py`` that does the actual machine learning. Upon exit, it either returns a ``1`` that means object found, or a ``0`` which means nothing found. Based on how you have configured your settings, this information is then stored in ZM and/or pushed to your mobile device as a notification.
 
 * `zmeventnotification.ini` has an attribute called ``hook_script``. If you enable that field, that is the beginning of how this kicks in.
 

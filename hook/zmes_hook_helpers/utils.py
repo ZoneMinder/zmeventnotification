@@ -253,7 +253,10 @@ def process_config(args, ctx):
         g.polygons = []
 
         # Check if we have a custom overrides for this monitor
-        if args['monitorid']:
+        
+       
+       
+        if 'monitorid' in args and args['monitorid']:
             sec = 'monitor-{}'.format(args['monitorid'])
             if sec in config_file: 
                 # we have a specific section for this monitor

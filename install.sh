@@ -15,10 +15,12 @@
 
 # --- Change these if you want --
 
-TARGET_BIN='/usr/bin'
+
 
 TARGET_CONFIG='/etc/zm'
 TARGET_DATA='/var/lib/zmeventnotification'
+TARGET_BIN_ES='/usr/bin'
+TARGET_BIN_HOOK='/var/lib/zmeventnotification/bin'
 
 WGET=$(which wget)
 WEB_OWNER_FROM_PS=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $1}')
@@ -112,10 +114,10 @@ verify_config() {
     echo "Install Hooks: ${INSTALL_HOOK}"
     echo "Install Hooks config: ${INSTALL_HOOK_CONFIG}"
     echo
-    [[ ${INSTALL_ES} != 'no' ]] && echo "The Event Server will be installed to ${TARGET_BIN}"
+    [[ ${INSTALL_ES} != 'no' ]] && echo "The Event Server will be installed to ${TARGET_BIN_ES}"
     [[ ${INSTALL_ES_CONFIG} != 'no' ]] && echo "The Event Server config will be installed to ${TARGET_CONFIG}"
 
-    [[ ${INSTALL_HOOK} != 'no' ]] && echo "The hook data files will be installed to ${TARGET_DATA} sub-folders"
+    [[ ${INSTALL_HOOK} != 'no' ]] && echo "The hook files will be installed to ${TARGET_DATA} sub-folders"
     [[ ${INSTALL_HOOK_CONFIG} != 'no' ]] && echo "The hook config files will be installed to ${TARGET_CONFIG}"
     echo
      [[ ${INTERACTIVE} == 'yes' ]] && read -p "If any of this looks wrong, please hit Ctrl+C and edit the variables in this script..."
@@ -126,7 +128,8 @@ verify_config() {
 # move proc for zmeventnotification.pl
 install_es() {
     echo '***** Installing ES **********'
-    install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN}" && 
+    mkdir -p "${TARGET_DATA}/push" 2>/dev/null
+    install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN_ES}" && 
             print_success "Completed, but you will still have to install ES dependencies as per https://github.com/pliablepixels/zmeventnotification/blob/master/README.md#install-dependencies"  || print_error "failed"
     #echo "Done, but you will still have to manually install all ES dependencies as per https://github.com/pliablepixels/zmeventnotification#how-do-i-install-it"
 }
@@ -134,10 +137,14 @@ install_es() {
 # install proc for ML hooks
 install_hook() {
     echo '***** Installing Hooks **********'
+    mkdir -p "${TARGET_DATA}/bin" 2>/dev/null
     mkdir -p "${TARGET_DATA}/images" 2>/dev/null
     mkdir -p "${TARGET_DATA}/known_faces" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/yolov3" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/tinyyolo" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/misc" 2>/dev/null
+    echo "for future use" > "${TARGET_DATA}/misc/README.txt" 2>/dev/null
+    
 
     # If you don't already have data files, get them
     # First YOLOV3
@@ -179,13 +186,11 @@ install_hook() {
     done
 
 
-    # Make sure webserver can access them
-    chown -R ${WEB_OWNER}:${WEB_GROUP} "${TARGET_DATA}"
-
     # Now install the ML hooks
     #pip install -r  hook/requirements.txt 
-    install -m 755 -o "${WEB_OWNER}" hook/detect_wrapper.sh "${TARGET_BIN}"
-    install -m 755 -o "${WEB_OWNER}" hook/detect.py "${TARGET_BIN}"
+    install -m 755 -o "${WEB_OWNER}" hook/zm_detect_wrapper.sh "${TARGET_BIN_HOOK}"
+    install -m 755 -o "${WEB_OWNER}" hook/zm_detect.py "${TARGET_BIN_HOOK}"
+    install -m 755 -o "${WEB_OWNER}" hook/zm_train_faces.py "${TARGET_BIN_HOOK}"
     #python setup.py install && print_success "Done" || print_error "python setup failed"
     pip3 install hook/ && print_success "Done" || print_error "python setup failed"
 }
@@ -213,7 +218,7 @@ install_hook_config() {
     install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.ini "${TARGET_CONFIG}" &&
         print_success "config copied" || print_error "could not copy config"
     echo "====> Remember to fill in the right values in the config files, or your system won't work! <============="
-    echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN}/detect_wrapper.sh! <========"
+    echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN_HOOK}/zm_detect_wrapper.sh! <========"
     echo
 }
 
@@ -304,6 +309,7 @@ check_args() {
     [[ ${INSTALL_HOOK} == 'no' ]] && INSTALL_HOOK_CONFIG='no'
     [[ ${INSTALL_HOOK} == 'prompt' && ${INSTALL_HOOK_CONFIG} == 'yes' ]] && INSTALL_HOOK_CONFIG='prompt'
 
+   
 }
 
 
@@ -355,3 +361,5 @@ then
     confirm 'Install Hook Config' 'y/N' && install_hook_config || echo 'Skipping Hook config install'
 fi
 
+# Make sure webserver can access them
+chown -R ${WEB_OWNER}:${WEB_GROUP} "${TARGET_DATA}"
