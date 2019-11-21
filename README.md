@@ -16,8 +16,8 @@ I will add more algorithms over time.
 
 Documentation
 -------------
-- Documentation, including installation, FAQ etc.are [here for the latest stable release] (https://zmeventnotification.readthedocs.io/en/stable/guides/install.html) and [here for the master branch](https://zmeventnotification.readthedocs.io/en/latest/guides/index.html)
-- Always refer to the [Breaking Changes](https://zmeventnotification.readthedocs.io/en/latest/guides/breaking.html) document before you upgrade
+- Documentation, including installation, FAQ etc.are [here for the latest stable release](https://zmeventnotification.readthedocs.io/en/stable/guides/install.html) and [here for the master branch](https://zmeventnotification.readthedocs.io/en/latest/guides/index.html)
+- Always refer to the [Breaking Changes](https://zmeventnotification.readthedocs.io/en/latest/guides/breaking.html) document before you upgrade.
 
 
 Screenshots
