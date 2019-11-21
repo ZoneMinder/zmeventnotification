@@ -459,12 +459,13 @@ Here is how to debug and report:
   - Enable ZM debug logs for both ES (and hooks if you use them) as described in :ref:`hooks-logging`. Note that ES debug logs are different from hooks debug logs. You need to enable both if you use them. 
 -  Start a terminal and start zmeventnotification manually from
    command line like so ``sudo -u www-data /usr/bin/zmeventnotification.pl``
-- Start another terminal and tail logs like so ``tail -f /var/log/zm/zmeventnotification.log /var/log/zm/zmesdetect_m*.log``. If you are NOT using hooks, simply do ``tail -f /var/log/zm/zmeventnotification.log``
--  Make sure you see logs like this in the logs window like so: (this example shows logs from both ES and hooks)
+- Start another terminal and tail logs like so ``tail -F /var/log/zm/zmeventnotification.log /var/log/zm/zmesdetect_m*.log``. If you are NOT using hooks, simply do ``tail -F /var/log/zm/zmeventnotification.log``
+- Note that we are using ``-F`` and not ``-f`` for tail. ``-F`` tracks files as they change, which may happen when logs are rotated.
+- Make sure you see logs like this in the logs window like so: (this example shows logs from both ES and hooks)
 
 ::
 
-  pp@homeserver:~/fiddle/zmeventnotification$ tail -f /var/log/zm/zmeventnotification.log /var/log/zm/zmesdetect_m*.log
+  pp@homeserver:~/fiddle/zmeventnotification$ tail -F /var/log/zm/zmeventnotification.log /var/log/zm/zmesdetect_m*.log
   ==> /var/log/zm/zmeventnotification.log <==
   10/06/2019 06:48:29.200008 zmeventnotification[13694].INF [main:557] [Invoking hook:'/var/lib/zmeventnotification/bin/zm_detect_wrapper.sh' 33989 2 "DoorBell" " front" "/var/cache/zoneminder/events/2/2019-10-06/33989"]
   10/06/2019 06:48:34.013490 zmeventnotification[29913].INF [main:557] [New event 33990 reported for Monitor:10 (Name:FrontLawn)  front steps]
