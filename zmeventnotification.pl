@@ -483,8 +483,6 @@ use ZoneMinder;
 use POSIX;
 use DBI;
 
-$SIG{CHLD} = 'IGNORE';
-$SIG{HUP} = \&logrot;
 
 $ENV{PATH}  = '/bin:/usr/bin';
 $ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
@@ -542,6 +540,9 @@ sub at_eol($) { $_[0] =~ /\n\z/ }
 
 logInit();
 logSetSignal();
+
+$SIG{HUP} = \&logrot;
+$SIG{CHLD} = 'IGNORE';
 
 my $dbh = zmDbConnect();
 my %monitors;
