@@ -484,6 +484,7 @@ use POSIX;
 use DBI;
 
 $SIG{CHLD} = 'IGNORE';
+$SIG{HUP} = \&logrot;
 
 $ENV{PATH}  = '/bin:/usr/bin';
 $ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
@@ -493,6 +494,15 @@ sub Usage {
     print("This daemon is not meant to be invoked from command line\n");
     exit(-1);
 }
+
+sub logrot {
+    logReinit();
+    printDebug ("log rotate HUP handler processed, logs re-inited");
+
+}
+
+
+
 
 # https://docstore.mik.ua/orelly/perl4/cook/ch07_24.htm
 sub sysreadline(*;$) {
