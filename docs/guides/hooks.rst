@@ -240,9 +240,9 @@ Starting version 4.0.x, the hooks now use ZM logging, thanks to a `python wrappe
 
   ::
 
-    tail -f  /var/log/zm/zmesdetect*.log
+    tail -F  /var/log/zm/zmesdetect*.log
 
-  Note that the detection code registers itself as ``zmesdetect`` with ZM. When it is invoked with a specific monitor ID (usually the case), then the component is named ``zmesdetect_mX.log`` where ``X`` is the monitor ID. In other words, that now gives you one log per monitor (just like ``/var/log/zm/zmc_mX.log``) which makes it easy to debug/isolate. 
+  Note that the detection code registers itself as ``zmesdetect`` with ZM. When it is invoked with a specific monitor ID (usually the case), then the component is named ``zmesdetect_mX.log`` where ``X`` is the monitor ID. In other words, that now gives you one log per monitor (just like ``/var/log/zm/zmc_mX.log``) which makes it easy to debug/isolate. Also note we are doing ``tail -F`` not ``tail -f``. ``-F`` tracks files as they get logrotated as well.
 
 Troubleshooting
 ~~~~~~~~~~~~~~~
@@ -252,7 +252,7 @@ Troubleshooting
 -  Always run ``detect_wrapper.sh`` in manual mode first to make sure it
    works
 -  To get debug logs, Make sure your ``LOG_DEBUG`` in ZM Options->Logs is set to on and your ``LOG_DEBUG_TARGET`` option includes ``_zmesdetect`` (or is empty)
--  You can view debug logs for detection by doing ``tail -f  /var/log/zm/zmesdetect*.log``
+-  You can view debug logs for detection by doing ``tail -F /var/log/zm/zmesdetect*.log``
 -  One of the big reasons why object detection fails is because the hook
    is not able to download the image to check. This may be because your
    ZM version is old or other errors. Some common issues:
