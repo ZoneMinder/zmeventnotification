@@ -483,7 +483,6 @@ use ZoneMinder;
 use POSIX;
 use DBI;
 
-
 $ENV{PATH}  = '/bin:/usr/bin';
 $ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
 delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
@@ -495,12 +494,9 @@ sub Usage {
 
 sub logrot {
     logReinit();
-    printDebug ("log rotate HUP handler processed, logs re-inited");
+    printDebug("log rotate HUP handler processed, logs re-inited");
 
 }
-
-
-
 
 # https://docstore.mik.ua/orelly/perl4/cook/ch07_24.htm
 sub sysreadline(*;$) {
@@ -541,7 +537,7 @@ sub at_eol($) { $_[0] =~ /\n\z/ }
 logInit();
 logSetSignal();
 
-$SIG{HUP} = \&logrot;
+$SIG{HUP}  = \&logrot;
 $SIG{CHLD} = 'IGNORE';
 
 my $dbh = zmDbConnect();
