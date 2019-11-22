@@ -57,8 +57,7 @@ use IO::Select;
 #
 # ==========================================================================
 
-
-my $app_version="4.6";
+my $app_version = "4.5";
 
 # ==========================================================================
 #
@@ -484,6 +483,7 @@ use ZoneMinder;
 use POSIX;
 use DBI;
 
+
 $ENV{PATH}  = '/bin:/usr/bin';
 $ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
 delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
@@ -494,10 +494,14 @@ sub Usage {
 }
 
 sub logrot {
+    print ("************* LOGROT CALLED");
     logReinit();
-    printDebug("log rotate HUP handler processed, logs re-inited");
+    printDebug ("log rotate HUP handler processed, logs re-inited");
 
 }
+
+
+
 
 # https://docstore.mik.ua/orelly/perl4/cook/ch07_24.htm
 sub sysreadline(*;$) {
@@ -538,7 +542,7 @@ sub at_eol($) { $_[0] =~ /\n\z/ }
 logInit();
 logSetSignal();
 
-$SIG{HUP}  = \&logrot;
+$SIG{HUP} = \&logrot;
 $SIG{CHLD} = 'IGNORE';
 
 my $dbh = zmDbConnect();
@@ -909,7 +913,9 @@ sub validateZmAuth {
         or Fatal( "Can't prepare '$sql': " . $dbh->errstr() );
     my $res = $sth->execute($u)
         or Fatal( "Can't execute: " . $sth->errstr() );
-    if ( my ($state) = $sth->fetchrow_hashref() ) {
+    my $state = $sth->fetchrow_hashref();
+    $sth->finish();
+    if ($state) {
         my $scheme = substr( $state->{Password}, 0, 1 );
         if ( $scheme eq "*" ) {    # mysql decode
             printDebug("Comparing using mysql hash");
@@ -918,7 +924,6 @@ sub validateZmAuth {
                 return 0;
             }
             my $encryptedPassword = password41($p);
-            $sth->finish();
             return $state->{Password} eq $encryptedPassword;
         }
         else {                     # try bcrypt
@@ -939,7 +944,6 @@ sub validateZmAuth {
         }
     }
     else {
-        $sth->finish();
         return 0;
     }
 
