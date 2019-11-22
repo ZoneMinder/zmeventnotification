@@ -2,7 +2,7 @@ Writing your own detection plugin
 ---------------------------------
 It is super simple to create your own plugin.
 
-Your plugin needs to be created as a class that detect.py can import.
+Your plugin needs to be created as a class that zm_detect.py can import.
 
 The best file to start from is hog.py (simplest)
 

@@ -1,11 +1,34 @@
 Installation of the Event Server (ES)
 --------------------------------------
 
-Download the repo
+Clone the repo
 ~~~~~~~~~~~~~~~~~
 
--  Clone the project to some directory
-   ``git clone https://github.com/pliablepixels/zmeventnotification.git``
+I'd recommend users download the latest stable release. Starting version 4.5 I have started tagging releases that are rested. The master branch will always be 'cutting-edge'.
+
+To clone the latest stable release:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+  git clone https://github.com/pliablepixels/zmeventnotification.git
+  # repeat these two steps each time you want to update to the latest stable
+  git fetch --tags
+  git checkout $(git describe --tags $(git rev-list --tags --max-count=1))
+
+To clone master:
+^^^^^^^^^^^^^^^^^
+
+::
+
+  git clone https://github.com/pliablepixels/zmeventnotification.git
+  # repeat these two steps each time you want to update
+  git checkout master # only needed if you are on some other branch later
+  git pull
+
+
+Configure the ini files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -  Edit ``zmeventnotification.ini`` to your liking. More details about
    various parts of the configuration are explained later in this readme
 -  If you are behind a firewall, make sure you enable port ``9000``,

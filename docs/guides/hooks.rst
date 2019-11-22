@@ -50,7 +50,7 @@ Option 1: Automatic install
 
     cd zmeventnotification
 
--  (OPTIONAL) Edit ``hook/detect_wrapper.sh`` and change:
+-  (OPTIONAL) Edit ``hook/zm_detect_wrapper.sh`` and change:
 
    -  ``CONFIG_FILE`` to point to the right config file, if you changed
       paths
@@ -81,90 +81,8 @@ Note, if you installed ``face_recognition`` earlier without blas, do this:
 
 Option 2: Manual install
 ^^^^^^^^^^^^^^^^^^^^^^^^
+If automatic install fails for you, or you like to be in control, take a look at what ``install.sh`` does. I used to maintain explict instructions on manual install, but its painful to keep this section in sync with ``install.sh``
 
-If automatic install fails for you, or you like to be in control:
-
-.. code:: bash
-
-    git clone https://github.com/pliablepixels/zmeventnotification # if you don't already have it downloaded
-
-
--  Install object detection files:
-
-   .. code:: bash
-
-       cd zmeventnotification/
-       sudo -H pip3 install hook/
-
-**Note:** if you want to add "face recognition" you also need to do
-
-::
-
-    sudo apt-get install libopenblas-dev liblapack-dev libblas-dev  # not mandatory, but gives a good speed boost!
-    sudo -H pip3 install face_recognition # mandatory
-
-Takes a while and installs a gob of stuff, which is why I did not add it
-automatically, especially if you don't need face recognition.
-
-Note, if you installed ``face_recognition`` without blas, do this::
-
-    sudo -H pip3 uninstall dlib
-    sudo -H pip3 uninstall face-recognition
-    sudo apt-get install libopenblas-dev liblapack-dev libblas-dev # this is the important part
-    sudo -H pip3 install dlib --verbose --no-cache-dir # make sure it finds openblas
-    sudo -H pip3 install face_recognition
-
--  You now need to download configuration and weight files that are
-   required by the machine learning magic. Note that you don't have to
-   put them in ``/var/lib/zmeventnotification`` -> use whatever you want
-   (and change variables in ``detect_wrapper.sh`` script if you do)
-
-.. code:: bash
-
-    sudo mkdir -p /var/lib/zmeventnotification/images
-    sudo mkdir -p /var/lib/zmeventnotification/models
-
-    # if you are using face recognition, create this folder
-    # after that you need to copy images of faces you want to detect
-    # to this folder
-    sudo mkdir -p /var/lib/zmeventnotification/known_faces
-
-    # if you want to use YoloV3 (slower, accurate)
-    sudo mkdir -p /var/lib/zmeventnotification/models/yolov3 # if you are using YoloV3
-    sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg -O /var/lib/zmeventnotification/models/yolov3/yolov3.cfg
-    sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names -O /var/lib/zmeventnotification/models/yolov3/yolov3_classes.txt
-    sudo wget https://pjreddie.com/media/files/yolov3.weights -O /var/lib/zmeventnotification/models/yolov3/yolov3.weights
-
-    --OR--
-
-    # if you want to use TinyYoloV3 (faster, less accurate)
-    sudo mkdir -p /var/lib/zmeventnotification/models/tinyyolo # if you are using TinyYoloV3
-    sudo wget https://pjreddie.com/media/files/yolov3-tiny.weights -O /var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.weights
-    sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg -O /var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.cfg
-    sudo wget https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names -O /var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.txt
-
--  Copy over the object detection config file
-
-.. code:: bash
-
-    sudo cp objectconfig.ini /etc/zm
-
--  Now make sure it all RW accessible by ``www-data`` (or ``apache``)
-
-   ::
-
-       sudo chown -R www-data:www-data /var/lib/zmeventnotification/ #(change www-data to apache for CentOS/Fedora)
-
--  (OPTIONAL) Edit ``detect_wrapper.sh`` and change:
-
-   -  ``CONFIG_FILE`` to point to the right config file, if you changed
-      paths
-
--  Now copy your detection file to ``/usr/bin``
-
-   ::
-
-       sudo cp detect.py /usr/bin
 
 Post install steps
 ~~~~~~~~~~~~~~~~~~
@@ -172,7 +90,7 @@ Post install steps
 -  Make sure you edit your installed ``objectconfig.ini`` to the right
    settings. You MUST change the ``[general]`` section for your own
    portal.
--  Make sure the ``CONFIG_FILE`` variable in ``detect_wrapper.sh`` is
+-  Make sure the ``CONFIG_FILE`` variable in ``zm_detect_wrapper.sh`` is
    correct
 
 Test operation
@@ -180,7 +98,7 @@ Test operation
 
 ::
 
-    sudo -u www-data /usr/bin/detect_wrapper.sh <eid> <mid> # replace www-data with apache if needed
+    sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect_wrapper.sh <eid> <mid> # replace www-data with apache if needed
 
 This will try and download the configured frame for alarm and analyze
 it. Replace with your own EID (Example 123456) The files will be in
@@ -240,19 +158,19 @@ Starting version 4.0.x, the hooks now use ZM logging, thanks to a `python wrappe
 
   ::
 
-    tail -f  /var/log/zm/zmesdetect*.log
+    tail -F  /var/log/zm/zmesdetect*.log
 
-  Note that the detection code registers itself as ``zmesdetect`` with ZM. When it is invoked with a specific monitor ID (usually the case), then the component is named ``zmesdetect_mX.log`` where ``X`` is the monitor ID. In other words, that now gives you one log per monitor (just like ``/var/log/zm/zmc_mX.log``) which makes it easy to debug/isolate. 
+  Note that the detection code registers itself as ``zmesdetect`` with ZM. When it is invoked with a specific monitor ID (usually the case), then the component is named ``zmesdetect_mX.log`` where ``X`` is the monitor ID. In other words, that now gives you one log per monitor (just like ``/var/log/zm/zmc_mX.log``) which makes it easy to debug/isolate. Also note we are doing ``tail -F`` not ``tail -f``. ``-F`` tracks files as they get logrotated as well.
 
 Troubleshooting
 ~~~~~~~~~~~~~~~
 
 -  In general, I expect you to debug properly. Please don't ask me basic
    questions without investigating logs yourself
--  Always run ``detect_wrapper.sh`` in manual mode first to make sure it
+-  Always run ``zm_detect_wrapper.sh`` in manual mode first to make sure it
    works
 -  To get debug logs, Make sure your ``LOG_DEBUG`` in ZM Options->Logs is set to on and your ``LOG_DEBUG_TARGET`` option includes ``_zmesdetect`` (or is empty)
--  You can view debug logs for detection by doing ``tail -f  /var/log/zm/zmesdetect*.log``
+-  You can view debug logs for detection by doing ``tail -F /var/log/zm/zmesdetect*.log``
 -  One of the big reasons why object detection fails is because the hook
    is not able to download the image to check. This may be because your
    ZM version is old or other errors. Some common issues:
@@ -375,15 +293,34 @@ Configuring face recognition
 
 -  Make sure you have images of people you want to recognize in
    ``/var/lib/zmeventnotification/known_faces``
--  Only one image per person
--  For example, you may have the following image setup:
+- You can have multiple faces per person
+- Typical configuration:
 
-   ::
+:: 
 
-       /var/lib/zmeventnotification/known_faces
-           + david_gilmour.jpg
-           + ramanujan.jpg
-           + bruce_lee.jpg
+  known_faces/
+    +----------bruce_lee/
+                +------1.jpg
+                +------2.jpg
+    +----------david_gilmour/
+            +------1.jpg
+            +------img2.jpg
+            +------3.jpg
+    +----------ramanujan/
+            +------face1.jpg
+            +------face2.jpg
+
+
+In this example, you have 3 names, each with different images.
+
+- It is recommended that you now train the images by doing:
+
+::
+
+  sudo -u www-data /var/lib/zmeventnotification/bin/zm_train_faces.py
+
+
+- Note that you do not necessarily have to train it first but I highly recommend it. When detection runs, it will look for the trained file and if missing, will auto-create it. However, detection may also load yolo and if you have limited GPU resources, you may run out of memory when training. 
 
 -  When face recognition is triggered, it will load each of these files
    and if there are faces in them, will load them and compare them to
@@ -391,12 +328,11 @@ Configuring face recognition
 
 known faces images
 ''''''''''''''''''
-
--  Only put in one image per person
 -  Make sure the face is recognizable
--  crop it to around 400 pixels width (doesn't seem to need bigger
+-  crop it to around 800 pixels width (doesn't seem to need bigger
    images, but experiment. Larger the image, the larger the memory
    requirements)
+- crop around the face - not a tight crop, but no need to add a full body. A typical "passport" photo crop, maybe with a bit more of shoulder is ideal.
 
 
 Performance comparison
@@ -443,7 +379,7 @@ You can manually invoke the detection module to check if it works ok:
 
 .. code:: bash
 
-    ./sudo -u www-data /usr/bin/detect.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
+    ./sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid>
 
 The ``--monitorid <mid>`` is optional and is the monitor ID. If you do
 specify it, it will pick up the right mask to apply (if it is in your
@@ -453,7 +389,7 @@ config)
 **STEP 1: Make sure the scripts(s) work** 
 
 - Run the python script manually to see if it works (refer to sections above on how to run them manually) 
-- ``./detect_wrapper.sh <eid> <mid>`` --> make sure it
+- ``./zm_detect_wrapper.sh <eid> <mid>`` --> make sure it
   downloads a proper image for that eid. Make sure it correctly invokes
   detect.py If not, fix it. (``<mid>`` is optional and is used to apply a
   crop mask if specified) 
