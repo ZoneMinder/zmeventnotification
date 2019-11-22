@@ -57,7 +57,7 @@ use IO::Select;
 #
 # ==========================================================================
 
-my $app_version = "4.5";
+my $app_version = "4.6";
 
 # ==========================================================================
 #
@@ -494,7 +494,6 @@ sub Usage {
 }
 
 sub logrot {
-    print ("************* LOGROT CALLED");
     logReinit();
     printDebug ("log rotate HUP handler processed, logs re-inited");
 
