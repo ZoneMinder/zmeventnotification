@@ -483,7 +483,6 @@ use ZoneMinder;
 use POSIX;
 use DBI;
 
-
 $ENV{PATH}  = '/bin:/usr/bin';
 $ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
 delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
@@ -495,12 +494,9 @@ sub Usage {
 
 sub logrot {
     logReinit();
-    printDebug ("log rotate HUP handler processed, logs re-inited");
+    printDebug("log rotate HUP handler processed, logs re-inited");
 
 }
-
-
-
 
 # https://docstore.mik.ua/orelly/perl4/cook/ch07_24.htm
 sub sysreadline(*;$) {
@@ -541,7 +537,7 @@ sub at_eol($) { $_[0] =~ /\n\z/ }
 logInit();
 logSetSignal();
 
-$SIG{HUP} = \&logrot;
+$SIG{HUP}  = \&logrot;
 $SIG{CHLD} = 'IGNORE';
 
 my $dbh = zmDbConnect();
@@ -559,7 +555,7 @@ my $wss;
 # Main entry point
 
 printInfo("You are running version: $app_version");
-printDebug("Started with: perl:",$^X, " and command:", $0);
+printDebug( "Started with: perl:", $^X, " and command:", $0 );
 printWarning(
     "WARNING: SSL is disabled, which means all traffic will be unencrypted")
     unless $ssl_enabled;
@@ -916,6 +912,7 @@ sub validateZmAuth {
         or Fatal( "Can't execute: " . $sth->errstr() );
     my $state = $sth->fetchrow_hashref();
     $sth->finish();
+
     if ($state) {
         my $scheme = substr( $state->{Password}, 0, 1 );
         if ( $scheme eq "*" ) {    # mysql decode
@@ -2336,12 +2333,12 @@ sub initSocketServer {
                     # client
                     # based on zmdc code, looks like we need to reinit
                     # else there are issues
-		    close (READER);
+                    close(READER);
                     local $SIG{'CHLD'} = 'DEFAULT';
                     $dbh = zmDbConnect(1);
                     logReinit();
-		    printDebug ("shutting down websocketserver in child");
-		    $wss->shutdown();
+                    printDebug("shutting down websocketserver in child");
+                    $wss->shutdown();
                     my $numAlarms = scalar @events;
                     printInfo(
                         "Forking process:$$ to handle $numAlarms alarms");
