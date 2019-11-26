@@ -2343,7 +2343,7 @@ sub initSocketServer {
                     printInfo(
                         "Forking process:$$ to handle $numAlarms alarms");
 
-# send it the list of current events to handle bcause checkNewEvents() will clean it
+                    # send it the list of current events to handle bcause checkNewEvents() will clean it
                     processAlarms(@events);
                     printInfo("Ending process:$$ to handle alarms");
                     exit 0;
@@ -2469,5 +2469,6 @@ sub initSocketServer {
 
             printDebug("---------->onConnect STOP<--------------");
         }
-    )->start;
+    );
+    $wss->start();
 }
