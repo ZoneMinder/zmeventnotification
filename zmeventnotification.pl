@@ -2333,12 +2333,12 @@ sub initSocketServer {
                     # client
                     # based on zmdc code, looks like we need to reinit
                     # else there are issues
+                    $wss->shutdown();
                     close(READER);
                     local $SIG{'CHLD'} = 'DEFAULT';
                     $dbh = zmDbConnect(1);
                     logReinit();
                     printDebug("shutting down websocketserver in child");
-                    $wss->shutdown();
                     my $numAlarms = scalar @events;
                     printInfo(
                         "Forking process:$$ to handle $numAlarms alarms");
