@@ -92,7 +92,7 @@ use constant {
     DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE              => 'yes',
     DEFAULT_HOOK_USE_HOOK_DESCRIPTION               => 'no',
     DEFAULT_HOOK_STORE_FRAME_IN_ZM                  => 'no',
-    DEFAULT_RESTART_INTERVAL			    => 3600,
+    DEFAULT_RESTART_INTERVAL                        => 3600,
 };
 
 # connection state
@@ -248,11 +248,13 @@ if ($secrets_filename) {
     }
 }
 
-$restart_interval    //= config_get_val( $config, "general", "restart_interval",    DEFAULT_RESTART_INTERVAL );
-if (!$restart_interval) {
-	printInfo ('ES will not be restarted as interval is specified as 0');
-} else {
-	printInfo ("ES will be restarted at $restart_interval seconds");
+$restart_interval //= config_get_val( $config, "general", "restart_interval",
+    DEFAULT_RESTART_INTERVAL );
+if ( !$restart_interval ) {
+    printInfo('ES will not be restarted as interval is specified as 0');
+}
+else {
+    printInfo("ES will be restarted at $restart_interval seconds");
 }
 
 # If an option set a value, leave it.  If there's a value in the config, use
@@ -555,7 +557,7 @@ my $dbh = zmDbConnect();
 my %monitors;
 my %last_event_for_monitors;
 my $monitor_reload_time = 0;
-my $es_start_time = time();
+my $es_start_time       = time();
 my $apns_feedback_time  = 0;
 my $proxy_reach_time    = 0;
 my $wss;
@@ -569,14 +571,17 @@ my $zmdc_active = 0;
 #
 
 printInfo("You are running version: $app_version");
-printDebug( "Started with: perl:". $^X. " and command:". $0 );
+printDebug( "Started with: perl:" . $^X . " and command:" . $0 );
 
-my $zmdc_status= `zmdc.pl status zmeventnotification.pl`;
-if (index($zmdc_status, 'running since') != -1)  {
-	$zmdc_active = 1;
-	printDebug ('ES invoked via ZMDC. Will exit when needed and have zmdc restart it');
-} else {
-	printDebug ('ES invoked manually. Will handle restarts ourselves');
+my $zmdc_status = `zmdc.pl status zmeventnotification.pl`;
+if ( index( $zmdc_status, 'running since' ) != -1 ) {
+    $zmdc_active = 1;
+    printDebug(
+        'ES invoked via ZMDC. Will exit when needed and have zmdc restart it'
+    );
+}
+else {
+    printDebug('ES invoked manually. Will handle restarts ourselves');
 }
 
 printWarning(
@@ -2344,22 +2349,28 @@ sub initSocketServer {
         tick_period => $event_check_interval,
         on_tick     => sub {
             printDebug("---------->Tick START<--------------");
-    	    if ( $restart_interval && (( time() - $es_start_time ) > $restart_interval) ) {
-		    printInfo ("Time to restart ES as it has been running more that $restart_interval seconds");
-		    if ($zmdc_active) {
-			    printDebug ('Exiting, zmdc will restart me');
-			    exit 0;
-		    } else {
-			    printDebug ('Self exec-ing as zmdc is not tracking me');
-			    # untaint via reg-exp
-			    if ($0 =~ /^(.*)$/) {
-				    my $f = $1;
-				    printDebug ("restarting $f");
-				    exec($f);
-			    }
-		    }
+            if ( $restart_interval
+                && ( ( time() - $es_start_time ) > $restart_interval ) )
+            {
+                printInfo(
+                    "Time to restart ES as it has been running more that $restart_interval seconds"
+                );
+                if ($zmdc_active) {
+                    printDebug('Exiting, zmdc will restart me');
+                    exit 0;
+                }
+                else {
+                    printDebug('Self exec-ing as zmdc is not tracking me');
 
-	    }
+                    # untaint via reg-exp
+                    if ( $0 =~ /^(.*)$/ ) {
+                        my $f = $1;
+                        printDebug("restarting $f");
+                        exec($f);
+                    }
+                }
+
+            }
             checkConnection();
             processJobs();
             if ( checkNewEvents() ) {
@@ -2382,7 +2393,7 @@ sub initSocketServer {
                     printInfo(
                         "Forking process:$$ to handle $numAlarms alarms");
 
-                    # send it the list of current events to handle bcause checkNewEvents() will clean it
+# send it the list of current events to handle bcause checkNewEvents() will clean it
                     processAlarms(@events);
                     printInfo("Ending process:$$ to handle alarms");
                     exit 0;
