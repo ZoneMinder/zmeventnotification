@@ -92,6 +92,7 @@ use constant {
     DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE              => 'yes',
     DEFAULT_HOOK_USE_HOOK_DESCRIPTION               => 'no',
     DEFAULT_HOOK_STORE_FRAME_IN_ZM                  => 'no',
+    DEFAULT_RESTART_INTERVAL			    => 3600,
 };
 
 # connection state
@@ -156,6 +157,8 @@ my $picture_portal_password;
 
 my $secrets;
 my $secrets_filename;
+
+my $restart_interval;
 
 #default key. Please don't change this
 use constant NINJA_API_KEY =>
@@ -243,6 +246,13 @@ if ($secrets_filename) {
         Fatal( "Encountered errors while reading $secrets_filename:\n"
                 . join( "\n", @Config::IniFiles::errors ) );
     }
+}
+
+$restart_interval    //= config_get_val( $config, "general", "restart_interval",    DEFAULT_RESTART_INTERVAL );
+if (!$restart_interval) {
+	printInfo ('ES will not be restarted as interval is specified as 0');
+} else {
+	printInfo ("ES will be restarted at $restart_interval seconds");
 }
 
 # If an option set a value, leave it.  If there's a value in the config, use
@@ -386,6 +396,7 @@ ${\(
 )}:
 
 Secrets file................... ${\(value_or_undefined($secrets_filename))}
+Restart interval (secs)........ ${\(value_or_undefined($restart_interval))}
 
 Port .......................... ${\(value_or_undefined($port))}
 Address ....................... ${\(value_or_undefined($address))}
@@ -544,6 +555,7 @@ my $dbh = zmDbConnect();
 my %monitors;
 my %last_event_for_monitors;
 my $monitor_reload_time = 0;
+my $es_start_time = time();
 my $apns_feedback_time  = 0;
 my $proxy_reach_time    = 0;
 my $wss;
@@ -551,11 +563,22 @@ my @events             = ();
 my @active_connections = ();
 my @needsReload        = ();
 my $wss;
+my $zmdc_active = 0;
 
 # Main entry point
+#
 
 printInfo("You are running version: $app_version");
-printDebug( "Started with: perl:", $^X, " and command:", $0 );
+printDebug( "Started with: perl:". $^X. " and command:". $0 );
+
+my $zmdc_status= `zmdc.pl status zmeventnotification.pl`;
+if (index($zmdc_status, 'running since') != -1)  {
+	$zmdc_active = 1;
+	printDebug ('ES invoked via ZMDC. Will exit when needed and have zmdc restart it');
+} else {
+	printDebug ('ES invoked manually. Will handle restarts ourselves');
+}
+
 printWarning(
     "WARNING: SSL is disabled, which means all traffic will be unencrypted")
     unless $ssl_enabled;
@@ -2321,6 +2344,22 @@ sub initSocketServer {
         tick_period => $event_check_interval,
         on_tick     => sub {
             printDebug("---------->Tick START<--------------");
+    	    if ( $restart_interval && (( time() - $es_start_time ) > $restart_interval) ) {
+		    printInfo ("Time to restart ES as it has been running more that $restart_interval seconds");
+		    if ($zmdc_active) {
+			    printDebug ('Exiting, zmdc will restart me');
+			    exit 0;
+		    } else {
+			    printDebug ('Self exec-ing as zmdc is not tracking me');
+			    # untaint via reg-exp
+			    if ($0 =~ /^(.*)$/) {
+				    my $f = $1;
+				    printDebug ("restarting $f");
+				    exec($f);
+			    }
+		    }
+
+	    }
             checkConnection();
             processJobs();
             if ( checkNewEvents() ) {
