@@ -92,7 +92,7 @@ use constant {
 		DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE              => 'yes',
 		DEFAULT_HOOK_USE_HOOK_DESCRIPTION               => 'no',
 		DEFAULT_HOOK_STORE_FRAME_IN_ZM                  => 'no',
-		DEFAULT_RESTART_INTERVAL                        => 3600,
+		DEFAULT_RESTART_INTERVAL                        => 7200,
 };
 
 # connection state
