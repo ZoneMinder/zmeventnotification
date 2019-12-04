@@ -57,7 +57,7 @@ class Yolo:
         class_ids = []
         confidences = []
         boxes = []
-        conf_threshold = 0.5
+
         nms_threshold = 0.4
 
         for out in outs:
@@ -65,18 +65,22 @@ class Yolo:
                 scores = detection[5:]
                 class_id = np.argmax(scores)
                 confidence = scores[class_id]
-                if confidence > 0.5:
-                    center_x = int(detection[0] * Width)
-                    center_y = int(detection[1] * Height)
-                    w = int(detection[2] * Width)
-                    h = int(detection[3] * Height)
-                    x = center_x - w / 2
-                    y = center_y - h / 2
+                center_x = int(detection[0] * Width)
+                center_y = int(detection[1] * Height)
+                w = int(detection[2] * Width)
+                h = int(detection[3] * Height)
+                x = center_x - w / 2
+                y = center_y - h / 2
+                if confidence >= g.config['yolo_min_confidence']:
                     class_ids.append(class_id)
                     confidences.append(float(confidence))
                     boxes.append([x, y, w, h])
+                    g.logger.info ('object:{} at {} has a acceptable confidence:{} compared to min confidence of: {}, ignoring'.format(str(self.classes[class_id]), [x,y,x+w,y+h], confidence, g.config['yolo_min_confidence']))
+                else:
+                    g.logger.info ('object:{} at {} has a lower confidence:{} than min confidence of: {}, ignoring'.format(str(self.classes[class_id]), [x,y,x+w,y+h], confidence, g.config['yolo_min_confidence']))
+    
 
-        indices = cv2.dnn.NMSBoxes(boxes, confidences, conf_threshold, nms_threshold)
+        indices = cv2.dnn.NMSBoxes(boxes, confidences,  g.config['yolo_min_confidence'], nms_threshold)
 
         bbox = []
         label = []
