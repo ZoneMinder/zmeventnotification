@@ -75,7 +75,6 @@ class Yolo:
                     class_ids.append(class_id)
                     confidences.append(float(confidence))
                     boxes.append([x, y, w, h])
-                    g.logger.info ('object:{} at {} has a acceptable confidence:{} compared to min confidence of: {}, ignoring'.format(str(self.classes[class_id]), [x,y,x+w,y+h], confidence, g.config['yolo_min_confidence']))
                 else:
                     pass
                 #    g.logger.info ('object:{} at {} has a lower confidence:{} than min confidence of: {}, ignoring'.format(str(self.classes[class_id]), [x,y,x+w,y+h], confidence, g.config['yolo_min_confidence']))
@@ -97,5 +96,6 @@ class Yolo:
             bbox.append( [int(round(x)), int(round(y)), int(round(x + w)), int(round(y + h))])
             label.append(str(self.classes[class_ids[i]]))
             conf.append(confidences[i])
+            g.logger.info ('object:{} at {} has a acceptable confidence:{} compared to min confidence of: {}, adding'.format(label[-1], bbox[-1], conf[-1], g.config['yolo_min_confidence']))
         return bbox, label, conf                                   
 
