@@ -93,6 +93,8 @@ use constant {
 		DEFAULT_HOOK_USE_HOOK_DESCRIPTION               => 'no',
 		DEFAULT_HOOK_STORE_FRAME_IN_ZM                  => 'no',
 		DEFAULT_RESTART_INTERVAL                        => 7200,
+		DEFAULT_NOTIFY_ON_HOOK_FAIL			=> 'none',
+		DEFAULT_NOTIFY_ON_HOOK_SUCCESS			=> 'all',
 };
 
 # connection state
@@ -144,7 +146,11 @@ my $read_alarm_cause;
 my $tag_alarm_event_id;
 my $use_custom_notification_sound;
 
-my $hook;
+my $hook_on_event_start;
+my $hook_on_event_end;
+my $notify_on_hook_fail;
+my $notify_on_hook_success;
+
 my $use_hook_description;
 my $keep_frame_match_type;
 my $skip_monitors;
@@ -303,7 +309,14 @@ $picture_portal_username
 		//= config_get_val( $config, "customize", "picture_portal_username" );
 $picture_portal_password
 		//= config_get_val( $config, "customize", "picture_portal_password" );
-$hook //= config_get_val( $config, "hook", "hook_script" );
+
+$hook_on_event_start //= config_get_val( $config, "hook", "hook_on_event_start" );
+# backward compatibility
+$hook_on_event_start //= config_get_val( $config, "hook", "hook_script" ) if (!$hook_on_event_start);
+$hook_on_event_end //= config_get_val( $config, "hook", "hook_on_event_end" );
+$notify_on_hook_fail //= config_get_val( $config, "hook", "notify_on_hook_fail", DEFAULT_NOTIFY_ON_HOOK_FAIL );
+$notify_on_hook_success //= config_get_val( $config, "hook", "notify_on_hook_sucess", DEFAULT_NOTIFY_ON_HOOK_SUCCESS );
+
 $use_hook_description
 		//= config_get_val( $config, "hook", "use_hook_description",
 		DEFAULT_HOOK_USE_HOOK_DESCRIPTION );
@@ -416,7 +429,11 @@ Read alarm cause .............. ${\(yes_or_no($read_alarm_cause))}
 Tag alarm event id ............ ${\(yes_or_no($tag_alarm_event_id))}
 Use custom notification sound . ${\(yes_or_no($use_custom_notification_sound))}
 
-Hook .......................... ${\(value_or_undefined($hook))}
+Pre Event Hook Script ......... ${\(value_or_undefined($hook_on_event_start))}
+Post Event Hook Script ........ ${\(value_or_undefined($hook_on_event_end))}
+Notify on hook success......... ${\(value_or_undefined($notify_on_hook_success))}
+Notify on hook failure......... ${\(value_or_undefined($notify_on_hook_fail))}
+
 Use Hook Description........... ${\(yes_or_no($use_hook_description))}
 Keep frame match type.......... ${\(yes_or_no($keep_frame_match_type))}
 Skipped monitors............... ${\(value_or_undefined($skip_monitors))}
@@ -2177,7 +2194,7 @@ sub processAlarms {
 # if you want to use hook, lets first call the hook
 # if the hook returns an exit value of 0 (yes/success), we process it, else we skip it
 
-				if ($hook) {
+				if ($hook_on_event_start) {
 						if ( $skip_monitors
 								&& isInList( $skip_monitors, $alarm->{MonitorId} ) ) {
 								printInfo("Skipping hook processing because "
@@ -2186,7 +2203,7 @@ sub processAlarms {
 												. ") is in skip monitor list" );
 						} else {
 								my $cmd
-										= $hook . " "
+										= $hook_on_event_start . " "
 										. $alarm->{EventId} . " "
 										. $alarm->{MonitorId} . " \""
 										. $alarm->{Name} . "\"" . " \""
