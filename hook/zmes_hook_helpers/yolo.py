@@ -77,7 +77,8 @@ class Yolo:
                     boxes.append([x, y, w, h])
                     g.logger.info ('object:{} at {} has a acceptable confidence:{} compared to min confidence of: {}, ignoring'.format(str(self.classes[class_id]), [x,y,x+w,y+h], confidence, g.config['yolo_min_confidence']))
                 else:
-                    g.logger.info ('object:{} at {} has a lower confidence:{} than min confidence of: {}, ignoring'.format(str(self.classes[class_id]), [x,y,x+w,y+h], confidence, g.config['yolo_min_confidence']))
+                    pass
+                #    g.logger.info ('object:{} at {} has a lower confidence:{} than min confidence of: {}, ignoring'.format(str(self.classes[class_id]), [x,y,x+w,y+h], confidence, g.config['yolo_min_confidence']))
     
 
         indices = cv2.dnn.NMSBoxes(boxes, confidences,  g.config['yolo_min_confidence'], nms_threshold)
