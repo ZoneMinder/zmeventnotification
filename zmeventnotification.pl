@@ -93,8 +93,8 @@ use constant {
 		DEFAULT_HOOK_USE_HOOK_DESCRIPTION               => 'no',
 		DEFAULT_HOOK_STORE_FRAME_IN_ZM                  => 'no',
 		DEFAULT_RESTART_INTERVAL                        => 7200,
-		DEFAULT_NOTIFY_ON_HOOK_FAIL			=> 'none',
-		DEFAULT_NOTIFY_ON_HOOK_SUCCESS			=> 'all',
+		DEFAULT_NOTIFY_ON_HOOK_FAIL                     => 'none',
+		DEFAULT_NOTIFY_ON_HOOK_SUCCESS                  => 'all',
 };
 
 # connection state
@@ -283,7 +283,7 @@ $ssl_enabled
 		//= config_get_val( $config, "ssl", "enable", DEFAULT_SSL_ENABLE );
 $ssl_cert_file //= config_get_val( $config, "ssl", "cert" );
 $ssl_key_file  //= config_get_val( $config, "ssl", "key" );
-$console_logs //= config_get_val( $config, "customize", "console_logs",
+$console_logs  //= config_get_val( $config, "customize", "console_logs",
 		DEFAULT_CUSTOMIZE_VERBOSE );
 $event_check_interval
 		//= config_get_val( $config, "customize", "event_check_interval",
@@ -310,12 +310,19 @@ $picture_portal_username
 $picture_portal_password
 		//= config_get_val( $config, "customize", "picture_portal_password" );
 
-$hook_on_event_start //= config_get_val( $config, "hook", "hook_on_event_start" );
+$hook_on_event_start
+		//= config_get_val( $config, "hook", "hook_on_event_start" );
+
 # backward compatibility
-$hook_on_event_start //= config_get_val( $config, "hook", "hook_script" ) if (!$hook_on_event_start);
+$hook_on_event_start //= config_get_val( $config, "hook", "hook_script" )
+		if ( !$hook_on_event_start );
 $hook_on_event_end //= config_get_val( $config, "hook", "hook_on_event_end" );
-$notify_on_hook_fail //= config_get_val( $config, "hook", "notify_on_hook_fail", DEFAULT_NOTIFY_ON_HOOK_FAIL );
-$notify_on_hook_success //= config_get_val( $config, "hook", "notify_on_hook_sucess", DEFAULT_NOTIFY_ON_HOOK_SUCCESS );
+$notify_on_hook_fail
+		//= config_get_val( $config, "hook", "notify_on_hook_fail",
+		DEFAULT_NOTIFY_ON_HOOK_FAIL );
+$notify_on_hook_success
+		//= config_get_val( $config, "hook", "notify_on_hook_sucess",
+		DEFAULT_NOTIFY_ON_HOOK_SUCCESS );
 
 $use_hook_description
 		//= config_get_val( $config, "hook", "use_hook_description",
@@ -801,6 +808,20 @@ sub checkNewEvents() {
 						"recording" ) {
 						my $hooktext
 								= $last_event_for_monitors{ $monitor->{Id} }{"hook_text"};
+						if ($hook_on_event_end) {
+								my $cmd
+										= $hook_on_event_end . " "
+										. $monitor->{LastEvent} . " "
+										. $monitor->{Id} . " \""
+										. $monitor->{Name} . "\"" . " \""
+										. $hook_text . "\"";
+
+								printInfo( "Invoking hook on event end:" . $cmd );
+								my $resTxt  = `$cmd`;
+								my $resCode = $? >> 8;
+								chomp($resTxt);
+						}
+
 						printDebug( "Alarm "
 										. $monitor->{LastEvent}
 										. " for monitor:"
