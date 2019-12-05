@@ -317,12 +317,16 @@ $hook_on_event_start
 $hook_on_event_start //= config_get_val( $config, "hook", "hook_script" )
 		if ( !$hook_on_event_start );
 $hook_on_event_end //= config_get_val( $config, "hook", "hook_on_event_end" );
+
 $notify_on_hook_fail
 		//= config_get_val( $config, "hook", "notify_on_hook_fail",
 		DEFAULT_NOTIFY_ON_HOOK_FAIL );
 $notify_on_hook_success
 		//= config_get_val( $config, "hook", "notify_on_hook_sucess",
 		DEFAULT_NOTIFY_ON_HOOK_SUCCESS );
+$notify_on_hook_success=lc($notify_on_hook_success);
+$notify_on_hook_fail=lc($notify_on_hook_fail);
+
 
 $use_hook_description
 		//= config_get_val( $config, "hook", "use_hook_description",
@@ -814,7 +818,7 @@ sub checkNewEvents() {
 										. $monitor->{LastEvent} . " "
 										. $monitor->{Id} . " \""
 										. $monitor->{Name} . "\"" . " \""
-										. $hook_text . "\"";
+										. $hooktext . "\"";
 
 								printInfo( "Invoking hook on event end:" . $cmd );
 								my $resTxt  = `$cmd`;
@@ -2240,7 +2244,7 @@ sub processAlarms {
 														. " to hook for image storage" );
 
 								}
-								printInfo( "Invoking hook:" . $cmd );
+								printInfo( "Invoking hook on event start:" . $cmd );
 								my $resTxt  = `$cmd`;
 								my $resCode = $? >> 8;
 								chomp($resTxt);
