@@ -1103,6 +1103,9 @@ sub sendOverMQTTBroker {
 
 		my $alarm = shift;
 		my $ac    = shift;
+    my $event_type = shift;
+    my $resCode = shift;
+
 		my $json;
 
 # only remove if not removed before. If you are sending over multiple channels, it may have already been stripped
@@ -1115,7 +1118,9 @@ sub sendOverMQTTBroker {
 				{   monitor => $alarm->{MonitorId},
 						name    => $description,
 						state   => 'alarm',
-						eventid => $alarm->{EventId}
+						eventid => $alarm->{EventId},
+            hookvalue => $resCode,
+            eventtype=> $event_type
 				}
 		);
 
@@ -1132,6 +1137,8 @@ sub sendOverWebSocket {
 # goes out of sync with the parent. So we use a parent pipe
 		my $alarm = shift;
 		my $ac    = shift;
+    my $event_type = shift;
+    my $resCode = shift;
 
 # only remove if not removed before. If you are sending over multiple channels, it may have already been stripped
 		$alarm->{Cause} = substr( $alarm->{Cause}, 4 )
@@ -1156,11 +1163,21 @@ sub sendOverFCM {
 
 		my $alarm = shift;
 		my $obj   = shift;
+    my $event_type = shift;
+    my $resCode = shift;
+
+
 		my $mid   = $alarm->{MonitorId};
 		my $eid   = $alarm->{EventId};
 		my $mname = $alarm->{Name};
+    
 
 		my $pic = $picture_url =~ s/EVENTID/$eid/gr;
+    if ($resCode == 1) {
+      printDebug ('FCM called when hook failed, so making sure we do not use objdetect in url');
+      $pic = $pic =~ s/objdetect/snapshot/gr;
+    }
+
 		$pic = $pic . '&username=' . $picture_portal_username
 				if ($picture_portal_username);
 		$pic = $pic . '&password=' . uri_escape($picture_portal_password)
@@ -2185,7 +2202,7 @@ sub sendEvent {
 				# only send if fcm is an allowed channel
 				if ( isAllowedChannel( 'event_start', 'fcm', $resCode ) ) {
 						printInfo("Sending notification over FCM");
-						sendOverFCM( $alarm, $ac, $event_type );
+						sendOverFCM( $alarm, $ac, $event_type, $resCode );
 				} else {
 						printInfo(
 								"Not sending over FCM as notify filters are on_success:$notify_on_hook_success and on_fail:$notify_on_hook_fail"
@@ -2198,7 +2215,7 @@ sub sendEvent {
 
 				if ( isAllowedChannel( 'event_start', 'web', $resCode ) ) {
 						printInfo("Sending notification over Web");
-						sendOverWebSocket( $alarm, $ac, $event_type );
+						sendOverWebSocket( $alarm, $ac, $event_type, $resCode );
 				} else {
 						printInfo(
 								"Not sending over Web as notify filters are on_success:$notify_on_hook_success and on_fail:$notify_on_hook_fail"
@@ -2209,7 +2226,7 @@ sub sendEvent {
 
 				if ( isAllowedChannel( 'event_start', 'mqtt', $resCode ) ) {
 						printInfo("Sending notification over MQTT");
-						sendOverMQTTBroker( $alarm, $ac, $event_type );
+						sendOverMQTTBroker( $alarm, $ac, $event_type, $resCode );
 				} else {
 						printInfo(
 								"Not sending over MQTT as notify filters are on_success:$notify_on_hook_success and on_fail:$notify_on_hook_fail"
