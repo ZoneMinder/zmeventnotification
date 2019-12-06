@@ -1,6 +1,11 @@
 Breaking Changes
 ----------------
 
+Version 4.8 onwards
+~~~~~~~~~~~~~~~~~~~~~
+- The ``hook_script`` attribute is deprecated. You now have ``hook_on_event_start`` and ``hook_on_event_end`` which lets you invoke different scripts when an event starts or ends. You also have the concepts of channels, that allows you to decide whether to send a notification even if hooks don't return anything. Read up about ``notify_on_hook_success`` and ``notify_on_hook_fail`` in  ``zmeventnotification.ini`` 
+- Due to a yet unsolvable bug, the ES will self-restart every 2 hours. Don't panic. (`ref <https://github.com/pliablepixels/zmeventnotification/issues/175>`__)
+
 Version 4.6 onwards
 ~~~~~~~~~~~~~~~~~~~~
 - If you are using hooks, make sure you run ``sudo ./install.sh`` again - it will create additional files in ``/var/lib/zmeventnotification``
