@@ -154,7 +154,6 @@ my $notify_on_hook_success;
 my %notify_on_hook_fail;
 my %notify_on_hook_success;
 
-
 my $use_hook_description;
 my $keep_frame_match_type;
 my $skip_monitors;
@@ -281,13 +280,13 @@ $mqtt_username //= config_get_val( $config, "mqtt", "username" );
 $mqtt_password //= config_get_val( $config, "mqtt", "password" );
 $use_fcm //= config_get_val( $config, "fcm", "enable", DEFAULT_FCM_ENABLE );
 $fcm_api_key //= config_get_val( $config, "fcm", "api_key", NINJA_API_KEY );
-$token_file  //= config_get_val( $config, "fcm", "token_file",
+$token_file //= config_get_val( $config, "fcm", "token_file",
 		DEFAULT_FCM_TOKEN_FILE );
 $ssl_enabled
 		//= config_get_val( $config, "ssl", "enable", DEFAULT_SSL_ENABLE );
 $ssl_cert_file //= config_get_val( $config, "ssl", "cert" );
 $ssl_key_file  //= config_get_val( $config, "ssl", "key" );
-$console_logs  //= config_get_val( $config, "customize", "console_logs",
+$console_logs //= config_get_val( $config, "customize", "console_logs",
 		DEFAULT_CUSTOMIZE_VERBOSE );
 $event_check_interval
 		//= config_get_val( $config, "customize", "event_check_interval",
@@ -306,7 +305,7 @@ $use_custom_notification_sound //= config_get_val(
 		"use_custom_notification_sound",
 		DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND
 );
-$picture_url     //= config_get_val( $config, "customize", "picture_url" );
+$picture_url //= config_get_val( $config, "customize", "picture_url" );
 $include_picture //= config_get_val( $config, "customize", "include_picture",
 		DEFAULT_CUSTOMIZE_INCLUDE_PICTURE );
 $picture_portal_username
@@ -331,8 +330,10 @@ $notify_on_hook_success
 
 # get channels and convert to hash
 
-%notify_on_hook_fail = map  {$_ => 1}  split(/\s*,\s*/,lc($notify_on_hook_fail));
-%notify_on_hook_success = map {$_ => 1}  split(/\s*,\s*/,lc($notify_on_hook_success));
+%notify_on_hook_fail
+		= map { $_ => 1 } split( /\s*,\s*/, lc($notify_on_hook_fail) );
+%notify_on_hook_success
+		= map { $_ => 1 } split( /\s*,\s*/, lc($notify_on_hook_success) );
 
 $use_hook_description
 		//= config_get_val( $config, "hook", "use_hook_description",
@@ -516,7 +517,7 @@ use ZoneMinder;
 use POSIX;
 use DBI;
 
-$ENV{PATH}  = '/bin:/usr/bin';
+$ENV{PATH} = '/bin:/usr/bin';
 $ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
 delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
 
@@ -734,7 +735,7 @@ sub checkNewEvents() {
 										. $monitor->{Id}
 										. ")" );
 						next;
-				} 
+				}
 
 				my ( $state, $last_event, $trigger_cause, $trigger_text )
 						= zmMemRead(
@@ -744,15 +745,13 @@ sub checkNewEvents() {
 						]
 						);
 
-       
-        #  printDebug ("**********".$monitor->{Name}." state: $state, last_event: $last_event, #last_processed_event:".	$last_event_for_monitors{ $monitor->{Id} }{"eid"});
-  
-        
+#  printDebug ("**********".$monitor->{Name}." state: $state, last_event: $last_event, #last_processed_event:".	$last_event_for_monitors{ $monitor->{Id} }{"eid"});
+
 				if ( $state == STATE_ALARM ) {
 						if (!defined( $monitor->{LastEvent} )
 								|| ( $last_event
 										!= $last_event_for_monitors{ $monitor->{Id} }{"eid"} )
-						) {
+								) {
 
 								if ( $last_event_for_monitors{ $monitor->{Id} }{"state"} eq
 										"recording" ) {
@@ -770,32 +769,37 @@ sub checkNewEvents() {
 												) if $hooktext;
 												$last_event_for_monitors{ $monitor->{Id} }
 														{"hook_text"} = undef;
-                    
+
 										}
 
-                    if ($hook_on_event_end) {
+										if ($hook_on_event_end) {
 
-                      #alarm is (if we need it in future for end script)
-                      #		{
-                      #		Name      => $name,
-                      #		MonitorId => $mid,
-                      #		EventId   => $last_event,
-                      #		Cause     => $alarm_cause
-                      #		};
+												#alarm is (if we need it in future for end script)
+												#		{
+												#		Name      => $name,
+												#		MonitorId => $mid,
+												#		EventId   => $last_event,
+												#		Cause     => $alarm_cause
+												#		};
 
-                      my $notes = getNotesFromEventDB($last_event_for_monitors{ $monitor->{Id} }{"eid"});
-                      my $cmd
-                          = $hook_on_event_end . " "
-                          . $last_event_for_monitors{ $monitor->{Id} }{"eid"} . " "
-                          . $monitor->{Id} . " \""
-                          . $monitor->{Name} . "\"" . " \""
-                          . $notes . "\"";
+												my $notes
+														= getNotesFromEventDB(
+														$last_event_for_monitors{ $monitor->{Id} }{"eid"}
+														);
+												my $cmd
+														= $hook_on_event_end . " "
+														. $last_event_for_monitors{ $monitor->{Id} }
+														{"eid"} . " "
+														. $monitor->{Id} . " \""
+														. $monitor->{Name} . "\"" . " \""
+														. $notes . "\"";
 
-                      printInfo( "(concurrent) Invoking hook on event end:" . $cmd );
-                      my $resTxt  = `$cmd`;
-                      my $resCode = $? >> 8;
-                      chomp($resTxt);
-                  }
+												printInfo( "(concurrent) Invoking hook on event end:"
+																. $cmd );
+												my $resTxt  = `$cmd`;
+												my $resCode = $? >> 8;
+												chomp($resTxt);
+										}
 
 								}
 								$alarm_cause
@@ -833,11 +837,17 @@ sub checkNewEvents() {
 								$eventFound = 1;
 						}
 
-				} elsif (( ($state == STATE_IDLE || $state == STATE_TAPE)
-						&& $last_event_for_monitors{ $monitor->{Id} }{"state"} eq
-						"recording") || ($state == STATE_ALERT && $last_event != 	$last_event_for_monitors{ $monitor->{Id} }{"eid"})) {
+				} elsif (
+						(   ( $state == STATE_IDLE || $state == STATE_TAPE )
+								&& $last_event_for_monitors{ $monitor->{Id} }{"state"} eq
+								"recording"
+						)
+						|| (   $state == STATE_ALERT
+								&& $last_event
+								!= $last_event_for_monitors{ $monitor->{Id} }{"eid"} )
+						) {
 
-            # We come here is the monitor state is IDLE after a previous alarm, or it goes to ALERT with a different EID
+# We come here is the monitor state is IDLE after a previous alarm, or it goes to ALERT with a different EID
 						my $hooktext
 								= $last_event_for_monitors{ $monitor->{Id} }{"hook_text"};
 
@@ -859,12 +869,12 @@ sub checkNewEvents() {
 						}
 						updateEventinZmDB( $monitor->{LastEvent}, $hooktext )
 								if $hooktext;
-            
-            	if ($hook_on_event_end) {
 
-                my $notes = getNotesFromEventDB($monitor->{LastEvent});
+						if ($hook_on_event_end) {
 
-                #alarm is (if we need it in future for end script)
+								my $notes = getNotesFromEventDB( $monitor->{LastEvent} );
+
+								#alarm is (if we need it in future for end script)
 								#		{
 								#		Name      => $name,
 								#		MonitorId => $mid,
@@ -885,7 +895,6 @@ sub checkNewEvents() {
 						}
 						$last_event_for_monitors{ $monitor->{Id} }{"state"}     = "idle";
 						$last_event_for_monitors{ $monitor->{Id} }{"hook_text"} = undef;
-   
 
 				}
 		}
@@ -980,23 +989,25 @@ sub updateEventinZmDB {
 				"updating Notes clause for Event:" . $eid . " with:" . $notes );
 		my $sql = "UPDATE Events set Notes=CONCAT(?,Notes) where Id=?";
 		my $sth = $dbh->prepare_cached($sql)
-				or Fatal( "UpdateEventInZmDB: Can't prepare '$sql': " . $dbh->errstr() );
+				or
+				Fatal( "UpdateEventInZmDB: Can't prepare '$sql': " . $dbh->errstr() );
 		my $res = $sth->execute( $notes, $eid )
 				or Fatal( "UpdateEventInZmDB: Can't execute: " . $sth->errstr() );
-    $sth->finish();
+		$sth->finish();
 
 }
 
 sub getNotesFromEventDB {
-    my $eid = shift;
-    my $sql = "SELECT Notes from Events WHERE Id=?";
-    	my $sth = $dbh->prepare_cached($sql)
-				or Fatal( "getNotesFromEventDB: Can't prepare '$sql': " . $dbh->errstr() );
-		my $res = $sth->execute( $eid )
+		my $eid = shift;
+		my $sql = "SELECT Notes from Events WHERE Id=?";
+		my $sth = $dbh->prepare_cached($sql)
+				or Fatal(
+				"getNotesFromEventDB: Can't prepare '$sql': " . $dbh->errstr() );
+		my $res = $sth->execute($eid)
 				or Fatal( "getNotesFromEventDB: Can't execute: " . $sth->errstr() );
-    my $notes  = $sth->fetchrow_hashref();
-    $sth->finish();
-    return $notes->{Notes};
+		my $notes = $sth->fetchrow_hashref();
+		$sth->finish();
+		return $notes->{Notes};
 }
 
 # This function compares the password provided over websockets
@@ -1363,7 +1374,7 @@ sub processJobs {
 												. $desc );
 
 								printInfo("Force updating event $eid with desc:$desc");
-                $last_event_for_monitors{ mid }{"hook_text"}=$desc;
+								$last_event_for_monitors{mid}{"hook_text"} = $desc;
 								updateEventinZmDB( $eid, $desc );
 
 		 # Edited Sep 4 2019: Lets write it immediately
@@ -1397,7 +1408,7 @@ sub processJobs {
 						elsif ( $job eq "timestamp" ) {
 								my ( $id, $mid, $timeval ) = split( "--SPLIT--", $msg );
 								printDebug(
-													"GOT JOB==> Update last sent timestamp of monitor:"
+										      "GOT JOB==> Update last sent timestamp of monitor:"
 												. $mid . " to "
 												. $timeval
 												. " for id:"
@@ -1604,7 +1615,7 @@ sub processIncomingMessage {
 										if (( !exists $_->{conn} )
 												|| (   $_->{conn}->ip() ne $conn->ip()
 														|| $_->{conn}->port() ne $conn->port() )
-										) {
+												) {
 												printDebug("token matched but connection did not");
 												printInfo("Duplicate token found: marking ..."
 																. substr( $_->{token}, -10 )
@@ -1653,7 +1664,7 @@ sub processIncomingMessage {
 												$_->{intlist} = $eintlist;
 										}    # token and conn. matches
 								}    # end of token matches
-										 # The connection matches but the token does not
+								     # The connection matches but the token does not
 								 # this can happen if this is the first token registration after push notification registration
 								 # response is received
 								if (   ( exists $_->{conn} )
@@ -2109,7 +2120,7 @@ sub isInList {
 		my $monlist = shift;
 		my $mid     = shift;
 
-		my @mids  = split( ',', $monlist );
+		my @mids = split( ',', $monlist );
 		my $found = 0;
 		foreach (@mids) {
 				if ( $mid eq $_ ) {
@@ -2153,14 +2164,13 @@ sub getConnectionIdentity {
 
 # Master event send routine. Will invoke different transport APIs as needed based on connection details
 sub sendEvent {
-		my $alarm = shift;
-		my $ac    = shift;
-    my $event_type = shift;
-    my $resCode = shift; # 0 = on_success, 1 = on_fail
+		my $alarm      = shift;
+		my $ac         = shift;
+		my $event_type = shift;
+		my $resCode    = shift;    # 0 = on_success, 1 = on_fail
 
-
-		my $t     = gettimeofday;
-		my $str   = encode_json(
+		my $t   = gettimeofday;
+		my $str = encode_json(
 				{   event  => 'alarm',
 						type   => '',
 						status => 'Success',
@@ -2171,36 +2181,40 @@ sub sendEvent {
 		if (   $ac->{type} == FCM
 				&& $ac->{pushstate} ne "disabled"
 				&& $ac->{state} != PENDING_AUTH ) {
-        
-        # only send if fcm is an allowed channel
-        if (isAllowedChannel('event_start', 'fcm', $resCode )) {
-          printInfo("Sending notification over FCM");
-				  sendOverFCM( $alarm, $ac, $event_type );
-        } else {
-          printInfo ("Not sending over FCM as notify filters are on_success:$notify_on_hook_success and on_fail:$notify_on_hook_fail");
-        }
 
-				
+				# only send if fcm is an allowed channel
+				if ( isAllowedChannel( 'event_start', 'fcm', $resCode ) ) {
+						printInfo("Sending notification over FCM");
+						sendOverFCM( $alarm, $ac, $event_type );
+				} else {
+						printInfo(
+								"Not sending over FCM as notify filters are on_success:$notify_on_hook_success and on_fail:$notify_on_hook_fail"
+						);
+				}
+
 		} elsif ( $ac->{type} == WEB
 				&& $ac->{state} == VALID_CONNECTION
 				&& exists $ac->{conn} ) {
-        
-          if (isAllowedChannel('event_start', 'web', $resCode )) {
-          printInfo("Sending notification over Web");
-				  sendOverWebSocket( $alarm, $ac, $event_type );
-        } else {
-          printInfo ("Not sending over Web as notify filters are on_success:$notify_on_hook_success and on_fail:$notify_on_hook_fail");
-        }
 
-			
+				if ( isAllowedChannel( 'event_start', 'web', $resCode ) ) {
+						printInfo("Sending notification over Web");
+						sendOverWebSocket( $alarm, $ac, $event_type );
+				} else {
+						printInfo(
+								"Not sending over Web as notify filters are on_success:$notify_on_hook_success and on_fail:$notify_on_hook_fail"
+						);
+				}
+
 		} elsif ( $ac->{type} == MQTT ) {
 
-          if (isAllowedChannel('event_start', 'mqtt', $resCode )) {
-          printInfo("Sending notification over MQTT");
-				  sendOverMQTTBroker( $alarm, $ac, $event_type );
-        } else {
-          printInfo ("Not sending over MQTT as notify filters are on_success:$notify_on_hook_success and on_fail:$notify_on_hook_fail");
-        }
+				if ( isAllowedChannel( 'event_start', 'mqtt', $resCode ) ) {
+						printInfo("Sending notification over MQTT");
+						sendOverMQTTBroker( $alarm, $ac, $event_type );
+				} else {
+						printInfo(
+								"Not sending over MQTT as notify filters are on_success:$notify_on_hook_success and on_fail:$notify_on_hook_fail"
+						);
+				}
 		}
 
 		print WRITER "timestamp--TYPE--"
@@ -2215,29 +2229,31 @@ sub sendEvent {
 }
 
 sub isAllowedChannel {
-		my $event_type  = shift;
-    my $channel = shift;
-		my $rescode = shift;
+		my $event_type = shift;
+		my $channel    = shift;
+		my $rescode    = shift;
 
 		if ( $rescode == 0 ) {
-				if ( !exists($notify_on_hook_success{$channel}) && $notify_on_hook_success ne "all" ) {
-         # print ("Channel ask: $channel, retCode:$rescode, not found");
+				if ( !exists( $notify_on_hook_success{$channel} )
+						&& $notify_on_hook_success ne "all" ) {
+
+						# print ("Channel ask: $channel, retCode:$rescode, not found");
 						return 0;
 				}
-        return 1;
-		}
-    elsif ( $rescode == 1 ) {
-				if ( !exists($notify_on_hook_fail{$channel}) && $notify_on_hook_fail ne "all" ) {
-       #   print ("Channel ask: $channel, retCode:$rescode, not found");
-            
+				return 1;
+		} elsif ( $rescode == 1 ) {
+				if ( !exists( $notify_on_hook_fail{$channel} )
+						&& $notify_on_hook_fail ne "all" ) {
+
+						#   print ("Channel ask: $channel, retCode:$rescode, not found");
+
 						return 0;
 				}
-        return 1;
+				return 1;
+		} else {
+				printDebug("invalid rescode $rescode passed to isAllowedChannel");
+				return 0;
 		}
-    else {
-      printDebug ("invalid rescode $rescode passed to isAllowedChannel");
-      return 0;
-    }
 }
 
 # Compares connection rules (monList/interval). Returns 1 if event should be send to this connection,
@@ -2310,9 +2326,9 @@ sub shouldSendEventToConn {
 
 sub processAlarms {
 
-    # by default, hook or no hook, lets assume our script success
-    # is successful. That way, if we don't use hooks, the flow is fine
-    my $resCode = 0;
+		# by default, hook or no hook, lets assume our script success
+		# is successful. That way, if we don't use hooks, the flow is fine
+		my $resCode = 0;
 
 		# iterate through each alarm
 		foreach (@events) {
@@ -2355,7 +2371,7 @@ sub processAlarms {
 
 								}
 								printInfo( "Invoking hook on event start:" . $cmd );
-								my $resTxt  = `$cmd`;
+								my $resTxt = `$cmd`;
 								$resCode = $? >> 8;
 								chomp($resTxt);
 								printInfo("For Monitor:"
@@ -2366,19 +2382,21 @@ sub processAlarms {
 												. $resTxt
 												. " exit:"
 												. $resCode );
+
 								#next if ( $resCode != 0 );
-								if ($use_hook_description && $resCode == 0) {
-                    # lets append it to any existing motion notes
-                    # note that this is in the fork. We are only passing hook text
-                    # to parent, so it can be appended to the full motion text on event close
+								if ( $use_hook_description && $resCode == 0 ) {
+
+		 # lets append it to any existing motion notes
+		 # note that this is in the fork. We are only passing hook text
+		 # to parent, so it can be appended to the full motion text on event close
 										$alarm->{Cause} = $resTxt . " " . $alarm->{Cause};
 										printDebug(
 												"after appending motion text, alarm->cause is now:"
 														. $alarm->{Cause} );
 
-                    # This updates the ZM DB with the detected description
-                    # we are writing resTxt not alarm cause which is only detection text
-                    # when we write to DB, we will add the latest notes, which may have more zones
+# This updates the ZM DB with the detected description
+# we are writing resTxt not alarm cause which is only detection text
+# when we write to DB, we will add the latest notes, which may have more zones
 										print WRITER "event_description--TYPE--"
 												. $alarm->{MonitorId}
 												. "--SPLIT--"
@@ -2389,7 +2407,7 @@ sub processAlarms {
 						}
 				}
 
-        # coming here means the alarm needs to be sent out to listerens who are interested
+# coming here means the alarm needs to be sent out to listerens who are interested
 				printInfo("Matching alarm to connection rules...");
 				my ($serv) = @_;
 				foreach (@active_connections) {
@@ -2398,7 +2416,7 @@ sub processAlarms {
 								printDebug(
 										"shouldSendEventToConn returned true, so calling sendEvent"
 								);
-								sendEvent( $alarm, $_, "event_start", $resCode);
+								sendEvent( $alarm, $_, "event_start", $resCode );
 
 						}
 				}    # foreach active_connections
@@ -2437,7 +2455,7 @@ sub initSocketServer {
 		printInfo( "Web Socket Event Server listening on port " . $port . "\n" );
 
 		$wss = Net::WebSocket::Server->new(
-				listen      => $ssl_enabled ? $ssl_server : $port,
+				listen => $ssl_enabled ? $ssl_server : $port,
 				tick_period => $event_check_interval,
 				on_tick     => sub {
 						printDebug("---------->Tick START<--------------");
