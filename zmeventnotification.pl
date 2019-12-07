@@ -93,8 +93,10 @@ use constant {
 		DEFAULT_HOOK_USE_HOOK_DESCRIPTION               => 'no',
 		DEFAULT_HOOK_STORE_FRAME_IN_ZM                  => 'no',
 		DEFAULT_RESTART_INTERVAL                        => 7200,
-		DEFAULT_NOTIFY_ON_HOOK_FAIL                     => 'none',
-		DEFAULT_NOTIFY_ON_HOOK_SUCCESS                  => 'all',
+		DEFAULT_EVENT_START_NOTIFY_ON_HOOK_FAIL         => 'none',
+		DEFAULT_EVENT_START_NOTIFY_ON_HOOK_SUCCESS      => 'none',
+		DEFAULT_EVENT_END_NOTIFY_ON_HOOK_FAIL           => 'none',
+		DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS        => 'none',
 };
 
 # connection state
@@ -146,13 +148,18 @@ my $read_alarm_cause;
 my $tag_alarm_event_id;
 my $use_custom_notification_sound;
 
-my $hook_on_event_start;
-my $hook_on_event_end;
+my $event_start_hook;
+my $event_end_hook;
 
-my $notify_on_hook_fail;
-my $notify_on_hook_success;
-my %notify_on_hook_fail;
-my %notify_on_hook_success;
+my $event_start_notify_on_hook_fail;
+my $event_start_notify_on_hook_success;
+my %event_start_notify_on_hook_fail;
+my %event_start_notify_on_hook_success;
+
+my $event_end_notify_on_hook_fail;
+my $event_end_notify_on_hook_success;
+my %event_end_notify_on_hook_fail;
+my %event_end_notify_on_hook_success;
 
 my $use_hook_description;
 my $keep_frame_match_type;
@@ -313,27 +320,44 @@ $picture_portal_username
 $picture_portal_password
 		//= config_get_val( $config, "customize", "picture_portal_password" );
 
-$hook_on_event_start
-		//= config_get_val( $config, "hook", "hook_on_event_start" );
+$event_start_hook //= config_get_val( $config, "hook", "event_start_hook" );
 
 # backward compatibility
-$hook_on_event_start //= config_get_val( $config, "hook", "hook_script" )
-		if ( !$hook_on_event_start );
-$hook_on_event_end //= config_get_val( $config, "hook", "hook_on_event_end" );
+$event_start_hook //= config_get_val( $config, "hook", "hook_script" )
+		if ( !$event_start_hook );
+$event_end_hook //= config_get_val( $config, "hook", "event_end_hook" );
 
-$notify_on_hook_fail
-		//= config_get_val( $config, "hook", "notify_on_hook_fail",
-		DEFAULT_NOTIFY_ON_HOOK_FAIL );
-$notify_on_hook_success
-		//= config_get_val( $config, "hook", "notify_on_hook_sucess",
-		DEFAULT_NOTIFY_ON_HOOK_SUCCESS );
+$event_start_notify_on_hook_fail //= config_get_val(
+		$config, "hook",
+		"event_start_notify_on_hook_fail",
+		DEFAULT_EVENT_START_NOTIFY_ON_HOOK_FAIL
+);
+$event_start_notify_on_hook_success //= config_get_val(
+		$config, "hook",
+		"event_start_notify_on_hook_sucess",
+		DEFAULT_EVENT_START_NOTIFY_ON_HOOK_SUCCESS
+);
+$event_end_notify_on_hook_fail //= config_get_val(
+		$config, "hook",
+		"event_end_notify_on_hook_fail",
+		DEFAULT_EVENT_END_NOTIFY_ON_HOOK_FAIL
+);
+$event_end_notify_on_hook_success //= config_get_val(
+		$config, "hook",
+		"event_end_notify_on_hook_sucess",
+		DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS
+);
 
 # get channels and convert to hash
 
-%notify_on_hook_fail
-		= map { $_ => 1 } split( /\s*,\s*/, lc($notify_on_hook_fail) );
-%notify_on_hook_success
-		= map { $_ => 1 } split( /\s*,\s*/, lc($notify_on_hook_success) );
+%event_start_notify_on_hook_fail = map { $_ => 1 }
+		split( /\s*,\s*/, lc($event_start_notify_on_hook_fail) );
+%event_start_notify_on_hook_success = map { $_ => 1 }
+		split( /\s*,\s*/, lc($event_start_notify_on_hook_success) );
+%event_end_notify_on_hook_fail
+		= map { $_ => 1 } split( /\s*,\s*/, lc($event_end_notify_on_hook_fail) );
+%event_end_notify_on_hook_success = map { $_ => 1 }
+		split( /\s*,\s*/, lc($event_end_notify_on_hook_success) );
 
 $use_hook_description
 		//= config_get_val( $config, "hook", "use_hook_description",
@@ -418,39 +442,42 @@ ${\(
   "Default configuration ($abs_config_file doesn't exist)"
 )}:
 
-Secrets file................... ${\(value_or_undefined($secrets_filename))}
-Restart interval (secs)........ ${\(value_or_undefined($restart_interval))}
+Secrets file.......................... ${\(value_or_undefined($secrets_filename))}
+Restart interval (secs)............... ${\(value_or_undefined($restart_interval))}
 
-Port .......................... ${\(value_or_undefined($port))}
-Address ....................... ${\(value_or_undefined($address))}
-Event check interval .......... ${\(value_or_undefined($event_check_interval))}
-Monitor reload interval ....... ${\(value_or_undefined($monitor_reload_interval))}
+Port ................................. ${\(value_or_undefined($port))}
+Address .............................. ${\(value_or_undefined($address))}
+Event check interval ................. ${\(value_or_undefined($event_check_interval))}
+Monitor reload interval .............. ${\(value_or_undefined($monitor_reload_interval))}
 
-Auth enabled .................. ${\(yes_or_no($auth_enabled))}
-Auth timeout .................. ${\(value_or_undefined($auth_timeout))}
+Auth enabled ......................... ${\(yes_or_no($auth_enabled))}
+Auth timeout ......................... ${\(value_or_undefined($auth_timeout))}
 
-Use FCM ....................... ${\(yes_or_no($use_fcm))}
-FCM API key ................... ${\(present_or_not($fcm_api_key))}
-Token file .................... ${\(value_or_undefined($token_file))}
+Use FCM .............................. ${\(yes_or_no($use_fcm))}
+FCM API key .......................... ${\(present_or_not($fcm_api_key))}
+Token file ........................... ${\(value_or_undefined($token_file))}
 
-Use MQTT .......................${\(yes_or_no($use_mqtt))}
-MQTT Server ....................${\(value_or_undefined($mqtt_server))}
-MQTT Username ..................${\(value_or_undefined($mqtt_username))}
-MQTT Password ..................${\(present_or_not($mqtt_password))}
+Use MQTT ..............................${\(yes_or_no($use_mqtt))}
+MQTT Server ...........................${\(value_or_undefined($mqtt_server))}
+MQTT Username .........................${\(value_or_undefined($mqtt_username))}
+MQTT Password .........................${\(present_or_not($mqtt_password))}
 
-SSL enabled ................... ${\(yes_or_no($ssl_enabled))}
-SSL cert file ................. ${\(value_or_undefined($ssl_cert_file))}
-SSL key file .................. ${\(value_or_undefined($ssl_key_file))}
+SSL enabled .......................... ${\(yes_or_no($ssl_enabled))}
+SSL cert file ........................ ${\(value_or_undefined($ssl_cert_file))}
+SSL key file ......................... ${\(value_or_undefined($ssl_key_file))}
 
-Verbose ....................... ${\(yes_or_no($console_logs))}
-Read alarm cause .............. ${\(yes_or_no($read_alarm_cause))}
-Tag alarm event id ............ ${\(yes_or_no($tag_alarm_event_id))}
-Use custom notification sound . ${\(yes_or_no($use_custom_notification_sound))}
+Verbose .............................. ${\(yes_or_no($console_logs))}
+Read alarm cause ..................... ${\(yes_or_no($read_alarm_cause))}
+Tag alarm event id ................... ${\(yes_or_no($tag_alarm_event_id))}
+Use custom notification sound ........ ${\(yes_or_no($use_custom_notification_sound))}
 
-Pre Event Hook Script ......... ${\(value_or_undefined($hook_on_event_start))}
-Post Event Hook Script ........ ${\(value_or_undefined($hook_on_event_end))}
-Notify on hook success......... ${\(value_or_undefined($notify_on_hook_success))}
-Notify on hook failure......... ${\(value_or_undefined($notify_on_hook_fail))}
+Hook Script on Event Start ........... ${\(value_or_undefined($event_start_hook))}
+Hook Script on Event End.............. ${\(value_or_undefined($event_end_hook))}
+
+Notify on Event Start (hook success).. ${\(value_or_undefined($event_start_notify_on_hook_success))}
+Notify on Event Start (hook fail)..... ${\(value_or_undefined($event_start_notify_on_hook_fail))}
+Notify on Event End (hook success)... ${\(value_or_undefined($event_end_notify_on_hook_success))}
+Notify on Event End (hook fail)...... ${\(value_or_undefined($event_end_notify_on_hook_fail))}
 
 Use Hook Description........... ${\(yes_or_no($use_hook_description))}
 Keep frame match type.......... ${\(yes_or_no($keep_frame_match_type))}
@@ -568,11 +595,23 @@ SLEEP:
 }
 sub at_eol($) { $_[0] =~ /\n\z/ }
 
+sub REAPER {
+    # don't mess up return codes for back ticks
+    local ($!, $?);
+    my $pid;
+    while (($pid = waitpid(-1, &WNOHANG)) > 0) {
+        # do something with $stiff if you want
+        printDebug ("REAPER: acknowledged child $pid exiting");
+    }
+    $SIG{CHLD} = \&REAPER;    # install *after* calling waitpid
+}
+
 logInit();
 logSetSignal();
 
 $SIG{HUP}  = \&logrot;
-$SIG{CHLD} = 'IGNORE';
+$SIG{CHLD} = \&REAPER;
+#$SIG{CHLD} = 'DEFAULT';
 
 my $dbh = zmDbConnect();
 my %monitors;
@@ -771,23 +810,15 @@ sub checkNewEvents() {
 														{"hook_text"} = undef;
 
 										}
-
-										if ($hook_on_event_end) {
-
-												#alarm is (if we need it in future for end script)
-												#		{
-												#		Name      => $name,
-												#		MonitorId => $mid,
-												#		EventId   => $last_event,
-												#		Cause     => $alarm_cause
-												#		};
-
-												my $notes
+										my $resCode = 0;
+										my $notes;
+										if ($event_end_hook) {
+												$notes
 														= getNotesFromEventDB(
 														$last_event_for_monitors{ $monitor->{Id} }{"eid"}
 														);
 												my $cmd
-														= $hook_on_event_end . " "
+														= $event_end_hook . " "
 														. $last_event_for_monitors{ $monitor->{Id} }
 														{"eid"} . " "
 														. $monitor->{Id} . " \""
@@ -796,10 +827,33 @@ sub checkNewEvents() {
 
 												printInfo( "(concurrent) Invoking hook on event end:"
 																. $cmd );
-												my $resTxt  = `$cmd`;
-												my $resCode = $? >> 8;
+												my $resTxt = `$cmd`;
+												$resCode = $? >> 8;
 												chomp($resTxt);
-										}
+
+												printInfo(
+														"Event End: Matching alarm to connection rules..."
+												);
+												my ($serv) = @_;
+												my $alarm = {
+														Name      => $monitor->{Name},
+														MonitorId => $monitor->{Id},
+														EventId =>
+																$last_event_for_monitors{ $monitor->{Id} }
+																{"eid"},
+														Cause => $notes
+												};
+												foreach (@active_connections) {
+														if ( shouldSendEventToConn( $alarm, $_ ) ) {
+																printDebug(
+																		"Event End: shouldSendEventToConn returned true, so calling sendEvent"
+																);
+																sendEvent( $alarm, $_, "event_end",
+																		$resCode );
+														}
+												}    # foreach active_connections
+
+										}    # event end hook
 
 								}
 								$alarm_cause
@@ -870,9 +924,12 @@ sub checkNewEvents() {
 						updateEventinZmDB( $monitor->{LastEvent}, $hooktext )
 								if $hooktext;
 
-						if ($hook_on_event_end) {
+						my $end_rescode = 0;
+           
+						my $notes;
+						if ($event_end_hook) {
 
-								my $notes = getNotesFromEventDB( $monitor->{LastEvent} );
+								$notes = getNotesFromEventDB( $monitor->{LastEvent} );
 
 								#alarm is (if we need it in future for end script)
 								#		{
@@ -881,18 +938,41 @@ sub checkNewEvents() {
 								#		EventId   => $last_event,
 								#		Cause     => $alarm_cause
 								#		};
-								my $cmd
-										= $hook_on_event_end . " "
+								my $end_cmd
+										= $event_end_hook . " "
 										. $monitor->{LastEvent} . " "
 										. $monitor->{Id} . " \""
 										. $monitor->{Name} . "\"" . " \""
 										. $notes . "\"";
 
-								printInfo( "Invoking hook on event end:" . $cmd );
-								my $resTxt  = `$cmd`;
-								my $resCode = $? >> 8;
-								chomp($resTxt);
-						}
+								printInfo( "Invoking hook on event end:" . $end_cmd );
+								my $end_restxt =`$end_cmd`;
+								$end_rescode = $? >> 8;
+                chomp($end_restxt);
+                printInfo ("***************** RESCODE $end_rescode WITH: $end_restxt and reason:".$!."\n");
+                print("***************** RESCODE $end_rescode WITH: $end_restxt and reason:".$!."\n");
+								
+
+								printInfo("Event End: Matching alarm to connection rules...");
+								my ($serv) = @_;
+								my $alarm = {
+										Name      => $monitor->{Name},
+										MonitorId => $monitor->{Id},
+										EventId =>
+												$last_event_for_monitors{ $monitor->{Id} }{"eid"},
+										Cause => $notes
+								};
+
+								foreach (@active_connections) {
+										if ( shouldSendEventToConn( $alarm, $_ ) ) {
+												printDebug(
+														"Event End: shouldSendEventToConn returned true, so calling sendEvent"
+												);
+												sendEvent( $alarm, $_, "event_end", $end_rescode );
+										}
+								}    # foreach active_connections
+						}    # event end hook
+
 						$last_event_for_monitors{ $monitor->{Id} }{"state"}     = "idle";
 						$last_event_for_monitors{ $monitor->{Id} }{"hook_text"} = undef;
 
@@ -1101,10 +1181,10 @@ sub deleteFCMToken {
 # Sends a push notification to the mqtt Broker
 sub sendOverMQTTBroker {
 
-		my $alarm = shift;
-		my $ac    = shift;
-    my $event_type = shift;
-    my $resCode = shift;
+		my $alarm      = shift;
+		my $ac         = shift;
+		my $event_type = shift;
+		my $resCode    = shift;
 
 		my $json;
 
@@ -1114,13 +1194,15 @@ sub sendOverMQTTBroker {
 		my $description
 				= $alarm->{Name} . ":(" . $alarm->{EventId} . ") " . $alarm->{Cause};
 
+    $description = "Ended:".$description if ($event_type eq "event_end");
+
 		$json = encode_json(
-				{   monitor => $alarm->{MonitorId},
-						name    => $description,
-						state   => 'alarm',
-						eventid => $alarm->{EventId},
-            hookvalue => $resCode,
-            eventtype=> $event_type
+				{   monitor   => $alarm->{MonitorId},
+						name      => $description,
+						state     => 'alarm',
+						eventid   => $alarm->{EventId},
+						hookvalue => $resCode,
+						eventtype => $event_type
 				}
 		);
 
@@ -1135,14 +1217,16 @@ sub sendOverWebSocket {
 
 # We can't send websocket data in a fork. WSS contains user space crypt data that
 # goes out of sync with the parent. So we use a parent pipe
-		my $alarm = shift;
-		my $ac    = shift;
-    my $event_type = shift;
-    my $resCode = shift;
+		my $alarm      = shift;
+		my $ac         = shift;
+		my $event_type = shift;
+		my $resCode    = shift;
 
 # only remove if not removed before. If you are sending over multiple channels, it may have already been stripped
 		$alarm->{Cause} = substr( $alarm->{Cause}, 4 )
 				if ( !$keep_frame_match_type && $alarm->{Cause} =~ /^\[.\]/ );
+
+    $alarm->{Cause} = "End:".$alarm->{Cause} if ($event_type eq "event_end");
 		my $str = encode_json(
 				{   event  => 'alarm',
 						type   => '',
@@ -1161,22 +1245,22 @@ sub sendOverWebSocket {
 # Sends a push notification to FCM
 sub sendOverFCM {
 
-		my $alarm = shift;
-		my $obj   = shift;
-    my $event_type = shift;
-    my $resCode = shift;
-
+		my $alarm      = shift;
+		my $obj        = shift;
+		my $event_type = shift;
+		my $resCode    = shift;
 
 		my $mid   = $alarm->{MonitorId};
 		my $eid   = $alarm->{EventId};
 		my $mname = $alarm->{Name};
-    
 
 		my $pic = $picture_url =~ s/EVENTID/$eid/gr;
-    if ($resCode == 1) {
-      printDebug ('FCM called when hook failed, so making sure we do not use objdetect in url');
-      $pic = $pic =~ s/objdetect/snapshot/gr;
-    }
+		if ( $resCode == 1 ) {
+				printDebug(
+						'FCM called when hook failed, so making sure we do not use objdetect in url'
+				);
+				$pic = $pic =~ s/objdetect/snapshot/gr;
+		}
 
 		$pic = $pic . '&username=' . $picture_portal_username
 				if ($picture_portal_username);
@@ -1204,8 +1288,12 @@ sub sendOverFCM {
 						if ( !$keep_frame_match_type );
 		}
 
+    
 		my $now   = strftime( '%I:%M %p, %d-%b', localtime );
-		my $body  = $alarm->{Cause} . " at " . $now;
+    my $body = $alarm->{Cause};
+    $body = $body." ended" if ($event_type eq "event_end");
+		$body  = $body." at " . $now;
+
 		my $badge = $obj->{badge} + 1;
 
 		print WRITER "badge--TYPE--" . $obj->{id} . "--SPLIT--" . $badge . "\n";
@@ -2200,12 +2288,12 @@ sub sendEvent {
 				&& $ac->{state} != PENDING_AUTH ) {
 
 				# only send if fcm is an allowed channel
-				if ( isAllowedChannel( 'event_start', 'fcm', $resCode ) ) {
+				if ( isAllowedChannel( $event_type, 'fcm', $resCode ) ) {
 						printInfo("Sending notification over FCM");
 						sendOverFCM( $alarm, $ac, $event_type, $resCode );
 				} else {
 						printInfo(
-								"Not sending over FCM as notify filters are on_success:$notify_on_hook_success and on_fail:$notify_on_hook_fail"
+								"Not sending over FCM as notify filters are on_success:$event_start_notify_on_hook_success and on_fail:$event_start_notify_on_hook_fail"
 						);
 				}
 
@@ -2213,23 +2301,23 @@ sub sendEvent {
 				&& $ac->{state} == VALID_CONNECTION
 				&& exists $ac->{conn} ) {
 
-				if ( isAllowedChannel( 'event_start', 'web', $resCode ) ) {
+				if ( isAllowedChannel( $event_type, 'web', $resCode ) ) {
 						printInfo("Sending notification over Web");
 						sendOverWebSocket( $alarm, $ac, $event_type, $resCode );
 				} else {
 						printInfo(
-								"Not sending over Web as notify filters are on_success:$notify_on_hook_success and on_fail:$notify_on_hook_fail"
+								"Not sending over Web as notify filters are on_success:$event_start_notify_on_hook_success and on_fail:$event_start_notify_on_hook_fail"
 						);
 				}
 
 		} elsif ( $ac->{type} == MQTT ) {
 
-				if ( isAllowedChannel( 'event_start', 'mqtt', $resCode ) ) {
+				if ( isAllowedChannel( $event_type, 'mqtt', $resCode ) ) {
 						printInfo("Sending notification over MQTT");
 						sendOverMQTTBroker( $alarm, $ac, $event_type, $resCode );
 				} else {
 						printInfo(
-								"Not sending over MQTT as notify filters are on_success:$notify_on_hook_success and on_fail:$notify_on_hook_fail"
+								"Not sending over MQTT as notify filters are on_success:$event_start_notify_on_hook_success and on_fail:$event_start_notify_on_hook_fail"
 						);
 				}
 		}
@@ -2251,16 +2339,16 @@ sub isAllowedChannel {
 		my $rescode    = shift;
 
 		if ( $rescode == 0 ) {
-				if ( !exists( $notify_on_hook_success{$channel} )
-						&& $notify_on_hook_success ne "all" ) {
+				if ( !exists( $event_start_notify_on_hook_success{$channel} )
+						&& $event_start_notify_on_hook_success ne "all" ) {
 
 						# print ("Channel ask: $channel, retCode:$rescode, not found");
 						return 0;
 				}
 				return 1;
 		} elsif ( $rescode == 1 ) {
-				if ( !exists( $notify_on_hook_fail{$channel} )
-						&& $notify_on_hook_fail ne "all" ) {
+				if ( !exists( $event_start_notify_on_hook_fail{$channel} )
+						&& $event_start_notify_on_hook_fail ne "all" ) {
 
 						#   print ("Channel ask: $channel, retCode:$rescode, not found");
 
@@ -2362,7 +2450,7 @@ sub processAlarms {
 # if you want to use hook, lets first call the hook
 # if the hook returns an exit value of 0 (yes/success), we process it, else we skip it
 
-				if ($hook_on_event_start) {
+				if ($event_start_hook) {
 						if ( $skip_monitors
 								&& isInList( $skip_monitors, $alarm->{MonitorId} ) ) {
 								printInfo("Skipping hook processing because "
@@ -2371,7 +2459,7 @@ sub processAlarms {
 												. ") is in skip monitor list" );
 						} else {
 								my $cmd
-										= $hook_on_event_start . " "
+										= $event_start_hook . " "
 										. $alarm->{EventId} . " "
 										. $alarm->{MonitorId} . " \""
 										. $alarm->{Name} . "\"" . " \""
@@ -2422,7 +2510,7 @@ sub processAlarms {
 												. $resTxt . "\n";
 								}
 						}
-				}
+				}    # event start hook
 
 # coming here means the alarm needs to be sent out to listerens who are interested
 				printInfo("Matching alarm to connection rules...");
@@ -2509,7 +2597,7 @@ sub initSocketServer {
 										# else there are issues
 										#$wss->shutdown();
 										close(READER);
-										local $SIG{'CHLD'} = 'DEFAULT';
+										#local $SIG{'CHLD'} = 'DEFAULT';
 										$dbh = zmDbConnect(1);
 										logReinit();
 										printDebug("shutting down websocketserver in child");
