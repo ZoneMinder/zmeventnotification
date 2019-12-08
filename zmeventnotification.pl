@@ -338,7 +338,6 @@ $event_start_notify_on_hook_success //= config_get_val(
 		DEFAULT_EVENT_START_NOTIFY_ON_HOOK_SUCCESS
 );
 
-
 $event_end_notify_on_hook_fail //= config_get_val(
 		$config, "hook",
 		"event_end_notify_on_hook_fail",
@@ -725,7 +724,7 @@ sub printError {
 
 sub checkNewEvents() {
 
-     #printInfo ("******** WEB FOR 6::".$last_event_for_monitors{6}{"web"});
+		#printInfo ("******** WEB FOR 6::".$last_event_for_monitors{6}{"web"});
 		my $eventFound = 0;
 		if ( ( time() - $monitor_reload_time ) > $monitor_reload_interval ) {
 				my $len = scalar @active_connections;
@@ -850,10 +849,9 @@ sub checkNewEvents() {
 														Cause => $notes
 												};
 												foreach (@active_connections) {
-													
-																sendEvent( $alarm, $_, "event_end",
-																		$resCode );
-														
+
+														sendEvent( $alarm, $_, "event_end", $resCode );
+
 												}    # foreach active_connections
 
 										}    # event end hook
@@ -880,8 +878,9 @@ sub checkNewEvents() {
 										= "recording";
 
 								# delete sent marks for end events
-                #printInfo ("***** GLOBAL REMOVE FOR ". $monitor->{Id});
-                printDebug ("Removing event sent markers for ".$monitor->{Id});
+								#printInfo ("***** GLOBAL REMOVE FOR ". $monitor->{Id});
+								printDebug(
+										"Removing event sent markers for " . $monitor->{Id} );
 								delete( $last_event_for_monitors{ $monitor->{Id} }{"mqtt"} );
 								delete( $last_event_for_monitors{ $monitor->{Id} }{"fcm"} );
 								delete( $last_event_for_monitors{ $monitor->{Id} }{"web"} );
@@ -1310,7 +1309,7 @@ sub sendOverFCM {
 		my $key   = "key=" . $fcm_api_key;
 		my $title = $mname . " Alarm";
 		$title = $title . " (" . $eid . ")" if ($tag_alarm_event_id);
-    $title = "Ended:".$title if ($event_type eq "event_end");
+		$title = "Ended:" . $title          if ( $event_type eq "event_end" );
 
 		my $ios_message = {
 				to           => $obj->{token},
@@ -1477,16 +1476,17 @@ sub processJobs {
 
 						}
 
-            elsif ( $job eq "notification_sent" ) {
-								my ( $id, $key, $value) = split( "--SPLIT--", $msg );
-                #printInfo ("***** GOT MID:$id, key:$key value: $value");
-                if ($value eq "1") {
-                  printDebug ("Job: event marker:$id, key:$key to $value");
-                  $last_event_for_monitors{$id}{$key} = 1;
-                } else {
-                  printInfo ("Job: Removing:$id, event marker:$key");
-                  delete( $last_event_for_monitors{$id}{$key});
-                }
+						elsif ( $job eq "notification_sent" ) {
+								my ( $id, $key, $value ) = split( "--SPLIT--", $msg );
+
+								#printInfo ("***** GOT MID:$id, key:$key value: $value");
+								if ( $value eq "1" ) {
+										printDebug("Job: event marker:$id, key:$key to $value");
+										$last_event_for_monitors{$id}{$key} = 1;
+								} else {
+										printInfo("Job: Removing:$id, event marker:$key");
+										delete( $last_event_for_monitors{$id}{$key} );
+								}
 
 						}
 
@@ -2310,27 +2310,36 @@ sub sendEvent {
 				# only send if fcm is an allowed channel
 				if ( isAllowedChannel( $event_type, 'fcm', $resCode ) ) {
 						if ( $event_type eq "event_end" ) {
-								if ( $last_event_for_monitors{ $alarm->{MonitorId}}{"fcm"} )
+								if ( $last_event_for_monitors{ $alarm->{MonitorId} }{"fcm"} )
 								{
 										printInfo("Sending end notification for EID:"
 														. $alarm->{EventId}
 														. "over FCM as start was previously sent" );
 										sendOverFCM( $alarm, $ac, $event_type, $resCode );
 								} else {
-                  printDebug ("Looks like fcm event_start was not sent for EID:". $alarm->{EventId}." so skipping");
-                }
+										printDebug(
+												"Looks like fcm event_start was not sent for EID:"
+														. $alarm->{EventId}
+														. " so skipping" );
+								}
 						} else {
 								printInfo("Sending event_start notification over FCM");
 								sendOverFCM( $alarm, $ac, $event_type, $resCode );
-                 print WRITER "notification_sent--TYPE--".$alarm->{MonitorId}. "--SPLIT--"."fcm"."--SPLIT--"."1\n";
-								
+								print WRITER "notification_sent--TYPE--"
+										. $alarm->{MonitorId}
+										. "--SPLIT--" . "fcm"
+										. "--SPLIT--" . "1\n";
+
 						}
 
 				} else {
 						printInfo(
 								"Not sending over FCM as notify filters are on_success:$event_start_notify_on_hook_success and on_fail:$event_start_notify_on_hook_fail"
 						);
-						 print WRITER "notification_sent--TYPE--".$alarm->{MonitorId}. "--SPLIT--"."fcm"."--SPLIT--"."0\n";
+						print WRITER "notification_sent--TYPE--"
+								. $alarm->{MonitorId}
+								. "--SPLIT--" . "fcm"
+								. "--SPLIT--" . "0\n";
 				}
 
 		} elsif ( $ac->{type} == WEB
@@ -2338,7 +2347,7 @@ sub sendEvent {
 				&& exists $ac->{conn} ) {
 
 				if ( isAllowedChannel( $event_type, 'web', $resCode ) ) {
-            
+
 						if ( $event_type eq "event_end" ) {
 								if ( $last_event_for_monitors{ $alarm->{MonitorId} }{"web"} )
 								{
@@ -2348,22 +2357,30 @@ sub sendEvent {
 										sendOverWebSocket( $alarm, $ac, $event_type, $resCode );
 
 								} else {
-                  printDebug ("Looks like Web event_start was not sent for MID:".$alarm->{MonitorId}. " EID:". $alarm->{EventId}." so skipping");
-                }
+										printDebug(
+												"Looks like Web event_start was not sent for MID:"
+														. $alarm->{MonitorId} . " EID:"
+														. $alarm->{EventId}
+														. " so skipping" );
+								}
 						} else {
 								printInfo("Sending event_start notification over Web");
 								sendOverWebSocket( $alarm, $ac, $event_type, $resCode );
-                print WRITER "notification_sent--TYPE--".$alarm->{MonitorId}. "--SPLIT--"."web"."--SPLIT--"."1\n";
+								print WRITER "notification_sent--TYPE--"
+										. $alarm->{MonitorId}
+										. "--SPLIT--" . "web"
+										. "--SPLIT--" . "1\n";
 
-             
-							
 						}
 				} else {
 						printInfo(
 								"Not sending over Web as notify filters are on_success:$event_start_notify_on_hook_success and on_fail:$event_start_notify_on_hook_fail"
 						);
-           
-					 print WRITER "notification_sent--TYPE--".$alarm->{MonitorId}. "--SPLIT--"."web"."--SPLIT--"."0\n";
+
+						print WRITER "notification_sent--TYPE--"
+								. $alarm->{MonitorId}
+								. "--SPLIT--" . "web"
+								. "--SPLIT--" . "0\n";
 				}
 
 		} elsif ( $ac->{type} == MQTT ) {
@@ -2379,18 +2396,27 @@ sub sendEvent {
 										sendOverMQTTBroker( $alarm, $ac, $event_type, $resCode );
 
 								} else {
-                  printDebug ("Looks like MQTT event_start was not sent for EID:". $alarm->{EventId}." so skipping");
-                }
+										printDebug(
+												"Looks like MQTT event_start was not sent for EID:"
+														. $alarm->{EventId}
+														. " so skipping" );
+								}
 						} else {
 								printInfo("Sending event_start notification over MQTT");
 								sendOverMQTTBroker( $alarm, $ac, $event_type, $resCode );
-								 print WRITER "notification_sent--TYPE--".$alarm->{MonitorId}. "--SPLIT--"."mqtt"."--SPLIT--"."1\n";
+								print WRITER "notification_sent--TYPE--"
+										. $alarm->{MonitorId}
+										. "--SPLIT--" . "mqtt"
+										. "--SPLIT--" . "1\n";
 						}
 				} else {
 						printInfo(
 								"Not sending over MQTT as notify filters are on_success:$event_start_notify_on_hook_success and on_fail:$event_start_notify_on_hook_fail"
 						);
-						 print WRITER "notification_sent--TYPE--".$alarm->{MonitorId}. "--SPLIT--"."mqtt"."--SPLIT--"."0\n";
+						print WRITER "notification_sent--TYPE--"
+								. $alarm->{MonitorId}
+								. "--SPLIT--" . "mqtt"
+								. "--SPLIT--" . "0\n";
 				}
 		}
 
