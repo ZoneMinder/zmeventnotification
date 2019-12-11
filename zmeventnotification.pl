@@ -42,7 +42,7 @@ use Symbol qw(qualify_to_ref);
 use IO::Select;
 
 # debugging only.
-#use Data::Dumper;
+use Data::Dumper;
 
 # ==========================================================================
 #
@@ -629,7 +629,8 @@ $SIG{CHLD} = \&REAPER;
 
 my $dbh = zmDbConnect();
 my %monitors;
-my %last_event_for_monitors;
+my %last_event_for_monitors=();
+my %active_events=();
 my $monitor_reload_time = 0;
 my $es_start_time       = time();
 my $apns_feedback_time  = 0;
@@ -727,13 +728,16 @@ sub printError {
 # so they can be JSONified and sent out
 
 # Output:
+#    {Name => Name of monitor, MonitorId => ID of monitor, EventId => Event ID, Cause=> Cause text ofƒ alarm}
 # a) List of events in the @events array with the following structure per event:
-#    {Name => Name of monitor, MonitorId => ID of monitor, EventId => Event ID, Cause=> Cause text of alarm}
 # b) A CONCATENATED list of events in $alarm_header_display for convenience
 # c) A CONCATENATED list of monitor IDs in $alarm_mid
 
 sub checkNewEvents() {
+
+    
     my $eventFound = 0;
+    my @newEvents = ();
     printDebug ("inside checkNewEvents()");
     if ( ( time() - $monitor_reload_time ) > $monitor_reload_interval ) {
 
@@ -778,7 +782,7 @@ sub checkNewEvents() {
         @needsReload = @failedReloads;
     }
 
-    @events = ();
+   
 
     # loop through all monitors getting SHM state
     foreach my $monitor ( values(%monitors) ) {
@@ -801,236 +805,75 @@ sub checkNewEvents() {
             ]
             );
 
-        if ( $state == STATE_ALARM ) {
-            if (!defined( $monitor->{CurrentEvent} )
-                || ( $current_event
-                    != $last_event_for_monitors{ $monitor->{Id} }{"eid"} )
-                )
-            {
+        next if (!$current_event); # will it ever happen?
 
-                if ( $last_event_for_monitors{ $monitor->{Id} }{"state"} eq
-                    "recording" )
-                {
-                    my $hooktext = $last_event_for_monitors{ $monitor->{Id} }
-                        {"hook_text"};
-                    if ($hooktext) {
-                        printDebug( "HOOK: (concurrent-event) "
-                                . $last_event_for_monitors{ $monitor->{Id} }
-                                {"eid"}
-                                . " writing hook to DB with hook text="
-                                . $hooktext );
-                        updateEventinZmDB(
-                            $last_event_for_monitors{ $monitor->{Id} }{"eid"},
-                            $hooktext )
-                            if $hooktext;
-                        $last_event_for_monitors{ $monitor->{Id} }{"hook_text"}
-                            = undef;
-
-                    }
-                    my $resCode = 0;
-                    my $notes;
-                    if ($event_end_hook) {
-
-                        $notes
-                            = getNotesFromEventDB(
-                            $last_event_for_monitors{ $monitor->{Id} }{"eid"} );
-                        my $cmd
-                            = $event_end_hook . " "
-                            . $last_event_for_monitors{ $monitor->{Id} }{"eid"}
-                            . " "
-                            . $monitor->{Id} . " \""
-                            . $monitor->{Name} . "\"" . " \""
-                            . $notes . "\"";
-
-                        printInfo(
-                            "(concurrent) Invoking hook on event end:" . $cmd );
-                        my $resTxt = `$cmd`;
-                        $resCode = $? >> 8;
-                        chomp($resTxt);
-
-                        printInfo(
-                            "Event End: Matching alarm to connection rules..."
-                        );
-                        my ($serv) = @_;
-                        my $alarm = {
-                            Name      => $monitor->{Name},
-                            MonitorId => $monitor->{Id},
-                            EventId =>
-                                $last_event_for_monitors{ $monitor->{Id} }
-                                {"eid"},
-                            Cause => $notes
-                        };
-
-                        foreach (@active_connections) {
-
-                            sendEvent( $alarm, $_, "event_end", $resCode );
-
-                        }    # foreach active_connections
-
-                    }    # event end hook
-
-                }
-                $alarm_cause = zmMemRead( $monitor, "shared_data:alarm_cause" )
+         $alarm_cause = zmMemRead( $monitor, "shared_data:alarm_cause" )
                     if ($read_alarm_cause);
-                $alarm_cause = $trigger_cause
-                    if ( defined($trigger_cause)
-                    && $alarm_cause eq ""
-                    && $trigger_cause ne "" );
-                printInfo("New event $current_event reported for Monitor:"
+        $alarm_cause = $trigger_cause
+            if ( defined($trigger_cause)
+            && $alarm_cause eq ""
+            && $trigger_cause ne "" );
+
+        my $mid = $monitor->{Id};
+
+        if ( $state == STATE_ALARM ) {
+            if (!$active_events{$mid}->{$current_event})  {
+              # this means we haven't previously worked on this alarm
+              # so create an event start object for this monitor
+              $eventFound++;
+              # First we need to close any other open events for this monitor
+                foreach my $ev (keys %{$active_events{$mid}}) {
+                  if (!$active_events{$mid}->{$ev}->{End}) {
+                    printDebug ("Closing unclosed event:$ev of Monitor:$mid as we are in a new event ");
+                    my $now = localtime();
+                    my $cause = getNotesFromEventDB($ev);
+                    $active_events{$mid}->{$ev}->{End} = {
+                      State =>  $event_end_hook? 'pending':'ready',
+                      Time=>"$now",
+                      Cause=>"$cause"
+                      
+                    }
+                    
+                  }
+                }
+
+                # add this new event to active events
+                my $now = localtime();
+                $active_events{$mid}->{$current_event} = {
+                   MonitorId => $monitor->{Id},
+                   MonitorName => $monitor->{Name},
+                   EventId => $current_event,
+                   Start => {
+                    State =>  $event_start_hook? 'pending':'ready',
+                    Time => $now,
+                    Cause => "$alarm_cause",
+                   },
+                  };
+
+                  #print Dumper($active_events{$mid}->{$current_event});
+
+                  printInfo("New event $current_event reported for Monitor:"
                         . $monitor->{Id}
                         . " (Name:"
                         . $monitor->{Name} . ") "
                         . $alarm_cause
                         . "\n" );
-                $monitor->{CurrentState} = $state;
-                $monitor->{CurrentEvent} = $current_event;
-                $last_event_for_monitors{ $monitor->{Id} }{"eid"}
-                    = $current_event;
-                $last_event_for_monitors{ $monitor->{Id} }{"state"}
-                    = "recording";
+                  
+                  push @newEvents,  {
+                    Alarm=>$active_events{$mid}->{$current_event},
+                    MonitorObj=>$monitor
+                  };
 
-                # delete sent marks for end events
-                #printInfo ("***** GLOBAL REMOVE FOR ". $monitor->{Id});
-                printDebug(
-                    "Removing event sent markers for " . $monitor->{Id} );
-                delete( $last_event_for_monitors{ $monitor->{Id} }{"mqtt"} );
-                delete( $last_event_for_monitors{ $monitor->{Id} }{"fcm"} );
-                delete( $last_event_for_monitors{ $monitor->{Id} }{"web"} );
-                my $name = $monitor->{Name};
-                my $mid  = $monitor->{Id};
-                my $eid  = $current_event;
-                printDebug( "HOOK: $current_event Creating event object for "
-                        . $monitor->{Name}
-                        . ", setting state to recording" );
-                push @events,
-                    {
-                    Name      => $name,
-                    MonitorId => $mid,
-                    EventId   => $current_event,
-                    Cause     => $alarm_cause
-                    };
-                $eventFound = 1;
-            } # end of STATE_ALARM & current_event != last event
-
+              } else {
+                # state alarm and it is present in the active event list, so we've worked on it
+                printDebug ("We've already worked on Monitor:$mid, Event:$current_event, not doing anything more");
+              }
         }
-        elsif (
-            (   ( $state == STATE_IDLE || $state == STATE_TAPE )
-                && $last_event_for_monitors{ $monitor->{Id} }{"state"} eq
-                "recording"
-            )
-            || (   $state == STATE_ALERT
-                && $current_event
-                != $last_event_for_monitors{ $monitor->{Id} }{"eid"} )
-            )
-        {
-
-# We come here is the monitor state is IDLE after a previous alarm, or it goes to ALERT with a different EID
-            my $hooktext
-                = $last_event_for_monitors{ $monitor->{Id} }{"hook_text"};
-
-            my $lasteid = $last_event_for_monitors{ $monitor->{Id} }{"eid"};
-            printDebug( "Alarm "
-                    . $lasteid
-                    . " for monitor:"
-                    . $monitor->{Id}
-                    . " has ended "
-                    . $hooktext );
-            if ($hooktext) {
-                printDebug( "HOOK: "
-                        . $lasteid
-                        . " writing hook to DB with hook text="
-                        . $hooktext );
-            }
-            else {
-                printDebug( "HOOK: "
-                        . $lasteid
-                        . " NOT writing hook to DB as hook text was empty" );
-            }
-            updateEventinZmDB( $lasteid, $hooktext )
-                if $hooktext;
-
-            my $end_rescode = 0;
-
-            my $notes;
-            if ($event_end_hook) {
-
-                $notes = getNotesFromEventDB($lasteid);
-
-                #alarm is (if we need it in future for end script)
-                #		{
-                #		Name      => $name,
-                #		MonitorId => $mid,
-                #		EventId   => $current_event,
-                #		Cause     => $alarm_cause
-                #		};
-                my $end_cmd
-                    = $event_end_hook . " "
-                    . $lasteid . " "
-                    . $monitor->{Id} . " \""
-                    . $monitor->{Name} . "\"" . " \""
-                    . $notes . "\"";
-
-                printInfo( "Invoking hook on event end:" . $end_cmd );
-                my $end_restxt = `$end_cmd`;
-                $end_rescode = $? >> 8;
-                chomp($end_restxt);
-                printInfo("Event End: Matching alarm to connection rules...");
-                my ($serv) = @_;
-                my $alarm = {
-                    Name      => $monitor->{Name},
-                    MonitorId => $monitor->{Id},
-                    EventId   => $lasteid,
-                    Cause     => $notes
-                };
-
-                foreach (@active_connections) {
-
-                    sendEvent( $alarm, $_, "event_end", $end_rescode );
-
-                }    # foreach active_connections
-            }    # event end hook
-
-            $last_event_for_monitors{ $monitor->{Id} }{"state"}     = "idle";
-            $last_event_for_monitors{ $monitor->{Id} }{"hook_text"} = undef;
-            $last_event_for_monitors{ $monitor->{Id} }{"eid"} = $current_event;
-
-        }
+       
     }
+
     printDebug("checkEvents() events found=$eventFound");
-
-    # Send out dummy events for testing
-    if (  !$eventFound
-        && $dummyEventTest
-        && ( time() - $dummyEventTimeLastSent ) >= $dummyEventInterval )
-    {
-        $dummyEventTimeLastSent = time();
-        my $random_mon1
-            = $monitors{ ( keys %monitors )[ rand keys %monitors ] };
-        my $random_mon2
-            = $monitors{ ( keys %monitors )[ rand keys %monitors ] };
-        printInfo( "Sending dummy event to: " . $random_mon1->{Name} );
-
-        #printInfo ("Sending dummy event to: ".$random_mon2->{Name});
-        push @events,
-            {
-            Name      => $random_mon1->{Name},
-            MonitorId => $random_mon1->{Id},
-            EventId   => $random_mon1->{CurrentEvent},
-            Cause     => "Dummy1"
-            };
-        push @events,
-            {
-            Name      => $random_mon2->{Name},
-            MonitorId => $random_mon2->{Id},
-            EventId   => $random_mon2->{CurrentEvent},
-            Cause     => "Dummy2"
-            };
-
-        $eventFound = 1;
-
-    }
-
-    return ($eventFound);
+    return (@newEvents);
 }
 
 sub loadMonitor {
@@ -1522,7 +1365,7 @@ sub processJobs {
             # hook script result will be updated in ZM DB
             elsif ( $job eq "event_description" ) {
                 my ( $mid, $eid, $desc ) = split( "--SPLIT--", $msg );
-                printDebug( "GOT JOB==> Update monitor "
+                printDebug( "Job: Update monitor "
                         . $mid
                         . " description:"
                         . $desc );
@@ -1531,30 +1374,6 @@ sub processJobs {
                 $last_event_for_monitors{mid}{"hook_text"} = $desc;
                 updateEventinZmDB( $eid, $desc );
 
-       # Edited Sep 4 2019: Lets write it immediately
-       # There are issues with post writing I haven't figured out yet
-       # Should not be an issue - we add to front, while new notes go to the end
-       #
-       # If the hook took too long and the alarm already closed,
-       # we need to handle it here. Two situations:
-       # a) that mid is now handling a new alarm
-       # b) that mid is now idling
-
-#if (   ( $last_event_for_monitors{ $mid }{ "eid" } != $eid )
-#    || ( $last_event_for_monitors{ $mid }{ "state" } eq "idle" )
-#    ) {
-#    printDebug(
-#        "HOOK: script for eid:$eid returned after the alarm closed, so writing hook text:$desc now..."
-#        ) ;
-#    updateEventinZmDB( $eid, $desc ) ;
-#    $last_event_for_monitors{ $mid }{ "hook_text" } = undef ;
-#    }
-
-            #  hook returned before the alarm closed, so we will catch it in the
-            # main loop
-            # else {
-            #        $last_event_for_monitors{ $mid }{ "hook_text" } = $desc ;
-            #        }
 
             }
 
@@ -1562,7 +1381,7 @@ sub processJobs {
             elsif ( $job eq "timestamp" ) {
                 my ( $id, $mid, $timeval ) = split( "--SPLIT--", $msg );
                 printDebug(
-                          "GOT JOB==> Update last sent timestamp of monitor:"
+                          "Job: Update last sent timestamp of monitor:"
                         . $mid . " to "
                         . $timeval
                         . " for id:"
@@ -1576,6 +1395,17 @@ sub processJobs {
                 }
 
                 #dump(@active_connections);
+            }
+            elsif ($job eq "active_event_update") {
+              my ( $mid,$eid,$type,$key,$val ) = split( "--SPLIT--", $msg );
+              printDebug ("Job: Update active_event eid:$eid, mid:$mid, type:$type, field:$key to: $val");
+              $active_events{$mid}->{$eid}->{$type}->{State} = $val if ($key=='State');
+              $active_events{$mid}->{$eid}->{$type}->{Cause} = $val if ($key=='Cause');
+            }
+             elsif ($job eq "active_event_delete") {
+              my ( $mid,$eid ) = split( "--SPLIT--", $msg );
+              printDebug ("Job: Deleting active_event eid:$eid, mid:$mid");
+              delete ($active_events{$mid}->{$eid});
             }
             else {
                 printDebug("Job message not recognized!");
@@ -2577,6 +2407,8 @@ sub shouldSendEventToConn {
     return $retVal;
 }
 
+
+
 # If there are events reported in checkNewEvents, processAlarms is called to
 # 1. Apply hooks if applicable
 # 2. Send them out
@@ -2587,108 +2419,228 @@ sub shouldSendEventToConn {
 #  @events will have the list of alarms we need to process and send out
 # structure {Name => $name, MonitorId => $mid, EventId => $current_event, Cause=> $alarm_cause};
 
-sub processAlarms {
+sub processNewAlarmsInFork {
 
-    # by default, hook or no hook, lets assume our script success
-    # is successful. That way, if we don't use hooks, the flow is fine
+    # This fork will stay alive till the event in question is completed
+    my $newEvent          = shift;
+    my $alarm = $newEvent->{Alarm};
+    my $monitor = $newEvent->{MonitorObj};
+    my $mid = $alarm->{MonitorId};
+    my $eid = $alarm->{EventId};
+    my $mname = $alarm->{MonitorName};
+    my $doneProcessing = 0;
     my $resCode = 0;
 
-    # iterate through each alarm
-    foreach (@events) {
-        my $alarm = $_;
-        printInfo("processAlarms: EID:"
-                . $alarm->{EventId}
-                . " Monitor:"
-                . $alarm->{Name}
-                . " (id):"
-                . $alarm->{MonitorId}
-                . " cause:"
-                . $alarm->{Cause} );
+    my $prefix = "FORK: for Mon:$mid ($mname) Event:$eid";
 
-# if you want to use hook, lets first call the hook
-# if the hook returns an exit value of 0 (yes/success), we process it, else we skip it
+    my $start_time = time();
 
-        if ($event_start_hook) {
+    while ( !$doneProcessing ) {
+     print "FORK:".Dumper(\$alarm);
+        my $now = time();
+        if ($now - $start_time > 3600) {
+          printInfo ("$prefix: reached an hour, bailing...");
+          print WRITER 'active_event_delete--TYPE--'.$mid.'--SPLIT--'.$eid.'\n';
+            $doneProcessing = 1;
+
+        }
+        # ---------- Event start processing ----------------------------------#
+        if ( $alarm->{Start}->{State} eq 'pending' ) {
+            # this means we need to invoke a hook
             if ( $skip_monitors
-                && isInList( $skip_monitors, $alarm->{MonitorId} ) )
+                && isInList( $skip_monitors,$mid ) )
             {
-                printInfo("Skipping hook processing because "
-                        . $alarm->{Name} . "("
-                        . $alarm->{MonitorId}
-                        . ") is in skip monitor list" );
+                printInfo("$prefix: $mid is in skip list, not using hooks");
+                $alarm->{Start}->{State} = 'ready';
+                $resCode = 0;
+
+                #$active_events{$mid}{$eid}{'start'}->{State} = 'ready';
             }
             else {
+                # invoke hook start script
                 my $cmd
                     = $event_start_hook . " "
-                    . $alarm->{EventId} . " "
-                    . $alarm->{MonitorId} . " \""
+                    . $eid . " "
+                    . $mid . " \""
+                    . $alarm->{Name} . "\"" . " \""
+                    . $alarm->{Cause} . "\"";
+
+
+                if ($hook_pass_image_path) {
+                    my $event = new ZoneMinder::Event( $eid );
+                    $cmd = $cmd . " \"" . $event->Path() . "\"";
+                    printDebug("$prefix: Adding event path:"
+                            . $event->Path()
+                            . " to hook for image storage" );
+
+                }
+                printInfo( "$prefix: Invoking hook on event start:" . $cmd );
+                my $resTxt = `$cmd`;
+                $resCode = $? >> 8;
+                chomp($resTxt);
+                printInfo ("$prefix: hook start returned with text:$resTxt exit:$resCode");
+                $alarm->{Start}->{State} = 'ready'; 
+
+                if ( $use_hook_description && $resCode == 0 ) {
+
+                  # lets append it to any existing motion notes
+                  # note that this is in the fork. We are only passing hook text
+                  # to parent, so it can be appended to the full motion text on event close``
+                    $alarm->{Start}->{Cause}
+                        = $resTxt . " " . $alarm->{Start}->{Cause};
+                    print WRITER 'active_event_update--TYPE--'
+                        . $mid
+                        . '--SPLIT--'
+                        . $eid
+                        . '--SPLIT--' . 'Start'
+                        . '--SPLIT--' . 'Cause'
+                        . '--SPLIT--'
+                        . $alarm->{Start}->{Cause} . '\n';
+
+
+                    # This updates the ZM DB with the detected description
+                    # we are writing resTxt not alarm cause which is only detection text
+                    # when we write to DB, we will add the latest notes, which may have more zones
+                    print WRITER "event_description--TYPE--"
+                        . $mid
+                        . "--SPLIT--"
+                        . $eid
+                        . "--SPLIT--"
+                        . $resTxt . "\n";
+                }    # use_hook_desc
+            }    # hook start script
+
+
+            # end of State == pending
+        }
+        elsif ( $alarm->{Start}->{State} eq 'ready' ) {
+    
+           # temp wrapper object for now to keep to old interface
+           # will eventually replace
+            my $cause = $alarm->{Start}->{Cause};
+            my $temp_alarm_obj = {
+                  Name => "$mname",
+                  MonitorId => $mid,
+                  EventId=> $eid,
+                  Cause=> "$cause",
+            };
+
+            printInfo("Matching alarm to connection rules...");
+            my ($serv) = @_;
+            foreach (@active_connections) {
+
+                if ( shouldSendEventToConn( $temp_alarm_obj, $_ ) ) {
+                    printDebug(
+                        "shouldSendEventToConn returned true, so calling sendEvent"
+                    );
+                    #sendEvent( $temp_alarm_obj, $_, "event_start", $resCode );
+
+                }
+            }    # foreach active_connections
+            $alarm->{Start}->{State} = 'done';
+        }
+       
+
+        # ---------- Event End processing ----------------------------------#
+        elsif ( $alarm->{End}->{State} eq 'pending' ) {
+
+            # this means we need to invoke a hook
+            if ( $alarm->{Start}->{State} ne 'done' ) {
+                printDebug(
+                    "END: $prefix: Not yet sending out end notificationas start hook/notify is not done"
+                );
+                $resCode = 0;
+            }
+            else {
+                # invoke hook script
+              
+                my $cmd
+                    = $event_end_hook . " "
+                    . $eid . " "
+                    . $mid . " \""
                     . $alarm->{Name} . "\"" . " \""
                     . $alarm->{Cause} . "\"";
 
 # new ZM 1.33 feature - lets me extract event path so I can store the hook detection image
                 if ($hook_pass_image_path) {
-
-                    my $event = new ZoneMinder::Event( $alarm->{EventId} );
+                    my $event = new ZoneMinder::Event( $eid);
                     $cmd = $cmd . " \"" . $event->Path() . "\"";
-                    printInfo("Adding event path:"
+                    printDebug("END: $prefix: Adding event path:"
                             . $event->Path()
                             . " to hook for image storage" );
 
                 }
-                printInfo( "Invoking hook on event start:" . $cmd );
+                printInfo( "END: $prefix: Invoking hook on event end:" . $cmd );
                 my $resTxt = `$cmd`;
                 $resCode = $? >> 8;
                 chomp($resTxt);
-                printInfo("For Monitor:"
-                        . $alarm->{MonitorId}
-                        . " event:"
-                        . $alarm->{EventId}
-                        . ", hook script returned with text:"
-                        . $resTxt
-                        . " exit:"
-                        . $resCode );
 
-                #next if ( $resCode != 0 );
-                if ( $use_hook_description && $resCode == 0 ) {
+                $alarm->{End}->{State} = 'ready'; 
+              printInfo ("END: $prefix: hook end returned with text:$resTxt exit:$resCode");
 
-       # lets append it to any existing motion notes
-       # note that this is in the fork. We are only passing hook text
-       # to parent, so it can be appended to the full motion text on event close
-                    $alarm->{Cause} = $resTxt . " " . $alarm->{Cause};
-                    printDebug(
-                        "after appending motion text, alarm->cause is now:"
-                            . $alarm->{Cause} );
+                $alarm->{Cause} = $resTxt . " " . $alarm->{Cause};
+               
+            
+            }    # hook end script
 
-  # This updates the ZM DB with the detected description
-  # we are writing resTxt not alarm cause which is only detection text
-  # when we write to DB, we will add the latest notes, which may have more zones
-                    print WRITER "event_description--TYPE--"
-                        . $alarm->{MonitorId}
-                        . "--SPLIT--"
-                        . $alarm->{EventId}
-                        . "--SPLIT--"
-                        . $resTxt . "\n";
-                }
-            }
-        }    # event start hook
 
-# coming here means the alarm needs to be sent out to listerens who are interested
-        printInfo("Matching alarm to connection rules...");
-        my ($serv) = @_;
-        foreach (@active_connections) {
+            # end of State == pending
+        }
+        elsif ( $alarm->{End}->{State} eq 'ready' ) {
+            # end will never be ready before start is ready
+            # this means we need to notify
+            printInfo("END: $prefix: Matching alarm to connection rules...");
 
-            if ( shouldSendEventToConn( $alarm, $_ ) ) {
-                printDebug(
-                    "shouldSendEventToConn returned true, so calling sendEvent"
-                );
-                sendEvent( $alarm, $_, "event_start", $resCode );
+              my $cause = $alarm->{End}->{Cause};
+              my $temp_alarm_obj = {
+                  Name => "$mname",
+                  MonitorId => $mid,
+                  EventId=> $eid,
+                  Cause=> "$cause"
+            };
 
-            }
-        }    # foreach active_connections
+            my ($serv) = @_;
+            foreach (@active_connections) {
+                sendEvent( $temp_alarm_obj, $_, "event_start", $resCode );
+            }    # foreach active_connections
+            $alarm->{End}->{State} = 'done';
 
-    }    # foreach events
+            print WRITER 'active_event_delete--TYPE--'.$mid.'--SPLIT--'.$eid.'\n';
+            $doneProcessing = 1;
+            #$active_events{$mid}{$eid}{'start'}->{State} = 'done';
+        }
 
-}
+          if (!zmMemVerify($monitor)) {
+
+              printError ("$prefix: SHM failed, re-validating it");
+              loadMonitor($monitor);
+          
+          } else {
+            my $state = zmGetMonitorState($monitor);
+            my $shm_eid = zmGetLastEvent ($monitor);
+
+            if ($state == STATE_IDLE || $state == STATE_TAPE || $shm_eid != $eid) {
+              printDebug ("FORK: For $mid ($mname), SHM says: state=$state, eid=$shm_eid");
+              printInfo ("FORK: Event $eid for Monitor $mid has finished");
+
+              print ("************ ADDING END DATA\n");
+              my $now = localtime();
+              my $cause = getNotesFromEventDB($eid);
+              $alarm->{End} = {
+                State=> $event_end_hook? 'pending': 'ready',
+                Time=>"$now",
+                Cause=>"$cause"
+              };
+          }
+        }
+
+          sleep(2);
+    }  #doneProcessing
+    printInfo ("FORK: $prefix exiting");  
+
+}    # sub processNewAlarms
+
+
 
 # This is really the main module
 # It opens a WSS socket and keeps listening
@@ -2747,37 +2699,50 @@ sub initSocketServer {
                 }
 
             }
+
+           
             checkConnection();
             processJobs();
-            if ( checkNewEvents() ) {
 
-                my $pid = fork;
+            my $forks = 0;
+            foreach my $f_mid (keys %active_events) {
+              foreach my $ev (keys %{ $active_events{$f_mid}}) {
+                $forks++;
+              }
+            }
+            printInfo ("There are $forks active child forks...");
+            my (@newEvents) = checkNewEvents();
+            #print Dumper(\@newEvents);
+
+            printInfo ("There are ".scalar @newEvents." new Events to process");
+            foreach (@newEvents) {
+                 my $pid = fork;
                 if ( !defined $pid ) {
                     die "Cannot fork: $!";
                 }
                 elsif ( $pid == 0 ) {
-
-                    # client
-                    # based on zmdc code, looks like we need to reinit
-                    # else there are issues
                     #$wss->shutdown();
                     close(READER);
-
-                    #local $SIG{'CHLD'} = 'DEFAULT';
                     $dbh = zmDbConnect(1);
                     logReinit();
 
-                    my $numAlarms = scalar @events;
-                    printInfo("Forking process:$$ to handle $numAlarms alarms");
+                    printInfo("Forking process:$$ to handle alarm eid:".$_->{Alarm}->{EventId});
 
 # send it the list of current events to handle bcause checkNewEvents() will clean it
-                    processAlarms(@events);
+                    processNewAlarmsInFork($_);
                     printInfo("Ending process:$$ to handle alarms");
 
                     exit 0;
 
                 }
+
             }
+
+
+          
+
+             
+         
             printDebug("---------->Tick END<--------------");
         },
 
