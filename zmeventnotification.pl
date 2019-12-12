@@ -42,7 +42,7 @@ use Symbol qw(qualify_to_ref);
 use IO::Select;
 
 # debugging only.
-use Data::Dumper;
+# use Data::Dumper;
 
 # ==========================================================================
 #
@@ -181,6 +181,8 @@ my $secrets;
 my $secrets_filename;
 
 my $restart_interval;
+
+my $prefix = "PARENT:";
 
 #default key. Please don't change this
 use constant NINJA_API_KEY =>
@@ -629,7 +631,6 @@ $SIG{CHLD} = \&REAPER;
 
 my $dbh = zmDbConnect();
 my %monitors;
-my %last_event_for_monitors=();
 my %active_events=();
 my $monitor_reload_time = 0;
 my $es_start_time       = time();
@@ -697,20 +698,25 @@ sub try_use {
 sub printDebug {
     my $str = shift;
     my $now = strftime( '%Y-%m-%d,%H:%M:%S', localtime );
+    $str = $prefix.' '.$str;
     print( 'CONSOLE DEBUG:', $now, " ", $str, "\n" ) if $console_logs;
+ 
     Debug($str);
 }
 
 sub printInfo {
     my $str = shift;
     my $now = strftime( '%Y-%m-%d,%H:%M:%S', localtime );
+    $str = $prefix.' '.$str;
     print( 'CONSOLE INFO:', $now, " ", $str, "\n" ) if $console_logs;
+    
     Info($str);
 }
 
 sub printWarning {
     my $str = shift;
     my $now = strftime( '%Y-%m-%d,%H:%M:%S', localtime );
+    $str = $prefix.' '.$str;
     print( 'CONSOLE WARNING:', $now, " ", $str, "\n" ) if $console_logs;
     Warning($str);
 }
@@ -718,6 +724,7 @@ sub printWarning {
 sub printError {
     my $str = shift;
     my $now = strftime( '%Y-%m-%d,%H:%M:%S', localtime );
+    $str = $prefix.' '.$str;
     print( 'CONSOLE ERROR:', $now, " ", $str, "\n" ) if $console_logs;
     Error($str);
 }
@@ -824,13 +831,12 @@ sub checkNewEvents() {
               # First we need to close any other open events for this monitor
                 foreach my $ev (keys %{$active_events{$mid}}) {
                   if (!$active_events{$mid}->{$ev}->{End}) {
-                    printDebug ("Closing unclosed event:$ev of Monitor:$mid as we are in a new event ");
-                    my $now = localtime();
-                    my $cause = getNotesFromEventDB($ev);
+                    printDebug ("Closing unclosed event:$ev of Monitor:$mid as we are in a new event");
+              
                     $active_events{$mid}->{$ev}->{End} = {
                       State =>  $event_end_hook? 'pending':'ready',
-                      Time=>"$now",
-                      Cause=>"$cause"
+                      Time=> time(),
+                      Cause=> getNotesFromEventDB($ev)
                       
                     }
                     
@@ -838,15 +844,14 @@ sub checkNewEvents() {
                 }
 
                 # add this new event to active events
-                my $now = localtime();
                 $active_events{$mid}->{$current_event} = {
                    MonitorId => $monitor->{Id},
                    MonitorName => $monitor->{Name},
                    EventId => $current_event,
                    Start => {
                     State =>  $event_start_hook? 'pending':'ready',
-                    Time => $now,
-                    Cause => "$alarm_cause",
+                    Time => time(),
+                    Cause => $alarm_cause,
                    },
                   };
 
@@ -1292,17 +1297,20 @@ sub sendOverFCM {
 
 # credit: https://stackoverflow.com/a/52724546/1361529
 sub processJobs {
+    printDebug ("Inside processJobs");
     while (
         ( my $read_avail = select( $rout = $rin, undef, undef, 0.0 ) ) != 0 )
     {
+        printDebug ("processJobs after select");
         if ( $read_avail < 0 ) {
             if ( !$!{EINTR} ) {
                 printError("Pipe read error: $read_avail $!");
             }
         }
         elsif ( $read_avail > 0 ) {
+          printDebug ("processJobs inside read_avail > 0");
             chomp( my $txt = sysreadline(READER) );
-            printDebug("PARENT GOT RAW TEXT-->$txt");
+            printDebug("RAW TEXT-->$txt");
             my ( $job, $msg ) = split( "--TYPE--", $txt );
 
             if ( $job eq "message" ) {
@@ -1341,26 +1349,8 @@ sub processJobs {
 
             }
 
-            elsif ( $job eq "child_exit" ) {
-                my ($mid) = split( "--SPLIT--", $msg );
-                printDebug("Job: Marking child for MID:$mid as exited");
-                $last_event_for_monitors{$mid}{"child_state"} = EXITED;
-            }
-
-            elsif ( $job eq "notification_sent" ) {
-                my ( $id, $key, $value ) = split( "--SPLIT--", $msg );
-
-                #printInfo ("***** GOT MID:$id, key:$key value: $value");
-                if ( $value eq "1" ) {
-                    printDebug("Job: event marker:$id, key:$key to $value");
-                    $last_event_for_monitors{$id}{$key} = 1;
-                }
-                else {
-                    printInfo("Job: Removing:$id, event marker:$key");
-                    delete( $last_event_for_monitors{$id}{$key} );
-                }
-
-            }
+           
+         
 
             # hook script result will be updated in ZM DB
             elsif ( $job eq "event_description" ) {
@@ -1371,7 +1361,6 @@ sub processJobs {
                         . $desc );
 
                 printInfo("Force updating event $eid with desc:$desc");
-                $last_event_for_monitors{mid}{"hook_text"} = $desc;
                 updateEventinZmDB( $eid, $desc );
 
 
@@ -1412,7 +1401,7 @@ sub processJobs {
             }
         }
     }
-    printDebug("Empty job queue");
+    printDebug("Finished processJobs()");
 }
 
 # returns extra fields associated to a connection
@@ -2183,39 +2172,15 @@ sub sendEvent {
 
         # only send if fcm is an allowed channel
         if ( isAllowedChannel( $event_type, 'fcm', $resCode ) ) {
-            if ( $event_type eq "event_end" ) {
-                if ( $last_event_for_monitors{ $alarm->{MonitorId} }{"fcm"} ) {
-                    printInfo("Sending end notification for EID:"
-                            . $alarm->{EventId}
-                            . "over FCM as start was previously sent" );
-                    sendOverFCM( $alarm, $ac, $event_type, $resCode );
-                }
-                else {
-                    printDebug(
-                              "Looks like fcm event_start was not sent for EID:"
-                            . $alarm->{EventId}
-                            . " so skipping" );
-                }
-            }
-            else {
                 printInfo("Sending event_start notification over FCM");
                 sendOverFCM( $alarm, $ac, $event_type, $resCode );
-                print WRITER "notification_sent--TYPE--"
-                    . $alarm->{MonitorId}
-                    . "--SPLIT--" . "fcm"
-                    . "--SPLIT--" . "1\n";
-
-            }
-
+             
         }
         else {
             printInfo(
-                "Not sending over FCM as notify filters are on_success:$event_start_notify_on_hook_success and on_fail:$event_start_notify_on_hook_fail"
+                "Not sending over FCM as notify filters are on_success:$event_start_notify_on_hook_success and on_fail:$event_end_notify_on_hook_fail"
             );
-            print WRITER "notification_sent--TYPE--"
-                . $alarm->{MonitorId}
-                . "--SPLIT--" . "fcm"
-                . "--SPLIT--" . "0\n";
+         
         }
 
     }
@@ -2227,28 +2192,19 @@ sub sendEvent {
         if ( isAllowedChannel( $event_type, 'web', $resCode ) ) {
 
             if ( $event_type eq "event_end" ) {
-                if ( $last_event_for_monitors{ $alarm->{MonitorId} }{"web"} ) {
+              
                     printInfo("Sending end notification for EID:"
                             . $alarm->{EventId}
                             . "over web as start was previously sent" );
                     sendOverWebSocket( $alarm, $ac, $event_type, $resCode );
 
-                }
-                else {
-                    printDebug(
-                              "Looks like Web event_start was not sent for MID:"
-                            . $alarm->{MonitorId} . " EID:"
-                            . $alarm->{EventId}
-                            . " so skipping" );
-                }
+            
+            
             }
             else {
                 printInfo("Sending event_start notification over Web");
                 sendOverWebSocket( $alarm, $ac, $event_type, $resCode );
-                print WRITER "notification_sent--TYPE--"
-                    . $alarm->{MonitorId}
-                    . "--SPLIT--" . "web"
-                    . "--SPLIT--" . "1\n";
+             
 
             }
         }
@@ -2257,10 +2213,7 @@ sub sendEvent {
                 "Not sending over Web as notify filters are on_success:$event_start_notify_on_hook_success and on_fail:$event_start_notify_on_hook_fail"
             );
 
-            print WRITER "notification_sent--TYPE--"
-                . $alarm->{MonitorId}
-                . "--SPLIT--" . "web"
-                . "--SPLIT--" . "0\n";
+          
         }
 
     }
@@ -2269,37 +2222,26 @@ sub sendEvent {
         if ( isAllowedChannel( $event_type, 'mqtt', $resCode ) ) {
 
             if ( $event_type eq "event_end" ) {
-                if ( $last_event_for_monitors{ $alarm->{MonitorId} }{"mqtt"} ) {
+                
                     printInfo("Sending end notification for EID:"
                             . $alarm->{EventId}
                             . "over MQTT as start was previously sent" );
                     sendOverMQTTBroker( $alarm, $ac, $event_type, $resCode );
 
-                }
-                else {
-                    printDebug(
-                        "Looks like MQTT event_start was not sent for EID:"
-                            . $alarm->{EventId}
-                            . " so skipping" );
-                }
+         
+             
             }
             else {
                 printInfo("Sending event_start notification over MQTT");
                 sendOverMQTTBroker( $alarm, $ac, $event_type, $resCode );
-                print WRITER "notification_sent--TYPE--"
-                    . $alarm->{MonitorId}
-                    . "--SPLIT--" . "mqtt"
-                    . "--SPLIT--" . "1\n";
+             
             }
         }
         else {
             printInfo(
                 "Not sending over MQTT as notify filters are on_success:$event_start_notify_on_hook_success and on_fail:$event_start_notify_on_hook_fail"
             );
-            print WRITER "notification_sent--TYPE--"
-                . $alarm->{MonitorId}
-                . "--SPLIT--" . "mqtt"
-                . "--SPLIT--" . "0\n";
+          
         }
     }
 
@@ -2318,32 +2260,33 @@ sub isAllowedChannel {
     my $event_type = shift;
     my $channel    = shift;
     my $rescode    = shift;
+    my $retval = 0;
 
-    if ( $rescode == 0 ) {
-        if ( !exists( $event_start_notify_on_hook_success{$channel} )
-            && $event_start_notify_on_hook_success ne "all" )
-        {
+  printDebug("isAllowedChannel: got type:$event_type resCode:$rescode");
 
-            # print ("Channel ask: $channel, retCode:$rescode, not found");
-            return 0;
-        }
-        return 1;
+    my $channel_exists;
+    if ($event_type eq 'event_start') {
+      if ($rescode == 0) {
+        $channel_exists = exists( $event_start_notify_on_hook_success{$channel} ) || exists($event_start_notify_on_hook_success{'all'}) ;
+      } else {
+        $channel_exists = exists( $event_start_notify_on_hook_fail{$channel} ) || exists($event_start_notify_on_hook_fail{'all'});
+      }
     }
-    elsif ( $rescode == 1 ) {
-        if ( !exists( $event_start_notify_on_hook_fail{$channel} )
-            && $event_start_notify_on_hook_fail ne "all" )
-        {
-
-            #   print ("Channel ask: $channel, retCode:$rescode, not found");
-
-            return 0;
-        }
-        return 1;
+    elsif ($event_type eq 'event_end') {
+      if ($rescode == 0) {
+        $channel_exists = exists( $event_end_notify_on_hook_success{$channel} ) || exists($event_end_notify_on_hook_success{'all'});
+      } else {
+        $channel_exists = exists( $event_end_notify_on_hook_fail{$channel} ) || exists($event_end_notify_on_hook_fail{'all'});
+      }
+    
     }
     else {
-        printDebug("invalid rescode $rescode passed to isAllowedChannel");
-        return 0;
+      printError ("Invalid event_type:$event_type sent to isAllowedChannel()");
+      $channel_exists = 0;
+      return 0;
     }
+    return $channel_exists;
+
 }
 
 # Compares connection rules (monList/interval). Returns 1 if event should be send to this connection,
@@ -2429,18 +2372,19 @@ sub processNewAlarmsInFork {
     my $eid = $alarm->{EventId};
     my $mname = $alarm->{MonitorName};
     my $doneProcessing = 0;
-    my $resCode = 0;
+    my $resCode = 1;  # will contain succ/fail of hook scripts, or 1 (fail) if not invoked
+    my $endProcessed = 0;
 
-    my $prefix = "FORK: for Mon:$mid ($mname) Event:$eid";
+    $prefix = "|----> FORK:$mname ($mid), eid:$eid";
 
     my $start_time = time();
 
     while ( !$doneProcessing ) {
-     print "FORK:".Dumper(\$alarm);
+     #print "FORK:".Dumper(\$alarm);
         my $now = time();
         if ($now - $start_time > 3600) {
-          printInfo ("$prefix: reached an hour, bailing...");
-          print WRITER 'active_event_delete--TYPE--'.$mid.'--SPLIT--'.$eid.'\n';
+          printInfo ("reached an hour, bailing...");
+          
             $doneProcessing = 1;
 
         }
@@ -2450,9 +2394,9 @@ sub processNewAlarmsInFork {
             if ( $skip_monitors
                 && isInList( $skip_monitors,$mid ) )
             {
-                printInfo("$prefix: $mid is in skip list, not using hooks");
+                printInfo("$mid is in skip list, not using hooks");
                 $alarm->{Start}->{State} = 'ready';
-                $resCode = 0;
+                $resCode = 0
 
                 #$active_events{$mid}{$eid}{'start'}->{State} = 'ready';
             }
@@ -2469,16 +2413,16 @@ sub processNewAlarmsInFork {
                 if ($hook_pass_image_path) {
                     my $event = new ZoneMinder::Event( $eid );
                     $cmd = $cmd . " \"" . $event->Path() . "\"";
-                    printDebug("$prefix: Adding event path:"
+                    printDebug("Adding event path:"
                             . $event->Path()
                             . " to hook for image storage" );
 
                 }
-                printInfo( "$prefix: Invoking hook on event start:" . $cmd );
+                printInfo( "Invoking hook on event start:" . $cmd );
                 my $resTxt = `$cmd`;
                 $resCode = $? >> 8;
                 chomp($resTxt);
-                printInfo ("$prefix: hook start returned with text:$resTxt exit:$resCode");
+                printInfo ("hook start returned with text:$resTxt exit:$resCode");
                 $alarm->{Start}->{State} = 'ready'; 
 
                 if ( $use_hook_description && $resCode == 0 ) {
@@ -2495,7 +2439,7 @@ sub processNewAlarmsInFork {
                         . '--SPLIT--' . 'Start'
                         . '--SPLIT--' . 'Cause'
                         . '--SPLIT--'
-                        . $alarm->{Start}->{Cause} . '\n';
+                        . $alarm->{Start}->{Cause} . "\n";
 
 
                     # This updates the ZM DB with the detected description
@@ -2533,7 +2477,7 @@ sub processNewAlarmsInFork {
                     printDebug(
                         "shouldSendEventToConn returned true, so calling sendEvent"
                     );
-                    #sendEvent( $temp_alarm_obj, $_, "event_start", $resCode );
+                    sendEvent( $temp_alarm_obj, $_, "event_start", $resCode );
 
                 }
             }    # foreach active_connections
@@ -2547,7 +2491,7 @@ sub processNewAlarmsInFork {
             # this means we need to invoke a hook
             if ( $alarm->{Start}->{State} ne 'done' ) {
                 printDebug(
-                    "END: $prefix: Not yet sending out end notificationas start hook/notify is not done"
+                    "Not yet sending out end notificationas start hook/notify is not done"
                 );
                 $resCode = 0;
             }
@@ -2565,18 +2509,18 @@ sub processNewAlarmsInFork {
                 if ($hook_pass_image_path) {
                     my $event = new ZoneMinder::Event( $eid);
                     $cmd = $cmd . " \"" . $event->Path() . "\"";
-                    printDebug("END: $prefix: Adding event path:"
+                    printDebug("Adding event path:"
                             . $event->Path()
                             . " to hook for image storage" );
 
                 }
-                printInfo( "END: $prefix: Invoking hook on event end:" . $cmd );
+                printInfo( "Invoking hook on event end:" . $cmd );
                 my $resTxt = `$cmd`;
                 $resCode = $? >> 8;
                 chomp($resTxt);
 
                 $alarm->{End}->{State} = 'ready'; 
-              printInfo ("END: $prefix: hook end returned with text:$resTxt exit:$resCode");
+              printInfo ("hook end returned with text:$resTxt exit:$resCode");
 
                 $alarm->{Cause} = $resTxt . " " . $alarm->{Cause};
                
@@ -2589,7 +2533,7 @@ sub processNewAlarmsInFork {
         elsif ( $alarm->{End}->{State} eq 'ready' ) {
             # end will never be ready before start is ready
             # this means we need to notify
-            printInfo("END: $prefix: Matching alarm to connection rules...");
+            printInfo("Matching alarm to connection rules...");
 
               my $cause = $alarm->{End}->{Cause};
               my $temp_alarm_obj = {
@@ -2601,42 +2545,43 @@ sub processNewAlarmsInFork {
 
             my ($serv) = @_;
             foreach (@active_connections) {
-                sendEvent( $temp_alarm_obj, $_, "event_start", $resCode );
+                sendEvent( $temp_alarm_obj, $_, "event_end", $resCode );
             }    # foreach active_connections
             $alarm->{End}->{State} = 'done';
-
-            print WRITER 'active_event_delete--TYPE--'.$mid.'--SPLIT--'.$eid.'\n';
             $doneProcessing = 1;
             #$active_events{$mid}{$eid}{'start'}->{State} = 'done';
         }
 
           if (!zmMemVerify($monitor)) {
 
-              printError ("$prefix: SHM failed, re-validating it");
+              printError ("SHM failed, re-validating it");
               loadMonitor($monitor);
           
           } else {
             my $state = zmGetMonitorState($monitor);
             my $shm_eid = zmGetLastEvent ($monitor);
 
-            if ($state == STATE_IDLE || $state == STATE_TAPE || $shm_eid != $eid) {
-              printDebug ("FORK: For $mid ($mname), SHM says: state=$state, eid=$shm_eid");
-              printInfo ("FORK: Event $eid for Monitor $mid has finished");
-
-              print ("************ ADDING END DATA\n");
-              my $now = localtime();
-              my $cause = getNotesFromEventDB($eid);
+            if (($state == STATE_IDLE || $state == STATE_TAPE || $shm_eid != $eid) && !$endProcessed) {
+              printDebug ("For $mid ($mname), SHM says: state=$state, eid=$shm_eid");
+              printInfo ("Event $eid for Monitor $mid has finished");
+              $endProcessed = 1;
+              
               $alarm->{End} = {
                 State=> $event_end_hook? 'pending': 'ready',
-                Time=>"$now",
-                Cause=>"$cause"
+                Time=> time(),
+                Cause=>getNotesFromEventDB($eid)
               };
+              $resCode = 1 if (!$event_end_hook);
+
+              printDebug ("Event end object is: state=>".$alarm->{End}->{State}." with cause=>".$alarm->{End}->{Cause});
           }
         }
 
           sleep(2);
     }  #doneProcessing
-    printInfo ("FORK: $prefix exiting");  
+    printDebug ("exiting");  
+    print WRITER 'active_event_delete--TYPE--'.$mid.'--SPLIT--'.$eid."\n";
+    close (WRITER);
 
 }    # sub processNewAlarms
 
