@@ -97,6 +97,7 @@ use constant {
   DEFAULT_EVENT_START_NOTIFY_ON_HOOK_SUCCESS      => 'none',
   DEFAULT_EVENT_END_NOTIFY_ON_HOOK_FAIL           => 'none',
   DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS        => 'none',
+  DEFAULT_EVENT_END_NOTIFY_IF_START_SUCCESS       => 'yes',
 };
 
 # connection state
@@ -166,6 +167,8 @@ my $event_end_notify_on_hook_fail;
 my $event_end_notify_on_hook_success;
 my %event_end_notify_on_hook_fail;
 my %event_end_notify_on_hook_success;
+
+my $event_end_notify_if_start_success;
 
 my $use_hook_description;
 my $keep_frame_match_type;
@@ -357,6 +360,8 @@ $event_end_notify_on_hook_success //= config_get_val(
   DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS
 );
 
+
+
 # get channels and convert to hash
 
 %event_start_notify_on_hook_fail = map { $_ => 1 }
@@ -367,6 +372,9 @@ $event_end_notify_on_hook_success //= config_get_val(
   map { $_ => 1 } split( /\s*,\s*/, lc($event_end_notify_on_hook_fail) );
 %event_end_notify_on_hook_success = map { $_ => 1 }
   split( /\s*,\s*/, lc($event_end_notify_on_hook_success) );
+
+$event_end_notify_if_start_success //=
+config_get_val ($config, "hook", "event_end_notify_if_start_success", DEFAULT_EVENT_END_NOTIFY_IF_START_SUCCESS);
 
 $use_hook_description //=
   config_get_val( $config, "hook", "use_hook_description",
@@ -487,6 +495,8 @@ Notify on Event Start (hook success).. ${\(value_or_undefined($event_start_notif
 Notify on Event Start (hook fail)..... ${\(value_or_undefined($event_start_notify_on_hook_fail))}
 Notify on Event End (hook success)... ${\(value_or_undefined($event_end_notify_on_hook_success))}
 Notify on Event End (hook fail)...... ${\(value_or_undefined($event_end_notify_on_hook_fail))}
+
+Notify End only if Start success......${\(yes_or_no($event_end_notify_if_start_success))}
 
 Use Hook Description........... ${\(yes_or_no($use_hook_description))}
 Keep frame match type.......... ${\(yes_or_no($keep_frame_match_type))}
@@ -2354,8 +2364,10 @@ sub processNewAlarmsInFork {
   my $eid            = $alarm->{EventId};
   my $mname          = $alarm->{MonitorName};
   my $doneProcessing = 0;
-  my $resCode =
-    1;    # will contain succ/fail of hook scripts, or 1 (fail) if not invoked
+  # will contain succ/fail of hook scripts, or 1 (fail) if not invoked
+  my $resCode =1;    
+  my $start_code = $resCode;
+
   my $endProcessed = 0;
 
   $prefix = "|----> FORK:$mname ($mid), eid:$eid";
@@ -2406,6 +2418,7 @@ sub processNewAlarmsInFork {
         printInfo( "Invoking hook on event start:" . $cmd );
         my $resTxt = `$cmd`;
         $resCode = $? >> 8;
+        $start_code = $resCode;
         chomp($resTxt);
         printInfo("hook start returned with text:$resTxt exit:$resCode");
         $alarm->{Start}->{State} = 'ready';
@@ -2511,7 +2524,11 @@ sub processNewAlarmsInFork {
     }
     elsif ( $alarm->{End}->{State} eq 'ready' ) {
 
-      # end will never be ready before start is ready
+      if ($event_end_notify_if_start_success && $start_code != 0) {
+        printInfo ("Not sending event end alarm, as we did not send a start alarm for this");
+      }
+      else {
+        # end will never be ready before start is ready
       # this means we need to notify
       printInfo("Matching alarm to connection rules...");
 
@@ -2527,6 +2544,8 @@ sub processNewAlarmsInFork {
       foreach (@active_connections) {
         sendEvent( $temp_alarm_obj, $_, "event_end", $resCode );
       }    # foreach active_connections
+      }
+      
       $alarm->{End}->{State} = 'done';
       $doneProcessing = 1;
 
