@@ -1297,7 +1297,7 @@ sub sendOverFCM {
 
 # credit: https://stackoverflow.com/a/52724546/1361529
 sub processJobs {
-    printDebug ("Inside processJobs");
+    #printDebug ("Inside processJobs");
     while (
         ( my $read_avail = select( $rout = $rin, undef, undef, 0.0 ) ) != 0 )
     {
@@ -2406,8 +2406,8 @@ sub processNewAlarmsInFork {
                     = $event_start_hook . " "
                     . $eid . " "
                     . $mid . " \""
-                    . $alarm->{Name} . "\"" . " \""
-                    . $alarm->{Cause} . "\"";
+                    . $alarm->{MonitorName} . "\"" . " \""
+                    . $alarm->{Start}->{Cause} . "\"";
 
 
                 if ($hook_pass_image_path) {
@@ -2502,8 +2502,8 @@ sub processNewAlarmsInFork {
                     = $event_end_hook . " "
                     . $eid . " "
                     . $mid . " \""
-                    . $alarm->{Name} . "\"" . " \""
-                    . $alarm->{Cause} . "\"";
+                    . $alarm->{MonitorName} . "\"" . " \""
+                    . getNotesFromEventDB($eid) . "\"";
 
 # new ZM 1.33 feature - lets me extract event path so I can store the hook detection image
                 if ($hook_pass_image_path) {
