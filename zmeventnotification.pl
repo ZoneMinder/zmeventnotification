@@ -754,7 +754,7 @@ sub checkNewEvents() {
 
   my $eventFound = 0;
   my @newEvents  = ();
-  printDebug("inside checkNewEvents()");
+  #printDebug("inside checkNewEvents()");
   if ( ( time() - $monitor_reload_time ) > $monitor_reload_interval ) {
 
     # this means we have hit the reload monitor timeframe
@@ -891,7 +891,7 @@ sub checkNewEvents() {
 
   }
 
-  printDebug("checkEvents() events found=$eventFound");
+  printDebug("checkEvents() new events found=$eventFound");
   return (@newEvents);
 }
 

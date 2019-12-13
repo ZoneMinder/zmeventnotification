@@ -138,6 +138,8 @@ install_es() {
 install_hook() {
     echo '***** Installing Hooks **********'
     mkdir -p "${TARGET_DATA}/bin" 2>/dev/null
+    rm -fr  "${TARGET_DATA}/bin/*" 2>/dev/null
+
     mkdir -p "${TARGET_DATA}/images" 2>/dev/null
     mkdir -p "${TARGET_DATA}/known_faces" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/yolov3" 2>/dev/null
@@ -188,7 +190,8 @@ install_hook() {
 
     # Now install the ML hooks
     #pip install -r  hook/requirements.txt 
-    install -m 755 -o "${WEB_OWNER}" hook/zm_detect_wrapper.sh "${TARGET_BIN_HOOK}"
+    install -m 755 -o "${WEB_OWNER}" hook/zm_event_start.sh "${TARGET_BIN_HOOK}"
+    install -m 755 -o "${WEB_OWNER}" hook/zm_event_end.sh "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_detect.py "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_train_faces.py "${TARGET_BIN_HOOK}"
     #python setup.py install && print_success "Done" || print_error "python setup failed"
@@ -218,7 +221,7 @@ install_hook_config() {
     install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.ini "${TARGET_CONFIG}" &&
         print_success "config copied" || print_error "could not copy config"
     echo "====> Remember to fill in the right values in the config files, or your system won't work! <============="
-    echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN_HOOK}/zm_detect_wrapper.sh! <========"
+    echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN_HOOK}/zm_event_start.sh! <========"
     echo
 }
 

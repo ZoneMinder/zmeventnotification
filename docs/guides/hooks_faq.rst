@@ -5,14 +5,13 @@ Necessary Reading - Sample Config Files
 ----------------------------------------
 The sample configuration files, `zmeventnotification.ini <https://github.com/pliablepixels/zmeventnotification/blob/master/zmeventnotification.ini>`__ and `objectconfig.ini <https://github.com/pliablepixels/zmeventnotification/blob/master/hook/objectconfig.ini>`__  come with extensive commentary about each attribute and what they do. Please go through them to get a better understanding. Note that most of the configuration attributes in `zmeventnotification.ini` are not related to machine learning, except for the `[hook]` section.
 
-How do the hooks actually work?
----------------------------------
+How do the hooks actually invoke object detection?
+-----------------------------------------------------
 
-* When the Event Notification Server detects an event, it invokes a script called ``zm_detect_wrapper.sh``. This is invoked only if you have configured ``hook_script`` in your ``zmeventnotification.ini``.
+* When the Event Notification Server detects an event, it invokes the script specified in ``event_start_hook``  in your ``zmeventnotification.ini``. This is typically ``/var/lib/zmeventnotification/bin/zm_event_start.sh``
 
-* ``zm_detect_wrapper.sh`` in turn invokes ``zm_detect.py`` that does the actual machine learning. Upon exit, it either returns a ``1`` that means object found, or a ``0`` which means nothing found. Based on how you have configured your settings, this information is then stored in ZM and/or pushed to your mobile device as a notification.
+* ``zm_event_start.sh`` in turn invokes ``zm_detect.py`` that does the actual machine learning. Upon exit, it either returns a ``1`` that means object found, or a ``0`` which means nothing found. Based on how you have configured your settings, this information is then stored in ZM and/or pushed to your mobile device as a notification.
 
-* `zmeventnotification.ini` has an attribute called ``hook_script``. If you enable that field, that is the beginning of how this kicks in.
 
 How To Debug Issues
 ---------------------
