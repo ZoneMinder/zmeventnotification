@@ -15,6 +15,7 @@ import imutils
 import ssl
 import pickle
 import json
+import time
 #import hashlib
 
 import zmes_hook_helpers.log as log
@@ -41,15 +42,40 @@ def remote_detect(image):
     access_token = None
     auth_header = None
 
-    # Get API access token
-    r = requests.post(url=login_url, 
-                    data=json.dumps({'username':g.config['ml_user'], 'password':g.config['ml_password']}), 
-                    headers={'content-type': 'application/json'})
-    data = r.json()
-    access_token = data.get('access_token')
+    data_file = g.config['ml_temp_file_path']+'/mlapi_data.json'
+    if os.path.exists(data_file):
+        g.logger.debug ('Found token file, checking if token has not expired')
+        with open(data_file) as json_file:
+            data = json.load(json_file)
+        generated = data['time']
+        expires = data['expires']
+        access_token = data['token']
+        now = time.time() + 30
+        # lets make sure there is at least 30 secs left
+        if int(now - generated)  >= expires:
+            g.logger.debug ('Found access token, but it has expired')
+            access_token = None
+            # Get API access token
     if not access_token:
-        raise ValueError ('Error getting remote API token {}'.format(data))
-        return
+        g.logger.debug ('Invoking remote API login')
+        r = requests.post(url=login_url, 
+                        data=json.dumps({'username':g.config['ml_user'], 'password':g.config['ml_password']}), 
+                        headers={'content-type': 'application/json'})
+        data = r.json()
+        access_token = data.get('access_token')
+        if not access_token:
+            raise ValueError ('Error getting remote API token {}'.format(data))
+            return
+        g.logger.debug ('Writing new token for future use')
+        with open(data_file, 'w') as json_file:
+            wdata = {
+                'token': access_token,
+                'expires': data.get('expires'),
+                'time': time.time()
+            }
+            json.dump(wdata, json_file)
+        
+
     auth_header = {'Authorization': 'Bearer '+access_token}
 
     ret, jpeg = cv2.imencode('.jpg', image)
@@ -69,7 +95,14 @@ def remote_detect(image):
         conf.append(float(d.get('confidence').strip('%')))
         box = d.get('box')
         bbox.append(d.get('box')) 
+
+        print (bbox, label, conf)
     return bbox, label,conf
+
+
+
+
+
 
 
 def append_suffix(filename, token):

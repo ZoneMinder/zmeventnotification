@@ -127,6 +127,11 @@ config_vals = {
             'default': None,
             'type': 'string'
         },
+        'ml_temp_file_path': {
+            'section': 'ml',
+            'default': '/var/lib/zmeventnotification/misc',
+            'type': 'string'
+        },
         'ml_user': {
             'section': 'ml',
             'default': None,
