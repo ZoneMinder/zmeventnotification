@@ -120,6 +120,25 @@ config_vals = {
             'type': 'eval'
         },
 
+        # General ML
+     
+        'ml_gateway': {
+            'section': 'ml',
+            'default': None,
+            'type': 'string'
+        },
+        'ml_user': {
+            'section': 'ml',
+            'default': None,
+            'type': 'string'
+        },
+        'ml_password': {
+            'section': 'ml',
+            'default': None,
+            'type': 'string'
+        },
+       
+
         # YOLO
         'yolo_type':{
             'section':'yolo',

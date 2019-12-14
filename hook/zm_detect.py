@@ -27,6 +27,50 @@ import zmes_hook_helpers.hog as hog
 import zmes_hook_helpers.alpr as alpr
 from zmes_hook_helpers.__init__ import __version__
 
+# This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code. 
+
+def remote_detect(image):
+    import requests
+    bbox = []
+    label = []
+    conf = []
+    api_url = g.config['ml_gateway'];
+    g.logger.info('Detecting using remote API Gateway {}'.format(api_url));
+    login_url = api_url + '/login';
+    object_url = api_url + '/detect/object';
+    access_token = None
+    auth_header = None
+
+    # Get API access token
+    r = requests.post(url=login_url, 
+                    data=json.dumps({'username':g.config['ml_user'], 'password':g.config['ml_password']}), 
+                    headers={'content-type': 'application/json'})
+    data = r.json()
+    access_token = data.get('access_token')
+    if not access_token:
+        raise ValueError ('Error getting remote API token {}'.format(data))
+        return
+    auth_header = {'Authorization': 'Bearer '+access_token}
+
+    ret, jpeg = cv2.imencode('.jpg', image)
+    files = {'file': ('image.jpg', jpeg.tobytes())}
+    
+    params = {
+        'delete':True,
+        
+    }
+
+    r = requests.post(url=object_url, headers=auth_header,params=params, files=files)
+    data = r.json();
+
+    for d in data:
+       
+        label.append(d.get('type'))
+        conf.append(float(d.get('confidence').strip('%')))
+        box = d.get('box')
+        bbox.append(d.get('box')) 
+    return bbox, label,conf
+
 
 def append_suffix(filename, token):
     f, e = os.path.splitext(filename)
@@ -73,6 +117,9 @@ utils.process_config(args, g.ctx)
 
 if not args['file']:
     filename1, filename2, filename1_bbox, filename2_bbox = utils.download_files(args)
+
+    
+        
     # filename_alarm will be the first frame to analyze (typically alarm)
     # filename_snapshot will be the second frame to analyze only if the first fails (typically snapshot)
 else:
@@ -89,7 +136,7 @@ obj_json = []
 # Read images to analyze
 image2 = None
 image1 = cv2.imread(filename1)
-if image1 is None: # can't have this None, something went wrong
+if image1 is None : # can't have this None, something went wrong
     g.logger.error('Error reading {}. It either does not exist or is invalid'.format(filename1))
     raise ValueError('Error reading file {}. It either does not exist or is invalid'.format(filename1))
 oldh, oldw = image1.shape[:2]
@@ -190,7 +237,10 @@ for model in g.config['models']:
 
         image = image1 if filename==filename1 else image2
 
-        b, l, c = m.detect(image)
+        if g.config['ml_gateway']:
+            b,l,c = remote_detect(image)
+        else:   
+            b, l, c = m.detect(image)
         g.logger.debug('|--> model:{} detection took: {}s'.format(model,(datetime.datetime.now() - t_start).total_seconds()))
         t_start = datetime.datetime.now()
         # Now look for matched patterns in bounding boxes
