@@ -50,11 +50,13 @@ def remote_detect(image):
         generated = data['time']
         expires = data['expires']
         access_token = data['token']
-        now = time.time() + 30
+        now = time.time() 
         # lets make sure there is at least 30 secs left
-        if int(now - generated)  >= expires:
-            g.logger.debug ('Found access token, but it has expired')
+        if int(now + 30 - generated)  >= expires:
+            g.logger.debug ('Found access token, but it has expired (or is about to expire)')
             access_token = None
+        else:
+            g.logger.debug ('Access token is valid for {} more seconds'.format(int(now-generated)))
             # Get API access token
     if not access_token:
         g.logger.debug ('Invoking remote API login')
