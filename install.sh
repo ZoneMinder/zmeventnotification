@@ -145,7 +145,7 @@ install_hook() {
     mkdir -p "${TARGET_DATA}/models/yolov3" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/tinyyolo" 2>/dev/null
     mkdir -p "${TARGET_DATA}/misc" 2>/dev/null
-    echo "for future use" > "${TARGET_DATA}/misc/README.txt" 2>/dev/null
+    echo "everything that does not fit anywhere else :-)" > "${TARGET_DATA}/misc/README.txt" 2>/dev/null
     
 
     # If you don't already have data files, get them
