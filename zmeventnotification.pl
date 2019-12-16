@@ -57,7 +57,7 @@ use IO::Select;
 #
 # ==========================================================================
 
-my $app_version = "4.8";
+my $app_version = "5.0";
 
 # ==========================================================================
 #
@@ -623,19 +623,23 @@ sub REAPER {
   # don't mess up return codes for back ticks
   local ( $!, $? );
   my $pid;
-  while ( ( $pid = waitpid( -1, &WNOHANG ) ) > 0 ) {
-
-    # do something with $stiff if you want
-    printDebug("REAPER: acknowledged child $pid exiting");
+  $pid = waitpid(-1, &WNOHANG);
+  if ($pid == -1) { # no child waiting. Ignore it. 
+  } elsif (WIFEXITED($?)) {
+          printDebug("REAPER: acknowledged child $pid exiting\n");
+  } else {
+          printDebug ("REAPER: False alarm on $pid");
   }
   $SIG{CHLD} = \&REAPER;    # install *after* calling waitpid
 }
+
 
 logInit();
 logSetSignal();
 
 $SIG{HUP}  = \&logrot;
-$SIG{CHLD} = \&REAPER;
+#$SIG{CHLD} = \&REAPER;
+$SIG{CHLD} = "IGNORE";
 
 #$SIG{CHLD} = 'DEFAULT';
 
@@ -2670,13 +2674,14 @@ sub initSocketServer {
           die "Cannot fork: $!";
         }
         elsif ( $pid == 0 ) {
-
+          # do this to get a proper return value
+          $SIG{CHLD} = undef;
           #$wss->shutdown();
           close(READER);
           $dbh = zmDbConnect(1);
           logReinit();
 
-          printInfo( "Forking process:$$ to handle alarm eid:"
+          printInfo( "Forked process:$$ to handle alarm eid:"
               . $_->{Alarm}->{EventId} );
 
 # send it the list of current events to handle bcause checkNewEvents() will clean it
@@ -2796,5 +2801,6 @@ sub initSocketServer {
       printDebug("---------->onConnect STOP<--------------");
     }
   );
+ 
   $wss->start();
 }

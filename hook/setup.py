@@ -51,6 +51,7 @@ setup(name = NAME,
                     'zmes_hook_helpers.face_train',
                     'zmes_hook_helpers.alpr',
                     'zmes_hook_helpers.image_manip',
+                    'zmes_hook_helpers.apigw',
                     'zmes_hook_helpers.utils']
       )
 

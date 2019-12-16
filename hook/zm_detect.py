@@ -16,6 +16,7 @@ import ssl
 import pickle
 import json
 import time
+import requests
 #import hashlib
 
 import zmes_hook_helpers.log as log
@@ -23,14 +24,14 @@ import zmes_hook_helpers.utils as utils
 import zmes_hook_helpers.image_manip as img
 import zmes_hook_helpers.common_params as g
 
-import zmes_hook_helpers.yolo as yolo
-import zmes_hook_helpers.hog as hog
+
 import zmes_hook_helpers.alpr as alpr
 from zmes_hook_helpers.__init__ import __version__
 
+auth_header = None
 # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code. 
 
-def remote_detect(image):
+def remote_detect(image, model = None):
     import requests
     bbox = []
     label = []
@@ -40,7 +41,10 @@ def remote_detect(image):
     login_url = api_url + '/login';
     object_url = api_url + '/detect/object';
     access_token = None
-    auth_header = None
+    global auth_header
+
+    if model == 'face':
+        object_url += '?type=face'
 
     data_file = g.config['ml_temp_file_path']+'/mlapi_data.json'
     if os.path.exists(data_file):
@@ -80,6 +84,11 @@ def remote_detect(image):
 
     auth_header = {'Authorization': 'Bearer '+access_token}
 
+   
+        
+
+        
+
     ret, jpeg = cv2.imencode('.jpg', image)
     files = {'file': ('image.jpg', jpeg.tobytes())}
     
@@ -87,22 +96,19 @@ def remote_detect(image):
         'delete':True,
         
     }
-
+    #print (object_url)
     r = requests.post(url=object_url, headers=auth_header,params=params, files=files)
     data = r.json();
 
     for d in data:
        
         label.append(d.get('type'))
-        conf.append(float(d.get('confidence').strip('%')))
+        conf.append(float(d.get('confidence').strip('%'))/100)
         box = d.get('box')
         bbox.append(d.get('box')) 
 
-        print (bbox, label, conf)
+        #print (bbox, label, conf)
     return bbox, label,conf
-
-
-
 
 
 
@@ -148,6 +154,16 @@ g.ctx = ssl.create_default_context()
 
 
 utils.process_config(args, g.ctx)
+
+
+if not g.config['ml_gateway']:
+    g.logger.info('Importing local classes for Yolo/Face')
+    import zmes_hook_helpers.yolo as yolo
+    import zmes_hook_helpers.hog as hog
+else:
+    g.logger.info('Importing remote shim classes for Yolo/Face')
+    from zmes_hook_helpers.apigw import YoloRemote,FaceRemote
+
 # now download image(s)
 
 if not args['file']:
@@ -214,19 +230,25 @@ for model in g.config['models']:
     t_start = datetime.datetime.now()
     
     if model == 'yolo':
-        m = yolo.Yolo()
+        if  g.config['ml_gateway']:
+            m = YoloRemote();
+        else:
+            m = yolo.Yolo()
     elif model == 'hog':
         m = hog.Hog()
     elif model == 'face':
-        try:
-            import zmes_hook_helpers.face as face
-        except ImportError:
-            g.logger.error ('Error importing face recognition. Make sure you did sudo -H pip3 install face_recognition')
-            raise
+        if  g.config['ml_gateway']:
+            m = FaceRemote();
+        else:
+            try:
+                import zmes_hook_helpers.face as face
+            except ImportError:
+                g.logger.error ('Error importing face recognition. Make sure you did sudo -H pip3 install face_recognition')
+                raise
 
-        m = face.Face(upsample_times=g.config['face_upsample_times'], 
-                        num_jitters=g.config['face_num_jitters'],
-                        model=g.config['face_model'])
+            m = face.Face(upsample_times=g.config['face_upsample_times'], 
+                            num_jitters=g.config['face_num_jitters'],
+                            model=g.config['face_model'])
     elif model == 'alpr':
         if g.config['alpr_use_after_detection_only'] == 'yes':
             #g.logger.debug ('Skipping ALPR as it is configured to only be used after object detection')
@@ -273,7 +295,7 @@ for model in g.config['models']:
         image = image1 if filename==filename1 else image2
 
         if g.config['ml_gateway']:
-            b,l,c = remote_detect(image)
+            b,l,c = remote_detect(image,model)
         else:   
             b, l, c = m.detect(image)
         g.logger.debug('|--> model:{} detection took: {}s'.format(model,(datetime.datetime.now() - t_start).total_seconds()))
@@ -286,6 +308,27 @@ for model in g.config['models']:
         if model == 'face':
             g.logger.debug('Appending known faces to filter list')
             match = match + [g.config['unknown_face_name']] # unknown face
+
+            if g.config['ml_gateway']:
+                data_file = g.config['ml_temp_file_path']+'/known_face_names.json'
+                if os.path.exists(data_file):
+                    g.logger.debug ('Found known faces list remote gateway supports. If you have trained new faces in the remote gateway, please delete this file')
+                    with open(data_file) as json_file:
+                        data = json.load(json_file)
+                        g.logger.debug ('Read from existing names: {}'.format(data['names']))
+                        m.set_classes(data['names'])
+                else:
+                    g.logger.debug ('Fetching known names from remote gateway')
+                    api_url = g.config['ml_gateway']+'/detect/object?type=face_names';
+                    r = requests.post(url=api_url, headers=auth_header,params={})
+                    data = r.json();
+                    with open(data_file, 'w') as json_file:
+                        wdata = {
+                            'names': data['names']
+                        }
+                        json.dump(wdata, json_file)
+
+
             for cls in m.get_classes():
                 if not cls in match:
                     match = match + [cls]
