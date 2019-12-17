@@ -360,8 +360,6 @@ $event_end_notify_on_hook_success //= config_get_val(
   DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS
 );
 
-
-
 # get channels and convert to hash
 
 %event_start_notify_on_hook_fail = map { $_ => 1 }
@@ -373,8 +371,11 @@ $event_end_notify_on_hook_success //= config_get_val(
 %event_end_notify_on_hook_success = map { $_ => 1 }
   split( /\s*,\s*/, lc($event_end_notify_on_hook_success) );
 
-$event_end_notify_if_start_success //=
-config_get_val ($config, "hook", "event_end_notify_if_start_success", DEFAULT_EVENT_END_NOTIFY_IF_START_SUCCESS);
+$event_end_notify_if_start_success //= config_get_val(
+  $config, "hook",
+  "event_end_notify_if_start_success",
+  DEFAULT_EVENT_END_NOTIFY_IF_START_SUCCESS
+);
 
 $use_hook_description //=
   config_get_val( $config, "hook", "use_hook_description",
@@ -623,21 +624,23 @@ sub REAPER {
   # don't mess up return codes for back ticks
   local ( $!, $? );
   my $pid;
-  $pid = waitpid(-1, &WNOHANG);
-  if ($pid == -1) { # no child waiting. Ignore it. 
-  } elsif (WIFEXITED($?)) {
-          printDebug("REAPER: acknowledged child $pid exiting\n");
-  } else {
-          printDebug ("REAPER: False alarm on $pid");
+  $pid = waitpid( -1, &WNOHANG );
+  if ( $pid == -1 ) {    # no child waiting. Ignore it.
+  }
+  elsif ( WIFEXITED($?) ) {
+    printDebug("REAPER: acknowledged child $pid exiting\n");
+  }
+  else {
+    printDebug("REAPER: False alarm on $pid");
   }
   $SIG{CHLD} = \&REAPER;    # install *after* calling waitpid
 }
 
-
 logInit();
 logSetSignal();
 
-$SIG{HUP}  = \&logrot;
+$SIG{HUP} = \&logrot;
+
 #$SIG{CHLD} = \&REAPER;
 $SIG{CHLD} = "IGNORE";
 
@@ -758,6 +761,7 @@ sub checkNewEvents() {
 
   my $eventFound = 0;
   my @newEvents  = ();
+
   #printDebug("inside checkNewEvents()");
   if ( ( time() - $monitor_reload_time ) > $monitor_reload_interval ) {
 
@@ -1000,7 +1004,7 @@ sub validateZmAuth {
     }
     else {                     # try bcrypt
       if ( !try_use("Crypt::Eksblowfish::Bcrypt") ) {
-        Fatal( "Crypt::Eksblowfish::Bcrypt missing, cannot validate password" );
+        Fatal("Crypt::Eksblowfish::Bcrypt missing, cannot validate password");
         return 0;
       }
       my $saved_pass = $state->{Password};
@@ -1651,7 +1655,7 @@ sub processIncomingMessage {
           && ( $_->{token} ne $json_string->{'data'}->{'token'} ) )
         {
           printDebug(
-            "connection matched but token did not. first registration?" );
+            "connection matched but token did not. first registration?");
           $_->{type}     = FCM;
           $_->{token}    = $json_string->{'data'}->{'token'};
           $_->{platform} = $json_string->{'data'}->{'platform'};
@@ -2368,8 +2372,9 @@ sub processNewAlarmsInFork {
   my $eid            = $alarm->{EventId};
   my $mname          = $alarm->{MonitorName};
   my $doneProcessing = 0;
+
   # will contain succ/fail of hook scripts, or 1 (fail) if not invoked
-  my $resCode =1;    
+  my $resCode    = 1;
   my $start_code = $resCode;
 
   my $endProcessed = 0;
@@ -2421,7 +2426,7 @@ sub processNewAlarmsInFork {
         }
         printInfo( "Invoking hook on event start:" . $cmd );
         my $resTxt = `$cmd`;
-        $resCode = $? >> 8;
+        $resCode    = $? >> 8;
         $start_code = $resCode;
         chomp($resTxt);
         printInfo("hook start returned with text:$resTxt exit:$resCode");
@@ -2475,7 +2480,7 @@ sub processNewAlarmsInFork {
 
         if ( shouldSendEventToConn( $temp_alarm_obj, $_ ) ) {
           printDebug(
-            "shouldSendEventToConn returned true, so calling sendEvent" );
+            "shouldSendEventToConn returned true, so calling sendEvent");
           sendEvent( $temp_alarm_obj, $_, "event_start", $resCode );
 
         }
@@ -2528,28 +2533,30 @@ sub processNewAlarmsInFork {
     }
     elsif ( $alarm->{End}->{State} eq 'ready' ) {
 
-      if ($event_end_notify_if_start_success && $start_code != 0) {
-        printInfo ("Not sending event end alarm, as we did not send a start alarm for this");
+      if ( $event_end_notify_if_start_success && $start_code != 0 ) {
+        printInfo(
+          "Not sending event end alarm, as we did not send a start alarm for this"
+        );
       }
       else {
         # end will never be ready before start is ready
-      # this means we need to notify
-      printInfo("Matching alarm to connection rules...");
+        # this means we need to notify
+        printInfo("Matching alarm to connection rules...");
 
-      my $cause          = $alarm->{End}->{Cause};
-      my $temp_alarm_obj = {
-        Name      => "$mname",
-        MonitorId => $mid,
-        EventId   => $eid,
-        Cause     => "$cause"
-      };
+        my $cause          = $alarm->{End}->{Cause};
+        my $temp_alarm_obj = {
+          Name      => "$mname",
+          MonitorId => $mid,
+          EventId   => $eid,
+          Cause     => "$cause"
+        };
 
-      my ($serv) = @_;
-      foreach (@active_connections) {
-        sendEvent( $temp_alarm_obj, $_, "event_end", $resCode );
-      }    # foreach active_connections
+        my ($serv) = @_;
+        foreach (@active_connections) {
+          sendEvent( $temp_alarm_obj, $_, "event_end", $resCode );
+        }    # foreach active_connections
       }
-      
+
       $alarm->{End}->{State} = 'done';
       $doneProcessing = 1;
 
@@ -2674,15 +2681,17 @@ sub initSocketServer {
           die "Cannot fork: $!";
         }
         elsif ( $pid == 0 ) {
+
           # do this to get a proper return value
           $SIG{CHLD} = undef;
+
           #$wss->shutdown();
           close(READER);
           $dbh = zmDbConnect(1);
           logReinit();
 
-          printInfo( "Forked process:$$ to handle alarm eid:"
-              . $_->{Alarm}->{EventId} );
+          printInfo(
+            "Forked process:$$ to handle alarm eid:" . $_->{Alarm}->{EventId} );
 
 # send it the list of current events to handle bcause checkNewEvents() will clean it
           processNewAlarmsInFork($_);
@@ -2762,7 +2771,7 @@ sub initSocketServer {
         },
         disconnect => sub {
           my ( $conn, $code, $reason ) = @_;
-          printDebug( "---------->onConnect:disconnect START<--------------" );
+          printDebug("---------->onConnect:disconnect START<--------------");
           printInfo( "Websocket remotely disconnected from "
               . $conn->ip()
               . getConnFields($conn) );
@@ -2801,6 +2810,6 @@ sub initSocketServer {
       printDebug("---------->onConnect STOP<--------------");
     }
   );
- 
+
   $wss->start();
 }
