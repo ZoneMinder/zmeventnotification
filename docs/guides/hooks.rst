@@ -93,6 +93,7 @@ Post install steps
 -  Make sure the ``CONFIG_FILE`` variable in ``zm_event_start.sh`` is
    correct
 
+
 Test operation
 ~~~~~~~~~~~~~~
 
@@ -119,8 +120,7 @@ If it doesn't work, go back and figure out where you have a problem
 
    -  Set ``delete_after_analyze`` to ``yes`` so that downloaded images
       are removed after analysis. In the default installation, the
-      images are kept in ``/var/lib/zmeventnotification/images`` so you
-      can debug.
+      images are kept in ``/var/lib/zmeventnotification/images`` so you can debug.
    -  Remember these rules:
 
       -  ``frame_id=snapshot`` will work for any ZM >= 1.32
@@ -134,6 +134,11 @@ If it doesn't work, go back and figure out where you have a problem
 Upgrading
 ~~~~~~~~~
 To upgrade at a later stage, see :ref:`upgrade_es_hooks`.
+
+Sidebar: Local vs. Remote Machine Learning
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Starting v5.0, you can now choose to run the machine learning code on a separate server. This can free up your local ZM server resources if you have memory/CPU constraints. See :ref:`this FAQ entry <local_remote_ml>`.
+
 
 .. _hooks-logging:
 
