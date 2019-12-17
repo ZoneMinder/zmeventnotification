@@ -64,3 +64,16 @@ I'm having issues with accuracy of Face Recognition
 -  Experiment. Read the `accuracy wiki <https://github.com/ageitgey/face_recognition/wiki/Face-Recognition-Accuracy-Problems>`__ link.
 
 
+.. _local_remote_ml:
+
+Local vs. Remote server for Machine Learning
+---------------------------------------------
+As of version 5.0.0, you can now comfigure an API gateway for remote machine learning by installing `my mlapi server <https://github.com/pliablepixels/mlapi>`__ on a remote server. Once setup, simply point your ``ml_gateway`` inside ``objectconfig.ini`` to the IP/port of your gateway and make sure ``ml_user`` and ``ml_password`` are the user/password you set up on the API gateway. That's all.
+
+The implementation is a little kludgy, which I'll refine over time. What will now happen is any time ``zm_detect.py`` needs to do object detection or face recognition, it will simply pass on that image to the API Gateway instead of trying to do it locally. This can significantly free up resources in your ZM server that is running the ES.
+
+If you want to know what is kludgy as of today:
+
+- All the machine libraries are still installed locally, even if you only want remote usage (just that local ones will not be used). So its a double install, effectively. The good part of course it you can easily switch between local and remote just by commenting/uncommenting ``ml_api_gateway`` in ``objectconfig.ini``
+
+- The way the local instance (``zm_detect.py``) passes images to the remote API server is clumsy. The image will first be downloaded locally, then sent via multipart/mime/HTTP to the API server and then it will analyze. This makes it easy for me to make sure all the existing options like ``write_debug_images`` and others continue to work locally or remotely. Obviously, a better approach would be just to pass the snapshot/alarm image URLs to the remote API server and have it download it, but this will break some of my existing debug functions. I'll get to it some day.
