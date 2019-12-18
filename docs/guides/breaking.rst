@@ -3,6 +3,9 @@ Breaking Changes
 
 Version 5.0 onwards
 ~~~~~~~~~~~~~~~~~~~~~
+
+- ``install.sh`` no longer tries to install opencv on its own. You will have to install ``opencv`` and ``opencv-contrib`` on your own. See install instructions in :doc:`hooks`.
+
 - The ``hook_script`` attribute is deprecated. You now have ``hook_on_event_start`` and ``hook_on_event_end`` which lets you invoke different scripts when an event starts or ends. You also have the concepts of channels, that allows you to decide whether to send a notification even if hooks don't return anything. Read up about ``notify_on_hook_success`` and ``notify_on_hook_fail`` in  ``zmeventnotification.ini`` 
 
 - Now that we support pre/post event hooks, the script names have changed too (``zm_detect_wrapper.sh`` is ``zm_event_start.sh`` and we have a new script called ``zm_event_end.sh`` that is really just a dummy script. Change it to what you need to do at the end of an event, if you enable event end notifications)

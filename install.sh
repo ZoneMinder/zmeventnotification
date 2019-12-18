@@ -195,7 +195,8 @@ install_hook() {
     install -m 755 -o "${WEB_OWNER}" hook/zm_detect.py "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_train_faces.py "${TARGET_BIN_HOOK}"
     #python setup.py install && print_success "Done" || print_error "python setup failed"
-    pip3 install hook/ && print_success "Done" || print_error "python setup failed"
+    pip3 install hook/ && print_opencv_message || print_error "python setup failed"
+
 }
 
 
@@ -223,6 +224,34 @@ install_hook_config() {
     echo "====> Remember to fill in the right values in the config files, or your system won't work! <============="
     echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN_HOOK}/zm_event_start.sh! <========"
     echo
+}
+
+print_opencv_message() {
+
+    print_success "Done"
+
+    cat << EOF
+
+    |-------------------------- NOTE -------------------------------------|
+    
+     Hook installation done, but you may also need to install the 
+     following packages: opencv-python and opencv-contrib-python,
+     if you have not already installed them. Any version above 4.0 
+     should work.
+
+     If you want to install binary packages, simply do:
+
+     sudo -H pip3 install opencv
+     sudo -H pip3 install opencv-contrib-python
+
+     If you want to install from source, you can do that too 
+     (especially if you need GPU support etc.). Please refer to
+     https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html 
+     on how to compile opencv & opencv-contrib.
+
+    |----------------------------------------------------------------------|
+
+EOF
 }
 
 # wuh
@@ -347,7 +376,7 @@ fi
 echo
 echo
 
-[[ ${INSTALL_HOOK} == 'yes' ]] && install_hook
+[[ ${INSTALL_HOOK} == 'yes' ]] && install_hook 
 [[ ${INSTALL_HOOK} == 'no' ]] && echo 'Skipping Hook'
 if [[ ${INSTALL_HOOK} == 'prompt' ]] 
 then
@@ -366,3 +395,4 @@ fi
 
 # Make sure webserver can access them
 chown -R ${WEB_OWNER}:${WEB_GROUP} "${TARGET_DATA}"
+
