@@ -12,7 +12,7 @@ Version 5.0 onwards
 
 - You can now offload the entire machine learning processes to a remote server. All you need to do is to use ``ml_gateway`` and related options in ``objectconfig.ini``. The "ML gateway" is `my mlapi project <https://github.com/pliablepixels/mlapi>`__
 
-- Due to a yet unsolvable bug, the ES will self-restart every 2 hours. Don't panic. (`ref <https://github.com/pliablepixels/zmeventnotification/issues/175>`__). You can change this interval by modifying the ``restart_interval`` attribute in ``zmeventnotification.ini``
+- The ES now supports a ``restart_interval`` config item in ``zmeventnotification.ini``. If not 0, this will restart the ES after those many seconds (example ``7200`` is 2 hours). This may be needed if you find the ES locking up after a few hours. I think 5.0 resolves this locking issue (see `this issue <https://github.com/pliablepixels/zmeventnotification/issues/175>`__) but if it doesn't use this, umm, hack for now.
 
 
 Version 4.6 onwards
