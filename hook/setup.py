@@ -14,7 +14,7 @@ URL = 'https://github.com/pliablepixels/zmeventserver/'
 AUTHOR_EMAIL = 'pliablepixels@gmail.com'
 AUTHOR = 'Pliable Pixels'
 LICENSE = 'GPL'
-INSTALL_REQUIRES=['opencv_contrib_python', 'numpy', 'requests', 'Shapely', 'imutils', 'pyzm', 'scikit-learn']
+INSTALL_REQUIRES=['numpy', 'requests', 'Shapely', 'imutils', 'pyzm', 'scikit-learn']
 
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -51,6 +51,7 @@ setup(name = NAME,
                     'zmes_hook_helpers.face_train',
                     'zmes_hook_helpers.alpr',
                     'zmes_hook_helpers.image_manip',
+                    'zmes_hook_helpers.apigw',
                     'zmes_hook_helpers.utils']
       )
 
