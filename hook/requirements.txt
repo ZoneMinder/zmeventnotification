@@ -1,3 +1,4 @@
+opencv_python>=4.1.0.25
 opencv_contrib_python>=4.1.0.25
 future>=0.15.2
 numpy>=1.13.3
