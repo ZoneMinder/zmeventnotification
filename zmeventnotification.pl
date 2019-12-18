@@ -2721,7 +2721,9 @@ sub initSocketServer {
         utf8 => sub {
           printDebug("---------->onConnect msg START<--------------");
           my ( $conn, $msg ) = @_;
-          printDebug("Raw incoming message: $msg");
+          my $dmsg = $msg;
+          $dmsg =~ s/\"password\":\"(.*?)\"/"password":\*\*\*/;
+          printDebug("Raw incoming message: $dmsg");
           processIncomingMessage( $conn, $msg );
           printDebug("---------->onConnect msg STOP<--------------");
         },
