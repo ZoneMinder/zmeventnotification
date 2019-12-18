@@ -137,13 +137,7 @@ missing ones like so:
 
     perl -MCPAN -e "install XXXX" # where XXX is Config::IniFiles, for example
 
-If you are also planning on using the machine learning hooks, you will need to make sure you have Python3 and pip3 installed and working properly. Refer to your OS package documentation on how to get Python3 and pip3. Further, on some system, you may also need ``python3-opencv``. On debian/ubuntu systems, you can do:
-
-::
-
-        sudo apt-get install python3-opencv
-
-
+If you are also planning on using the machine learning hooks, you will need to make sure you have Python3 and pip3 installed and working properly. Refer to your OS package documentation on how to get Python3 and pip3. 
 
 Configure SSL certificate (Generate new, or use ZoneMinder certs if you are already using HTTPS)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
