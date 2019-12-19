@@ -837,7 +837,10 @@ sub checkNewEvents() {
 
     my $mid = $monitor->{Id};
 
-    if ( $state == STATE_ALARM ) {
+    # Alert only happens after alarm. The state before alarm
+    # is STATE_PRE_ALERT. This is needed to catch alarms
+    # that occur in < polling time of ES and then moves to ALERT
+    if ( $state == STATE_ALARM || $state == STATE_ALERT ) {
       if ( !$active_events{$mid}->{$current_event} ) {
 
         # this means we haven't previously worked on this alarm
