@@ -46,7 +46,7 @@ def remote_detect(image, model = None):
     if model == 'face':
         object_url += '?type=face'
 
-    data_file = g.config['base_data_path']+'/mlapi_data.json'
+    data_file = g.config['base_data_path']+'/zm_login.json'
     if os.path.exists(data_file):
         g.logger.debug ('Found token file, checking if token has not expired')
         with open(data_file) as json_file:
