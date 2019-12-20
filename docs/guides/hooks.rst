@@ -59,11 +59,11 @@ Option 1: Automatic install
 
     sudo -H ./install.sh # and follow the prompts
 
-**Note 1:**: If you plan on using object detection, starting v5.0.0, the setup script no longer installs ``opencv`` for you. This is because you may want to install your own version with GPU accelaration or other options. You will need to either do:
+**Note 1:**: If you plan on using object detection, starting v5.0.0, the setup script no longer installs opencv for you. This is because you may want to install your own version with GPU accelaration or other options. You will need to either do:
 
 ::
 
-  sudo -H pip3 install opencv
+  sudo -H pip3 install opencv-python
   sudo -H pip3 install opencv-contrib
 
 or `install them from source <https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html>`__.
