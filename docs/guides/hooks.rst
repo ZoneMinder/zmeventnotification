@@ -64,7 +64,7 @@ Option 1: Automatic install
 ::
 
   sudo -H pip3 install opencv-python
-  sudo -H pip3 install opencv-contrib
+  sudo -H pip3 install opencv-contrib-python
 
 or `install them from source <https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html>`__.
 
