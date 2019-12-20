@@ -192,7 +192,11 @@ def process_config(args, ctx):
 
     def _set_config_val(k,v):
     # internal function to parse all keys
-        val = config_file[v['section']].get(k,v['default'])
+        if config_file.has_section(v['section']):
+            val = config_file[v['section']].get(k,v['default'])
+        else:
+            val = v['default']
+            g.logger.debug ('Section [{}] missing in config file, using key:{} default: {}'.format(v['section'], k,val))
 
         if val and val[0] == '!': # its a secret token, so replace
             g.logger.debug ('Secret token found in config: {}'.format(val));
