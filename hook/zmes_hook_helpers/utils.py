@@ -13,6 +13,7 @@ import ssl
 import urllib
 import json
 import time
+import re
 
 from configparser import ConfigParser
 import zmes_hook_helpers.common_params as g
@@ -288,6 +289,20 @@ def process_config(args, ctx):
         g.logger.error('Error was:{}'.format(e))
         exit(0)
 
+    # Now lets make sure we take care of parameter substitutions {{}}
+
+    p=r'{{(\w+?)}}'
+    for gk,gv in g.config.items():
+        if not isinstance(gv, str):
+            continue
+       
+        sub_vars = re.findall(p,gv)
+        for sub_var in sub_vars:
+            if g.config[sub_var]:
+                
+                g.config[gk] = g.config[gk].replace('{{'+sub_var+'}}', g.config[sub_var])
+                g.logger.debug ('key [{}] is \'{}\' after substitution'.format(gk, g.config[gk]) )
+        
 
 
 

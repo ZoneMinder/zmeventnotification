@@ -13,7 +13,17 @@ config_vals = {
             'default': None,
             'type': 'string',
         },
+         'base_data_path': {
+            'section': 'general',
+            'default': '/var/lib/zmeventnotification',
+            'type': 'string'
+        },
         'portal':{
+            'section': 'general',
+            'default': '',
+            'type': 'string',
+        },
+        'api_portal':{
             'section': 'general',
             'default': '',
             'type': 'string',
@@ -127,11 +137,7 @@ config_vals = {
             'default': None,
             'type': 'string'
         },
-        'ml_temp_file_path': {
-            'section': 'ml',
-            'default': '/var/lib/zmeventnotification/misc',
-            'type': 'string'
-        },
+       
         'ml_user': {
             'section': 'ml',
             'default': None,

@@ -46,7 +46,7 @@ def remote_detect(image, model = None):
     if model == 'face':
         object_url += '?type=face'
 
-    data_file = g.config['ml_temp_file_path']+'/mlapi_data.json'
+    data_file = g.config['base_data_path']+'/mlapi_data.json'
     if os.path.exists(data_file):
         g.logger.debug ('Found token file, checking if token has not expired')
         with open(data_file) as json_file:
@@ -154,6 +154,13 @@ g.ctx = ssl.create_default_context()
 
 
 utils.process_config(args, g.ctx)
+ 
+# misc came later, so lets be safe
+if not os.path.exists(g.config['base_data_path']+'/misc/'):
+    try:
+        os.makedirs(g.config['base_data_path']+'/misc/')
+    except FileExistsError:
+        pass # if two detects run together with a race here
 
 
 if not g.config['ml_gateway']:
@@ -310,7 +317,8 @@ for model in g.config['models']:
             match = match + [g.config['unknown_face_name']] # unknown face
 
             if g.config['ml_gateway']:
-                data_file = g.config['ml_temp_file_path']+'/known_face_names.json'
+                
+                data_file = g.config['base_data_path']+'/misc/known_face_names.json'
                 if os.path.exists(data_file):
                     g.logger.debug ('Found known faces list remote gateway supports. If you have trained new faces in the remote gateway, please delete this file')
                     with open(data_file) as json_file:
