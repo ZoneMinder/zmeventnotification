@@ -2611,7 +2611,7 @@ sub processNewAlarmsInFork {
           Time  => time(),
           Cause => getNotesFromEventDB($eid)
         };
-        $resCode = 1 if ( !$event_end_hook );
+        $resCode = 1 if ( !$event_end_hook &&  ($alarm->{Start}->{State} eq 'done') );
 
         printDebug( "Event end object is: state=>"
             . $alarm->{End}->{State}
