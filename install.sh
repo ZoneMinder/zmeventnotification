@@ -241,7 +241,7 @@ print_opencv_message() {
 
      If you want to install binary packages, simply do:
 
-     sudo -H pip3 install opencv
+     sudo -H pip3 install opencv-python
      sudo -H pip3 install opencv-contrib-python
 
      If you want to install from source, you can do that too 
