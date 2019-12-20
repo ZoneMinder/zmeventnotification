@@ -57,7 +57,7 @@ use IO::Select;
 #
 # ==========================================================================
 
-my $app_version = "5.1";
+my $app_version = "5.2";
 
 # ==========================================================================
 #
@@ -81,6 +81,7 @@ use constant {
   DEFAULT_MQTT_ENABLE       => 'no',
   DEFAULT_MQTT_SERVER       => '127.0.0.1',
   DEFAULT_FCM_TOKEN_FILE    => '/var/lib/zmeventnotification/push/tokens.txt',
+  DEFAULT_BASE_DATA_PATH    => '/var/lib/zmeventnotification',
   DEFAULT_SSL_ENABLE        => 'yes',
   DEFAULT_CUSTOMIZE_VERBOSE => 'no',
   DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL          => 5,
@@ -182,6 +183,7 @@ my $picture_portal_password;
 
 my $secrets;
 my $secrets_filename;
+my $base_data_path;
 
 my $restart_interval;
 
@@ -287,6 +289,9 @@ else {
 # If an option set a value, leave it.  If there's a value in the config, use
 # it.  Otherwise, use a default value if it's available.
 
+
+$base_data_path //= config_get_val( $config, "general", "base_data_path", DEFAULT_BASE_DATA_PATH ); 
+
 $port    //= config_get_val( $config, "network", "port",    DEFAULT_PORT );
 $address //= config_get_val( $config, "network", "address", DEFAULT_ADDRESS );
 $auth_enabled //=
@@ -300,7 +305,8 @@ $mqtt_username //= config_get_val( $config, "mqtt", "username" );
 $mqtt_password //= config_get_val( $config, "mqtt", "password" );
 $use_fcm //= config_get_val( $config, "fcm", "enable", DEFAULT_FCM_ENABLE );
 $fcm_api_key //= config_get_val( $config, "fcm", "api_key", NINJA_API_KEY );
-$token_file //=
+
+$token_file //= 
   config_get_val( $config, "fcm", "token_file", DEFAULT_FCM_TOKEN_FILE );
 $ssl_enabled //= config_get_val( $config, "ssl", "enable", DEFAULT_SSL_ENABLE );
 $ssl_cert_file //= config_get_val( $config, "ssl", "cert" );
@@ -431,7 +437,23 @@ sub config_get_val {
     $final_val = $secret_val;
   }
 
-  #printInfo("RETURNING --> $final_val");
+  # now search for substitutions
+  my @matches = ( $final_val =~ /\{\{(.*?)\}\}/g );
+
+  foreach (@matches) {
+    
+    
+    my $token = $_;
+    # check if token exists in either general or its own section
+    # other-section substitution not supported
+  
+    my $val = $config->val('general', $token);
+    $val = $config->val($sect, $token) if !$val;
+    printDebug ("config string substitution: {{$token}} is '$val'");
+    $final_val =~ s/\{\{$token\}\}/$val/g;
+
+  } 
+ 
   return $final_val;
 }
 
@@ -461,6 +483,7 @@ ${\(
 )}:
 
 Secrets file.......................... ${\(value_or_undefined($secrets_filename))}
+Base data path.........................${\(value_or_undefined($base_data_path))}
 Restart interval (secs)............... ${\(value_or_undefined($restart_interval))}
 
 Port ................................. ${\(value_or_undefined($port))}
