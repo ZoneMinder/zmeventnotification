@@ -2440,7 +2440,10 @@ sub processNewAlarmsInFork {
           #$active_events{$mid}{$eid}{'start'}->{State} = 'ready';
       }
       else {
-        # invoke hook start script
+
+        if ($event_start_hook) {
+
+              # invoke hook start script
         my $cmd =
             $event_start_hook . " "
           . $eid . " "
@@ -2462,9 +2465,8 @@ sub processNewAlarmsInFork {
         $start_code = $resCode;
         chomp($resTxt);
         printInfo("hook start returned with text:$resTxt exit:$resCode");
-        $alarm->{Start}->{State} = 'ready';
 
-        if ( $use_hook_description && $resCode == 0 ) {
+         if ( $use_hook_description && $resCode == 0 ) {
 
      # lets append it to any existing motion notes
      # note that this is in the fork. We are only passing hook text
@@ -2490,6 +2492,16 @@ sub processNewAlarmsInFork {
             . "--SPLIT--"
             . $resTxt . "\n";
         }    # use_hook_desc
+
+        }
+        else { # treat it as a success if no hook to be used
+          printInfo ("hooks not being used, going to directly send out a notification if checks pass");
+          $resCode = 0;
+        }
+    
+        $alarm->{Start}->{State} = 'ready';
+
+       
       }    # hook start script
 
       # end of State == pending
