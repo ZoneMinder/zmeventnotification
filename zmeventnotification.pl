@@ -1188,7 +1188,10 @@ sub sendOverFCM {
   if ( substr( $alarm->{Cause}, 0, 3 ) eq "[a]" ) {
     my $npic = $pic =~ s/BESTMATCH/alarm/gr;
     $pic = $npic;
-    printDebug("Alarm frame matched, changing picture url to:$pic ");
+    my $dpic = $pic;
+    $dpic =~ s/pass(word)?=(.*?)($|&)/pass$1=xxx$3/g;
+
+    printDebug("Alarm frame matched, changing picture url to:$dpic ");
     $alarm->{Cause} = substr( $alarm->{Cause}, 4 )
       if ( !$keep_frame_match_type );
 
@@ -1278,7 +1281,10 @@ sub sendOverFCM {
 
   }
 
-  printDebug("Final JSON being sent is: $json");
+  my $djson = $json;
+  $djson =~ s/pass(word)?=(.*?)($|&)/pass$1=xxx$3/g;
+
+  printDebug("Final JSON being sent is: $djson");
   my $req = HTTP::Request->new( 'POST', $uri );
   $req->header(
     'Content-Type'  => 'application/json',
@@ -1339,14 +1345,14 @@ sub processJobs {
   #printDebug ("Inside processJobs");
   while ( ( my $read_avail = select( $rout = $rin, undef, undef, 0.0 ) ) != 0 )
   {
-    printDebug("processJobs after select");
+    #printDebug("processJobs after select");
     if ( $read_avail < 0 ) {
       if ( !$!{EINTR} ) {
         printError("Pipe read error: $read_avail $!");
       }
     }
     elsif ( $read_avail > 0 ) {
-      printDebug("processJobs inside read_avail > 0");
+     # printDebug("processJobs inside read_avail > 0");
       chomp( my $txt = sysreadline(READER) );
       printDebug("RAW TEXT-->$txt");
       my ( $job, $msg ) = split( "--TYPE--", $txt );
