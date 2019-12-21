@@ -975,6 +975,21 @@ sub loadMonitors {
   %monitors = %new_monitors;
 }
 
+sub getEventfromZmDB {
+  # Read event from ZmDB, passing details back via hash
+  my ( $eid ) = @_;
+  printDebug( "reading details for Event:" . $eid );
+
+  my $sql = "SELECT Id,MonitorId,Name,Cause,StartTime,EndTime,Width,Height,Length,Frames,AlarmFrames,TotScore,AvgScore,MaxScore,Notes FROM Events WHERE id=?";
+  my $sth = $dbh->prepare( $sql )
+    or Fatal( "Can't prepare '$sql': " . $dbh->errstr() );
+  my $res = $sth->execute( $eid )
+    or Fatal( "Can't execute: " . $sth->errstr() );
+  my $href = $sth->fetchrow_hashref()
+    or Fatal( "Can't fetchrow_hashref: " . $sth->errstr() );
+  return $href;
+}
+
 # Updated Notes DB of events with detection text
 # if available (hook enabled)
 sub updateEventinZmDB {
