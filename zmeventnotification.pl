@@ -498,10 +498,10 @@ Use FCM .............................. ${\(yes_or_no($use_fcm))}
 FCM API key .......................... ${\(present_or_not($fcm_api_key))}
 Token file ........................... ${\(value_or_undefined($token_file))}
 
-Use MQTT ..............................${\(yes_or_no($use_mqtt))}
-MQTT Server ...........................${\(value_or_undefined($mqtt_server))}
-MQTT Username .........................${\(value_or_undefined($mqtt_username))}
-MQTT Password .........................${\(present_or_not($mqtt_password))}
+Use MQTT ............................. ${\(yes_or_no($use_mqtt))}
+MQTT Server .......................... ${\(value_or_undefined($mqtt_server))}
+MQTT Username ........................ ${\(value_or_undefined($mqtt_username))}
+MQTT Password ........................ ${\(present_or_not($mqtt_password))}
 
 SSL enabled .......................... ${\(yes_or_no($ssl_enabled))}
 SSL cert file ........................ ${\(value_or_undefined($ssl_cert_file))}
@@ -517,21 +517,21 @@ Hook Script on Event End.............. ${\(value_or_undefined($event_end_hook))}
 
 Notify on Event Start (hook success).. ${\(value_or_undefined($event_start_notify_on_hook_success))}
 Notify on Event Start (hook fail)..... ${\(value_or_undefined($event_start_notify_on_hook_fail))}
-Notify on Event End (hook success)... ${\(value_or_undefined($event_end_notify_on_hook_success))}
-Notify on Event End (hook fail)...... ${\(value_or_undefined($event_end_notify_on_hook_fail))}
+Notify on Event End (hook success).... ${\(value_or_undefined($event_end_notify_on_hook_success))}
+Notify on Event End (hook fail)....... ${\(value_or_undefined($event_end_notify_on_hook_fail))}
 
-Notify End only if Start success......${\(yes_or_no($event_end_notify_if_start_success))}
+Notify End only if Start success...... ${\(yes_or_no($event_end_notify_if_start_success))}
 
-Use Hook Description........... ${\(yes_or_no($use_hook_description))}
-Keep frame match type.......... ${\(yes_or_no($keep_frame_match_type))}
-Skipped monitors............... ${\(value_or_undefined($skip_monitors))}
-Store Frame in ZM...............${\(yes_or_no($hook_pass_image_path))}
+Use Hook Description.................. ${\(yes_or_no($use_hook_description))}
+Keep frame match type................. ${\(yes_or_no($keep_frame_match_type))}
+Skipped monitors...................... ${\(value_or_undefined($skip_monitors))}
+Store Frame in ZM..................... ${\(yes_or_no($hook_pass_image_path))}
 
 
-Picture URL ................... ${\(value_or_undefined($picture_url))}
-Include picture................ ${\(yes_or_no($include_picture))}
-Picture username .............. ${\(value_or_undefined($picture_portal_username))}
-Picture password .............. ${\(present_or_not($picture_portal_password))}
+Picture URL .......................... ${\(value_or_undefined($picture_url))}
+Include picture....................... ${\(yes_or_no($include_picture))}
+Picture username ..................... ${\(value_or_undefined($picture_portal_username))}
+Picture password ..................... ${\(present_or_not($picture_portal_password))}
 
 EOF
   );
