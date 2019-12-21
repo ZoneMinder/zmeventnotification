@@ -1112,14 +1112,53 @@ sub sendOverMQTTBroker {
   my $ac         = shift;
   my $event_type = shift;
   my $resCode    = shift;
+  my $cause      = $alarm->{Cause};
 
   my $json;
 
-# only remove if not removed before. If you are sending over multiple channels, it may have already been stripped
-  $alarm->{Cause} = substr( $alarm->{Cause}, 4 )
-    if ( !$keep_frame_match_type && $alarm->{Cause} =~ /^\[.\]/ );
+# Should we really be removing info from the $Alarm->{Cause} before other brokers have a chance to look at it?
+# I've opted to use a local copy named '$cause' and leave the original $Alarm->{Cause} untouched.
+## only remove if not removed before. If you are sending over multiple channels, it may have already been stripped
+#  $alarm->{Cause} = substr( $alarm->{Cause}, 4 )
+#    if ( !$keep_frame_match_type && $alarm->{Cause} =~ /^\[.\]/ );
+
+  my $pic = $picture_url =~ s/EVENTID/$alarm->{EventId}/gr;
+  if ( $resCode == 1 ) {
+    printDebug(
+      'MQTT called when hook failed, so making sure we do not use objdetect in url'
+    );
+    $pic = $pic =~ s/objdetect/snapshot/gr;
+  }
+
+  # MQTT is typically published in cleartext with open subscriptions to topics.
+  # It would be a really bad idea to send the username/password as part of the URL.
+  # We should rely on the consumer of the topic to know how to authenticate to the URL.
+  #$pic = $pic . '&username=' . $picture_portal_username
+  #  if ($picture_portal_username);
+  #$pic = $pic . '&password=' . uri_escape($picture_portal_password)
+  #  if ($picture_portal_password);
+
+  # if we used best match we will use the right image in notification
+  if ( substr( $cause, 0, 3 ) eq "[a]" ) {
+    my $npic = $pic =~ s/BESTMATCH/alarm/gr;
+    $pic = $npic;
+    $cause = substr( $cause, 4 )
+      if ( !$keep_frame_match_type );
+  }
+  elsif ( substr( $cause, 0, 3 ) eq "[s]" ) {
+    my $npic = $pic =~ s/BESTMATCH/snapshot/gr;
+    $pic = $npic;
+    $cause = substr( $cause, 4 )
+      if ( !$keep_frame_match_type );
+  }
+  elsif ( substr( $cause, 0, 3 ) eq "[x]" ) {
+    $cause = substr( $cause, 4 )
+      if ( !$keep_frame_match_type );
+  }
+
+  # send old MQTT topic for backward compatibility
   my $description =
-    $alarm->{Name} . ":(" . $alarm->{EventId} . ") " . $alarm->{Cause};
+    $alarm->{Name} . ":(" . $alarm->{EventId} . ") " . $cause;
 
   $description = "Ended:" . $description if ( $event_type eq "event_end" );
 
@@ -1137,6 +1176,38 @@ sub sendOverMQTTBroker {
   # before the next message is sent (with a retry timer of 5 s)
   $ac->{mqtt_conn}
     ->publish( join( '/', 'zoneminder', $alarm->{MonitorId} ) => $json );
+
+  # new MQTT 'event' topic with more information regarding current event and alarm state
+  my $eventData = getEventfromZmDB( $alarm->{EventId} );
+
+  $eventData->{Cause} = substr( $eventData->{Cause}, 4 )
+    if ( !$keep_frame_match_type && $eventData->{Cause} =~ /^\[(a|s|x)\]/ );
+
+  $json = encode_json(
+    { ts           => time(),
+      monitor      => $eventData->{MonitorId},
+      name         => $eventData->{Name},
+      eventid      => $alarm->{EventId},
+      cause        => $eventData->{Cause},
+      start_time   => $eventData->{StartTime},
+      end_time     => $eventData->{EndTime},
+      length       => $eventData->{Length},
+      width        => $eventData->{Width},
+      height       => $eventData->{Height},
+      frames       => $eventData->{Frames},
+      alarm_frames => $eventData->{AlarmFrames},
+      total_score  => $eventData->{TotScore},
+      avg_score    => $eventData->{AvgScore},
+      max_score    => $eventData->{MaxScore},
+      notes        => $eventData->{Notes},
+      image        => $pic,
+      hookvalue    => $resCode,
+      eventtype    => $event_type
+    }
+  );
+
+  $ac->{mqtt_conn}
+    ->publish( join( '/', 'zoneminder', $alarm->{ MonitorId }, 'event' ) => $json );
 
 }
 
