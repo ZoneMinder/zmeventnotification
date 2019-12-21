@@ -1,6 +1,6 @@
 # Changelog
 
-## [v5.0.1](https://github.com/pliablepixels/zmeventnotification/tree/v5.0.1) (2019-12-19)
+## [v5.1.2](https://github.com/pliablepixels/zmeventnotification/tree/v5.0.1) (2019-12-19)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v4.6.1...v5.0.1)
 
@@ -13,7 +13,6 @@
 **Fixed bugs:**
 
 - Yolo minimum confidence is hard coded to 0.5 in code, will not go lower but higher works [\#178](https://github.com/pliablepixels/zmeventnotification/issues/178)
-- ZMeventnotification locks without error \(typically after several hours\) [\#175](https://github.com/pliablepixels/zmeventnotification/issues/175)
 
 **Closed issues:**
 

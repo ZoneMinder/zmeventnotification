@@ -59,17 +59,20 @@ Option 1: Automatic install
 
     sudo -H ./install.sh # and follow the prompts
 
-**Note 1:**: If you plan on using object detection, starting v5.0.0, the setup script no longer installs ``opencv`` for you. This is because you may want to install your own version with GPU accelaration or other options. You will need to either do:
+
+**Note 1:**: ``install.sh`` will not overwrite the hooks pip3 module if the version number is the same as the one you already have. To force reinstall, after you run ``install.sh`` you can manually do ``sudo -H pip3 install --upgrade --no-deps --force-reinstall hook/`` from the ``zmeventnotification`` folder. Note that normally, I will bump up the version # but this condition may kick in for you if you keep pulling master when I haven't yet bumped up versions.
+
+**Note 2:**: If you plan on using object detection, starting v5.0.0, the setup script no longer installs opencv for you. This is because you may want to install your own version with GPU accelaration or other options. You will need to either do:
 
 ::
 
-  sudo -H pip3 install opencv
-  sudo -H pip3 install opencv-contrib
+  sudo -H pip3 install opencv-python
+  sudo -H pip3 install opencv-contrib-python
 
 or `install them from source <https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html>`__.
 
 
-**Note 2:** if you want to add "face recognition" you also need to do
+**Note 3:** if you want to add "face recognition" you also need to do
 
 ::
 

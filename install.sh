@@ -195,7 +195,7 @@ install_hook() {
     install -m 755 -o "${WEB_OWNER}" hook/zm_detect.py "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_train_faces.py "${TARGET_BIN_HOOK}"
     #python setup.py install && print_success "Done" || print_error "python setup failed"
-    pip3 install hook/ && print_opencv_message || print_error "python setup failed"
+    sudo -H pip3 install hook/ && print_opencv_message || print_error "python hooks setup failed"
 
 }
 
@@ -241,7 +241,7 @@ print_opencv_message() {
 
      If you want to install binary packages, simply do:
 
-     sudo -H pip3 install opencv
+     sudo -H pip3 install opencv-python
      sudo -H pip3 install opencv-contrib-python
 
      If you want to install from source, you can do that too 
