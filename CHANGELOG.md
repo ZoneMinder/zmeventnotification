@@ -1,5 +1,15 @@
 # Changelog
 
+## [v5.4.1](https://github.com/pliablepixels/zmeventnotification/tree/v5.4.1) (2019-12-22)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.2.1...v5.4.1)
+
+**Closed issues:**
+
+- Clean up hook/no hook processing [\#190](https://github.com/pliablepixels/zmeventnotification/issues/190)
+- Feature request Audio Processing [\#189](https://github.com/pliablepixels/zmeventnotification/issues/189)
+- scikit-learn 0.21.3 =\> 0.22.0 depreciation warning and AttributeError [\#188](https://github.com/pliablepixels/zmeventnotification/issues/188)
+
 ## [v5.2.1](https://github.com/pliablepixels/zmeventnotification/tree/v5.2.1) (2019-12-21)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.1.2...v5.2.1)
@@ -11,10 +21,6 @@
 **Closed issues:**
 
 - \[PATCH\] FEATURE: Enhanced MQTT handling. [\#183](https://github.com/pliablepixels/zmeventnotification/issues/183)
-
-**Merged pull requests:**
-
-- Dev [\#181](https://github.com/pliablepixels/zmeventnotification/pull/181) ([pliablepixels](https://github.com/pliablepixels))
 
 ## [v5.1.2](https://github.com/pliablepixels/zmeventnotification/tree/v5.1.2) (2019-12-20)
 
@@ -39,6 +45,10 @@
 - bad bcrypt settings at ./zmeventnotification.test.pl line 938 [\#182](https://github.com/pliablepixels/zmeventnotification/issues/182)
 - MQTT Enhancement [\#179](https://github.com/pliablepixels/zmeventnotification/issues/179)
 - FR: ZmNinja - Zmeventnotification selection [\#152](https://github.com/pliablepixels/zmeventnotification/issues/152)
+
+**Merged pull requests:**
+
+- Dev [\#181](https://github.com/pliablepixels/zmeventnotification/pull/181) ([pliablepixels](https://github.com/pliablepixels))
 
 ## [v4.6.1](https://github.com/pliablepixels/zmeventnotification/tree/v4.6.1) (2019-11-21)
 
