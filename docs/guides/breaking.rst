@@ -1,6 +1,11 @@
 Breaking Changes
 ----------------
 
+Version 5.2 onwards
+~~~~~~~~~~~~~~~~~~~~
+- `use_hooks` is a new attribute that controls whether hooks will be used or not
+- `send_event_end_notification` is a new attribute that controls whether end notifications are sent 
+
 Version 5.0 onwards
 ~~~~~~~~~~~~~~~~~~~~~
 
