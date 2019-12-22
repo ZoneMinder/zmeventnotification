@@ -91,17 +91,17 @@ use constant {
   DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND => 'no',
   DEFAULT_CUSTOMIZE_INCLUDE_PICTURE               => 'no',
 
-  DEFAULT_USE_HOOKS                               => 'no',
-  DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE              => 'yes',
-  DEFAULT_HOOK_USE_HOOK_DESCRIPTION               => 'no',
-  DEFAULT_HOOK_STORE_FRAME_IN_ZM                  => 'no',
-  DEFAULT_RESTART_INTERVAL                        => 7200,
-  DEFAULT_EVENT_START_NOTIFY_ON_HOOK_FAIL         => 'none',
-  DEFAULT_EVENT_START_NOTIFY_ON_HOOK_SUCCESS      => 'none',
-  DEFAULT_EVENT_END_NOTIFY_ON_HOOK_FAIL           => 'none',
-  DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS        => 'none',
-  DEFAULT_EVENT_END_NOTIFY_IF_START_SUCCESS       => 'yes',
-  DEFAULT_SEND_EVENT_END_NOTIFICATION             => 'no',
+  DEFAULT_USE_HOOKS                          => 'no',
+  DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE         => 'yes',
+  DEFAULT_HOOK_USE_HOOK_DESCRIPTION          => 'no',
+  DEFAULT_HOOK_STORE_FRAME_IN_ZM             => 'no',
+  DEFAULT_RESTART_INTERVAL                   => 7200,
+  DEFAULT_EVENT_START_NOTIFY_ON_HOOK_FAIL    => 'none',
+  DEFAULT_EVENT_START_NOTIFY_ON_HOOK_SUCCESS => 'none',
+  DEFAULT_EVENT_END_NOTIFY_ON_HOOK_FAIL      => 'none',
+  DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS   => 'none',
+  DEFAULT_EVENT_END_NOTIFY_IF_START_SUCCESS  => 'yes',
+  DEFAULT_SEND_EVENT_END_NOTIFICATION        => 'no',
 };
 
 # connection state
@@ -342,9 +342,12 @@ $picture_portal_username //=
 $picture_portal_password //=
   config_get_val( $config, "customize", "picture_portal_password" );
 
-$send_event_end_notification //= config_get_val( $config, "customize", "send_event_end_notification", DEFAULT_SEND_EVENT_END_NOTIFICATION );
+$send_event_end_notification //=
+  config_get_val( $config, "customize", "send_event_end_notification",
+  DEFAULT_SEND_EVENT_END_NOTIFICATION );
 
-$use_hooks //= config_get_val ($config,"customize", "use_hooks", DEFAULT_USE_HOOKS);
+$use_hooks //=
+  config_get_val( $config, "customize", "use_hooks", DEFAULT_USE_HOOKS );
 
 $event_start_hook //= config_get_val( $config, "hook", "event_start_hook" );
 
@@ -889,7 +892,7 @@ sub checkNewEvents() {
             );
 
             $active_events{$mid}->{$ev}->{End} = {
-              State => 'pending' ,
+              State => 'pending',
               Time  => time(),
               Cause => getNotesFromEventDB($ev)
 
@@ -2210,10 +2213,12 @@ sub sendEvent {
   my $event_type = shift;
   my $resCode    = shift;    # 0 = on_success, 1 = on_fail
 
-  if (!$send_event_end_notification && $event_type eq "event_end") {
-    printInfo ("Not sending event end notification as send_event_end_notification is no");
+  if ( !$send_event_end_notification && $event_type eq "event_end" ) {
+    printInfo(
+      "Not sending event end notification as send_event_end_notification is no"
+    );
     return;
-  } 
+  }
 
   my $hook = $event_type eq "event_start" ? $event_start_hook : $event_end_hook;
 
@@ -2232,7 +2237,10 @@ sub sendEvent {
   {
 
     # only send if fcm is an allowed channel
-    if ( isAllowedChannel( $event_type, 'fcm', $resCode ) || !$hook || !$use_hooks) {
+    if ( isAllowedChannel( $event_type, 'fcm', $resCode )
+      || !$hook
+      || !$use_hooks )
+    {
       printInfo("Sending $event_type notification over FCM");
       sendOverFCM( $alarm, $ac, $event_type, $resCode );
 
@@ -2250,7 +2258,10 @@ sub sendEvent {
     && exists $ac->{conn} )
   {
 
-    if ( isAllowedChannel( $event_type, 'web', $resCode ) || !$hook || !$use_hooks ) {
+    if ( isAllowedChannel( $event_type, 'web', $resCode )
+      || !$hook
+      || !$use_hooks )
+    {
       printInfo( "Sending $event_type notification for EID:"
           . $alarm->{EventId}
           . "over web" );
@@ -2267,7 +2278,10 @@ sub sendEvent {
   }
   elsif ( $ac->{type} == MQTT ) {
 
-    if ( isAllowedChannel( $event_type, 'mqtt', $resCode ) || !$hook || !$use_hooks ) {
+    if ( isAllowedChannel( $event_type, 'mqtt', $resCode )
+      || !$hook
+      || !$use_hooks )
+    {
       printInfo( "Sending $event_type notification for EID:"
           . $alarm->{EventId}
           . "over MQTT" );
@@ -2451,7 +2465,7 @@ sub processNewAlarmsInFork {
       }
       else {    # not a blocked monitor
 
-        if ($event_start_hook && $use_hooks) {
+        if ( $event_start_hook && $use_hooks ) {
 
           # invoke hook start script
           my $cmd =
@@ -2558,7 +2572,7 @@ sub processNewAlarmsInFork {
       }
       else {    # start processing over, so end can be processed
 
-        if ($event_end_hook && $use_hooks) {
+        if ( $event_end_hook && $use_hooks ) {
 
           # invoke end hook script
           my $cmd =
