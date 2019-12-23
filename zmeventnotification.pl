@@ -1068,12 +1068,12 @@ sub deleteFCMToken {
   printDebug( "DeleteToken called with ..." . substr( $dtoken, -10 ) );
   return if ( !-f $token_file );
 
-  open( my $fh, '<', $token_file );
+  open( my $fh, '<', $token_file ) or Fatal ("Error opening $token_file: $!");
   chomp( my @lines = <$fh> );
   close($fh);
   my @uniquetokens = uniq(@lines);
 
-  open( $fh, '>', $token_file );
+  open( $fh, '>', $token_file ) or Fatal ("Error opening $token_file: $!");
 
   foreach (@uniquetokens) {
     my ( $token, $monlist, $intlist, $platform, $pushstate ) =
@@ -1976,18 +1976,18 @@ sub initMQTT {
 sub initFCMTokens {
   printInfo("Initializing FCM tokens...");
   if ( !-f $token_file ) {
-    open( my $foh, '>', $token_file );
+    open( my $foh, '>', $token_file ) or Fatal ("Error opening $token_file: $!");
     printInfo( "Creating " . $token_file );
     print $foh "";
     close($foh);
   }
 
-  open( my $fh, '<', $token_file );
+  open( my $fh, '<', $token_file ) or Fatal ("Error opening $token_file: $!");
   chomp( my @lines = <$fh> );
   close($fh);
   my @uniquetokens = uniq(@lines);
 
-  open( $fh, '>', $token_file );
+  open( $fh, '>', $token_file ) or Fatal ("Error opening $token_file: $!");
 
   # This makes sure we rewrite the file with
   # unique tokens
@@ -2048,13 +2048,13 @@ sub saveFCMTokens {
   );
 
   return if ( $stoken eq "" );
-  open( my $fh, '<', $token_file )
+  open( my $fh, '<', $token_file ) 
     || Fatal( "Cannot open for read " . $token_file );
   chomp( my @lines = <$fh> );
   close($fh);
   my @uniquetokens = uniq(@lines);
   my $found        = 0;
-  open( my $fh, '>', $token_file )
+  open( my $fh, '>', $token_file ) 
     || Fatal( "Cannot open for write " . $token_file );
 
   foreach (@uniquetokens) {
