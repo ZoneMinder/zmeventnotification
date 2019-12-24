@@ -1137,6 +1137,8 @@ sub sendOverMQTTBroker {
   $ac->{mqtt_conn}
     ->publish( join( '/', 'zoneminder', $alarm->{MonitorId} ) => $json );
 
+  $ac->{mqtt_conn}->disconnect();
+
 }
 
 # called in a forked process
