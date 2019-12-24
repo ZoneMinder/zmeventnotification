@@ -1137,7 +1137,8 @@ sub sendOverMQTTBroker {
   $ac->{mqtt_conn}
     ->publish( join( '/', 'zoneminder', $alarm->{MonitorId} ) => $json );
 
-  $ac->{mqtt_conn}->disconnect();
+  # avoid connection drops - see https://github.com/pliablepixels/zmeventnotification/issues/191
+  $ac->{mqtt_conn}->disconnect(); 
 
 }
 
