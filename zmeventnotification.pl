@@ -72,19 +72,19 @@ my $app_version = "5.4";
 
 # configuration constants
 use constant {
-  DEFAULT_CONFIG_FILE       => "/etc/zm/zmeventnotification.ini",
-  DEFAULT_PORT              => 9000,
-  DEFAULT_ADDRESS           => '[::]',
-  DEFAULT_AUTH_ENABLE       => 'yes',
-  DEFAULT_AUTH_TIMEOUT      => 20,
-  DEFAULT_FCM_ENABLE        => 'yes',
-  DEFAULT_MQTT_ENABLE       => 'no',
-  DEFAULT_MQTT_SERVER       => '127.0.0.1',
-  DEFAULT_MQTT_CLOSE_ON_SEND=> 'no',
-  DEFAULT_FCM_TOKEN_FILE    => '/var/lib/zmeventnotification/push/tokens.txt',
-  DEFAULT_BASE_DATA_PATH    => '/var/lib/zmeventnotification',
-  DEFAULT_SSL_ENABLE        => 'yes',
-  DEFAULT_CUSTOMIZE_VERBOSE => 'no',
+  DEFAULT_CONFIG_FILE        => "/etc/zm/zmeventnotification.ini",
+  DEFAULT_PORT               => 9000,
+  DEFAULT_ADDRESS            => '[::]',
+  DEFAULT_AUTH_ENABLE        => 'yes',
+  DEFAULT_AUTH_TIMEOUT       => 20,
+  DEFAULT_FCM_ENABLE         => 'yes',
+  DEFAULT_MQTT_ENABLE        => 'no',
+  DEFAULT_MQTT_SERVER        => '127.0.0.1',
+  DEFAULT_MQTT_CLOSE_ON_SEND => 'no',
+  DEFAULT_FCM_TOKEN_FILE     => '/var/lib/zmeventnotification/push/tokens.txt',
+  DEFAULT_BASE_DATA_PATH     => '/var/lib/zmeventnotification',
+  DEFAULT_SSL_ENABLE         => 'yes',
+  DEFAULT_CUSTOMIZE_VERBOSE  => 'no',
   DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL          => 5,
   DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL       => 300,
   DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE              => 'no',
@@ -310,7 +310,9 @@ $mqtt_server //=
   config_get_val( $config, "mqtt", "server", DEFAULT_MQTT_SERVER );
 $mqtt_username //= config_get_val( $config, "mqtt", "username" );
 $mqtt_password //= config_get_val( $config, "mqtt", "password" );
-$mqtt_close_on_send //= config_get_val ($config, "mqtt", "close_on_send", DEFAULT_MQTT_CLOSE_ON_SEND);
+$mqtt_close_on_send //=
+  config_get_val( $config, "mqtt", "close_on_send",
+  DEFAULT_MQTT_CLOSE_ON_SEND );
 
 $use_fcm //= config_get_val( $config, "fcm", "enable", DEFAULT_FCM_ENABLE );
 $fcm_api_key //= config_get_val( $config, "fcm", "api_key", NINJA_API_KEY );
@@ -1073,12 +1075,12 @@ sub deleteFCMToken {
   printDebug( "DeleteToken called with ..." . substr( $dtoken, -10 ) );
   return if ( !-f $token_file );
 
-  open( my $fh, '<', $token_file ) or Fatal ("Error opening $token_file: $!");
+  open( my $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
   chomp( my @lines = <$fh> );
   close($fh);
   my @uniquetokens = uniq(@lines);
 
-  open( $fh, '>', $token_file ) or Fatal ("Error opening $token_file: $!");
+  open( $fh, '>', $token_file ) or Fatal("Error opening $token_file: $!");
 
   foreach (@uniquetokens) {
     my ( $token, $monlist, $intlist, $platform, $pushstate ) =
@@ -1142,7 +1144,7 @@ sub sendOverMQTTBroker {
   $ac->{mqtt_conn}
     ->publish( join( '/', 'zoneminder', $alarm->{MonitorId} ) => $json );
 
-  # avoid connection drops - see https://github.com/pliablepixels/zmeventnotification/issues/191
+# avoid connection drops - see https://github.com/pliablepixels/zmeventnotification/issues/191
   $ac->{mqtt_conn}->disconnect() if $mqtt_close_on_send;
 
 }
@@ -1984,18 +1986,18 @@ sub initMQTT {
 sub initFCMTokens {
   printInfo("Initializing FCM tokens...");
   if ( !-f $token_file ) {
-    open( my $foh, '>', $token_file ) or Fatal ("Error opening $token_file: $!");
+    open( my $foh, '>', $token_file ) or Fatal("Error opening $token_file: $!");
     printInfo( "Creating " . $token_file );
     print $foh "";
     close($foh);
   }
 
-  open( my $fh, '<', $token_file ) or Fatal ("Error opening $token_file: $!");
+  open( my $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
   chomp( my @lines = <$fh> );
   close($fh);
   my @uniquetokens = uniq(@lines);
 
-  open( $fh, '>', $token_file ) or Fatal ("Error opening $token_file: $!");
+  open( $fh, '>', $token_file ) or Fatal("Error opening $token_file: $!");
 
   # This makes sure we rewrite the file with
   # unique tokens
@@ -2056,13 +2058,13 @@ sub saveFCMTokens {
   );
 
   return if ( $stoken eq "" );
-  open( my $fh, '<', $token_file ) 
+  open( my $fh, '<', $token_file )
     || Fatal( "Cannot open for read " . $token_file );
   chomp( my @lines = <$fh> );
   close($fh);
   my @uniquetokens = uniq(@lines);
   my $found        = 0;
-  open( my $fh, '>', $token_file ) 
+  open( my $fh, '>', $token_file )
     || Fatal( "Cannot open for write " . $token_file );
 
   foreach (@uniquetokens) {
