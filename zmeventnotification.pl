@@ -80,6 +80,7 @@ use constant {
   DEFAULT_FCM_ENABLE        => 'yes',
   DEFAULT_MQTT_ENABLE       => 'no',
   DEFAULT_MQTT_SERVER       => '127.0.0.1',
+  DEFAULT_MQTT_CLOSE_ON_SEND=> 'no',
   DEFAULT_FCM_TOKEN_FILE    => '/var/lib/zmeventnotification/push/tokens.txt',
   DEFAULT_BASE_DATA_PATH    => '/var/lib/zmeventnotification',
   DEFAULT_SSL_ENABLE        => 'yes',
@@ -143,6 +144,7 @@ my $use_mqtt;
 my $mqtt_server;
 my $mqtt_username;
 my $mqtt_password;
+my $mqtt_close_on_send;
 
 my $use_fcm;
 my $fcm_api_key;
@@ -308,6 +310,8 @@ $mqtt_server //=
   config_get_val( $config, "mqtt", "server", DEFAULT_MQTT_SERVER );
 $mqtt_username //= config_get_val( $config, "mqtt", "username" );
 $mqtt_password //= config_get_val( $config, "mqtt", "password" );
+$mqtt_close_on_send //= config_get_val ($config, "mqtt", "close_on_send", DEFAULT_MQTT_CLOSE_ON_SEND);
+
 $use_fcm //= config_get_val( $config, "fcm", "enable", DEFAULT_FCM_ENABLE );
 $fcm_api_key //= config_get_val( $config, "fcm", "api_key", NINJA_API_KEY );
 
@@ -514,6 +518,7 @@ Use MQTT ..............................${\(yes_or_no($use_mqtt))}
 MQTT Server ...........................${\(value_or_undefined($mqtt_server))}
 MQTT Username .........................${\(value_or_undefined($mqtt_username))}
 MQTT Password .........................${\(present_or_not($mqtt_password))}
+MQTT Close on send ....................${\(yes_or_no($mqtt_close_on_send))}
 
 SSL enabled .......................... ${\(yes_or_no($ssl_enabled))}
 SSL cert file ........................ ${\(value_or_undefined($ssl_cert_file))}
@@ -1138,7 +1143,7 @@ sub sendOverMQTTBroker {
     ->publish( join( '/', 'zoneminder', $alarm->{MonitorId} ) => $json );
 
   # avoid connection drops - see https://github.com/pliablepixels/zmeventnotification/issues/191
-  $ac->{mqtt_conn}->disconnect(); 
+  $ac->{mqtt_conn}->disconnect() if $mqtt_close_on_send;
 
 }
 
