@@ -74,7 +74,7 @@ or `install them from source <https://docs.opencv.org/master/d7/d9f/tutorial_lin
 .. _opencv_seg_fault:
 
 Make sure OpenCV works
-~~~~~~~~~~~~~~~~~~~~~~~~~~
++++++++++++++++++++++++
 
 .. important::
 
