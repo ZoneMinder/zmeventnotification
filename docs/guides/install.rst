@@ -226,7 +226,7 @@ in ``install.sh`` before executing it.
 -  In ZM 1.32.0 and above, go to your web interface, and go to
    ``Options->Systems`` and enable ``OPT_USE_EVENTNOTIFICATION`` and you
    are all set.
-
+- If you plan on using the machine learning hooks, there is more work to do. Please refer to :ref:`hooks:Installation` section.
 
 **The rest of this section is NOT NEEDED for 1.32.0 and above!**
 
