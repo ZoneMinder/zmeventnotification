@@ -32,6 +32,7 @@ recognition.
 Please don't ask me questions on how to use them. Please read the
 extensive documentation and ini file configs
 
+.. _hooks_install:
 
 Installation
 ~~~~~~~~~~~~
