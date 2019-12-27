@@ -71,11 +71,11 @@ Option 1: Automatic install
 
 or `install them from source <https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html>`__.
 
-.. _opencv_seg_fault:
+.. _opencv_seg_fault::
 
 .. important::
 
-  After you install opencv, make sure it works. Start python3 and inside the interpreter, do a ``import cv2``. If it seg faults, you have a problem with the package you installed. Some people have reported using ``sudo apt-get install python3-opencv`` works instead of the pip route.
+  After you install opencv, make sure it works. Start python3 and inside the interpreter, do a ``import cv2``. If it seg faults, you have a problem with the package you installed. Some people have reported that doing ``sudo apt-get install libopencv-dev`` fixed the issue. Others reported dioing  ``sudo apt-get install python3-opencv`` works instead of the pip route.
 
   Note that if you get an error saying ``cv2 not found`` that means you did not install it in a place python3 can find it (you might have installed it for python2 by mistake)
 
