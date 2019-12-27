@@ -71,6 +71,8 @@ Option 1: Automatic install
 
 or `install them from source <https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html>`__.
 
+**I would strongly recommend you build from source, if you are able to. Pre built packages are not official from OpenCV and often seem to break/seg fault on different configurations.**
+
 .. _opencv_seg_fault:
 
 Make sure OpenCV works
