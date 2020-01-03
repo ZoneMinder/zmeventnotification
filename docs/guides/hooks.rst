@@ -32,6 +32,7 @@ recognition.
 Please don't ask me questions on how to use them. Please read the
 extensive documentation and ini file configs
 
+.. _hooks_install:
 
 Installation
 ~~~~~~~~~~~~
@@ -70,6 +71,20 @@ Option 1: Automatic install
   sudo -H pip3 install opencv-contrib-python
 
 or `install them from source <https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html>`__.
+
+**I would strongly recommend you build from source, if you are able to. Pre built packages are not official from OpenCV and often seem to break/seg fault on different configurations.**
+
+.. _opencv_seg_fault:
+
+Make sure OpenCV works
++++++++++++++++++++++++
+
+.. important::
+
+  After you install opencv, make sure it works. Start python3 and inside the interpreter, do a ``import cv2``. If it seg faults, you have a problem with the package you installed. Some people have reported that doing ``sudo apt-get install libopencv-dev`` fixed the issue. Others reported dioing  ``sudo apt-get install python3-opencv`` works instead of the pip route.
+
+  Note that if you get an error saying ``cv2 not found`` that means you did not install it in a place python3 can find it (you might have installed it for python2 by mistake)
+
 
 
 **Note 3:** if you want to add "face recognition" you also need to do

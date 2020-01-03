@@ -57,7 +57,7 @@ use IO::Select;
 #
 # ==========================================================================
 
-my $app_version = "5.2";
+my $app_version = "5.4";
 
 # ==========================================================================
 #
@@ -72,33 +72,37 @@ my $app_version = "5.2";
 
 # configuration constants
 use constant {
-  DEFAULT_CONFIG_FILE       => "/etc/zm/zmeventnotification.ini",
-  DEFAULT_PORT              => 9000,
-  DEFAULT_ADDRESS           => '[::]',
-  DEFAULT_AUTH_ENABLE       => 'yes',
-  DEFAULT_AUTH_TIMEOUT      => 20,
-  DEFAULT_FCM_ENABLE        => 'yes',
-  DEFAULT_MQTT_ENABLE       => 'no',
-  DEFAULT_MQTT_SERVER       => '127.0.0.1',
-  DEFAULT_FCM_TOKEN_FILE    => '/var/lib/zmeventnotification/push/tokens.txt',
-  DEFAULT_BASE_DATA_PATH    => '/var/lib/zmeventnotification',
-  DEFAULT_SSL_ENABLE        => 'yes',
-  DEFAULT_CUSTOMIZE_VERBOSE => 'no',
+  DEFAULT_CONFIG_FILE        => "/etc/zm/zmeventnotification.ini",
+  DEFAULT_PORT               => 9000,
+  DEFAULT_ADDRESS            => '[::]',
+  DEFAULT_AUTH_ENABLE        => 'yes',
+  DEFAULT_AUTH_TIMEOUT       => 20,
+  DEFAULT_FCM_ENABLE         => 'yes',
+  DEFAULT_MQTT_ENABLE        => 'no',
+  DEFAULT_MQTT_SERVER        => '127.0.0.1',
+  DEFAULT_MQTT_CLOSE_ON_SEND => 'no',
+  DEFAULT_FCM_TOKEN_FILE     => '/var/lib/zmeventnotification/push/tokens.txt',
+  DEFAULT_BASE_DATA_PATH     => '/var/lib/zmeventnotification',
+  DEFAULT_SSL_ENABLE         => 'yes',
+  DEFAULT_CUSTOMIZE_VERBOSE  => 'no',
   DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL          => 5,
   DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL       => 300,
   DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE              => 'no',
   DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID            => 'no',
   DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND => 'no',
   DEFAULT_CUSTOMIZE_INCLUDE_PICTURE               => 'no',
-  DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE              => 'yes',
-  DEFAULT_HOOK_USE_HOOK_DESCRIPTION               => 'no',
-  DEFAULT_HOOK_STORE_FRAME_IN_ZM                  => 'no',
-  DEFAULT_RESTART_INTERVAL                        => 7200,
-  DEFAULT_EVENT_START_NOTIFY_ON_HOOK_FAIL         => 'none',
-  DEFAULT_EVENT_START_NOTIFY_ON_HOOK_SUCCESS      => 'none',
-  DEFAULT_EVENT_END_NOTIFY_ON_HOOK_FAIL           => 'none',
-  DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS        => 'none',
-  DEFAULT_EVENT_END_NOTIFY_IF_START_SUCCESS       => 'yes',
+
+  DEFAULT_USE_HOOKS                          => 'no',
+  DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE         => 'yes',
+  DEFAULT_HOOK_USE_HOOK_DESCRIPTION          => 'no',
+  DEFAULT_HOOK_STORE_FRAME_IN_ZM             => 'no',
+  DEFAULT_RESTART_INTERVAL                   => 7200,
+  DEFAULT_EVENT_START_NOTIFY_ON_HOOK_FAIL    => 'none',
+  DEFAULT_EVENT_START_NOTIFY_ON_HOOK_SUCCESS => 'none',
+  DEFAULT_EVENT_END_NOTIFY_ON_HOOK_FAIL      => 'none',
+  DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS   => 'none',
+  DEFAULT_EVENT_END_NOTIFY_IF_START_SUCCESS  => 'yes',
+  DEFAULT_SEND_EVENT_END_NOTIFICATION        => 'no',
 };
 
 # connection state
@@ -140,6 +144,7 @@ my $use_mqtt;
 my $mqtt_server;
 my $mqtt_username;
 my $mqtt_password;
+my $mqtt_close_on_send;
 
 my $use_fcm;
 my $fcm_api_key;
@@ -155,7 +160,9 @@ my $monitor_reload_interval;
 my $read_alarm_cause;
 my $tag_alarm_event_id;
 my $use_custom_notification_sound;
+my $send_event_end_notification;
 
+my $use_hooks;
 my $event_start_hook;
 my $event_end_hook;
 
@@ -289,8 +296,8 @@ else {
 # If an option set a value, leave it.  If there's a value in the config, use
 # it.  Otherwise, use a default value if it's available.
 
-
-$base_data_path //= config_get_val( $config, "general", "base_data_path", DEFAULT_BASE_DATA_PATH ); 
+$base_data_path //= config_get_val( $config, "general", "base_data_path",
+  DEFAULT_BASE_DATA_PATH );
 
 $port    //= config_get_val( $config, "network", "port",    DEFAULT_PORT );
 $address //= config_get_val( $config, "network", "address", DEFAULT_ADDRESS );
@@ -303,10 +310,14 @@ $mqtt_server //=
   config_get_val( $config, "mqtt", "server", DEFAULT_MQTT_SERVER );
 $mqtt_username //= config_get_val( $config, "mqtt", "username" );
 $mqtt_password //= config_get_val( $config, "mqtt", "password" );
+$mqtt_close_on_send //=
+  config_get_val( $config, "mqtt", "close_on_send",
+  DEFAULT_MQTT_CLOSE_ON_SEND );
+
 $use_fcm //= config_get_val( $config, "fcm", "enable", DEFAULT_FCM_ENABLE );
 $fcm_api_key //= config_get_val( $config, "fcm", "api_key", NINJA_API_KEY );
 
-$token_file //= 
+$token_file //=
   config_get_val( $config, "fcm", "token_file", DEFAULT_FCM_TOKEN_FILE );
 $ssl_enabled //= config_get_val( $config, "ssl", "enable", DEFAULT_SSL_ENABLE );
 $ssl_cert_file //= config_get_val( $config, "ssl", "cert" );
@@ -336,6 +347,13 @@ $picture_portal_username //=
   config_get_val( $config, "customize", "picture_portal_username" );
 $picture_portal_password //=
   config_get_val( $config, "customize", "picture_portal_password" );
+
+$send_event_end_notification //=
+  config_get_val( $config, "customize", "send_event_end_notification",
+  DEFAULT_SEND_EVENT_END_NOTIFICATION );
+
+$use_hooks //=
+  config_get_val( $config, "customize", "use_hooks", DEFAULT_USE_HOOKS );
 
 $event_start_hook //= config_get_val( $config, "hook", "event_start_hook" );
 
@@ -441,19 +459,19 @@ sub config_get_val {
   my @matches = ( $final_val =~ /\{\{(.*?)\}\}/g );
 
   foreach (@matches) {
-    
-    
+
     my $token = $_;
+
     # check if token exists in either general or its own section
     # other-section substitution not supported
-  
-    my $val = $config->val('general', $token);
-    $val = $config->val($sect, $token) if !$val;
-    printDebug ("config string substitution: {{$token}} is '$val'");
+
+    my $val = $config->val( 'general', $token );
+    $val = $config->val( $sect, $token ) if !$val;
+    printDebug("config string substitution: {{$token}} is '$val'");
     $final_val =~ s/\{\{$token\}\}/$val/g;
 
-  } 
- 
+  }
+
   return $final_val;
 }
 
@@ -502,6 +520,7 @@ Use MQTT ..............................${\(yes_or_no($use_mqtt))}
 MQTT Server ...........................${\(value_or_undefined($mqtt_server))}
 MQTT Username .........................${\(value_or_undefined($mqtt_username))}
 MQTT Password .........................${\(present_or_not($mqtt_password))}
+MQTT Close on send ....................${\(yes_or_no($mqtt_close_on_send))}
 
 SSL enabled .......................... ${\(yes_or_no($ssl_enabled))}
 SSL cert file ........................ ${\(value_or_undefined($ssl_cert_file))}
@@ -511,7 +530,9 @@ Verbose .............................. ${\(yes_or_no($console_logs))}
 Read alarm cause ..................... ${\(yes_or_no($read_alarm_cause))}
 Tag alarm event id ................... ${\(yes_or_no($tag_alarm_event_id))}
 Use custom notification sound ........ ${\(yes_or_no($use_custom_notification_sound))}
+Send event end notification............${\(yes_or_no($send_event_end_notification))}
 
+Use Hooks............................. ${\(value_or_undefined($use_hooks))}
 Hook Script on Event Start ........... ${\(value_or_undefined($event_start_hook))}
 Hook Script on Event End.............. ${\(value_or_undefined($event_end_hook))}
 
@@ -878,7 +899,7 @@ sub checkNewEvents() {
             );
 
             $active_events{$mid}->{$ev}->{End} = {
-              State => $event_end_hook ? 'pending' : 'ready',
+              State => 'pending',
               Time  => time(),
               Cause => getNotesFromEventDB($ev)
 
@@ -893,7 +914,7 @@ sub checkNewEvents() {
           MonitorName => $monitor->{Name},
           EventId     => $current_event,
           Start       => {
-            State => $event_start_hook ? 'pending' : 'ready',
+            State => 'pending',
             Time  => time(),
             Cause => $alarm_cause,
           },
@@ -1054,12 +1075,12 @@ sub deleteFCMToken {
   printDebug( "DeleteToken called with ..." . substr( $dtoken, -10 ) );
   return if ( !-f $token_file );
 
-  open( my $fh, '<', $token_file );
+  open( my $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
   chomp( my @lines = <$fh> );
   close($fh);
   my @uniquetokens = uniq(@lines);
 
-  open( $fh, '>', $token_file );
+  open( $fh, '>', $token_file ) or Fatal("Error opening $token_file: $!");
 
   foreach (@uniquetokens) {
     my ( $token, $monlist, $intlist, $platform, $pushstate ) =
@@ -1123,6 +1144,9 @@ sub sendOverMQTTBroker {
   $ac->{mqtt_conn}
     ->publish( join( '/', 'zoneminder', $alarm->{MonitorId} ) => $json );
 
+# avoid connection drops - see https://github.com/pliablepixels/zmeventnotification/issues/191
+  $ac->{mqtt_conn}->disconnect() if $mqtt_close_on_send;
+
 }
 
 # called in a forked process
@@ -1173,6 +1197,13 @@ sub sendOverFCM {
   if ( $resCode == 1 ) {
     printDebug(
       'FCM called when hook failed, so making sure we do not use objdetect in url'
+    );
+    $pic = $pic =~ s/objdetect/snapshot/gr;
+  }
+
+  if ( !$event_start_hook || !$use_hooks ) {
+    printDebug(
+      'FCM called when there is no start hook/or hooks are disabled, so making sure we do not use objdetect in url'
     );
     $pic = $pic =~ s/objdetect/snapshot/gr;
   }
@@ -1352,7 +1383,8 @@ sub processJobs {
       }
     }
     elsif ( $read_avail > 0 ) {
-     # printDebug("processJobs inside read_avail > 0");
+
+      # printDebug("processJobs inside read_avail > 0");
       chomp( my $txt = sysreadline(READER) );
       printDebug("RAW TEXT-->$txt");
       my ( $job, $msg ) = split( "--TYPE--", $txt );
@@ -1954,18 +1986,18 @@ sub initMQTT {
 sub initFCMTokens {
   printInfo("Initializing FCM tokens...");
   if ( !-f $token_file ) {
-    open( my $foh, '>', $token_file );
+    open( my $foh, '>', $token_file ) or Fatal("Error opening $token_file: $!");
     printInfo( "Creating " . $token_file );
     print $foh "";
     close($foh);
   }
 
-  open( my $fh, '<', $token_file );
+  open( my $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
   chomp( my @lines = <$fh> );
   close($fh);
   my @uniquetokens = uniq(@lines);
 
-  open( $fh, '>', $token_file );
+  open( $fh, '>', $token_file ) or Fatal("Error opening $token_file: $!");
 
   # This makes sure we rewrite the file with
   # unique tokens
@@ -2191,6 +2223,15 @@ sub sendEvent {
   my $event_type = shift;
   my $resCode    = shift;    # 0 = on_success, 1 = on_fail
 
+  if ( !$send_event_end_notification && $event_type eq "event_end" ) {
+    printInfo(
+      "Not sending event end notification as send_event_end_notification is no"
+    );
+    return;
+  }
+
+  my $hook = $event_type eq "event_start" ? $event_start_hook : $event_end_hook;
+
   my $t   = gettimeofday;
   my $str = encode_json(
     { event  => 'alarm',
@@ -2206,8 +2247,11 @@ sub sendEvent {
   {
 
     # only send if fcm is an allowed channel
-    if ( isAllowedChannel( $event_type, 'fcm', $resCode ) ) {
-      printInfo("Sending event_start notification over FCM");
+    if ( isAllowedChannel( $event_type, 'fcm', $resCode )
+      || !$hook
+      || !$use_hooks )
+    {
+      printInfo("Sending $event_type notification over FCM");
       sendOverFCM( $alarm, $ac, $event_type, $resCode );
 
     }
@@ -2224,21 +2268,15 @@ sub sendEvent {
     && exists $ac->{conn} )
   {
 
-    if ( isAllowedChannel( $event_type, 'web', $resCode ) ) {
+    if ( isAllowedChannel( $event_type, 'web', $resCode )
+      || !$hook
+      || !$use_hooks )
+    {
+      printInfo( "Sending $event_type notification for EID:"
+          . $alarm->{EventId}
+          . "over web" );
+      sendOverWebSocket( $alarm, $ac, $event_type, $resCode );
 
-      if ( $event_type eq "event_end" ) {
-
-        printInfo( "Sending end notification for EID:"
-            . $alarm->{EventId}
-            . "over web as start was previously sent" );
-        sendOverWebSocket( $alarm, $ac, $event_type, $resCode );
-
-      }
-      else {
-        printInfo("Sending event_start notification over Web");
-        sendOverWebSocket( $alarm, $ac, $event_type, $resCode );
-
-      }
     }
     else {
       printInfo(
@@ -2250,21 +2288,14 @@ sub sendEvent {
   }
   elsif ( $ac->{type} == MQTT ) {
 
-    if ( isAllowedChannel( $event_type, 'mqtt', $resCode ) ) {
-
-      if ( $event_type eq "event_end" ) {
-
-        printInfo( "Sending end notification for EID:"
-            . $alarm->{EventId}
-            . "over MQTT as start was previously sent" );
-        sendOverMQTTBroker( $alarm, $ac, $event_type, $resCode );
-
-      }
-      else {
-        printInfo("Sending event_start notification over MQTT");
-        sendOverMQTTBroker( $alarm, $ac, $event_type, $resCode );
-
-      }
+    if ( isAllowedChannel( $event_type, 'mqtt', $resCode )
+      || !$hook
+      || !$use_hooks )
+    {
+      printInfo( "Sending $event_type notification for EID:"
+          . $alarm->{EventId}
+          . "over MQTT" );
+      sendOverMQTTBroker( $alarm, $ac, $event_type, $resCode );
     }
     else {
       printInfo(
@@ -2406,8 +2437,8 @@ sub processNewAlarmsInFork {
   my $doneProcessing = 0;
 
   # will contain succ/fail of hook scripts, or 1 (fail) if not invoked
-  my $resCode    = 1;
-  my $start_code = $resCode;
+  my $hookResult      = 0;
+  my $startHookResult = $hookResult;
 
   my $endProcessed = 0;
 
@@ -2427,69 +2458,87 @@ sub processNewAlarmsInFork {
     }
 
     # ---------- Event start processing ----------------------------------#
+    # every alarm that comes here first starts with pending
     if ( $alarm->{Start}->{State} eq 'pending' ) {
 
-      # this means we need to invoke a hook
+      # is this monitor blocked from hooks in config?
       if ( $skip_monitors
         && isInList( $skip_monitors, $mid ) )
       {
         printInfo("$mid is in skip list, not using hooks");
         $alarm->{Start}->{State} = 'ready';
-        $resCode = 0
 
-          #$active_events{$mid}{$eid}{'start'}->{State} = 'ready';
+        # lets treat this like a hook success so it
+        # gets sent out
+        $hookResult = 0
+
       }
-      else {
-        # invoke hook start script
-        my $cmd =
-            $event_start_hook . " "
-          . $eid . " "
-          . $mid . " \""
-          . $alarm->{MonitorName} . "\"" . " \""
-          . $alarm->{Start}->{Cause} . "\"";
+      else {    # not a blocked monitor
 
-        if ($hook_pass_image_path) {
-          my $event = new ZoneMinder::Event($eid);
-          $cmd = $cmd . " \"" . $event->Path() . "\"";
-          printDebug( "Adding event path:"
-              . $event->Path()
-              . " to hook for image storage" );
+        if ( $event_start_hook && $use_hooks ) {
 
-        }
-        printInfo( "Invoking hook on event start:" . $cmd );
-        my $resTxt = `$cmd`;
-        $resCode    = $? >> 8;
-        $start_code = $resCode;
-        chomp($resTxt);
-        printInfo("hook start returned with text:$resTxt exit:$resCode");
-        $alarm->{Start}->{State} = 'ready';
+          # invoke hook start script
+          my $cmd =
+              $event_start_hook . " "
+            . $eid . " "
+            . $mid . " \""
+            . $alarm->{MonitorName} . "\"" . " \""
+            . $alarm->{Start}->{Cause} . "\"";
 
-        if ( $use_hook_description && $resCode == 0 ) {
+          if ($hook_pass_image_path) {
+            my $event = new ZoneMinder::Event($eid);
+            $cmd = $cmd . " \"" . $event->Path() . "\"";
+            printDebug( "Adding event path:"
+                . $event->Path()
+                . " to hook for image storage" );
+
+          }
+          printInfo( "Invoking hook on event start:" . $cmd );
+          my $resTxt = `$cmd`;
+          $hookResult      = $? >> 8;
+          $startHookResult = $hookResult;
+          chomp($resTxt);
+          printInfo("hook start returned with text:$resTxt exit:$hookResult");
+
+          if ( $use_hook_description && $hookResult == 0 ) {
 
      # lets append it to any existing motion notes
      # note that this is in the fork. We are only passing hook text
      # to parent, so it can be appended to the full motion text on event close``
-          $alarm->{Start}->{Cause} =
-            $resTxt . " " . $alarm->{Start}->{Cause};
-          print WRITER 'active_event_update--TYPE--'
-            . $mid
-            . '--SPLIT--'
-            . $eid
-            . '--SPLIT--' . 'Start'
-            . '--SPLIT--' . 'Cause'
-            . '--SPLIT--'
-            . $alarm->{Start}->{Cause} . "\n";
+            $alarm->{Start}->{Cause} =
+              $resTxt . " " . $alarm->{Start}->{Cause};
+            print WRITER 'active_event_update--TYPE--'
+              . $mid
+              . '--SPLIT--'
+              . $eid
+              . '--SPLIT--' . 'Start'
+              . '--SPLIT--' . 'Cause'
+              . '--SPLIT--'
+              . $alarm->{Start}->{Cause} . "\n";
 
   # This updates the ZM DB with the detected description
   # we are writing resTxt not alarm cause which is only detection text
   # when we write to DB, we will add the latest notes, which may have more zones
-          print WRITER "event_description--TYPE--"
-            . $mid
-            . "--SPLIT--"
-            . $eid
-            . "--SPLIT--"
-            . $resTxt . "\n";
-        }    # use_hook_desc
+            print WRITER "event_description--TYPE--"
+              . $mid
+              . "--SPLIT--"
+              . $eid
+              . "--SPLIT--"
+              . $resTxt . "\n";
+          }    # use_hook_desc
+
+        }
+
+        # Coming here means we are not using start hooks
+        else {    # treat it as a success if no hook to be used
+          printInfo(
+            "use hooks/start hook not being used, going to directly send out a notification if checks pass"
+          );
+          $hookResult = 0;
+        }
+
+        $alarm->{Start}->{State} = 'ready';
+
       }    # hook start script
 
       # end of State == pending
@@ -2513,7 +2562,7 @@ sub processNewAlarmsInFork {
         if ( shouldSendEventToConn( $temp_alarm_obj, $_ ) ) {
           printDebug(
             "shouldSendEventToConn returned true, so calling sendEvent");
-          sendEvent( $temp_alarm_obj, $_, "event_start", $resCode );
+          sendEvent( $temp_alarm_obj, $_, "event_start", $hookResult );
 
         }
       }    # foreach active_connections
@@ -2526,38 +2575,51 @@ sub processNewAlarmsInFork {
       # this means we need to invoke a hook
       if ( $alarm->{Start}->{State} ne 'done' ) {
         printDebug(
-          "Not yet sending out end notificationas start hook/notify is not done"
+          "Not yet sending out end notification as start hook/notify is not done"
         );
-        $resCode = 0;
+
+        #$hookResult = 0; # why ? forgot.
       }
-      else {
-        # invoke hook script
+      else {    # start processing over, so end can be processed
 
-        my $cmd =
-            $event_end_hook . " "
-          . $eid . " "
-          . $mid . " \""
-          . $alarm->{MonitorName} . "\"" . " \""
-          . getNotesFromEventDB($eid) . "\"";
+        if ( $event_end_hook && $use_hooks ) {
 
-# new ZM 1.33 feature - lets me extract event path so I can store the hook detection image
-        if ($hook_pass_image_path) {
-          my $event = new ZoneMinder::Event($eid);
-          $cmd = $cmd . " \"" . $event->Path() . "\"";
-          printDebug( "Adding event path:"
-              . $event->Path()
-              . " to hook for image storage" );
+          # invoke end hook script
+          my $cmd =
+              $event_end_hook . " "
+            . $eid . " "
+            . $mid . " \""
+            . $alarm->{MonitorName} . "\"" . " \""
+            . getNotesFromEventDB($eid) . "\"";
+
+          if ($hook_pass_image_path) {
+            my $event = new ZoneMinder::Event($eid);
+            $cmd = $cmd . " \"" . $event->Path() . "\"";
+            printDebug( "Adding event path:"
+                . $event->Path()
+                . " to hook for image storage" );
+
+          }
+          printInfo( "Invoking hook on event end:" . $cmd );
+          my $resTxt = `$cmd`;
+          $hookResult = $? >> 8;
+          chomp($resTxt);
+
+          $alarm->{End}->{State} = 'ready';
+          printInfo("hook end returned with text:$resTxt exit:$hookResult");
+
+          $alarm->{Cause} = $resTxt . " " . $alarm->{Cause};
 
         }
-        printInfo( "Invoking hook on event end:" . $cmd );
-        my $resTxt = `$cmd`;
-        $resCode = $? >> 8;
-        chomp($resTxt);
+        else {
+          # treat it as a success if no hook to be used
+          printInfo(
+            "end hooks/use hooks not being used, going to directly send out a notification if checks pass"
+          );
+          $hookResult = 0;
+        }
 
         $alarm->{End}->{State} = 'ready';
-        printInfo("hook end returned with text:$resTxt exit:$resCode");
-
-        $alarm->{Cause} = $resTxt . " " . $alarm->{Cause};
 
       }    # hook end script
 
@@ -2565,9 +2627,11 @@ sub processNewAlarmsInFork {
     }
     elsif ( $alarm->{End}->{State} eq 'ready' ) {
 
-      if ( $event_end_notify_if_start_success && $start_code != 0 ) {
+ # note that this end_notify_if_start is default yes, even if you comment it out
+ # so if you disable all hooks params, you won't get end notifs
+      if ( $event_end_notify_if_start_success && $startHookResult != 0 ) {
         printInfo(
-          "Not sending event end alarm, as we did not send a start alarm for this"
+          "Not sending event end alarm, as we did not send a start alarm for this, or start hook processing failed"
         );
       }
       else {
@@ -2585,14 +2649,19 @@ sub processNewAlarmsInFork {
 
         my ($serv) = @_;
         foreach (@active_connections) {
-          sendEvent( $temp_alarm_obj, $_, "event_end", $resCode );
+          sendEvent( $temp_alarm_obj, $_, "event_end", $hookResult );
         }    # foreach active_connections
       }
 
       $alarm->{End}->{State} = 'done';
-      $doneProcessing = 1;
 
       #$active_events{$mid}{$eid}{'start'}->{State} = 'done';
+    }    # end state = ready
+    elsif ( $alarm->{End}->{State} eq 'done' ) {
+
+      # The end of this event lifecycle. Both start and end handled
+      # as needed
+      $doneProcessing = 1;
     }
 
     if ( !zmMemVerify($monitor) ) {
@@ -2607,17 +2676,18 @@ sub processNewAlarmsInFork {
 
       if ( ( $state == STATE_IDLE || $state == STATE_TAPE || $shm_eid != $eid )
         && !$endProcessed )
+
+        # The alarm has ended
       {
         printDebug("For $mid ($mname), SHM says: state=$state, eid=$shm_eid");
         printInfo("Event $eid for Monitor $mid has finished");
         $endProcessed = 1;
 
         $alarm->{End} = {
-          State => $event_end_hook ? 'pending' : 'ready',
+          State => 'pending',
           Time  => time(),
           Cause => getNotesFromEventDB($eid)
         };
-        $resCode = 1 if ( !$event_end_hook &&  ($alarm->{Start}->{State} eq 'done') );
 
         printDebug( "Event end object is: state=>"
             . $alarm->{End}->{State}
@@ -2625,9 +2695,8 @@ sub processNewAlarmsInFork {
             . $alarm->{End}->{Cause} );
       }
     }
-
     sleep(2);
-  }    #doneProcessing
+  }
   printDebug("exiting");
   print WRITER 'active_event_delete--TYPE--' . $mid . '--SPLIT--' . $eid . "\n";
   close(WRITER);

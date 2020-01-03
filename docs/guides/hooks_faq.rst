@@ -1,6 +1,11 @@
 Machine Learning Hooks FAQ
 ===========================
 
+I get a segment fault/core dump while trying to use opencv in detection
+--------------------------------------------------------------------------
+See :ref:`opencv_seg_fault`.
+
+
 Necessary Reading - Sample Config Files
 ----------------------------------------
 The sample configuration files, `zmeventnotification.ini <https://github.com/pliablepixels/zmeventnotification/blob/master/zmeventnotification.ini>`__ and `objectconfig.ini <https://github.com/pliablepixels/zmeventnotification/blob/master/hook/objectconfig.ini>`__  come with extensive commentary about each attribute and what they do. Please go through them to get a better understanding. Note that most of the configuration attributes in `zmeventnotification.ini` are not related to machine learning, except for the `[hook]` section.

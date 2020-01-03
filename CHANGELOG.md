@@ -1,6 +1,32 @@
 # Changelog
 
-## [v5.1.2](https://github.com/pliablepixels/zmeventnotification/tree/v5.0.1) (2019-12-19)
+## [v5.4.1](https://github.com/pliablepixels/zmeventnotification/tree/v5.4.1) (2019-12-22)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.2.1...v5.4.1)
+
+**Closed issues:**
+
+- Clean up hook/no hook processing [\#190](https://github.com/pliablepixels/zmeventnotification/issues/190)
+- Feature request Audio Processing [\#189](https://github.com/pliablepixels/zmeventnotification/issues/189)
+- scikit-learn 0.21.3 =\> 0.22.0 depreciation warning and AttributeError [\#188](https://github.com/pliablepixels/zmeventnotification/issues/188)
+
+## [v5.2.1](https://github.com/pliablepixels/zmeventnotification/tree/v5.2.1) (2019-12-21)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.1.2...v5.2.1)
+
+**Fixed bugs:**
+
+- notifications fail if there is no end\_hook even if OD succeeds [\#186](https://github.com/pliablepixels/zmeventnotification/issues/186)
+
+**Closed issues:**
+
+- \[PATCH\] FEATURE: Enhanced MQTT handling. [\#183](https://github.com/pliablepixels/zmeventnotification/issues/183)
+
+## [v5.1.2](https://github.com/pliablepixels/zmeventnotification/tree/v5.1.2) (2019-12-20)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.0.1...v5.1.2)
+
+## [v5.0.1](https://github.com/pliablepixels/zmeventnotification/tree/v5.0.1) (2019-12-19)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v4.6.1...v5.0.1)
 
