@@ -32,6 +32,7 @@ recognition.
 Please don't ask me questions on how to use them. Please read the
 extensive documentation and ini file configs
 
+.. _hooks_install:
 
 Installation
 ~~~~~~~~~~~~
@@ -50,7 +51,7 @@ Option 1: Automatic install
 
     cd zmeventnotification
 
--  (OPTIONAL) Edit ``hook/zm_detect_wrapper.sh`` and change:
+-  (OPTIONAL) Edit ``hook/zm_event_start.sh`` and change:
 
    -  ``CONFIG_FILE`` to point to the right config file, if you changed
       paths
@@ -59,7 +60,34 @@ Option 1: Automatic install
 
     sudo -H ./install.sh # and follow the prompts
 
-**Note:** if you want to add "face recognition" you also need to do
+
+**Note 1:**: ``install.sh`` will not overwrite the hooks pip3 module if the version number is the same as the one you already have. To force reinstall, after you run ``install.sh`` you can manually do ``sudo -H pip3 install --upgrade --no-deps --force-reinstall hook/`` from the ``zmeventnotification`` folder. Note that normally, I will bump up the version # but this condition may kick in for you if you keep pulling master when I haven't yet bumped up versions.
+
+**Note 2:**: If you plan on using object detection, starting v5.0.0, the setup script no longer installs opencv for you. This is because you may want to install your own version with GPU accelaration or other options. You will need to either do:
+
+::
+
+  sudo -H pip3 install opencv-python
+  sudo -H pip3 install opencv-contrib-python
+
+or `install them from source <https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html>`__.
+
+**I would strongly recommend you build from source, if you are able to. Pre built packages are not official from OpenCV and often seem to break/seg fault on different configurations.**
+
+.. _opencv_seg_fault:
+
+Make sure OpenCV works
++++++++++++++++++++++++
+
+.. important::
+
+  After you install opencv, make sure it works. Start python3 and inside the interpreter, do a ``import cv2``. If it seg faults, you have a problem with the package you installed. Some people have reported that doing ``sudo apt-get install libopencv-dev`` fixed the issue. Others reported dioing  ``sudo apt-get install python3-opencv`` works instead of the pip route.
+
+  Note that if you get an error saying ``cv2 not found`` that means you did not install it in a place python3 can find it (you might have installed it for python2 by mistake)
+
+
+
+**Note 3:** if you want to add "face recognition" you also need to do
 
 ::
 
@@ -90,15 +118,16 @@ Post install steps
 -  Make sure you edit your installed ``objectconfig.ini`` to the right
    settings. You MUST change the ``[general]`` section for your own
    portal.
--  Make sure the ``CONFIG_FILE`` variable in ``zm_detect_wrapper.sh`` is
+-  Make sure the ``CONFIG_FILE`` variable in ``zm_event_start.sh`` is
    correct
+
 
 Test operation
 ~~~~~~~~~~~~~~
 
 ::
 
-    sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect_wrapper.sh <eid> <mid> # replace www-data with apache if needed
+    sudo -u www-data /var/lib/zmeventnotification/bin/zm_event_start.sh <eid> <mid> # replace www-data with apache if needed
 
 This will try and download the configured frame for alarm and analyze
 it. Replace with your own EID (Example 123456) The files will be in
@@ -119,8 +148,7 @@ If it doesn't work, go back and figure out where you have a problem
 
    -  Set ``delete_after_analyze`` to ``yes`` so that downloaded images
       are removed after analysis. In the default installation, the
-      images are kept in ``/var/lib/zmeventnotification/images`` so you
-      can debug.
+      images are kept in ``/var/lib/zmeventnotification/images`` so you can debug.
    -  Remember these rules:
 
       -  ``frame_id=snapshot`` will work for any ZM >= 1.32
@@ -134,6 +162,11 @@ If it doesn't work, go back and figure out where you have a problem
 Upgrading
 ~~~~~~~~~
 To upgrade at a later stage, see :ref:`upgrade_es_hooks`.
+
+Sidebar: Local vs. Remote Machine Learning
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Starting v5.0, you can now choose to run the machine learning code on a separate server. This can free up your local ZM server resources if you have memory/CPU constraints. See :ref:`this FAQ entry <local_remote_ml>`.
+
 
 .. _hooks-logging:
 
@@ -167,7 +200,7 @@ Troubleshooting
 
 -  In general, I expect you to debug properly. Please don't ask me basic
    questions without investigating logs yourself
--  Always run ``zm_detect_wrapper.sh`` in manual mode first to make sure it
+-  Always run ``zm_event_start.sh`` in manual mode first to make sure it
    works
 -  To get debug logs, Make sure your ``LOG_DEBUG`` in ZM Options->Logs is set to on and your ``LOG_DEBUG_TARGET`` option includes ``_zmesdetect`` (or is empty)
 -  You can view debug logs for detection by doing ``tail -F /var/log/zm/zmesdetect*.log``
@@ -389,7 +422,7 @@ config)
 **STEP 1: Make sure the scripts(s) work** 
 
 - Run the python script manually to see if it works (refer to sections above on how to run them manually) 
-- ``./zm_detect_wrapper.sh <eid> <mid>`` --> make sure it
+- ``./zm_event_start.sh <eid> <mid>`` --> make sure it
   downloads a proper image for that eid. Make sure it correctly invokes
   detect.py If not, fix it. (``<mid>`` is optional and is used to apply a
   crop mask if specified) 

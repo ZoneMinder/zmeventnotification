@@ -1,6 +1,25 @@
 Breaking Changes
 ----------------
 
+Version 5.2 onwards
+~~~~~~~~~~~~~~~~~~~~
+- `use_hooks` is a new attribute that controls whether hooks will be used or not
+- `send_event_end_notification` is a new attribute that controls whether end notifications are sent 
+
+Version 5.0 onwards
+~~~~~~~~~~~~~~~~~~~~~
+
+- ``install.sh`` no longer tries to install opencv on its own. You will have to install ``opencv`` and ``opencv-contrib`` on your own. See install instructions in :doc:`hooks`.
+
+- The ``hook_script`` attribute is deprecated. You now have ``hook_on_event_start`` and ``hook_on_event_end`` which lets you invoke different scripts when an event starts or ends. You also have the concepts of channels, that allows you to decide whether to send a notification even if hooks don't return anything. Read up about ``notify_on_hook_success`` and ``notify_on_hook_fail`` in  ``zmeventnotification.ini`` 
+
+- Now that we support pre/post event hooks, the script names have changed too (``zm_detect_wrapper.sh`` is ``zm_event_start.sh`` and we have a new script called ``zm_event_end.sh`` that is really just a dummy script. Change it to what you need to do at the end of an event, if you enable event end notifications)
+
+- You can now offload the entire machine learning processes to a remote server. All you need to do is to use ``ml_gateway`` and related options in ``objectconfig.ini``. The "ML gateway" is `my mlapi project <https://github.com/pliablepixels/mlapi>`__
+
+- The ES now supports a ``restart_interval`` config item in ``zmeventnotification.ini``. If not 0, this will restart the ES after those many seconds (example ``7200`` is 2 hours). This may be needed if you find the ES locking up after a few hours. I think 5.0 resolves this locking issue (see `this issue <https://github.com/pliablepixels/zmeventnotification/issues/175>`__) but if it doesn't use this, umm, hack for now.
+
+
 Version 4.6 onwards
 ~~~~~~~~~~~~~~~~~~~~
 - If you are using hooks, make sure you run ``sudo ./install.sh`` again - it will create additional files in ``/var/lib/zmeventnotification``

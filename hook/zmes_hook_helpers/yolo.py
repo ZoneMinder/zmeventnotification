@@ -59,6 +59,11 @@ class Yolo:
         boxes = []
 
         nms_threshold = 0.4
+        conf_threshold = 0.2
+
+        # first nms filter out with a yolo confidence of 0.2 (or less)
+        if g.config['yolo_min_confidence'] < conf_threshold:
+            conf_threshold = g.config['yolo_min_confidence']
 
         for out in outs:
             for detection in out:
@@ -71,21 +76,18 @@ class Yolo:
                 h = int(detection[3] * Height)
                 x = center_x - w / 2
                 y = center_y - h / 2
-                if confidence >= g.config['yolo_min_confidence']:
-                    class_ids.append(class_id)
-                    confidences.append(float(confidence))
-                    boxes.append([x, y, w, h])
-                else:
-                    pass
-                #    g.logger.info ('object:{} at {} has a lower confidence:{} than min confidence of: {}, ignoring'.format(str(self.classes[class_id]), [x,y,x+w,y+h], confidence, g.config['yolo_min_confidence']))
-    
+                class_ids.append(class_id)
+                confidences.append(float(confidence))
+                boxes.append([x, y, w, h])
+              
 
-        indices = cv2.dnn.NMSBoxes(boxes, confidences,  g.config['yolo_min_confidence'], nms_threshold)
+        indices = cv2.dnn.NMSBoxes(boxes, confidences,  conf_threshold, nms_threshold)
 
         bbox = []
         label = []
         conf = []
 
+        # now filter out with configured yolo confidence, so we can see rejections in log
         for i in indices:
             i = i[0]
             box = boxes[i]
@@ -93,9 +95,14 @@ class Yolo:
             y = box[1]
             w = box[2]
             h = box[3]
-            bbox.append( [int(round(x)), int(round(y)), int(round(x + w)), int(round(y + h))])
-            label.append(str(self.classes[class_ids[i]]))
-            conf.append(confidences[i])
-            g.logger.info ('object:{} at {} has a acceptable confidence:{} compared to min confidence of: {}, adding'.format(label[-1], bbox[-1], conf[-1], g.config['yolo_min_confidence']))
-        return bbox, label, conf                                   
+            if confidences[i] >= g.config['yolo_min_confidence']:
+                bbox.append( [int(round(x)), int(round(y)), int(round(x + w)), int(round(y + h))])
+                label.append(str(self.classes[class_ids[i]]))
+                conf.append(confidences[i])
+                g.logger.info ('object:{} at {} has a acceptable confidence:{} compared to min confidence of: {}, adding'.format(label[-1], bbox[-1], conf[-1], g.config['yolo_min_confidence']))
+            else:
+                g.logger.info ('rejecting object:{} at {} because its confidence is :{} compared to min confidence of: {}'.format(str(self.classes[class_ids[i]]), [int(round(x)), int(round(y)), int(round(x + w)), int(round(y + h))], confidences[i], g.config['yolo_min_confidence']))
+
+        return bbox, label, conf         
+
 

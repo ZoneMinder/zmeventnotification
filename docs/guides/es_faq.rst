@@ -163,32 +163,58 @@ configuration (brilliantly) as follows:
 
     sudo /usr/bin/zmeventnotification.pl --check-config
 
-    03/31/2018 16:52:23.231955 zmeventnotification[29790].INF [using config file: /etc/zm/zmeventnotification.ini]
-    Configuration (read /etc/zm/zmeventnotification.ini):
+    
+Configuration (read /etc/zm/zmeventnotification.ini):
 
-    Port .......................... 9000
-    Address ....................... XX.XX.XX.XX
-    Event check interval .......... 5
-    Monitor reload interval ....... 300
+Secrets file.......................... /etc/zm/secrets.ini
+Restart interval (secs)............... 172800
 
-    Auth enabled .................. true
-    Auth timeout .................. 20
+Port ................................. 9000
+Address .............................. [::]
+Event check interval ................. 5
+Monitor reload interval .............. 300
 
-    Use FCM ....................... true
-    FCM API key ................... (defined)
-    Token file .................... /var/lib/zmeventnotification/push/tokens.txt
+Auth enabled ......................... yes
+Auth timeout ......................... 20
 
-    SSL enabled ................... true
-    SSL cert file ................. /etc/zm/apache2/ssl/zoneminder.crt
-    SSL key file .................. /etc/zm/apache2/ssl/zoneminder.key
+Use FCM .............................. yes
+FCM API key .......................... (defined)
+Token file ........................... /var/lib/zmeventnotification/push/tokens.txt
 
-    console_logs .................. false
-    Read alarm cause .............. true
-    Tag alarm event id ............ false
-    Use custom notification sound . false
+Use MQTT ..............................no
+MQTT Server ...........................127.0.0.1
+MQTT Username .........................(undefined)
+MQTT Password .........................(undefined)
 
-    Hook .......................... '/var/lib/zmeventnotification/bin/zm_detect_wrapper.sh'
-    Use Hook Description........... true
+SSL enabled .......................... yes
+SSL cert file ........................ /etc/myserver/fullchain.pem
+SSL key file ......................... /etc/myserver/privkey.pem
+
+Verbose .............................. no
+Read alarm cause ..................... yes
+Tag alarm event id ................... yes
+Use custom notification sound ........ no
+
+Hook Script on Event Start ........... '/var/lib/zmeventnotification/bin/zm_event_start.sh'
+Hook Script on Event End.............. '/var/lib/zmeventnotification/bin/zm_event_end.sh'
+
+Notify on Event Start (hook success).. all
+Notify on Event Start (hook fail)..... web
+Notify on Event End (hook success)... fcm,web
+Notify on Event End (hook fail)...... web
+
+Notify End only if Start success......yes
+
+Use Hook Description........... yes
+Keep frame match type.......... yes
+Skipped monitors............... (undefined)
+Store Frame in ZM...............yes
+
+
+Picture URL ................... https://myserver/zm/index.php?view=image&eid=EVENTID&fid=objdetect&width=600
+Include picture................ yes
+Picture username .............. zmes
+Picture password .............. (defined)
 
 What is the hook section ?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -223,9 +249,9 @@ detection succeeded in the alarmed or snapshot frame.
 Here is an example: (Note: just an example, please don't ask me for
 support for person detection)
 
--  You will find a sample ``zm_detect_wrapper.sh`` hook in the ``hook``
+-  You will find a sample ``zm_event_start.sh`` script in the ``hook``
    directory. This script is invoked by the notification server when an
-   event occurs.
+   event starts.
 -  This script in turn invokes a python OpenCV based script that grabs
    an image with maximum score from the current event so far and runs a
    fast person detection routine.
@@ -244,6 +270,13 @@ for an explanation of how this works
 
 Troubleshooting common situations
 ---------------------------------
+
+The ES is missing events. I see them being triggered in ZM
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+There could be multiple issues:
+
+- First, alarms are only triggered on Mocord, Modect and Nocord monitors (admittedly this is likely not your issue if you see ZM triggering alarms)
+- The ES polls ZM every 5 seconds for new alarms (the duration is controlled by ``event_check_interval`` in ``zmeventnotification.ini``). This means that if your alarm is very brief, that is, it starts and ends before the ES polls for new events then it will be missed. Note that the ES will catch alarms both in ``ALARM`` and ``ALERT`` state. ``ALARM`` is when ZM is actually detecting motion in the event. ``ALERT`` is when ZM stops detecting motion but is still waiting around till it writes all your ``post event frames`` that you have configured on your ZM Monitor buffer settings. So here is an example: Let's say I have a "Garage" monitor that I've configured a post event buffer of 100 (frames) and I've set my camera FPS to 10. That means it will take ZM 10 seconds to close an event after my alarm occurs (it will be in ``ALERT`` stage all that time). In this case, no matter show short my actual alarm, the ES will always catch it.
 
 LetsEncrypt certificates cannot be found when running as a web user
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -467,12 +500,12 @@ Here is how to debug and report:
 
   pp@homeserver:~/fiddle/zmeventnotification$ tail -F /var/log/zm/zmeventnotification.log /var/log/zm/zmesdetect_m*.log
   ==> /var/log/zm/zmeventnotification.log <==
-  10/06/2019 06:48:29.200008 zmeventnotification[13694].INF [main:557] [Invoking hook:'/var/lib/zmeventnotification/bin/zm_detect_wrapper.sh' 33989 2 "DoorBell" " front" "/var/cache/zoneminder/events/2/2019-10-06/33989"]
+  10/06/2019 06:48:29.200008 zmeventnotification[13694].INF [main:557] [Invoking hook:'/var/lib/zmeventnotification/bin/zm_event_start.sh' 33989 2 "DoorBell" " front" "/var/cache/zoneminder/events/2/2019-10-06/33989"]
   10/06/2019 06:48:34.013490 zmeventnotification[29913].INF [main:557] [New event 33990 reported for Monitor:10 (Name:FrontLawn)  front steps]
   10/06/2019 06:48:34.020958 zmeventnotification[13728].INF [main:557] [Forking process:13728 to handle 1 alarms]
   10/06/2019 06:48:34.021347 zmeventnotification[13728].INF [main:557] [processAlarms: EID:33990 Monitor:FrontLawn (id):10 cause: front steps]
   10/06/2019 06:48:34.237147 zmeventnotification[13728].INF [main:557] [Adding event path:/var/cache/zoneminder/events/10/2019-10-06/33990 to hook for image storage]
-  10/06/2019 06:48:34.237418 zmeventnotification[13728].INF [main:557] [Invoking hook:'/var/lib/zmeventnotification/bin/zm_detect_wrapper.sh' 33990 10 "FrontLawn" " front steps" "/var/cache/zoneminder/events/10/2019-10-06/33990"]
+  10/06/2019 06:48:34.237418 zmeventnotification[13728].INF [main:557] [Invoking hook:'/var/lib/zmeventnotification/bin/zm_event_start.sh' 33990 10 "FrontLawn" " front steps" "/var/cache/zoneminder/events/10/2019-10-06/33990"]
   10/06/2019 06:48:46.529693 zmeventnotification[13728].INF [main:557] [For Monitor:10 event:33990, hook script returned with text: exit:1]
   10/06/2019 06:48:46.529896 zmeventnotification[13728].INF [main:557] [Ending process:13728 to handle alarms]
   10/06/2019 06:48:47.640414 zmeventnotification[13694].INF [main:557] [For Monitor:2 event:33989, hook script returned with text: exit:1]

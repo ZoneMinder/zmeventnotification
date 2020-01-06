@@ -1,8 +1,60 @@
-# Change Log
+# Changelog
+
+## [v5.4.1](https://github.com/pliablepixels/zmeventnotification/tree/v5.4.1) (2019-12-22)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.2.1...v5.4.1)
+
+**Closed issues:**
+
+- Clean up hook/no hook processing [\#190](https://github.com/pliablepixels/zmeventnotification/issues/190)
+- Feature request Audio Processing [\#189](https://github.com/pliablepixels/zmeventnotification/issues/189)
+- scikit-learn 0.21.3 =\> 0.22.0 depreciation warning and AttributeError [\#188](https://github.com/pliablepixels/zmeventnotification/issues/188)
+
+## [v5.2.1](https://github.com/pliablepixels/zmeventnotification/tree/v5.2.1) (2019-12-21)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.1.2...v5.2.1)
+
+**Fixed bugs:**
+
+- notifications fail if there is no end\_hook even if OD succeeds [\#186](https://github.com/pliablepixels/zmeventnotification/issues/186)
+
+**Closed issues:**
+
+- \[PATCH\] FEATURE: Enhanced MQTT handling. [\#183](https://github.com/pliablepixels/zmeventnotification/issues/183)
+
+## [v5.1.2](https://github.com/pliablepixels/zmeventnotification/tree/v5.1.2) (2019-12-20)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.0.1...v5.1.2)
+
+## [v5.0.1](https://github.com/pliablepixels/zmeventnotification/tree/v5.0.1) (2019-12-19)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v4.6.1...v5.0.1)
 
 **Implemented enhancements:**
 
+- Allow object detection to be run remotely [\#184](https://github.com/pliablepixels/zmeventnotification/issues/184)
+- Support pre/post event hooks, also support specific channels for notification after hook or  fail [\#180](https://github.com/pliablepixels/zmeventnotification/issues/180)
 - Support multiple faces per person  [\#173](https://github.com/pliablepixels/zmeventnotification/issues/173)
+
+**Fixed bugs:**
+
+- Yolo minimum confidence is hard coded to 0.5 in code, will not go lower but higher works [\#178](https://github.com/pliablepixels/zmeventnotification/issues/178)
+
+**Closed issues:**
+
+- bad bcrypt settings at ./zmeventnotification.test.pl line 938 [\#182](https://github.com/pliablepixels/zmeventnotification/issues/182)
+- MQTT Enhancement [\#179](https://github.com/pliablepixels/zmeventnotification/issues/179)
+- FR: ZmNinja - Zmeventnotification selection [\#152](https://github.com/pliablepixels/zmeventnotification/issues/152)
+
+**Merged pull requests:**
+
+- Dev [\#181](https://github.com/pliablepixels/zmeventnotification/pull/181) ([pliablepixels](https://github.com/pliablepixels))
+
+## [v4.6.1](https://github.com/pliablepixels/zmeventnotification/tree/v4.6.1) (2019-11-21)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v4.5.8...v4.6.1)
+
+**Implemented enhancements:**
 
 - Allow for secret tokens to be used in ES and OD configs [\#167](https://github.com/pliablepixels/zmeventnotification/issues/167)
 
@@ -22,6 +74,9 @@
 - Multiple face and clustering support [\#174](https://github.com/pliablepixels/zmeventnotification/pull/174) ([pliablepixels](https://github.com/pliablepixels))
 
 ## [v4.5.8](https://github.com/pliablepixels/zmeventnotification/tree/v4.5.8) (2019-11-06)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/dccf3345a30cdc20f2fdef70bafa8bdf894fde76...v4.5.8)
+
 **Implemented enhancements:**
 
 - Add ability to ignore previously matched objects [\#121](https://github.com/pliablepixels/zmeventnotification/issues/121)
@@ -153,31 +208,7 @@
 - fix mislabeled picture\_url example in default config [\#108](https://github.com/pliablepixels/zmeventnotification/pull/108) ([joelsdc](https://github.com/joelsdc))
 - Replaced two occurrences where the incorrect equivalence operator was being used [\#106](https://github.com/pliablepixels/zmeventnotification/pull/106) ([humblking](https://github.com/humblking))
 - any config param can be overriden [\#102](https://github.com/pliablepixels/zmeventnotification/pull/102) ([pliablepixels](https://github.com/pliablepixels))
-- moved to pip [\#95](https://github.com/pliablepixels/zmeventnotification/pull/95) ([pliablepixels](https://github.com/pliablepixels))
-- peppy pep again [\#94](https://github.com/pliablepixels/zmeventnotification/pull/94) ([pliablepixels](https://github.com/pliablepixels))
-- Face recog, model chaining, much more [\#90](https://github.com/pliablepixels/zmeventnotification/pull/90) ([pliablepixels](https://github.com/pliablepixels))
-- Silver ghost bs master [\#89](https://github.com/pliablepixels/zmeventnotification/pull/89) ([pliablepixels](https://github.com/pliablepixels))
-- Added support for HTTP Basic Authentication when downloading event image [\#88](https://github.com/pliablepixels/zmeventnotification/pull/88) ([SilverGhostBS](https://github.com/SilverGhostBS))
-- normalization of ES paths and name [\#86](https://github.com/pliablepixels/zmeventnotification/pull/86) ([pliablepixels](https://github.com/pliablepixels))
-- log X-Forwarded [\#84](https://github.com/pliablepixels/zmeventnotification/pull/84) ([pliablepixels](https://github.com/pliablepixels))
-- Packaging [\#83](https://github.com/pliablepixels/zmeventnotification/pull/83) ([pliablepixels](https://github.com/pliablepixels))
-- Code formatting [\#79](https://github.com/pliablepixels/zmeventnotification/pull/79) ([joelsdc](https://github.com/joelsdc))
-- Add support for custom detect\_pattern per monitor [\#78](https://github.com/pliablepixels/zmeventnotification/pull/78) ([joelsdc](https://github.com/joelsdc))
-- new config approach, crop zones [\#75](https://github.com/pliablepixels/zmeventnotification/pull/75) ([pliablepixels](https://github.com/pliablepixels))
-- \#73 try and handle late hooks [\#74](https://github.com/pliablepixels/zmeventnotification/pull/74) ([pliablepixels](https://github.com/pliablepixels))
-- Updated install doc to fix issue when installing Config::IniFiles [\#69](https://github.com/pliablepixels/zmeventnotification/pull/69) ([shrestha-s](https://github.com/shrestha-s))
-- 63 pass alarm cause to hook [\#68](https://github.com/pliablepixels/zmeventnotification/pull/68) ([neillbell](https://github.com/neillbell))
-- MQTT cleanup [\#61](https://github.com/pliablepixels/zmeventnotification/pull/61) ([vajonam](https://github.com/vajonam))
-- \#59 reworked concurrent event handling [\#60](https://github.com/pliablepixels/zmeventnotification/pull/60) ([pliablepixels](https://github.com/pliablepixels))
-- hook interception and sample person detection [\#55](https://github.com/pliablepixels/zmeventnotification/pull/55) ([pliablepixels](https://github.com/pliablepixels))
-- Provide options for MQTT authentication [\#53](https://github.com/pliablepixels/zmeventnotification/pull/53) ([johnruemker](https://github.com/johnruemker))
-- add mqtt support for home assistant/node-red [\#52](https://github.com/pliablepixels/zmeventnotification/pull/52) ([vajonam](https://github.com/vajonam))
-- Add address cli/ini option. Fix \#43 and \#39. [\#44](https://github.com/pliablepixels/zmeventnotification/pull/44) ([ratmole](https://github.com/ratmole))
-- Synthead support options from cli and config file [\#41](https://github.com/pliablepixels/zmeventnotification/pull/41) ([pliablepixels](https://github.com/pliablepixels))
-- Fcm [\#29](https://github.com/pliablepixels/zmeventnotification/pull/29) ([pliablepixels](https://github.com/pliablepixels))
-- cleanup websockets; add setting to disable authentication [\#26](https://github.com/pliablepixels/zmeventnotification/pull/26) ([tobser](https://github.com/tobser))
-- adding dev stuff [\#20](https://github.com/pliablepixels/zmeventnotification/pull/20) ([pliablepixels](https://github.com/pliablepixels))
 
 
 
-\* *This Change Log was automatically generated by [github_changelog_generator](https://github.com/skywinder/Github-Changelog-Generator)*
+\* *This Changelog was automatically generated by [github_changelog_generator](https://github.com/github-changelog-generator/github-changelog-generator)*

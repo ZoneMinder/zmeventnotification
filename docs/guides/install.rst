@@ -137,13 +137,7 @@ missing ones like so:
 
     perl -MCPAN -e "install XXXX" # where XXX is Config::IniFiles, for example
 
-If you are also planning on using the machine learning hooks, you will need to make sure you have Python3 and pip3 installed and working properly. Refer to your OS package documentation on how to get Python3 and pip3. Further, on some system, you may also need ``python3-opencv``. On debian/ubuntu systems, you can do:
-
-::
-
-        sudo apt-get install python3-opencv
-
-
+If you are also planning on using the machine learning hooks, you will need to make sure you have Python3 and pip3 installed and working properly. Refer to your OS package documentation on how to get Python3 and pip3. 
 
 Configure SSL certificate (Generate new, or use ZoneMinder certs if you are already using HTTPS)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -232,7 +226,7 @@ in ``install.sh`` before executing it.
 -  In ZM 1.32.0 and above, go to your web interface, and go to
    ``Options->Systems`` and enable ``OPT_USE_EVENTNOTIFICATION`` and you
    are all set.
-
+- If you plan on using the machine learning hooks, there is more work to do. Please refer to :ref:`hooks_install`.
 
 **The rest of this section is NOT NEEDED for 1.32.0 and above!**
 

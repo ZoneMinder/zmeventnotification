@@ -15,6 +15,8 @@ import imutils
 import ssl
 import pickle
 import json
+import time
+import requests
 #import hashlib
 
 import zmes_hook_helpers.log as log
@@ -22,10 +24,93 @@ import zmes_hook_helpers.utils as utils
 import zmes_hook_helpers.image_manip as img
 import zmes_hook_helpers.common_params as g
 
-import zmes_hook_helpers.yolo as yolo
-import zmes_hook_helpers.hog as hog
+
 import zmes_hook_helpers.alpr as alpr
 from zmes_hook_helpers.__init__ import __version__
+
+auth_header = None
+# This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code. 
+
+def remote_detect(image, model = None):
+    import requests
+    bbox = []
+    label = []
+    conf = []
+    api_url = g.config['ml_gateway'];
+    g.logger.info('Detecting using remote API Gateway {}'.format(api_url));
+    login_url = api_url + '/login';
+    object_url = api_url + '/detect/object';
+    access_token = None
+    global auth_header
+
+    if model == 'face':
+        object_url += '?type=face'
+
+    data_file = g.config['base_data_path']+'/zm_login.json'
+    if os.path.exists(data_file):
+        g.logger.debug ('Found token file, checking if token has not expired')
+        with open(data_file) as json_file:
+            data = json.load(json_file)
+        generated = data['time']
+        expires = data['expires']
+        access_token = data['token']
+        now = time.time() 
+        # lets make sure there is at least 30 secs left
+        if int(now + 30 - generated)  >= expires:
+            g.logger.debug ('Found access token, but it has expired (or is about to expire)')
+            access_token = None
+        else:
+            g.logger.debug ('Access token is valid for {} more seconds'.format(int(now-generated)))
+            # Get API access token
+    if not access_token:
+        g.logger.debug ('Invoking remote API login')
+        r = requests.post(url=login_url, 
+                        data=json.dumps({'username':g.config['ml_user'], 'password':g.config['ml_password']}), 
+                        headers={'content-type': 'application/json'})
+        data = r.json()
+        access_token = data.get('access_token')
+        if not access_token:
+            raise ValueError ('Error getting remote API token {}'.format(data))
+            return
+        g.logger.debug ('Writing new token for future use')
+        with open(data_file, 'w') as json_file:
+            wdata = {
+                'token': access_token,
+                'expires': data.get('expires'),
+                'time': time.time()
+            }
+            json.dump(wdata, json_file)
+        
+
+    auth_header = {'Authorization': 'Bearer '+access_token}
+
+   
+        
+
+        
+
+    ret, jpeg = cv2.imencode('.jpg', image)
+    files = {'file': ('image.jpg', jpeg.tobytes())}
+    
+    params = {
+        'delete':True,
+        
+    }
+    #print (object_url)
+    r = requests.post(url=object_url, headers=auth_header,params=params, files=files)
+    data = r.json();
+
+    for d in data:
+       
+        label.append(d.get('type'))
+        conf.append(float(d.get('confidence').strip('%'))/100)
+        box = d.get('box')
+        bbox.append(d.get('box')) 
+
+        #print (bbox, label, conf)
+    return bbox, label,conf
+
+
 
 
 def append_suffix(filename, token):
@@ -69,10 +154,30 @@ g.ctx = ssl.create_default_context()
 
 
 utils.process_config(args, g.ctx)
+ 
+# misc came later, so lets be safe
+if not os.path.exists(g.config['base_data_path']+'/misc/'):
+    try:
+        os.makedirs(g.config['base_data_path']+'/misc/')
+    except FileExistsError:
+        pass # if two detects run together with a race here
+
+
+if not g.config['ml_gateway']:
+    g.logger.info('Importing local classes for Yolo/Face')
+    import zmes_hook_helpers.yolo as yolo
+    import zmes_hook_helpers.hog as hog
+else:
+    g.logger.info('Importing remote shim classes for Yolo/Face')
+    from zmes_hook_helpers.apigw import YoloRemote,FaceRemote
+
 # now download image(s)
 
 if not args['file']:
     filename1, filename2, filename1_bbox, filename2_bbox = utils.download_files(args)
+
+    
+        
     # filename_alarm will be the first frame to analyze (typically alarm)
     # filename_snapshot will be the second frame to analyze only if the first fails (typically snapshot)
 else:
@@ -89,7 +194,7 @@ obj_json = []
 # Read images to analyze
 image2 = None
 image1 = cv2.imread(filename1)
-if image1 is None: # can't have this None, something went wrong
+if image1 is None : # can't have this None, something went wrong
     g.logger.error('Error reading {}. It either does not exist or is invalid'.format(filename1))
     raise ValueError('Error reading file {}. It either does not exist or is invalid'.format(filename1))
 oldh, oldw = image1.shape[:2]
@@ -132,19 +237,25 @@ for model in g.config['models']:
     t_start = datetime.datetime.now()
     
     if model == 'yolo':
-        m = yolo.Yolo()
+        if  g.config['ml_gateway']:
+            m = YoloRemote();
+        else:
+            m = yolo.Yolo()
     elif model == 'hog':
         m = hog.Hog()
     elif model == 'face':
-        try:
-            import zmes_hook_helpers.face as face
-        except ImportError:
-            g.logger.error ('Error importing face recognition. Make sure you did sudo -H pip3 install face_recognition')
-            raise
+        if  g.config['ml_gateway']:
+            m = FaceRemote();
+        else:
+            try:
+                import zmes_hook_helpers.face as face
+            except ImportError:
+                g.logger.error ('Error importing face recognition. Make sure you did sudo -H pip3 install face_recognition')
+                raise
 
-        m = face.Face(upsample_times=g.config['face_upsample_times'], 
-                        num_jitters=g.config['face_num_jitters'],
-                        model=g.config['face_model'])
+            m = face.Face(upsample_times=g.config['face_upsample_times'], 
+                            num_jitters=g.config['face_num_jitters'],
+                            model=g.config['face_model'])
     elif model == 'alpr':
         if g.config['alpr_use_after_detection_only'] == 'yes':
             #g.logger.debug ('Skipping ALPR as it is configured to only be used after object detection')
@@ -190,7 +301,10 @@ for model in g.config['models']:
 
         image = image1 if filename==filename1 else image2
 
-        b, l, c = m.detect(image)
+        if g.config['ml_gateway']:
+            b,l,c = remote_detect(image,model)
+        else:   
+            b, l, c = m.detect(image)
         g.logger.debug('|--> model:{} detection took: {}s'.format(model,(datetime.datetime.now() - t_start).total_seconds()))
         t_start = datetime.datetime.now()
         # Now look for matched patterns in bounding boxes
@@ -201,6 +315,28 @@ for model in g.config['models']:
         if model == 'face':
             g.logger.debug('Appending known faces to filter list')
             match = match + [g.config['unknown_face_name']] # unknown face
+
+            if g.config['ml_gateway']:
+                
+                data_file = g.config['base_data_path']+'/misc/known_face_names.json'
+                if os.path.exists(data_file):
+                    g.logger.debug ('Found known faces list remote gateway supports. If you have trained new faces in the remote gateway, please delete this file')
+                    with open(data_file) as json_file:
+                        data = json.load(json_file)
+                        g.logger.debug ('Read from existing names: {}'.format(data['names']))
+                        m.set_classes(data['names'])
+                else:
+                    g.logger.debug ('Fetching known names from remote gateway')
+                    api_url = g.config['ml_gateway']+'/detect/object?type=face_names';
+                    r = requests.post(url=api_url, headers=auth_header,params={})
+                    data = r.json();
+                    with open(data_file, 'w') as json_file:
+                        wdata = {
+                            'names': data['names']
+                        }
+                        json.dump(wdata, json_file)
+
+
             for cls in m.get_classes():
                 if not cls in match:
                     match = match + [cls]

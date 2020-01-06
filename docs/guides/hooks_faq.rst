@@ -1,18 +1,22 @@
 Machine Learning Hooks FAQ
 ===========================
 
+I get a segment fault/core dump while trying to use opencv in detection
+--------------------------------------------------------------------------
+See :ref:`opencv_seg_fault`.
+
+
 Necessary Reading - Sample Config Files
 ----------------------------------------
 The sample configuration files, `zmeventnotification.ini <https://github.com/pliablepixels/zmeventnotification/blob/master/zmeventnotification.ini>`__ and `objectconfig.ini <https://github.com/pliablepixels/zmeventnotification/blob/master/hook/objectconfig.ini>`__  come with extensive commentary about each attribute and what they do. Please go through them to get a better understanding. Note that most of the configuration attributes in `zmeventnotification.ini` are not related to machine learning, except for the `[hook]` section.
 
-How do the hooks actually work?
----------------------------------
+How do the hooks actually invoke object detection?
+-----------------------------------------------------
 
-* When the Event Notification Server detects an event, it invokes a script called ``zm_detect_wrapper.sh``. This is invoked only if you have configured ``hook_script`` in your ``zmeventnotification.ini``.
+* When the Event Notification Server detects an event, it invokes the script specified in ``event_start_hook``  in your ``zmeventnotification.ini``. This is typically ``/var/lib/zmeventnotification/bin/zm_event_start.sh``
 
-* ``zm_detect_wrapper.sh`` in turn invokes ``zm_detect.py`` that does the actual machine learning. Upon exit, it either returns a ``1`` that means object found, or a ``0`` which means nothing found. Based on how you have configured your settings, this information is then stored in ZM and/or pushed to your mobile device as a notification.
+* ``zm_event_start.sh`` in turn invokes ``zm_detect.py`` that does the actual machine learning. Upon exit, it either returns a ``1`` that means object found, or a ``0`` which means nothing found. Based on how you have configured your settings, this information is then stored in ZM and/or pushed to your mobile device as a notification.
 
-* `zmeventnotification.ini` has an attribute called ``hook_script``. If you enable that field, that is the beginning of how this kicks in.
 
 How To Debug Issues
 ---------------------
@@ -65,3 +69,16 @@ I'm having issues with accuracy of Face Recognition
 -  Experiment. Read the `accuracy wiki <https://github.com/ageitgey/face_recognition/wiki/Face-Recognition-Accuracy-Problems>`__ link.
 
 
+.. _local_remote_ml:
+
+Local vs. Remote server for Machine Learning
+---------------------------------------------
+As of version 5.0.0, you can now comfigure an API gateway for remote machine learning by installing `my mlapi server <https://github.com/pliablepixels/mlapi>`__ on a remote server. Once setup, simply point your ``ml_gateway`` inside ``objectconfig.ini`` to the IP/port of your gateway and make sure ``ml_user`` and ``ml_password`` are the user/password you set up on the API gateway. That's all.
+
+The implementation is a little kludgy, which I'll refine over time. What will now happen is any time ``zm_detect.py`` needs to do object detection or face recognition, it will simply pass on that image to the API Gateway instead of trying to do it locally. This can significantly free up resources in your ZM server that is running the ES.
+
+If you want to know what is kludgy as of today:
+
+- All the machine libraries are still installed locally, even if you only want remote usage (just that local ones will not be used). So its a double install, effectively. The good part of course it you can easily switch between local and remote just by commenting/uncommenting ``ml_api_gateway`` in ``objectconfig.ini``
+
+- The way the local instance (``zm_detect.py``) passes images to the remote API server is clumsy. The image will first be downloaded locally, then sent via multipart/mime/HTTP to the API server and then it will analyze. This makes it easy for me to make sure all the existing options like ``write_debug_images`` and others continue to work locally or remotely. Obviously, a better approach would be just to pass the snapshot/alarm image URLs to the remote API server and have it download it, but this will break some of my existing debug functions. I'll get to it some day.
