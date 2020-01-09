@@ -1143,12 +1143,11 @@ sub sendOverMQTTBroker {
   # check connection if the tick interval has elapsed. This is our opportunity
   # to force a re-connect if it was somehow dropped by the broker.
   # https://metacpan.org/pod/Net::MQTT::Simple#tick(timeout)
-  if ( ( time() - $mqtt_last_tick_time ) > $mqtt_tick_interval )
-    {
-      printDebug('MQTT tick interval ($mqtt_tick_interval sec) elapsed.');
-      $mqtt_last_tick_time = time();
-      $ac->{mqtt_conn}->tick(0);
-    }
+  if ( ( time() - $mqtt_last_tick_time ) > $mqtt_tick_interval ) {
+    printDebug('MQTT tick interval ($mqtt_tick_interval sec) elapsed.');
+    $mqtt_last_tick_time = time();
+    $ac->{mqtt_conn}->tick(0);
+  }
 
   # based on the library docs, if this fails, it will drop this message and
   # reconnect when the next message is sent (no more than every 5s)
@@ -2776,8 +2775,7 @@ sub initSocketServer {
       {
         printDebug('MQTT tick interval ($mqtt_tick_interval sec) elapsed.');
         $mqtt_last_tick_time = time();
-        foreach (@active_connections)
-        {
+        foreach (@active_connections) {
           $_->{mqtt_conn}->tick(0) if ( $_->{type} == MQTT );
         }
       }
