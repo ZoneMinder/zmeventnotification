@@ -271,6 +271,12 @@ for an explanation of how this works
 Troubleshooting common situations
 ---------------------------------
 
+I just added a new monitor and the ES is not sending notifications for it
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This generally happens if you add a monitor _after_ you configure the ES.
+What you need to do is go to zmNinja's ``Menu->Settings->Event Server`` option and enable the monitor you just added and press save.
+
 The ES is missing events. I see them being triggered in ZM
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 There could be multiple issues:
