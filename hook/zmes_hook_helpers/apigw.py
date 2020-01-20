@@ -21,7 +21,7 @@ class FaceRemote:
     def __init__(self):
         self.classes = []
 
-    def set_classes(classes):
+    def set_classes(self,classes):
         self.classes = classes
 
     def get_classes(self):
