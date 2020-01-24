@@ -1116,6 +1116,7 @@ sub deleteFCMToken {
 sub sendOverMQTTBroker {
 
   my $alarm      = shift;
+  my $ac         = shift;
   my $event_type = shift;
   my $resCode    = shift;
 
@@ -1143,7 +1144,7 @@ sub sendOverMQTTBroker {
   my $topic = join( '/', 'zoneminder', $alarm->{MonitorId} );
   # Net:MQTT:Simple does not appear to be thread/fork safe so send message to
   # parent process via pipe to create a mqtt_publish job.
-  print WRITER "mqtt_publish--TYPE--" . $topic . "--SPLIT--" . $json . "\n";
+  print WRITER "mqtt_publish--TYPE--" . $ac->{id} . "--SPLIT--" . $topic . "--SPLIT--" . $json . "\n";
 
 }
 
@@ -1464,10 +1465,12 @@ sub processJobs {
         delete( $active_events{$mid}->{$eid} );
       }
       elsif ( $job eq "mqtt_publish" ) {
-        my ( $topic, $payload ) = split( "--SPLIT--", $msg );
+        my ( $id, $topic, $payload ) = split( "--SPLIT--", $msg );
         printDebug("Job: MQTT Publish on topic: $topic");
         foreach (@active_connections) {
-          $_->{mqtt_conn}->publish( $topic => $payload ) if ( $_->{type} == MQTT );
+          if ( ( $_->{id} eq $id ) && exists $_->{mqtt_conn} ) {
+            $_->{mqtt_conn}->publish( $topic => $payload );
+          }
         }
       }
       else {
@@ -2300,7 +2303,7 @@ sub sendEvent {
       printInfo( "Sending $event_type notification for EID:"
           . $alarm->{EventId}
           . " over MQTT" );
-      sendOverMQTTBroker( $alarm, $event_type, $resCode );
+      sendOverMQTTBroker( $alarm, $ac, $event_type, $resCode );
     }
     else {
       printInfo(
