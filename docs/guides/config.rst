@@ -44,6 +44,6 @@ And ``/etc/zm/secrets.ini`` contains:
 
 Then, while parsing the config file evertime a key value is found that starts with ``!`` that means its a secret token and the corresponding value from the secrets file will be substituted. 
 
-The same concept applies to ``/etc/zm/zmevennotification.ini``
+The same concept applies to ``/etc/zm/zmeventnotification.ini``
 
 **Obviously this means you can no longer have a password beginning with an exclamation mark directly in the config. It will be treated as a secret token**. To work around this, create a password token in your secrets file and put the real password there.
