@@ -1140,20 +1140,11 @@ sub sendOverMQTTBroker {
     }
   );
 
-  # check connection if the tick interval has elapsed. This is our opportunity
-  # to force a re-connect if it was somehow dropped by the broker.
-  # https://metacpan.org/pod/Net::MQTT::Simple#tick(timeout)
-  if ( ( time() - $mqtt_last_tick_time ) > $mqtt_tick_interval ) {
-    printDebug('MQTT tick interval ($mqtt_tick_interval sec) elapsed.');
-    $mqtt_last_tick_time = time();
-    $ac->{mqtt_conn}->tick(0);
-  }
-
-  # based on the library docs, if this fails, it will drop this message and
-  # reconnect when the next message is sent (no more than every 5s)
-  # https://metacpan.org/pod/Net::MQTT::Simple#Automatic-reconnection
-  $ac->{mqtt_conn}
-    ->publish( join( '/', 'zoneminder', $alarm->{MonitorId} ) => $json );
+  printDebug( "requesting MQTT Publishing Job for EID:" . $alarm->{EventId} );
+  my $topic = join( '/', 'zoneminder', $alarm->{MonitorId} );
+  # Net:MQTT:Simple does not appear to be thread/fork safe so send message to
+  # parent process via pipe to create a mqtt_publish job.
+  print WRITER "mqtt_publish--TYPE--" . $ac->{id} . "--SPLIT--" . $topic . "--SPLIT--" . $json . "\n";
 
 }
 
@@ -1472,6 +1463,15 @@ sub processJobs {
         my ( $mid, $eid ) = split( "--SPLIT--", $msg );
         printDebug("Job: Deleting active_event eid:$eid, mid:$mid");
         delete( $active_events{$mid}->{$eid} );
+      }
+      elsif ( $job eq "mqtt_publish" ) {
+        my ( $id, $topic, $payload ) = split( "--SPLIT--", $msg );
+        printDebug("Job: MQTT Publish on topic: $topic");
+        foreach (@active_connections) {
+          if ( ( $_->{id} eq $id ) && exists $_->{mqtt_conn} ) {
+            $_->{mqtt_conn}->publish( $topic => $payload );
+          }
+        }
       }
       else {
         printDebug("Job message not recognized!");
@@ -2773,7 +2773,7 @@ sub initSocketServer {
       if ( $use_mqtt
         && ( ( time() - $mqtt_last_tick_time ) > $mqtt_tick_interval ) )
       {
-        printDebug('MQTT tick interval ($mqtt_tick_interval sec) elapsed.');
+        printDebug('MQTT tick interval (' . $mqtt_tick_interval . ' sec) elapsed.');
         $mqtt_last_tick_time = time();
         foreach (@active_connections) {
           $_->{mqtt_conn}->tick(0) if ( $_->{type} == MQTT );
