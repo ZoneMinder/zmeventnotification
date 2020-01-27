@@ -8,5 +8,8 @@
 # $3 = monitor Name of monitor that triggered an alarm
 # $4 = cause of alarm 
 
-echo "$(date): POST EVENT FOR EID:${1} FOR MONITOR ${2} NAME ${3} CAUSE ${4}" > /tmp/post_log.txt
+# If people run it as is, without modifying it, lets make sure we 
+# return the cause back so its sent in the notification
+echo "${4}"
+#echo "$(date): POST EVENT FOR EID:${1} FOR MONITOR ${2} NAME ${3} CAUSE ${4}" > /tmp/post_log.txt
 exit 0
