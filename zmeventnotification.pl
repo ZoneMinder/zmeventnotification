@@ -103,6 +103,7 @@ use constant {
   DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS   => 'none',
   DEFAULT_EVENT_END_NOTIFY_IF_START_SUCCESS  => 'yes',
   DEFAULT_SEND_EVENT_END_NOTIFICATION        => 'no',
+  DEFAULT_FCM_DATE_FORMAT                    => '%I:%M %p, %d-%b'
 };
 
 # connection state
@@ -150,6 +151,7 @@ my $mqtt_last_tick_time = time();
 my $use_fcm;
 my $fcm_api_key;
 my $token_file;
+my $fcm_date_format;
 
 my $ssl_enabled;
 my $ssl_cert_file;
@@ -317,6 +319,8 @@ $mqtt_tick_interval //=
 
 $use_fcm //= config_get_val( $config, "fcm", "enable", DEFAULT_FCM_ENABLE );
 $fcm_api_key //= config_get_val( $config, "fcm", "api_key", NINJA_API_KEY );
+$fcm_date_format //= config_get_val($config, "fcm", "date_format", DEFAULT_FCM_DATE_FORMAT);
+
 
 $token_file //=
   config_get_val( $config, "fcm", "token_file", DEFAULT_FCM_TOKEN_FILE );
@@ -514,6 +518,7 @@ Auth enabled ......................... ${\(yes_or_no($auth_enabled))}
 Auth timeout ......................... ${\(value_or_undefined($auth_timeout))}
 
 Use FCM .............................. ${\(yes_or_no($use_fcm))}
+FCM Date Format....................... ${\(value_or_undefined($fcm_date_format))}
 FCM API key .......................... ${\(present_or_not($fcm_api_key))}
 Token file ........................... ${\(value_or_undefined($token_file))}
 
@@ -1238,7 +1243,7 @@ sub sendOverFCM {
       if ( !$keep_frame_match_type );
   }
 
-  my $now = strftime( '%I:%M %p, %d-%b', localtime );
+  my $now = strftime( $fcm_date_format, localtime );
   my $body = $alarm->{Cause};
   $body = $body . " ended" if ( $event_type eq "event_end" );
   $body = $body . " at " . $now;
