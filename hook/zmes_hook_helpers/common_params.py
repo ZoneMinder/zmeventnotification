@@ -137,6 +137,12 @@ config_vals = {
             'default': None,
             'type': 'string'
         },
+
+        'ml_fallback_local': {
+            'section': 'ml',
+            'default': 'no',
+            'type': 'string'
+        },
        
         'ml_user': {
             'section': 'ml',

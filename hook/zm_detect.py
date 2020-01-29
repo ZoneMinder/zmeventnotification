@@ -302,7 +302,27 @@ for model in g.config['models']:
         image = image1 if filename==filename1 else image2
 
         if g.config['ml_gateway']:
-            b,l,c = remote_detect(image,model)
+            try:
+                b,l,c = remote_detect(image,model)
+            except Exception as e:
+                g.logger.error ('Error executing remote API: {}'.format(e))
+                if g.config['ml_fallback_local'] == 'yes':
+                    g.logger.info ('Falling back to local execution...')
+                    if model == 'yolo':
+                        import zmes_hook_helpers.yolo as yolo
+                        m = yolo.Yolo()
+                    elif model == 'hog':
+                        import zmes_hook_helpers.hog as hog
+                        m = hog.Hog()
+                    elif model == 'face':
+                        import zmes_hook_helpers.face as face
+                        m = face.Face(upsample_times=g.config['face_upsample_times'], 
+                                num_jitters=g.config['face_num_jitters'],
+                                model=g.config['face_model'])
+                    b,l,c = m.detect(image)
+                else:
+                    raise
+
         else:   
             b, l, c = m.detect(image)
         g.logger.debug('|--> model:{} detection took: {}s'.format(model,(datetime.datetime.now() - t_start).total_seconds()))
