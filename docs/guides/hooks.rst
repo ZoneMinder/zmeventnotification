@@ -173,7 +173,7 @@ Starting v5.0, you can now choose to run the machine learning code on a separate
 Logging
 ~~~~~~~~~
 
-Starting version 4.0.x, the hooks now use ZM logging, thanks to a `python wrapper <https://pypi.org/project/pyzmutils/>`__ I wrote recently that taps into ZM's logging system. This also means it is no longer as easy as enabling ``log_level=debug`` in ``objdetect.ini``. Infact, that option has been removed. Follow standard ZM logging options for the hooks. Here is what I do:
+Starting version 4.0.x, the hooks now use ZM logging, thanks to a `python wrapper <https://pyzm.readthedocs.io/en/latest//>`__ I wrote recently that taps into ZM's logging system. This also means it is no longer as easy as enabling ``log_level=debug`` in ``objdetect.ini``. Infact, that option has been removed. Follow standard ZM logging options for the hooks. Here is what I do:
 
 - In ``ZM->Options->Logs:``
 
