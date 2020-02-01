@@ -196,7 +196,7 @@ install_hook() {
     install -m 755 -o "${WEB_OWNER}" hook/zm_detect.py "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_train_faces.py "${TARGET_BIN_HOOK}"
     #python setup.py install && print_success "Done" || print_error "python setup failed"
-    sudo -H pip3 install hook/ && print_opencv_message || print_error "python hooks setup failed"
+    ${PY_SUDO} install hook/ && print_opencv_message || print_error "python hooks setup failed"
 
 }
 
@@ -259,7 +259,7 @@ EOF
 display_help() {
     cat << EOF
     
-    $0 [-h|--help] [--install_es|--no_install_es] [--install_hook|--no_install_hook] [--install_config|--no_install_config]
+    $0 [-h|--help] [--install_es|--no_install_es] [--install_hook|--no_install_hook] [--install_config|--no_install_config] [--nosudo]
 
         When used without any parameters executes in interactive mode
 
@@ -276,6 +276,9 @@ display_help() {
 
         --no-interactive: run automatically, but you need to specify flags for all components
 
+        --no-pysudo: If specified will install python packages 
+        without sudo (some users don't install packages globally)
+
 
 EOF
 }
@@ -288,12 +291,17 @@ check_args() {
     INSTALL_ES_CONFIG='prompt'
     INSTALL_HOOK_CONFIG='prompt'
     INTERACTIVE='yes'
+    PY_SUDO='sudo -H'
 
     for key in "${cmd_args[@]}"
     do
     case $key in
         -h|--help)
             display_help && exit
+            shift
+            ;;
+        --no-pysudo)
+            PY_SUDO=''
             shift
             ;;
         --no-interactive)
