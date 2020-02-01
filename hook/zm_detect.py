@@ -83,12 +83,6 @@ def remote_detect(image, model = None):
         
 
     auth_header = {'Authorization': 'Bearer '+access_token}
-
-   
-        
-
-        
-
     ret, jpeg = cv2.imencode('.jpg', image)
     files = {'file': ('image.jpg', jpeg.tobytes())}
     
@@ -102,7 +96,7 @@ def remote_detect(image, model = None):
 
     for d in data:
        
-        label.append(d.get('type'))
+        label.append(d.get('label'))
         conf.append(float(d.get('confidence').strip('%'))/100)
         box = d.get('box')
         bbox.append(d.get('box')) 
@@ -325,6 +319,8 @@ for model in g.config['models']:
 
         else:   
             b, l, c = m.detect(image)
+
+        
         g.logger.debug('|--> model:{} detection took: {}s'.format(model,(datetime.datetime.now() - t_start).total_seconds()))
         t_start = datetime.datetime.now()
         # Now look for matched patterns in bounding boxes
@@ -396,11 +392,12 @@ for model in g.config['models']:
                     try_next_image = False
                     # First get non plate objects
                     for idx, t_l in enumerate(l):
+                        otype = 'face' if model == 'face' else 'object'
                         obj_json.append( {
-                            'type': 'object',
+                            'type': otype,
                             'label': t_l,
                             'box':  b[idx],
-                            'confidence': c[idx]
+                            'confidence': "{:.2f}%".format(c[idx] * 100)
                         })
                     # Now add plate objects
                     for i, al in enumerate(alpr_l):
@@ -412,7 +409,8 @@ for model in g.config['models']:
                             'type': 'licenseplate',
                             'label': al,
                             'box': alpr_b[i],
-                            'confidence': alpr_c[i]
+                            #'confidence': alpr_c[i]
+                            'confidence': "{:.2f}%".format(alpr_c[i] * 100)
                         })
                 elif filename == filename1 and filename2: # no plates, but another image to try
                     g.logger.debug ('We did not find license plates in vehicles, but there is another image to try')
@@ -433,12 +431,13 @@ for model in g.config['models']:
                         image = saved_image
                         filename = saved_file
                         # store non plate objects
+                        otype = 'face' if model=='face' else 'object'
                         for idx, t_l in enumerate(l):
                             obj_json.append( {
-                                'type': 'object',
+                                'type': otype,
                                 'label': t_l,
                                 'box': b[idx],
-                                'confidence': c[idx]
+                                'confidence': "{:.2f}%".format(c[idx] * 100)
                             })
                     try_next_image = False
             else: # objects, no vehicles 
@@ -466,22 +465,24 @@ for model in g.config['models']:
                         image = saved_image
                         filename = saved_file
                     try_next_image = False
+                    otype = 'face' if model == 'face' else 'object'
                     for idx, t_l in enumerate(l):
                         obj_json.append({
                             'type': 'object',
                             'label': t_l,
                             'box': b[idx],
-                            'confidence': c[idx]
+                            'confidence': "{:.2f}%".format(c[idx] * 100)
                         })
         else: # usealpr
             g.logger.debug ('ALPR not in use, no need for look aheads in processing')
             # store objects
+            otype = 'face' if model == 'face' else 'object'
             for idx, t_l in enumerate(l):
                 obj_json.append( {
-                    'type': 'object',
+                    'type': otype,
                     'label': t_l,
                     'box': b[idx],
-                    'confidence': c[idx]
+                    'confidence': "{:.2f}%".format(c[idx] * 100)
                 })
         if b:
            # g.logger.debug ('ADDING {} and {}'.format(b,l))
@@ -512,6 +513,7 @@ if not matched_file:
         g.logger.info('No patterns found using any models in all files')
 
 else:
+    
     # we have matches
     if matched_file == filename1:
         #image = image1
@@ -577,7 +579,20 @@ else:
             
   
     pred = ''
+    detections = []
     seen = {}
+
+    if not obj_json:
+        # if we broke out early/first match
+        otype = 'face' if model == 'face' else 'object'
+        for idx, t_l in enumerate(label):
+            obj_json.append( {
+                'type': otype,
+                'label': t_l,
+                'box': bbox[idx],
+                'confidence': "{:.2f}%".format(c[idx] * 100)
+            })
+
     #g.logger.debug ('CONFIDENCE ARRAY:{}'.format(conf))
     for idx, l in enumerate(label):
         if  l not in seen:
@@ -591,7 +606,10 @@ else:
         pred = pred.rstrip(',')
         pred = prefix + 'detected:' + pred
         g.logger.info('Prediction string:{}'.format(pred))
-        print (pred)
+        jos = json.dumps(obj_json)
+        g.logger.debug('Prediction string JSON:{}'.format(jos))
+        
+        print (pred + '--SPLIT--'+jos )
 
     # end of matched_file
 

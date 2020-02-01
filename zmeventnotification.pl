@@ -57,7 +57,7 @@ use IO::Select;
 #
 # ==========================================================================
 
-my $app_version = "5.5";
+my $app_version = "5.6";
 
 # ==========================================================================
 #
@@ -796,6 +796,15 @@ sub printError {
   Error($str);
 }
 
+sub parseDetectResults {
+  my $results = shift;
+  my ($txt, $jsonstring) = split('--SPLIT--',$results);
+  
+  $jsonstring = "[]" if (!$jsonstring); 
+  printDebug ("parse of hook:$txt and $jsonstring");
+  return ($txt, $jsonstring);
+}
+
 # This function uses shared memory polling to check if
 # ZM reported any new events. If it does find events
 # then the details are packaged into the events array
@@ -1141,7 +1150,8 @@ sub sendOverMQTTBroker {
       state     => 'alarm',
       eventid   => $alarm->{EventId},
       hookvalue => $resCode,
-      eventtype => $event_type
+      eventtype => $event_type,
+      detection => $alarm->{DetectionJson}
     }
   );
 
@@ -1461,8 +1471,16 @@ sub processJobs {
         );
         $active_events{$mid}->{$eid}->{$type}->{State} = $val
           if ( $key == 'State' );
-        $active_events{$mid}->{$eid}->{$type}->{Cause} = $val
-          if ( $key == 'Cause' );
+        if ( $key == 'Cause' ) {
+          my ($causeTxt, $causeJson) = split ('--JSON--',$val);
+          $active_events{$mid}->{$eid}->{$type}->{Cause} = $causeTxt;
+
+          # if detection is not used, this may be empty
+          $causeJson = "[]" if (!$causeJson);
+          $active_events{$mid}->{$eid}->{$type}->{DetectionJson} = decode_json($causeJson);
+        }
+        
+          
       }
       elsif ( $job eq "active_event_delete" ) {
         my ( $mid, $eid ) = split( "--SPLIT--", $msg );
@@ -2507,19 +2525,25 @@ sub processNewAlarmsInFork {
 
           }
           printInfo( "Invoking hook on event start:" . $cmd );
-          my $resTxt = `$cmd`;
+         
+          my $res = `$cmd`;
+          chomp ($res);
+          my ($resTxt, $resJsonString) = parseDetectResults($res);
           $hookResult      = $? >> 8;
           $startHookResult = $hookResult;
-          chomp($resTxt);
-          printInfo("hook start returned with text:$resTxt exit:$hookResult");
+          
+          printInfo("hook start returned with text:$resTxt json:$resJsonString exit:$hookResult");
 
           if ( $use_hook_description && $hookResult == 0 ) {
 
      # lets append it to any existing motion notes
      # note that this is in the fork. We are only passing hook text
-     # to parent, so it can be appended to the full motion text on event close``
+     # to parent, so it can be appended to the full motion text on event close
+
             $alarm->{Start}->{Cause} =
               $resTxt . " " . $alarm->{Start}->{Cause};
+            $alarm->{Start}->{DetectionJson} = decode_json($resJsonString);
+              
             print WRITER 'active_event_update--TYPE--'
               . $mid
               . '--SPLIT--'
@@ -2527,7 +2551,10 @@ sub processNewAlarmsInFork {
               . '--SPLIT--' . 'Start'
               . '--SPLIT--' . 'Cause'
               . '--SPLIT--'
-              . $alarm->{Start}->{Cause} . "\n";
+              . $alarm->{Start}->{Cause}
+              . '--JSON--' 
+              . $alarm->{Start}->{resJsonString} 
+              . "\n";
 
   # This updates the ZM DB with the detected description
   # we are writing resTxt not alarm cause which is only detection text
@@ -2561,11 +2588,14 @@ sub processNewAlarmsInFork {
       # temp wrapper object for now to keep to old interface
       # will eventually replace
       my $cause          = $alarm->{Start}->{Cause};
+      my $detectJson     = $alarm->{Start}->{DetectionJson} || [];
       my $temp_alarm_obj = {
         Name      => "$mname",
         MonitorId => $mid,
         EventId   => $eid,
         Cause     => "$cause",
+        DetectionJson => $detectJson
+
       };
 
       printInfo("Matching alarm to connection rules...");
@@ -2614,14 +2644,21 @@ sub processNewAlarmsInFork {
 
           }
           printInfo( "Invoking hook on event end:" . $cmd );
-          my $resTxt = `$cmd`;
+          my $res = `$cmd`;
+          chomp ($res);
+          my ($resTxt, $resJsonString) = parseDetectResults($res);
           $hookResult = $? >> 8;
-          chomp($resTxt);
+        
 
           $alarm->{End}->{State} = 'ready';
-          printInfo("hook end returned with text:$resTxt exit:$hookResult");
+          printInfo("hook end returned with text:$resTxt  json:$resJsonString exit:$hookResult");
 
+          #tbd  - was this a typo? Why ->{Cause}? 
+          # kept it here for now
           $alarm->{Cause} = $resTxt . " " . $alarm->{Cause};
+          #I think this is what we need
+          $alarm->{End}->{Cause} = $resTxt . " " . $alarm->{Cause};
+          $alarm->{End}->{DetectionJson} = decode_json($resJsonString);
 
         }
         else {
@@ -2653,11 +2690,13 @@ sub processNewAlarmsInFork {
         printInfo("Matching alarm to connection rules...");
 
         my $cause          = $alarm->{End}->{Cause};
+        my $detectJson     = $alarm->{End}->{DetectionJson}  || [];
         my $temp_alarm_obj = {
           Name      => "$mname",
           MonitorId => $mid,
           EventId   => $eid,
-          Cause     => "$cause"
+          Cause     => "$cause",
+          DetectionJson => $detectJson
         };
 
         my ($serv) = @_;
