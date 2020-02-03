@@ -986,15 +986,15 @@ sub loadMonitors {
 
   my %new_monitors = ();
 
-  my $sql = "SELECT * FROM Monitors
-        WHERE find_in_set( Function, 'Modect,Mocord,Nodect' )"
-    . ( $Config{ZM_SERVER_ID} ? 'AND ServerId=?' : '' );
+  my $sql = "SELECT * FROM `Monitors`
+        WHERE find_in_set( `Function`, 'Modect,Mocord,Nodect' )"
+    . ( $Config{ZM_SERVER_ID} ? 'AND `ServerId`=?' : '' );
   my $sth = $dbh->prepare_cached($sql)
     or Fatal( "Can't prepare '$sql': " . $dbh->errstr() );
   my $res = $sth->execute( $Config{ZM_SERVER_ID} ? $Config{ZM_SERVER_ID} : () )
     or Fatal( "Can't execute: " . $sth->errstr() );
   while ( my $monitor = $sth->fetchrow_hashref() ) {
-
+   
     if ( zmMemVerify($monitor) ) {
       $monitor->{CurrentState}        = zmGetMonitorState($monitor);
       $monitor->{CurrentEvent}        = zmGetLastEvent($monitor);
@@ -1028,7 +1028,7 @@ sub updateEventinZmDB {
 
 sub getNotesFromEventDB {
   my $eid = shift;
-  my $sql = "SELECT Notes from Events WHERE Id=?";
+  my $sql = "SELECT `Notes` from `Events` WHERE `Id`=?";
   my $sth = $dbh->prepare_cached($sql)
     or Fatal( "getNotesFromEventDB: Can't prepare '$sql': " . $dbh->errstr() );
   my $res = $sth->execute($eid)
@@ -1045,7 +1045,7 @@ sub validateZmAuth {
   return 1 unless $auth_enabled;
   my ( $u, $p ) = @_;
   return 0 if ( $u eq "" || $p eq "" );
-  my $sql = 'select Password from Users where Username=?';
+  my $sql = 'select `Password` from `Users` where `Username`=?';
   my $sth = $dbh->prepare_cached($sql)
     or Fatal( "Can't prepare '$sql': " . $dbh->errstr() );
   my $res = $sth->execute($u)
