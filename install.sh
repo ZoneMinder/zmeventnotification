@@ -1,4 +1,4 @@
-#!/bin/bash
+i#!/bin/bash
 
 #-----------------------------------------------------
 # Install script for the EventServer and the 
@@ -14,6 +14,9 @@
 #-----------------------------------------------------
 
 # --- Change these if you want --
+
+PYTHON=python3
+PIP=pip3
 
 
 
@@ -196,7 +199,7 @@ install_hook() {
     install -m 755 -o "${WEB_OWNER}" hook/zm_detect.py "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_train_faces.py "${TARGET_BIN_HOOK}"
     #python setup.py install && print_success "Done" || print_error "python setup failed"
-    ${PY_SUDO} install hook/ && print_opencv_message || print_error "python hooks setup failed"
+    ${PY_SUDO} ${PYTHON} install hook/ && print_opencv_message || print_error "python hooks setup failed"
 
 }
 
@@ -236,13 +239,12 @@ print_opencv_message() {
     |-------------------------- NOTE -------------------------------------|
     
      Hook installation done, but you may also need to install the 
-     following packages: opencv-python and opencv-contrib-python,
+     following packages: opencv-contrib-python
      if you have not already installed them. Any version above 4.0 
      should work.
 
      If you want to install binary packages, simply do:
 
-     sudo -H pip3 install opencv-python
      sudo -H pip3 install opencv-contrib-python
 
      If you want to install from source, you can do that too 
