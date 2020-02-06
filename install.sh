@@ -199,7 +199,7 @@ install_hook() {
     install -m 755 -o "${WEB_OWNER}" hook/zm_detect.py "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_train_faces.py "${TARGET_BIN_HOOK}"
     #python setup.py install && print_success "Done" || print_error "python setup failed"
-    ${PY_SUDO} ${PYTHON} install hook/ && print_opencv_message || print_error "python hooks setup failed"
+    ${PY_SUDO} ${PIP} install hook/ && print_opencv_message || print_error "python hooks setup failed"
 
 }
 
