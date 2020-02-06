@@ -1,4 +1,4 @@
-i#!/bin/bash
+#!/bin/bash
 
 #-----------------------------------------------------
 # Install script for the EventServer and the 
