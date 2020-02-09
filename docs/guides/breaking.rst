@@ -7,6 +7,7 @@ Version 5.7 onwards
   - This adds new attributes ``use_escontrol_interface``, ``escontrol_interface_file`` and ``escontrol_interface_password`` to ``zmeventnotification.ini``. Read more about it :ref:`escontrol_interface`.
 - If you are using face recognition, you now have the option of automatically saving unknown faces to a specific folders. That way it's easy for you to review them later and retrain your known faces.
   - This introduces the following new attributes to ``objectconfig.ini``: ``save_unknown_faces``, ``save_unknown_faces_leeway_pixels`` and ``unknown_images_path``. Their documentation is part of ``objectconfig.ini``
+- The detection script(s) now attach a JSON payload of the detected objects along with the text, separated by ``--SPLIT--``. If you are hacking your own scripts, you need to handle this. The ES automatically handles it when sending notifications.
 
 Version 5.2 onwards
 ~~~~~~~~~~~~~~~~~~~~
