@@ -227,6 +227,7 @@ to 0. Note that you can use any other number. The next time the server
 sends a push via APNS, it will use this value. 0 makes the badge go
 away.
 
+.. _escontrol_interface:
 
 Category: escontrol messages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

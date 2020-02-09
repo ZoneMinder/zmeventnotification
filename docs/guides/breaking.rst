@@ -1,7 +1,10 @@
 Breaking Changes
 ----------------
 
-
+Version 5.7 onwards
+~~~~~~~~~~~~~~~~~~~~
+- The ES supports a control channel using which you can control its behavior remotely
+- This adds new attributes ``use_escontrol_interface``, ``escontrol_interface_file`` and ``escontrol_interface_password`` to ``zmeventnotification.ini``. Read more about it :ref:`escontrol_interface`.
 
 Version 5.2 onwards
 ~~~~~~~~~~~~~~~~~~~~
