@@ -238,7 +238,7 @@ You can now control the ES dynamically using websockets. As of now, you can do t
 - restart the ES
 - reset all customizations made in the ES control admin_interface
 
-Note that any changes you make are persistently stored in  the file specified in ``escontrol_interface_file`` attribute, which by default is ``/var/lib/zmeventnotification/misc/escontrol_interface.txt``. This makes sure all settings are persistent across reboots.
+Note that any changes you make are persistently stored in  the file specified in ``escontrol_interface_file`` attribute, which by default is ``/var/lib/zmeventnotification/misc/escontrol_interface.dat``. This makes sure all settings are persistent across reboots.
 
 escontrol authentication
 '''''''''''''''''''''''''

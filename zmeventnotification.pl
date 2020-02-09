@@ -105,7 +105,7 @@ use constant {
   DEFAULT_SEND_EVENT_END_NOTIFICATION        => 'no',
   DEFAULT_USE_ESCONTROL_INTERFACE            => 'no',
   DEFAULT_ESCONTROL_INTERFACE_FILE =>
-    '/var/lib/zmeventnotification/misc/escontrol_interface.txt',
+    '/var/lib/zmeventnotification/misc/escontrol_interface.dat',
   DEFAULT_FCM_DATE_FORMAT => '%I:%M %p, %d-%b'
 };
 
