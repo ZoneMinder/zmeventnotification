@@ -42,7 +42,7 @@ use Symbol qw(qualify_to_ref);
 use IO::Select;
 
 # debugging only.
-# use Data::Dumper;
+use Data::Dumper;
 
 # ==========================================================================
 #
@@ -57,7 +57,7 @@ use IO::Select;
 #
 # ==========================================================================
 
-my $app_version = "5.6";
+my $app_version = "5.7";
 
 # ==========================================================================
 #
@@ -103,6 +103,8 @@ use constant {
   DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS   => 'none',
   DEFAULT_EVENT_END_NOTIFY_IF_START_SUCCESS  => 'yes',
   DEFAULT_SEND_EVENT_END_NOTIFICATION        => 'no',
+  DEFAULT_USE_ESCONTROL_INTERFACE                => 'no',
+  DEFAULT_ESCONTROL_INTERFACE_FILE               => '/var/lib/zmeventnotification/misc/escontrol_interface.txt',
   DEFAULT_FCM_DATE_FORMAT                    => '%I:%M %p, %d-%b'
 };
 
@@ -134,6 +136,10 @@ my $help;
 my $config_file;
 my $config_file_present;
 my $check_config;
+
+my $use_escontrol_interface;
+my $escontrol_interface_password;
+my $escontrol_interface_file;
 
 my $port;
 my $address;
@@ -199,6 +205,11 @@ my $restart_interval;
 
 my $prefix = "PARENT:";
 
+# admin interface options
+my %escontrol_interface_settings = (
+  'send_notifications' => 1
+);
+
 #default key. Please don't change this
 use constant NINJA_API_KEY =>
   "AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h";
@@ -220,6 +231,7 @@ if ( !try_use("Getopt::Long") )     { Fatal("Getopt::Long missing"); }
 if ( !try_use("File::Basename") )   { Fatal("File::Basename missing"); }
 if ( !try_use("File::Spec") )       { Fatal("File::Spec missing"); }
 if ( !try_use("URI::Escape") )      { Fatal("URI::Escape missing"); }
+if ( !try_use("Storable") )         { Fatal("Storable missing"); }
 
 #if (!try_use ("threads")) {Fatal ("threads library/support  missing");}
 
@@ -277,6 +289,7 @@ else {
   printInfo("No config file found, using inbuilt defaults");
 }
 
+
 $secrets_filename //= config_get_val( $config, "general", "secrets" );
 if ($secrets_filename) {
   printInfo("using secrets file: $secrets_filename");
@@ -286,6 +299,15 @@ if ($secrets_filename) {
         . join( "\n", @Config::IniFiles::errors ) );
   }
 }
+
+$escontrol_interface_file //= config_get_val( $config, "general", "escontrol_interface_file", DEFAULT_ESCONTROL_INTERFACE_FILE );
+
+$use_escontrol_interface //= config_get_val( $config, "general", "use_escontrol_interface", DEFAULT_USE_ESCONTROL_INTERFACE );
+$escontrol_interface_password //= config_get_val( $config, "general", "escontrol_interface_password");
+
+# secrets need to be loaded before admin
+# Do this BEFORE any config_get_val
+loadEsControlSettings();
 
 $restart_interval //= config_get_val( $config, "general", "restart_interval",
   DEFAULT_RESTART_INTERVAL );
@@ -432,6 +454,7 @@ if ($hook_pass_image_path) {
   }
 }
 
+
 # this is just a wrapper around Config::IniFiles val
 # older versions don't support a default parameter
 sub config_get_val {
@@ -440,11 +463,7 @@ sub config_get_val {
 
   my $final_val = defined($val) ? $val : $def;
 
-  # compatibility hack, lets use yes/no in config to maintain
-  # parity with hook config
-  if    ( lc($final_val) eq 'yes' ) { $final_val = 1; }
-  elsif ( lc($final_val) eq 'no' )  { $final_val = 0; }
-
+  
   my $fc = substr( $final_val, 0, 1 );
 
   #printInfo ("Parsing $final_val with X${fc}X");
@@ -459,6 +478,15 @@ sub config_get_val {
     #printInfo ('replacing with:'.$secret_val);
     $final_val = $secret_val;
   }
+
+  if (exists $escontrol_interface_settings{$parm}) {
+    printDebug ("ESCONTROL_INTERFACE overrides key: $parm with ".$escontrol_interface_settings{$parm});
+    $final_val = $escontrol_interface_settings{$parm};
+  }
+  # compatibility hack, lets use yes/no in config to maintain
+  # parity with hook config
+  if    ( lc($final_val) eq 'yes' ) { $final_val = 1; }
+  elsif ( lc($final_val) eq 'no' )  { $final_val = 0; }
 
   # now search for substitutions
   my @matches = ( $final_val =~ /\{\{(.*?)\}\}/g );
@@ -509,6 +537,10 @@ Secrets file.......................... ${\(value_or_undefined($secrets_filename)
 Base data path.........................${\(value_or_undefined($base_data_path))}
 Restart interval (secs)............... ${\(value_or_undefined($restart_interval))}
 
+Use admin interface ...................${\(yes_or_no($use_escontrol_interface))}
+Admin interface password...............${\(present_or_not($escontrol_interface_password))}
+Admin interface persistence file ......${\(value_or_undefined($escontrol_interface_file))}
+
 Port ................................. ${\(value_or_undefined($port))}
 Address .............................. ${\(value_or_undefined($address))}
 Event check interval ................. ${\(value_or_undefined($event_check_interval))}
@@ -538,7 +570,7 @@ Tag alarm event id ................... ${\(yes_or_no($tag_alarm_event_id))}
 Use custom notification sound ........ ${\(yes_or_no($use_custom_notification_sound))}
 Send event end notification............${\(yes_or_no($send_event_end_notification))}
 
-Use Hooks............................. ${\(value_or_undefined($use_hooks))}
+Use Hooks............................. ${\(yes_or_no($use_hooks))}
 Hook Script on Event Start ........... ${\(value_or_undefined($event_start_hook))}
 Hook Script on Event End.............. ${\(value_or_undefined($event_end_hook))}
 
@@ -796,6 +828,7 @@ sub printError {
   Error($str);
 }
 
+# splits JSON string from detection title string
 sub parseDetectResults {
   my $results = shift;
   my ($txt, $jsonstring) = split('--SPLIT--',$results);
@@ -805,6 +838,196 @@ sub parseDetectResults {
   return ($txt, $jsonstring);
 }
 
+
+sub saveEsControlSettings() {
+  if (!$use_escontrol_interface) {
+  printInfo ("ESCONTROL_INTERFACE is disabled. Not saving control data");
+  
+}
+  return if (!$use_escontrol_interface);
+  printInfo ("ESCONTROL_INTERFACE: Saving admin interfaces to $escontrol_interface_file");
+  store (\%escontrol_interface_settings, $escontrol_interface_file) or Fatal("Error writing to $escontrol_interface_file: $!") ;
+}
+
+sub loadEsControlSettings() {
+
+if (!$use_escontrol_interface) {
+  printInfo ("ESCONTROL_INTERFACE is disabled. Not loading control data");
+  return;
+}
+printInfo ("ESCONTROL_INTERFACE: Loading persistent admin interface settings from $escontrol_interface_file");
+if (! -f $escontrol_interface_file) {
+  printInfo ("ESCONTROL_INTERFACE: admin interface file does not exist, creating...");
+  saveEsControlSettings();
+
+} else {
+  %escontrol_interface_settings = %{retrieve($escontrol_interface_file)};
+  printInfo ("+..... ESCONTROL_INTERFACE: $_=>$escontrol_interface_settings{$_}") for (keys %escontrol_interface_settings);
+
+}
+
+
+}
+# This handles admin commands for a connection
+sub processEsControlCommand  {
+
+  return if (!$use_escontrol_interface);
+
+  my ( $json, $conn ) = @_;
+
+  my $obj = getObjectForConn($conn);
+  if (!$obj) {
+    printError ("ESCONTROL error matching connection to object");
+    return;
+  }
+
+  if ($obj->{category} ne 'escontrol') {
+    
+    my $str = encode_json(
+      { event  => 'escontrol',
+        type   => 'command',
+        status => 'Fail',
+        reason => 'NOTCONTROL',
+        request => $json
+      }
+    );
+    eval { $conn->send_utf8($str); };
+    if ($@) {
+      Error("Error sending NOT CONTROL: $@");
+
+    }
+  
+    return;
+
+  }
+
+  if (!$json->{'data'}) {
+      my $str = encode_json(
+      { event  => 'escontrol',
+        type   => 'command',
+        status => 'Fail',
+        reason => 'NODATA'
+      }
+    );
+    eval { $conn->send_utf8($str); };
+    if ($@) {
+      Error("Error sending ADMIN NO DATA: $@");
+
+    }
+  
+    return;
+  }
+  
+  if ($json->{'data'}->{'command'} eq 'mute') {
+    printInfo ('Admin Interface: Mute all notifications');
+    $escontrol_interface_settings{'send_notifications'} = 0;
+    saveEsControlSettings();
+    my $str = encode_json(
+            { event   => 'escontrol',
+              type    => '',
+              status  => 'Success', 
+              request => $json
+            }
+          );
+    eval { $conn->send_utf8($str); };
+    if ($@) {
+      Error("Error sending message: $@");
+
+    }
+
+  }
+  elsif ($json->{'data'}->{'command'} eq 'unmute') {
+    printInfo ('Admin Interface: Unmute all notifications');
+    $escontrol_interface_settings{'send_notifications'} = 1;
+    saveEsControlSettings();
+    my $str = encode_json(
+            { event   => 'escontrol',
+              type    => '',
+              status  => 'Success',  
+              request => $json
+            }
+          );
+    eval { $conn->send_utf8($str); };
+    if ($@) {
+      Error("Error sending message: $@");
+    }
+    
+  }
+  elsif ($json->{'data'}->{'command'} eq 'edit') {
+    my $key = $json->{'data'}->{'key'};
+    my $val = $json->{'data'}->{'val'};
+    printInfo ("Admin Interface: Change $key to $val");
+    $escontrol_interface_settings{$key} = $val;
+    saveEsControlSettings();
+
+    my $str = encode_json(
+            { event   => 'escontrol',
+              type    => '',
+              status  => 'Success',  
+              request => $json
+            }
+          );
+    eval { $conn->send_utf8($str); };
+    if ($@) {
+      Error("Error sending message: $@");
+    }
+    
+  }
+  elsif ($json->{'data'}->{'command'} eq 'restart') {
+    printInfo ('ES_CONTROL: restart ES');
+
+    my $str = encode_json(
+            { event   => 'escontrol',
+              type    => 'command',
+              status  => 'Success',  
+              request => $json
+            }
+          );
+    eval { $conn->send_utf8($str); };
+    if ($@) {
+      Error("Error sending message: $@");
+    }
+    restartES();
+  }
+  elsif ($json->{'data'}->{'command'} eq 'reset') {
+    printInfo ('ES_CONTROL: reset admin commands');
+
+    my $str = encode_json(
+            { event   => 'escontrol',
+              type    => 'command',
+              status  => 'Success',  
+              request => $json
+            }
+          );
+    eval { $conn->send_utf8($str); };
+    if ($@) {
+      Error("Error sending message: $@");
+    }
+    %escontrol_interface_settings = (
+      'send_notifications' => 1
+    );
+   saveEsControlSettings();
+  }
+  else {
+        my $str = encode_json(
+      { event  => $json->{'escontrol'},
+        type   => 'command',
+        status => 'Fail',
+        reason => 'NOTSUPPORTED',
+        request => $json
+      }
+    );
+    eval { $conn->send_utf8($str); };
+    if ($@) {
+      Error("Error sending NOTSUPPORTED: $@");
+
+    }
+
+  }
+
+
+
+}
 # This function uses shared memory polling to check if
 # ZM reported any new events. If it does find events
 # then the details are packaged into the events array
@@ -1041,47 +1264,59 @@ sub getNotesFromEventDB {
 # This function compares the password provided over websockets
 # to the password stored in the ZM MYSQL DB
 
-sub validateZmAuth {
-  return 1 unless $auth_enabled;
-  my ( $u, $p ) = @_;
-  return 0 if ( $u eq "" || $p eq "" );
-  my $sql = 'select `Password` from `Users` where `Username`=?';
-  my $sth = $dbh->prepare_cached($sql)
-    or Fatal( "Can't prepare '$sql': " . $dbh->errstr() );
-  my $res = $sth->execute($u)
-    or Fatal( "Can't execute: " . $sth->errstr() );
-  my $state = $sth->fetchrow_hashref();
-  $sth->finish();
+sub validateAuth {
 
-  if ($state) {
-    my $scheme = substr( $state->{Password}, 0, 1 );
-    if ( $scheme eq "*" ) {    # mysql decode
-      printDebug("Comparing using mysql hash");
-      if ( !try_use("Crypt::MySQL qw(password password41)") ) {
-        Fatal("Crypt::MySQL  missing, cannot validate password");
-        return 0;
+  my ( $u, $p, $c ) = @_;
+
+ 
+  # not an ES control auth
+  if ($c eq "normal") {
+      return 1 unless $auth_enabled;
+ 
+    return 0 if ( $u eq "" || $p eq "" );
+    my $sql = 'select `Password` from `Users` where `Username`=?';
+    my $sth = $dbh->prepare_cached($sql)
+      or Fatal( "Can't prepare '$sql': " . $dbh->errstr() );
+    my $res = $sth->execute($u)
+      or Fatal( "Can't execute: " . $sth->errstr() );
+    my $state = $sth->fetchrow_hashref();
+    $sth->finish();
+
+    if ($state) {
+      my $scheme = substr( $state->{Password}, 0, 1 );
+      if ( $scheme eq "*" ) {    # mysql decode
+        printDebug("Comparing using mysql hash");
+        if ( !try_use("Crypt::MySQL qw(password password41)") ) {
+          Fatal("Crypt::MySQL  missing, cannot validate password");
+          return 0;
+        }
+        my $encryptedPassword = password41($p);
+        return $state->{Password} eq $encryptedPassword;
       }
-      my $encryptedPassword = password41($p);
-      return $state->{Password} eq $encryptedPassword;
-    }
-    else {                     # try bcrypt
-      if ( !try_use("Crypt::Eksblowfish::Bcrypt") ) {
-        Fatal("Crypt::Eksblowfish::Bcrypt missing, cannot validate password");
-        return 0;
+      else {                     # try bcrypt
+        if ( !try_use("Crypt::Eksblowfish::Bcrypt") ) {
+          Fatal("Crypt::Eksblowfish::Bcrypt missing, cannot validate password");
+          return 0;
+        }
+        my $saved_pass = $state->{Password};
+
+        # perl bcrypt libs can't handle $2b$ or $2y$
+        $saved_pass =~ s/^\$2.\$/\$2a\$/;
+        my $new_hash = Crypt::Eksblowfish::Bcrypt::bcrypt( $p, $saved_pass );
+        printDebug("Comparing using bcrypt $new_hash to $saved_pass");
+        return $new_hash eq $saved_pass;
       }
-      my $saved_pass = $state->{Password};
-
-      # perl bcrypt libs can't handle $2b$ or $2y$
-      $saved_pass =~ s/^\$2.\$/\$2a\$/;
-      my $new_hash = Crypt::Eksblowfish::Bcrypt::bcrypt( $p, $saved_pass );
-      printDebug("Comparing using bcrypt $new_hash to $saved_pass");
-      return $new_hash eq $saved_pass;
     }
-  }
-  else {
-    return 0;
-  }
+    else {
+      return 0;
+    }
 
+  } else {
+    # admin category
+    printDebug ("Detected escontrol interface auth");
+    return ($p eq $escontrol_interface_password) && ($use_escontrol_interface);
+
+  }
 }
 
 # deletes a token - invoked if FCM responds with an incorrect token error
@@ -1519,6 +1754,21 @@ sub getConnFields {
   return $matched;
 }
 
+# returns full object that matches a connection
+sub getObjectForConn {
+  my $conn    = shift;
+  my $matched;
+
+  foreach (@active_connections) {
+    if ( exists $_->{conn} && $_->{conn} == $conn ) {
+      $matched = $_;
+      last;
+
+    }
+  }
+  return $matched;
+}
+
 # This runs at each tick to purge connections
 # that are inactive or have had an error
 # This also closes any connection that has not provided
@@ -1577,8 +1827,11 @@ sub checkConnection {
     scalar grep { $_->{state} == INVALID_CONNECTION && $_->{type} == WEB }
     @active_connections;
 
+  my $escontrol_conn = scalar grep { $_->{state} == VALID_CONNECTION && $_->{category} == 'escontrol' }
+    @active_connections;
+
   printDebug(
-    "After tick: TOTAL: $ac, FCM+WEB: $fcm_conn, FCM: $fcm_no_conn, WEB: $web_conn, MQTT:$mqtt_conn, invalid WEB: $web_no_conn, PENDING: $pend_conn"
+    "After tick: TOTAL: $ac,  ES_CONTROL: $escontrol_conn, FCM+WEB: $fcm_conn, FCM: $fcm_no_conn, WEB: $web_conn, MQTT:$mqtt_conn, invalid WEB: $web_no_conn, PENDING: $pend_conn"
   );
 
 }
@@ -1633,6 +1886,26 @@ sub processIncomingMessage {
     return;
   }
 
+elsif ( ( $json_string->{'event'} eq "escontrol" ) ) {
+  if (!$use_escontrol_interface) {
+    my $str = encode_json(
+      { event  => 'escontrol',
+        type   => '',
+        status => 'Fail',
+        reason => 'ESCONTROLDISABLED'
+      }
+    );
+    eval { $conn->send_utf8($str); };
+    if ($@) {
+      Error("Error sending ESCONTROLDISABLED: $@");
+
+    }
+    return;
+  }
+  processEsControlCommand($json_string, $conn);
+  return;
+
+}
 #-----------------------------------------------------------------------------------
 # "push" event processing
 #-----------------------------------------------------------------------------------
@@ -1889,6 +2162,17 @@ sub processIncomingMessage {
   elsif ( $json_string->{'event'} eq "auth" ) {
     my $uname   = $json_string->{'data'}->{'user'};
     my $pwd     = $json_string->{'data'}->{'password'};
+
+    my $category = 'normal';
+    $category = $json_string->{'category'}
+      if ( exists( $json_string->{'category'} ) );
+
+    if ($category ne 'normal' && $category ne 'escontrol') {
+      printInfo ("Auth category $category is invalid. Resetting it to 'normal'");
+      $category = 'normal';
+    }
+    
+
     my $monlist = "";
     my $intlist = "";
     $monlist = $json_string->{'data'}->{'monlist'}
@@ -1902,14 +2186,17 @@ sub processIncomingMessage {
         && ( $_->{conn}->port() eq $conn->port() )
         && ( $_->{state} == PENDING_AUTH ) )
       {
-        if ( !validateZmAuth( $uname, $pwd ) ) {
+        if ( !validateAuth( $uname, $pwd, $category ) ) {
+
+          my $reason = 'BADAUTH';
+          $reason = 'ESCONTROLDISABLED' if ($category eq 'escontrol' && !$use_escontrol_interface);
 
           # bad username or password, so reject and mark for deletion
           my $str = encode_json(
             { event  => 'auth',
               type   => '',
               status => 'Fail',
-              reason => 'BADAUTH'
+              reason => $reason
             }
           );
           eval { $_->{conn}->send_utf8($str); };
@@ -1925,6 +2212,8 @@ sub processIncomingMessage {
         else {
 
           # all good, connection auth was valid
+          $_->{category} = $category;
+         
           $_->{state}   = VALID_CONNECTION;
           $_->{monlist} = $monlist;
           $_->{intlist} = $intlist;
@@ -2253,6 +2542,12 @@ sub sendEvent {
   my $ac         = shift;
   my $event_type = shift;
   my $resCode    = shift;    # 0 = on_success, 1 = on_fail
+
+  if (!$escontrol_interface_settings{'send_notifications'}) {
+    printInfo ("ESCONTROL: Notifications are muted, not sending");
+    return;
+  }
+
 
   if ( !$send_event_end_notification && $event_type eq "event_end" ) {
     printInfo(
@@ -2755,6 +3050,26 @@ sub processNewAlarmsInFork {
 
 }    # sub processNewAlarms
 
+#restarts ES
+sub restartES {
+
+          $wss->shutdown();
+          if ($zmdc_active) {
+          printDebug('Exiting, zmdc will restart me');
+          exit 0;
+        }
+        else {
+          printDebug('Self exec-ing as zmdc is not tracking me');
+
+          # untaint via reg-exp
+          if ( $0 =~ /^(.*)$/ ) {
+            my $f = $1;
+            printDebug("restarting $f");
+            exec($f);
+          }
+        }
+}
+
 # This is really the main module
 # It opens a WSS socket and keeps listening
 sub initSocketServer {
@@ -2796,20 +3111,7 @@ sub initSocketServer {
         printInfo(
           "Time to restart ES as it has been running more that $restart_interval seconds"
         );
-        if ($zmdc_active) {
-          printDebug('Exiting, zmdc will restart me');
-          exit 0;
-        }
-        else {
-          printDebug('Self exec-ing as zmdc is not tracking me');
-
-          # untaint via reg-exp
-          if ( $0 =~ /^(.*)$/ ) {
-            my $f = $1;
-            printDebug("restarting $f");
-            exec($f);
-          }
-        }
+        restartES();
 
       }
 
@@ -2924,7 +3226,8 @@ sub initSocketServer {
             platform     => "websocket",
             pushstate    => '',
             extra_fields => $fields,
-            badge        => 0
+            badge        => 0,
+            category     => 'normal',
             };
           printInfo( "Websockets: New Connection Handshake requested from "
               . $conn->ip() . ":"

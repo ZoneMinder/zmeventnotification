@@ -1,6 +1,8 @@
 Breaking Changes
 ----------------
 
+
+
 Version 5.2 onwards
 ~~~~~~~~~~~~~~~~~~~~
 - `use_hooks` is a new attribute that controls whether hooks will be used or not
