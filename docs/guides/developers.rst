@@ -274,6 +274,19 @@ Unmute all notifications:
 
   {"event":"escontrol", "data":{"command":"unmute"}}
 
+
+Mute only notifications for monitor IDs 2,4,6 (other IDs retain old values):
+
+::
+
+  {"event":"escontrol", "data":{"command":"mute", "monitors":[2,4,6]}}
+
+Unmute only notifications for monitors 8,12,14 (other IDs retain old values):
+
+::
+
+  {"event":"escontrol", "data":{"command":"unmute","monitors":[8,12,14]}}
+
 Restart the ES:
 
 ::

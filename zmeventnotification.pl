@@ -207,7 +207,8 @@ my $restart_interval;
 my $prefix = "PARENT:";
 
 # admin interface options
-my %escontrol_interface_settings = ( 'send_notifications' => 1 );
+   
+my  %escontrol_interface_settings = ( 'notifications' => {} );
 
 #default key. Please don't change this
 use constant NINJA_API_KEY =>
@@ -879,6 +880,36 @@ sub loadEsControlSettings() {
 
 }
 
+# checks to see if notifications are muted or enabled for this monitor
+sub notificationEnabledEsControl {
+  my $id = shift;
+  if (!exists $escontrol_interface_settings{'notifications'}{$id}) {
+    printError("Hmm, Monitor:$id does not exist in control interface, treating it as allow...");
+    return 1;
+  } else {
+    printDebug ('ESCONTROL: Notification for Monitor:$id is'.$escontrol_interface_settings{'notifications'}{$id});
+    return $escontrol_interface_settings{'notifications'}{$id};
+  }
+
+}
+
+sub populateEsControlNotification {
+  # we need to update notifications in admin interface
+  if ($use_escontrol_interface) {
+    my $found = 0;
+    foreach my $monitor ( values(%monitors) ) {
+    my $id = $monitor->{Id};
+    if (!exists $escontrol_interface_settings{'notifications'}{$id}) {
+      $escontrol_interface_settings{notifications}{$id} = 1;
+      $found = 1;
+      printDebug ("ESCONTROL_INTERFACE: Discovered new monitor:$id, settings notification to 1");
+    }
+
+  }
+  saveEsControlSettings() if ($found);
+  }
+}
+
 # This handles admin commands for a connection
 sub processEsControlCommand {
 
@@ -929,9 +960,41 @@ sub processEsControlCommand {
     return;
   }
 
-  if ( $json->{'data'}->{'command'} eq 'mute' ) {
-    printInfo('Admin Interface: Mute all notifications');
-    $escontrol_interface_settings{'send_notifications'} = 0;
+  if ( $json->{'data'}->{'command'} eq 'get' ) {
+
+    my $str = encode_json(
+      { event   => 'escontrol',
+        type    => '',
+        status  => 'Success',
+        request => $json,
+        response=> encode_json(\%escontrol_interface_settings)
+      }
+    );
+    eval { $conn->send_utf8($str); };
+    if ($@) {
+      Error("Error sending message: $@");
+
+    }
+
+   
+   }
+
+  elsif ( $json->{'data'}->{'command'} eq 'mute' ) {
+    printInfo('ESCONTROL: Admin Interface: Mute notifications');
+
+     my @mids;
+    if ($json->{'data'}->{'monitors'}) {
+      @mids = @{$json->{'data'}->{'monitors'}}
+    } else {
+      @mids = getAllMonitorIds();
+    }
+
+    foreach my $mid (@mids) {
+      $escontrol_interface_settings{'notifications'}{$mid} = 0;
+      printDebug ("ESCONTROL: setting notification for Mid:$mid to 0");
+    }
+
+    
     saveEsControlSettings();
     my $str = encode_json(
       { event   => 'escontrol',
@@ -948,8 +1011,20 @@ sub processEsControlCommand {
 
   }
   elsif ( $json->{'data'}->{'command'} eq 'unmute' ) {
-    printInfo('Admin Interface: Unmute all notifications');
-    $escontrol_interface_settings{'send_notifications'} = 1;
+    printInfo('ESCONTROL: Admin Interface: Unmute notifications');
+  
+    my @mids;
+    if ($json->{'data'}->{'monitors'}) {
+      @mids = @{$json->{'data'}->{'monitors'}}
+    } else {
+      @mids = getAllMonitorIds();
+    }
+   
+    foreach my $mid (@mids) {
+      $escontrol_interface_settings{'notifications'}{$mid} = 1;
+      printDebug ("ESCONTROL: setting notification for Mid:$mid to 1");
+    }
+
     saveEsControlSettings();
     my $str = encode_json(
       { event   => 'escontrol',
@@ -1014,7 +1089,8 @@ sub processEsControlCommand {
     if ($@) {
       Error("Error sending message: $@");
     }
-    %escontrol_interface_settings = ( 'send_notifications' => 1 );
+    %escontrol_interface_settings = ( 'notifications' => {} );
+    populateEsControlNotification();
     saveEsControlSettings();
   }
   else {
@@ -1240,6 +1316,24 @@ sub loadMonitors {
     }
   }    # end while fetchrow
   %monitors = %new_monitors;
+
+  populateEsControlNotification();
+  saveEsControlSettings();
+
+
+
+}
+
+
+# returns all monitor IDs
+sub getAllMonitorIds {
+    my @mons = ();
+
+   foreach my $monitor ( values(%monitors) ) {
+    my $id = $monitor->{Id};
+    push @mons, $id;
+  }
+  return @mons;
 }
 
 # Updated Notes DB of events with detection text
@@ -2563,10 +2657,15 @@ sub sendEvent {
   my $event_type = shift;
   my $resCode    = shift;    # 0 = on_success, 1 = on_fail
 
-  if ( !$escontrol_interface_settings{'send_notifications'} ) {
-    printInfo("ESCONTROL: Notifications are muted, not sending");
+  my $id = $alarm->{MonitorId};
+  my $name = $alarm->{Name};
+  if ($use_escontrol_interface && !notificationEnabledEsControl($id) ) {
+    
+    printInfo("ESCONTROL: Notifications are muted for Monitor:$name($id), not sending");
     return;
+ 
   }
+ 
 
   if ( !$send_event_end_notification && $event_type eq "event_end" ) {
     printInfo(
