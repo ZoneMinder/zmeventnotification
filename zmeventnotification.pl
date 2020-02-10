@@ -42,7 +42,7 @@ use Symbol qw(qualify_to_ref);
 use IO::Select;
 
 # debugging only.
-use Data::Dumper;
+#use Data::Dumper;
 
 # ==========================================================================
 #
