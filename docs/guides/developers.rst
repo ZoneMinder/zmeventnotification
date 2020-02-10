@@ -260,6 +260,22 @@ To authenticate:
 escontrol commands
 '''''''''''''''''''''
 
+Get current control channel settings:
+
+**Client-->Server:**
+
+::
+
+  {"event": "escontrol", "data": {"command": "get"}}
+
+**Server-->Client:**
+
+::
+
+  {"request":{"data":{"command":"get"},"event":"escontrol"},"response":"{\"notifications\":{\"9\":1,\"8\":1,\"10\":1,\"2\":1,\"5\":1,\"6\":1}}","event":"escontrol","type":"","status":"Success"}
+
+
+
 Thes only show Client-->Server messages. Responses are not shown.
 
 Mute all notifications:
