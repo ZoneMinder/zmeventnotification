@@ -23,26 +23,39 @@ except ImportError:
 # restarts the ES, waits 10 secs and relogin
 def restart():
     global ws
-    send_command('restart')
+    send_command(cmd='restart')
     ws.close()
     print ('Waiting 10s for server to restart...\n')
     time.sleep(10)
     ws = create_connection(URL)
     login()
 
+def edit():
+    key = input ('key:')
+    val = input ('value:')
+    send_command(cmd='edit', key=key, val=val)
+
 # generic function to send multiple commands
-def send_command(cmd=None, key=None, val=None, monitors=None):
+def send_command(cmd=None, key=None, val=None):
     payload = { "event":"escontrol",
                 "data": {
                 "command":cmd,
         
                 }
             }
-    if (key and val):
+
+    if (cmd == 'edit' and key and val):
         payload["data"]["key"] = key
         payload["data"]["val"] = val
+
     if (cmd in ['mute','unmute']):
-        payload["data"]["monitors"] = monitors
+        monstr = input ('Enter list of monitor IDs separated by commas or ENTER for none: ')
+        if not monstr:
+           pass
+        else:
+            f=[int(i.strip()) for i in monstr]
+            payload["data"]["monitors"] = f
+           
     payloadstr = json.dumps(payload)
     print ("Sending: {}".format(payloadstr))
     ws.send(payloadstr)
@@ -88,7 +101,8 @@ functions = {
         '4': lambda:send_command(cmd='unmute'),
         '5': lambda:restart(),
         '6': lambda:send_command(cmd='reset'),
-        '7': lambda:terminate()
+        '7': lambda: edit(),
+        '8': lambda:terminate()
         }
 
 while True:
@@ -101,7 +115,8 @@ while True:
         4. Unmute notifications
         5. restart ES
         6. reset admin commands
-        7. Exit
+        7. edit
+        8. Exit
     """)
     i = input ("Select a choice:")
     functions[i]()
