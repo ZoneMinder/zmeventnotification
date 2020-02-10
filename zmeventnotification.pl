@@ -2180,7 +2180,8 @@ sub processIncomingMessage {
   elsif ( $json_string->{'event'} eq "auth" ) {
     my $uname = $json_string->{'data'}->{'user'};
     my $pwd   = $json_string->{'data'}->{'password'};
-
+    
+  
     my $category = 'normal';
     $category = $json_string->{'category'}
       if ( exists( $json_string->{'category'} ) );
@@ -2200,8 +2201,8 @@ sub processIncomingMessage {
     foreach (@active_connections) {
       if ( ( exists $_->{conn} )
         && ( $_->{conn}->ip() eq $conn->ip() )
-        && ( $_->{conn}->port() eq $conn->port() )
-        && ( $_->{state} == PENDING_AUTH ) )
+        && ( $_->{conn}->port() eq $conn->port() ))
+       # && ( $_->{state} == PENDING_AUTH ) ) # lets allow multiple auths
       {
         if ( !validateAuth( $uname, $pwd, $category ) ) {
 
