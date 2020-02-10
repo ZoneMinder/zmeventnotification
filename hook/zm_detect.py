@@ -263,7 +263,7 @@ for model in g.config['models']:
         raise ValueError('Invalid model {}'.format(model))
 
     g.logger.debug('|--> model:{} init took: {}s'.format(model, (datetime.datetime.now() - t_start).total_seconds()))
-    t_start = datetime.datetime.now()
+    
     # read the detection pattern we need to apply as a filter
     try:
         r = re.compile(g.config['detect_pattern'])
@@ -271,7 +271,7 @@ for model in g.config['models']:
         g.logger.error ('invalid pattern {}, using .*'.format(g.config['detect_pattern']))
         r = re.compile('.*')
 
-    
+    t_start = datetime.datetime.now()
     try_next_image = False # take the best of both images, currently used only by alpr
     # temporary holders, incase alpr is used but not found
     saved_bbox = []
