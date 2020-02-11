@@ -49,7 +49,7 @@ def send_command(cmd=None, key=None, val=None):
         payload["data"]["val"] = val
 
     if (cmd in ['mute','unmute']):
-        monstr = input ('Enter list of monitor IDs separated by commas or ENTER for none: ')
+        monstr = input ('Enter list of monitor IDs separated by commas or ENTER for all: ')
         if not monstr:
            pass
         else:
