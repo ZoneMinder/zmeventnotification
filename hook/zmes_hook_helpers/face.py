@@ -11,6 +11,7 @@ from sklearn import neighbors
 import imutils
 import math
 import uuid
+import time
 
 # Class to handle face recognition
 
@@ -99,7 +100,8 @@ class Face:
                 #print (image)
                 crop_img = image[y1:y2, x1:x2]
                # crop_img = image
-                unf = g.config['unknown_images_path'] + '/' + str(uuid.uuid4())+'.jpg'
+                timestr = time.strftime("%b%d-%H%M%S-")
+                unf = g.config['unknown_images_path'] + '/' + timestr+str(uuid.uuid4())+'.jpg'
                 g.logger.info ('Saving cropped unknown face at [{},{},{},{} - includes leeway of {}px] to {}'.format(x1,y1,x2,y2,g.config['save_unknown_faces_leeway_pixels'],unf))
                 cv2.imwrite(unf, crop_img)
                 
