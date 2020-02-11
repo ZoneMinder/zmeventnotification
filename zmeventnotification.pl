@@ -41,6 +41,13 @@ use Time::HiRes qw/gettimeofday/;
 use Symbol qw(qualify_to_ref);
 use IO::Select;
 
+if ( !try_use("JSON") ) {
+  if ( !try_use("JSON::XS") ) {
+    Fatal("JSON or JSON::XS  missing");
+    exit(-1);
+  }
+}
+
 # debugging only.
 #use Data::Dumper;
 
@@ -130,6 +137,14 @@ use constant {
   EXITED => 101
 };
 
+# escontrol notification states
+use constant {
+  ESCONTROL_FORCE_NOTIFY   => 1,
+  ESCONTROL_DEFAULT_NOTIFY => 0,
+  ESCONTROL_FORCE_MUTE     => -1,
+
+};
+
 # Declare options.
 
 my $help;
@@ -207,8 +222,8 @@ my $restart_interval;
 my $prefix = "PARENT:";
 
 # admin interface options
-   
-my  %escontrol_interface_settings = ( 'notifications' => {} );
+
+my %escontrol_interface_settings = ( 'notifications' => {} );
 
 #default key. Please don't change this
 use constant NINJA_API_KEY =>
@@ -313,134 +328,8 @@ $escontrol_interface_password //=
 # Do this BEFORE any config_get_val
 loadEsControlSettings();
 
-$restart_interval //= config_get_val( $config, "general", "restart_interval",
-  DEFAULT_RESTART_INTERVAL );
-if ( !$restart_interval ) {
-  printInfo('ES will not be restarted as interval is specified as 0');
-}
-else {
-  printInfo("ES will be restarted at $restart_interval seconds");
-}
-
-# If an option set a value, leave it.  If there's a value in the config, use
-# it.  Otherwise, use a default value if it's available.
-
-$base_data_path //= config_get_val( $config, "general", "base_data_path",
-  DEFAULT_BASE_DATA_PATH );
-
-$port    //= config_get_val( $config, "network", "port",    DEFAULT_PORT );
-$address //= config_get_val( $config, "network", "address", DEFAULT_ADDRESS );
-$auth_enabled //=
-  config_get_val( $config, "auth", "enable", DEFAULT_AUTH_ENABLE );
-$auth_timeout //=
-  config_get_val( $config, "auth", "timeout", DEFAULT_AUTH_TIMEOUT );
-$use_mqtt //= config_get_val( $config, "mqtt", "enable", DEFAULT_MQTT_ENABLE );
-$mqtt_server //=
-  config_get_val( $config, "mqtt", "server", DEFAULT_MQTT_SERVER );
-$mqtt_username //= config_get_val( $config, "mqtt", "username" );
-$mqtt_password //= config_get_val( $config, "mqtt", "password" );
-$mqtt_tick_interval //=
-  config_get_val( $config, "mqtt", "tick_interval",
-  DEFAULT_MQTT_TICK_INTERVAL );
-
-$use_fcm //= config_get_val( $config, "fcm", "enable", DEFAULT_FCM_ENABLE );
-$fcm_api_key //= config_get_val( $config, "fcm", "api_key", NINJA_API_KEY );
-$fcm_date_format //=
-  config_get_val( $config, "fcm", "date_format", DEFAULT_FCM_DATE_FORMAT );
-
-$token_file //=
-  config_get_val( $config, "fcm", "token_file", DEFAULT_FCM_TOKEN_FILE );
-$ssl_enabled //= config_get_val( $config, "ssl", "enable", DEFAULT_SSL_ENABLE );
-$ssl_cert_file //= config_get_val( $config, "ssl", "cert" );
-$ssl_key_file  //= config_get_val( $config, "ssl", "key" );
-$console_logs //= config_get_val( $config, "customize", "console_logs",
-  DEFAULT_CUSTOMIZE_VERBOSE );
-$event_check_interval //=
-  config_get_val( $config, "customize", "event_check_interval",
-  DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL );
-$monitor_reload_interval //=
-  config_get_val( $config, "customize", "monitor_reload_interval",
-  DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL );
-$read_alarm_cause //= config_get_val( $config, "customize", "read_alarm_cause",
-  DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE );
-$tag_alarm_event_id //=
-  config_get_val( $config, "customize", "tag_alarm_event_id",
-  DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID );
-$use_custom_notification_sound //= config_get_val(
-  $config, "customize",
-  "use_custom_notification_sound",
-  DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND
-);
-$picture_url //= config_get_val( $config, "customize", "picture_url" );
-$include_picture //= config_get_val( $config, "customize", "include_picture",
-  DEFAULT_CUSTOMIZE_INCLUDE_PICTURE );
-$picture_portal_username //=
-  config_get_val( $config, "customize", "picture_portal_username" );
-$picture_portal_password //=
-  config_get_val( $config, "customize", "picture_portal_password" );
-
-$send_event_end_notification //=
-  config_get_val( $config, "customize", "send_event_end_notification",
-  DEFAULT_SEND_EVENT_END_NOTIFICATION );
-
-$use_hooks //=
-  config_get_val( $config, "customize", "use_hooks", DEFAULT_USE_HOOKS );
-
-$event_start_hook //= config_get_val( $config, "hook", "event_start_hook" );
-
-# backward compatibility
-$event_start_hook //= config_get_val( $config, "hook", "hook_script" )
-  if ( !$event_start_hook );
-$event_end_hook //= config_get_val( $config, "hook", "event_end_hook" );
-
-$event_start_notify_on_hook_fail //= config_get_val(
-  $config, "hook",
-  "event_start_notify_on_hook_fail",
-  DEFAULT_EVENT_START_NOTIFY_ON_HOOK_FAIL
-);
-$event_start_notify_on_hook_success //= config_get_val(
-  $config, "hook",
-  "event_start_notify_on_hook_success",
-  DEFAULT_EVENT_START_NOTIFY_ON_HOOK_SUCCESS
-);
-
-$event_end_notify_on_hook_fail //= config_get_val(
-  $config, "hook",
-  "event_end_notify_on_hook_fail",
-  DEFAULT_EVENT_END_NOTIFY_ON_HOOK_FAIL
-);
-$event_end_notify_on_hook_success //= config_get_val(
-  $config, "hook",
-  "event_end_notify_on_hook_success",
-  DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS
-);
-
-# get channels and convert to hash
-
-%event_start_notify_on_hook_fail = map { $_ => 1 }
-  split( /\s*,\s*/, lc($event_start_notify_on_hook_fail) );
-%event_start_notify_on_hook_success = map { $_ => 1 }
-  split( /\s*,\s*/, lc($event_start_notify_on_hook_success) );
-%event_end_notify_on_hook_fail =
-  map { $_ => 1 } split( /\s*,\s*/, lc($event_end_notify_on_hook_fail) );
-%event_end_notify_on_hook_success = map { $_ => 1 }
-  split( /\s*,\s*/, lc($event_end_notify_on_hook_success) );
-
-$event_end_notify_if_start_success //= config_get_val(
-  $config, "hook",
-  "event_end_notify_if_start_success",
-  DEFAULT_EVENT_END_NOTIFY_IF_START_SUCCESS
-);
-
-$use_hook_description //=
-  config_get_val( $config, "hook", "use_hook_description",
-  DEFAULT_HOOK_USE_HOOK_DESCRIPTION );
-$keep_frame_match_type //=
-  config_get_val( $config, "hook", "keep_frame_match_type",
-  DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE );
-$skip_monitors //= config_get_val( $config, "hook", "skip_monitors" );
-$hook_pass_image_path //=
-  config_get_val( $config, "hook", "hook_pass_image_path" );
+# This will not load parameters in the .ini files
+loadEsConfigSettings();
 
 my %ssl_push_opts = ();
 
@@ -481,8 +370,9 @@ sub config_get_val {
     $final_val = $secret_val;
   }
 
+  printInfo("ESCONTROL_INTERFACE checking override for $parm");
   if ( exists $escontrol_interface_settings{$parm} ) {
-    printDebug( "ESCONTROL_INTERFACE overrides key: $parm with "
+    printInfo( "ESCONTROL_INTERFACE overrides key: $parm with "
         . $escontrol_interface_settings{$parm} );
     $final_val = $escontrol_interface_settings{$parm};
   }
@@ -510,6 +400,142 @@ sub config_get_val {
   }
 
   return $final_val;
+}
+
+# Loads all the ini file settings and populates variables
+sub loadEsConfigSettings {
+  $restart_interval //= config_get_val( $config, "general", "restart_interval",
+    DEFAULT_RESTART_INTERVAL );
+  if ( !$restart_interval ) {
+    printInfo('ES will not be restarted as interval is specified as 0');
+  }
+  else {
+    printInfo("ES will be restarted at $restart_interval seconds");
+  }
+
+  # If an option set a value, leave it.  If there's a value in the config, use
+  # it.  Otherwise, use a default value if it's available.
+
+  $base_data_path //= config_get_val( $config, "general", "base_data_path",
+    DEFAULT_BASE_DATA_PATH );
+
+  $port    //= config_get_val( $config, "network", "port",    DEFAULT_PORT );
+  $address //= config_get_val( $config, "network", "address", DEFAULT_ADDRESS );
+  $auth_enabled //=
+    config_get_val( $config, "auth", "enable", DEFAULT_AUTH_ENABLE );
+  $auth_timeout //=
+    config_get_val( $config, "auth", "timeout", DEFAULT_AUTH_TIMEOUT );
+  $use_mqtt //=
+    config_get_val( $config, "mqtt", "enable", DEFAULT_MQTT_ENABLE );
+  $mqtt_server //=
+    config_get_val( $config, "mqtt", "server", DEFAULT_MQTT_SERVER );
+  $mqtt_username //= config_get_val( $config, "mqtt", "username" );
+  $mqtt_password //= config_get_val( $config, "mqtt", "password" );
+  $mqtt_tick_interval //=
+    config_get_val( $config, "mqtt", "tick_interval",
+    DEFAULT_MQTT_TICK_INTERVAL );
+
+  $use_fcm //= config_get_val( $config, "fcm", "enable", DEFAULT_FCM_ENABLE );
+  $fcm_api_key //= config_get_val( $config, "fcm", "api_key", NINJA_API_KEY );
+  $fcm_date_format //=
+    config_get_val( $config, "fcm", "date_format", DEFAULT_FCM_DATE_FORMAT );
+
+  $token_file //=
+    config_get_val( $config, "fcm", "token_file", DEFAULT_FCM_TOKEN_FILE );
+  $ssl_enabled //=
+    config_get_val( $config, "ssl", "enable", DEFAULT_SSL_ENABLE );
+  $ssl_cert_file //= config_get_val( $config, "ssl", "cert" );
+  $ssl_key_file  //= config_get_val( $config, "ssl", "key" );
+  $console_logs //= config_get_val( $config, "customize", "console_logs",
+    DEFAULT_CUSTOMIZE_VERBOSE );
+  $event_check_interval //=
+    config_get_val( $config, "customize", "event_check_interval",
+    DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL );
+  $monitor_reload_interval //=
+    config_get_val( $config, "customize", "monitor_reload_interval",
+    DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL );
+  $read_alarm_cause //=
+    config_get_val( $config, "customize", "read_alarm_cause",
+    DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE );
+  $tag_alarm_event_id //=
+    config_get_val( $config, "customize", "tag_alarm_event_id",
+    DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID );
+  $use_custom_notification_sound //= config_get_val(
+    $config, "customize",
+    "use_custom_notification_sound",
+    DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND
+  );
+  $picture_url //= config_get_val( $config, "customize", "picture_url" );
+  $include_picture //= config_get_val( $config, "customize", "include_picture",
+    DEFAULT_CUSTOMIZE_INCLUDE_PICTURE );
+  $picture_portal_username //=
+    config_get_val( $config, "customize", "picture_portal_username" );
+  $picture_portal_password //=
+    config_get_val( $config, "customize", "picture_portal_password" );
+
+  $send_event_end_notification //=
+    config_get_val( $config, "customize", "send_event_end_notification",
+    DEFAULT_SEND_EVENT_END_NOTIFICATION );
+
+  $use_hooks //=
+    config_get_val( $config, "customize", "use_hooks", DEFAULT_USE_HOOKS );
+
+  $event_start_hook //= config_get_val( $config, "hook", "event_start_hook" );
+
+  # backward compatibility
+  $event_start_hook //= config_get_val( $config, "hook", "hook_script" )
+    if ( !$event_start_hook );
+  $event_end_hook //= config_get_val( $config, "hook", "event_end_hook" );
+
+  $event_start_notify_on_hook_fail //= config_get_val(
+    $config, "hook",
+    "event_start_notify_on_hook_fail",
+    DEFAULT_EVENT_START_NOTIFY_ON_HOOK_FAIL
+  );
+  $event_start_notify_on_hook_success //= config_get_val(
+    $config, "hook",
+    "event_start_notify_on_hook_success",
+    DEFAULT_EVENT_START_NOTIFY_ON_HOOK_SUCCESS
+  );
+
+  $event_end_notify_on_hook_fail //= config_get_val(
+    $config, "hook",
+    "event_end_notify_on_hook_fail",
+    DEFAULT_EVENT_END_NOTIFY_ON_HOOK_FAIL
+  );
+  $event_end_notify_on_hook_success //= config_get_val(
+    $config, "hook",
+    "event_end_notify_on_hook_success",
+    DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS
+  );
+
+  # get channels and convert to hash
+
+  %event_start_notify_on_hook_fail = map { $_ => 1 }
+    split( /\s*,\s*/, lc($event_start_notify_on_hook_fail) );
+  %event_start_notify_on_hook_success = map { $_ => 1 }
+    split( /\s*,\s*/, lc($event_start_notify_on_hook_success) );
+  %event_end_notify_on_hook_fail =
+    map { $_ => 1 } split( /\s*,\s*/, lc($event_end_notify_on_hook_fail) );
+  %event_end_notify_on_hook_success = map { $_ => 1 }
+    split( /\s*,\s*/, lc($event_end_notify_on_hook_success) );
+
+  $event_end_notify_if_start_success //= config_get_val(
+    $config, "hook",
+    "event_end_notify_if_start_success",
+    DEFAULT_EVENT_END_NOTIFY_IF_START_SUCCESS
+  );
+
+  $use_hook_description //=
+    config_get_val( $config, "hook", "use_hook_description",
+    DEFAULT_HOOK_USE_HOOK_DESCRIPTION );
+  $keep_frame_match_type //=
+    config_get_val( $config, "hook", "keep_frame_match_type",
+    DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE );
+  $skip_monitors //= config_get_val( $config, "hook", "skip_monitors" );
+  $hook_pass_image_path //=
+    config_get_val( $config, "hook", "hook_pass_image_path" );
+
 }
 
 # helper routines to print config status in help
@@ -604,13 +630,6 @@ exit( print_config() ) if $check_config;
 print_config() if $console_logs;
 
 # Lets now load all the optional dependent libraries in a failsafe way
-
-if ( !try_use("JSON") ) {
-  if ( !try_use("JSON::XS") ) {
-    Fatal("JSON or JSON::XS  missing");
-    exit(-1);
-  }
-}
 
 # Fetch whatever options are available from CLI arguments.
 
@@ -872,41 +891,47 @@ sub loadEsControlSettings() {
   }
   else {
     %escontrol_interface_settings = %{ retrieve($escontrol_interface_file) };
-    printInfo(
-      "+..... ESCONTROL_INTERFACE: $_=>$escontrol_interface_settings{$_}")
-      for ( keys %escontrol_interface_settings );
-
+    my $json = encode_json( \%escontrol_interface_settings );
+    printDebug("ESCONTROL_INTERFACE: Loaded parameters: $json");
   }
 
 }
 
 # checks to see if notifications are muted or enabled for this monitor
-sub notificationEnabledEsControl {
+sub getNotificationStatusEsControl {
   my $id = shift;
-  if (!exists $escontrol_interface_settings{'notifications'}{$id}) {
-    printError("Hmm, Monitor:$id does not exist in control interface, treating it as allow...");
-    return 1;
-  } else {
-    printDebug ('ESCONTROL: Notification for Monitor:$id is'.$escontrol_interface_settings{'notifications'}{$id});
+  if ( !exists $escontrol_interface_settings{'notifications'}{$id} ) {
+    printError(
+      "Hmm, Monitor:$id does not exist in control interface, treating it as force notify..."
+    );
+    return ESCONTROL_FORCE_NOTIFY;
+  }
+  else {
+    printDebug( "ESCONTROL: Notification for Monitor:$id is "
+        . $escontrol_interface_settings{'notifications'}{$id} );
     return $escontrol_interface_settings{'notifications'}{$id};
   }
 
 }
 
 sub populateEsControlNotification {
+
   # we need to update notifications in admin interface
   if ($use_escontrol_interface) {
     my $found = 0;
     foreach my $monitor ( values(%monitors) ) {
-    my $id = $monitor->{Id};
-    if (!exists $escontrol_interface_settings{'notifications'}{$id}) {
-      $escontrol_interface_settings{notifications}{$id} = 1;
-      $found = 1;
-      printDebug ("ESCONTROL_INTERFACE: Discovered new monitor:$id, settings notification to 1");
-    }
+      my $id = $monitor->{Id};
+      if ( !exists $escontrol_interface_settings{'notifications'}{$id} ) {
+        $escontrol_interface_settings{notifications}{$id} =
+          ESCONTROL_DEFAULT_NOTIFY;
+        $found = 1;
+        printDebug(
+          "ESCONTROL_INTERFACE: Discovered new monitor:$id, settings notification to ESCONTROL_DEFAULT_NOTIFY"
+        );
+      }
 
-  }
-  saveEsControlSettings() if ($found);
+    }
+    saveEsControlSettings() if ($found);
   }
 }
 
@@ -963,11 +988,11 @@ sub processEsControlCommand {
   if ( $json->{'data'}->{'command'} eq 'get' ) {
 
     my $str = encode_json(
-      { event   => 'escontrol',
-        type    => '',
-        status  => 'Success',
-        request => $json,
-        response=> encode_json(\%escontrol_interface_settings)
+      { event    => 'escontrol',
+        type     => '',
+        status   => 'Success',
+        request  => $json,
+        response => encode_json( \%escontrol_interface_settings )
       }
     );
     eval { $conn->send_utf8($str); };
@@ -976,25 +1001,26 @@ sub processEsControlCommand {
 
     }
 
-   
-   }
+  }
 
   elsif ( $json->{'data'}->{'command'} eq 'mute' ) {
     printInfo('ESCONTROL: Admin Interface: Mute notifications');
 
-     my @mids;
-    if ($json->{'data'}->{'monitors'}) {
-      @mids = @{$json->{'data'}->{'monitors'}}
-    } else {
+    my @mids;
+    if ( $json->{'data'}->{'monitors'} ) {
+      @mids = @{ $json->{'data'}->{'monitors'} };
+    }
+    else {
       @mids = getAllMonitorIds();
     }
 
     foreach my $mid (@mids) {
-      $escontrol_interface_settings{'notifications'}{$mid} = 0;
-      printDebug ("ESCONTROL: setting notification for Mid:$mid to 0");
+      $escontrol_interface_settings{'notifications'}{$mid} =
+        ESCONTROL_FORCE_MUTE;
+      printDebug(
+        "ESCONTROL: setting notification for Mid:$mid to ESCONTROL_FORCE_MUTE");
     }
 
-    
     saveEsControlSettings();
     my $str = encode_json(
       { event   => 'escontrol',
@@ -1012,17 +1038,21 @@ sub processEsControlCommand {
   }
   elsif ( $json->{'data'}->{'command'} eq 'unmute' ) {
     printInfo('ESCONTROL: Admin Interface: Unmute notifications');
-  
+
     my @mids;
-    if ($json->{'data'}->{'monitors'}) {
-      @mids = @{$json->{'data'}->{'monitors'}}
-    } else {
+    if ( $json->{'data'}->{'monitors'} ) {
+      @mids = @{ $json->{'data'}->{'monitors'} };
+    }
+    else {
       @mids = getAllMonitorIds();
     }
-   
+
     foreach my $mid (@mids) {
-      $escontrol_interface_settings{'notifications'}{$mid} = 1;
-      printDebug ("ESCONTROL: setting notification for Mid:$mid to 1");
+      $escontrol_interface_settings{'notifications'}{$mid} =
+        ESCONTROL_FORCE_NOTIFY;
+      printDebug(
+        "ESCONTROL: setting notification for Mid:$mid to ESCONTROL_FORCE_NOTIFY"
+      );
     }
 
     saveEsControlSettings();
@@ -1042,9 +1072,11 @@ sub processEsControlCommand {
   elsif ( $json->{'data'}->{'command'} eq 'edit' ) {
     my $key = $json->{'data'}->{'key'};
     my $val = $json->{'data'}->{'val'};
-    printInfo("Admin Interface: Change $key to $val");
+    printInfo("ESCONTROL_INTERFACE: Change $key to $val");
     $escontrol_interface_settings{$key} = $val;
     saveEsControlSettings();
+    printInfo('ESCONTROL_INTERFACE: --- Doing a complete reload of config --');
+    loadEsConfigSettings();
 
     my $str = encode_json(
       { event   => 'escontrol',
@@ -1092,6 +1124,8 @@ sub processEsControlCommand {
     %escontrol_interface_settings = ( 'notifications' => {} );
     populateEsControlNotification();
     saveEsControlSettings();
+    printInfo('ESCONTROL_INTERFACE: --- Doing a complete reload of config --');
+    loadEsConfigSettings();
   }
   else {
     my $str = encode_json(
@@ -1320,16 +1354,13 @@ sub loadMonitors {
   populateEsControlNotification();
   saveEsControlSettings();
 
-
-
 }
-
 
 # returns all monitor IDs
 sub getAllMonitorIds {
-    my @mons = ();
+  my @mons = ();
 
-   foreach my $monitor ( values(%monitors) ) {
+  foreach my $monitor ( values(%monitors) ) {
     my $id = $monitor->{Id};
     push @mons, $id;
   }
@@ -2274,8 +2305,7 @@ sub processIncomingMessage {
   elsif ( $json_string->{'event'} eq "auth" ) {
     my $uname = $json_string->{'data'}->{'user'};
     my $pwd   = $json_string->{'data'}->{'password'};
-    
-  
+
     my $category = 'normal';
     $category = $json_string->{'category'}
       if ( exists( $json_string->{'category'} ) );
@@ -2295,8 +2325,9 @@ sub processIncomingMessage {
     foreach (@active_connections) {
       if ( ( exists $_->{conn} )
         && ( $_->{conn}->ip() eq $conn->ip() )
-        && ( $_->{conn}->port() eq $conn->port() ))
-       # && ( $_->{state} == PENDING_AUTH ) ) # lets allow multiple auths
+        && ( $_->{conn}->port() eq $conn->port() ) )
+
+        # && ( $_->{state} == PENDING_AUTH ) ) # lets allow multiple auths
       {
         if ( !validateAuth( $uname, $pwd, $category ) ) {
 
@@ -2657,15 +2688,8 @@ sub sendEvent {
   my $event_type = shift;
   my $resCode    = shift;    # 0 = on_success, 1 = on_fail
 
-  my $id = $alarm->{MonitorId};
+  my $id   = $alarm->{MonitorId};
   my $name = $alarm->{Name};
-  if ($use_escontrol_interface && !notificationEnabledEsControl($id) ) {
-    
-    printInfo("ESCONTROL: Notifications are muted for Monitor:$name($id), not sending");
-    return;
- 
-  }
- 
 
   if ( !$send_event_end_notification && $event_type eq "event_end" ) {
     printInfo(
@@ -2810,6 +2834,30 @@ sub shouldSendEventToConn {
   my $monlist   = $ac->{monlist};
   my $intlist   = $ac->{intlist};
   my $last_sent = $ac->{last_sent};
+
+  # Remember that escontrol settings overrides this.
+  # At this stage, we are checking if we should send,
+  # so only check if escontrol notify is forced. mute is
+  # checked in sendEvent,
+  if ($use_escontrol_interface) {
+    my $id   = $alarm->{MonitorId};
+    my $name = $alarm->{Name};
+    if ( getNotificationStatusEsControl($id) == ESCONTROL_FORCE_NOTIFY ) {
+      printInfo(
+        "ESCONTROL: Notifications are force enabled for Monitor:$name($id), returning true"
+      );
+      return 1;
+    }
+
+    if ( getNotificationStatusEsControl($id) == ESCONTROL_FORCE_MUTE ) {
+      printInfo(
+        "ESCONTROL: Notifications are muted for Monitor:$name($id), not sending"
+      );
+      return 0;
+
+    }
+
+  }
 
   my $id     = getConnectionIdentity($ac);
   my $connId = $ac->{id};
