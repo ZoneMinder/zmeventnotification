@@ -370,7 +370,7 @@ sub config_get_val {
     $final_val = $secret_val;
   }
 
-  printInfo("ESCONTROL_INTERFACE checking override for $parm");
+  #printInfo("ESCONTROL_INTERFACE checking override for $parm");
   if ( exists $escontrol_interface_settings{$parm} ) {
     printInfo( "ESCONTROL_INTERFACE overrides key: $parm with "
         . $escontrol_interface_settings{$parm} );
