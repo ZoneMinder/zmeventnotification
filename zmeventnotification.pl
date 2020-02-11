@@ -145,6 +145,8 @@ use constant {
 
 };
 
+my $child_forks = 0; # Global tracker of active children
+
 # Declare options.
 
 my $help;
@@ -907,8 +909,8 @@ sub getNotificationStatusEsControl {
     return ESCONTROL_FORCE_NOTIFY;
   }
   else {
-    printDebug( "ESCONTROL: Notification for Monitor:$id is "
-        . $escontrol_interface_settings{'notifications'}{$id} );
+   # printDebug( "ESCONTROL: Notification for Monitor:$id is "
+   #     . $escontrol_interface_settings{'notifications'}{$id} );
     return $escontrol_interface_settings{'notifications'}{$id};
   }
 
@@ -1861,6 +1863,7 @@ sub processJobs {
         my ( $mid, $eid ) = split( "--SPLIT--", $msg );
         printDebug("Job: Deleting active_event eid:$eid, mid:$mid");
         delete( $active_events{$mid}->{$eid} );
+        $child_forks--;
       }
       elsif ( $job eq "mqtt_publish" ) {
         my ( $id, $topic, $payload ) = split( "--SPLIT--", $msg );
@@ -3299,19 +3302,15 @@ sub initSocketServer {
       checkConnection();
       processJobs();
 
-      my $forks = 0;
-      foreach my $f_mid ( keys %active_events ) {
-        foreach my $ev ( keys %{ $active_events{$f_mid} } ) {
-          $forks++;
-        }
-      }
-      printInfo("There are $forks active child forks...");
+    
+      printInfo("There are $child_forks active child forks...");
       my (@newEvents) = checkNewEvents();
 
       #print Dumper(\@newEvents);
 
       printInfo( "There are " . scalar @newEvents . " new Events to process" );
       foreach (@newEvents) {
+        $child_forks++;
         my $pid = fork;
         if ( !defined $pid ) {
           die "Cannot fork: $!";
