@@ -304,7 +304,7 @@ else {
   printInfo("No config file found, using inbuilt defaults");
 }
 
-$secrets_filename //= config_get_val( $config, "general", "secrets" );
+$secrets_filename = config_get_val( $config, "general", "secrets" );
 if ($secrets_filename) {
   printInfo("using secrets file: $secrets_filename");
   $secrets = Config::IniFiles->new( -file => $secrets_filename );
@@ -314,14 +314,14 @@ if ($secrets_filename) {
   }
 }
 
-$escontrol_interface_file //=
+$escontrol_interface_file =
   config_get_val( $config, "general", "escontrol_interface_file",
   DEFAULT_ESCONTROL_INTERFACE_FILE );
 
-$use_escontrol_interface //=
+$use_escontrol_interface =
   config_get_val( $config, "general", "use_escontrol_interface",
   DEFAULT_USE_ESCONTROL_INTERFACE );
-$escontrol_interface_password //=
+$escontrol_interface_password =
   config_get_val( $config, "general", "escontrol_interface_password" );
 
 # secrets need to be loaded before admin
@@ -404,7 +404,7 @@ sub config_get_val {
 
 # Loads all the ini file settings and populates variables
 sub loadEsConfigSettings {
-  $restart_interval //= config_get_val( $config, "general", "restart_interval",
+  $restart_interval = config_get_val( $config, "general", "restart_interval",
     DEFAULT_RESTART_INTERVAL );
   if ( !$restart_interval ) {
     printInfo('ES will not be restarted as interval is specified as 0');
@@ -416,94 +416,94 @@ sub loadEsConfigSettings {
   # If an option set a value, leave it.  If there's a value in the config, use
   # it.  Otherwise, use a default value if it's available.
 
-  $base_data_path //= config_get_val( $config, "general", "base_data_path",
+  $base_data_path = config_get_val( $config, "general", "base_data_path",
     DEFAULT_BASE_DATA_PATH );
 
-  $port    //= config_get_val( $config, "network", "port",    DEFAULT_PORT );
-  $address //= config_get_val( $config, "network", "address", DEFAULT_ADDRESS );
-  $auth_enabled //=
+  $port    = config_get_val( $config, "network", "port",    DEFAULT_PORT );
+  $address = config_get_val( $config, "network", "address", DEFAULT_ADDRESS );
+  $auth_enabled =
     config_get_val( $config, "auth", "enable", DEFAULT_AUTH_ENABLE );
-  $auth_timeout //=
+  $auth_timeout =
     config_get_val( $config, "auth", "timeout", DEFAULT_AUTH_TIMEOUT );
-  $use_mqtt //=
+  $use_mqtt =
     config_get_val( $config, "mqtt", "enable", DEFAULT_MQTT_ENABLE );
-  $mqtt_server //=
+  $mqtt_server =
     config_get_val( $config, "mqtt", "server", DEFAULT_MQTT_SERVER );
-  $mqtt_username //= config_get_val( $config, "mqtt", "username" );
-  $mqtt_password //= config_get_val( $config, "mqtt", "password" );
-  $mqtt_tick_interval //=
+  $mqtt_username = config_get_val( $config, "mqtt", "username" );
+  $mqtt_password = config_get_val( $config, "mqtt", "password" );
+  $mqtt_tick_interval =
     config_get_val( $config, "mqtt", "tick_interval",
     DEFAULT_MQTT_TICK_INTERVAL );
 
-  $use_fcm //= config_get_val( $config, "fcm", "enable", DEFAULT_FCM_ENABLE );
-  $fcm_api_key //= config_get_val( $config, "fcm", "api_key", NINJA_API_KEY );
-  $fcm_date_format //=
+  $use_fcm = config_get_val( $config, "fcm", "enable", DEFAULT_FCM_ENABLE );
+  $fcm_api_key = config_get_val( $config, "fcm", "api_key", NINJA_API_KEY );
+  $fcm_date_format =
     config_get_val( $config, "fcm", "date_format", DEFAULT_FCM_DATE_FORMAT );
 
-  $token_file //=
+  $token_file =
     config_get_val( $config, "fcm", "token_file", DEFAULT_FCM_TOKEN_FILE );
-  $ssl_enabled //=
+  $ssl_enabled =
     config_get_val( $config, "ssl", "enable", DEFAULT_SSL_ENABLE );
-  $ssl_cert_file //= config_get_val( $config, "ssl", "cert" );
-  $ssl_key_file  //= config_get_val( $config, "ssl", "key" );
-  $console_logs //= config_get_val( $config, "customize", "console_logs",
+  $ssl_cert_file = config_get_val( $config, "ssl", "cert" );
+  $ssl_key_file  = config_get_val( $config, "ssl", "key" );
+  $console_logs = config_get_val( $config, "customize", "console_logs",
     DEFAULT_CUSTOMIZE_VERBOSE );
-  $event_check_interval //=
+  $event_check_interval =
     config_get_val( $config, "customize", "event_check_interval",
     DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL );
-  $monitor_reload_interval //=
+  $monitor_reload_interval =
     config_get_val( $config, "customize", "monitor_reload_interval",
     DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL );
-  $read_alarm_cause //=
+  $read_alarm_cause =
     config_get_val( $config, "customize", "read_alarm_cause",
     DEFAULT_CUSTOMIZE_READ_ALARM_CAUSE );
-  $tag_alarm_event_id //=
+  $tag_alarm_event_id =
     config_get_val( $config, "customize", "tag_alarm_event_id",
     DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID );
-  $use_custom_notification_sound //= config_get_val(
+  $use_custom_notification_sound = config_get_val(
     $config, "customize",
     "use_custom_notification_sound",
     DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND
   );
-  $picture_url //= config_get_val( $config, "customize", "picture_url" );
-  $include_picture //= config_get_val( $config, "customize", "include_picture",
+  $picture_url = config_get_val( $config, "customize", "picture_url" );
+  $include_picture = config_get_val( $config, "customize", "include_picture",
     DEFAULT_CUSTOMIZE_INCLUDE_PICTURE );
-  $picture_portal_username //=
+  $picture_portal_username =
     config_get_val( $config, "customize", "picture_portal_username" );
-  $picture_portal_password //=
+  $picture_portal_password =
     config_get_val( $config, "customize", "picture_portal_password" );
 
-  $send_event_end_notification //=
+  $send_event_end_notification =
     config_get_val( $config, "customize", "send_event_end_notification",
     DEFAULT_SEND_EVENT_END_NOTIFICATION );
 
-  $use_hooks //=
+  $use_hooks =
     config_get_val( $config, "customize", "use_hooks", DEFAULT_USE_HOOKS );
 
-  $event_start_hook //= config_get_val( $config, "hook", "event_start_hook" );
+  $event_start_hook = config_get_val( $config, "hook", "event_start_hook" );
 
   # backward compatibility
-  $event_start_hook //= config_get_val( $config, "hook", "hook_script" )
+  $event_start_hook = config_get_val( $config, "hook", "hook_script" )
     if ( !$event_start_hook );
-  $event_end_hook //= config_get_val( $config, "hook", "event_end_hook" );
+  $event_end_hook = config_get_val( $config, "hook", "event_end_hook" );
 
-  $event_start_notify_on_hook_fail //= config_get_val(
+  $event_start_notify_on_hook_fail = config_get_val(
     $config, "hook",
     "event_start_notify_on_hook_fail",
     DEFAULT_EVENT_START_NOTIFY_ON_HOOK_FAIL
   );
-  $event_start_notify_on_hook_success //= config_get_val(
+  $event_start_notify_on_hook_success = config_get_val(
     $config, "hook",
     "event_start_notify_on_hook_success",
     DEFAULT_EVENT_START_NOTIFY_ON_HOOK_SUCCESS
   );
 
-  $event_end_notify_on_hook_fail //= config_get_val(
+  $event_end_notify_on_hook_fail = config_get_val(
     $config, "hook",
     "event_end_notify_on_hook_fail",
     DEFAULT_EVENT_END_NOTIFY_ON_HOOK_FAIL
   );
-  $event_end_notify_on_hook_success //= config_get_val(
+  $event_end_notify_on_hook_success = config_get_val(
     $config, "hook",
     "event_end_notify_on_hook_success",
     DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS
@@ -520,20 +520,20 @@ sub loadEsConfigSettings {
   %event_end_notify_on_hook_success = map { $_ => 1 }
     split( /\s*,\s*/, lc($event_end_notify_on_hook_success) );
 
-  $event_end_notify_if_start_success //= config_get_val(
+  $event_end_notify_if_start_success = config_get_val(
     $config, "hook",
     "event_end_notify_if_start_success",
     DEFAULT_EVENT_END_NOTIFY_IF_START_SUCCESS
   );
 
-  $use_hook_description //=
+  $use_hook_description =
     config_get_val( $config, "hook", "use_hook_description",
     DEFAULT_HOOK_USE_HOOK_DESCRIPTION );
-  $keep_frame_match_type //=
+  $keep_frame_match_type =
     config_get_val( $config, "hook", "keep_frame_match_type",
     DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE );
-  $skip_monitors //= config_get_val( $config, "hook", "skip_monitors" );
-  $hook_pass_image_path //=
+  $skip_monitors = config_get_val( $config, "hook", "skip_monitors" );
+  $hook_pass_image_path =
     config_get_val( $config, "hook", "hook_pass_image_path" );
 
 }
