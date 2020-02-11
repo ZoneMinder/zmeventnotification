@@ -100,7 +100,7 @@ class Face:
                 #print (image)
                 crop_img = image[y1:y2, x1:x2]
                # crop_img = image
-                timestr = time.strftime("%b%d-%H%M%S-")
+                timestr = time.strftime("%b%d-%Hh%Mm%Ss-")
                 unf = g.config['unknown_images_path'] + '/' + timestr+str(uuid.uuid4())+'.jpg'
                 g.logger.info ('Saving cropped unknown face at [{},{},{},{} - includes leeway of {}px] to {}'.format(x1,y1,x2,y2,g.config['save_unknown_faces_leeway_pixels'],unf))
                 cv2.imwrite(unf, crop_img)
@@ -110,3 +110,4 @@ class Face:
             conf.append(1)
 
         return matched_face_rects, matched_face_names, conf
+  
