@@ -132,6 +132,14 @@ config_vals = {
 
         # General ML
      
+
+         'use_opencv_dnn_cuda':{
+            'section':'ml',
+            'default':'no',
+            'type':'string'
+
+        },
+
         'ml_gateway': {
             'section': 'ml',
             'default': None,
@@ -157,6 +165,9 @@ config_vals = {
        
 
         # YOLO
+
+        
+
         'yolo_type':{
             'section':'yolo',
             'default':'full',

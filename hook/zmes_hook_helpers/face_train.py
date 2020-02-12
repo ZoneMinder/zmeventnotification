@@ -7,15 +7,20 @@ import imutils
 import math
 import ssl
 import os
+import datetime
 
 import zmes_hook_helpers.log as log
 import zmes_hook_helpers.common_params as g
 import zmes_hook_helpers.utils as utils
 
+start = datetime.datetime.now()
 import face_recognition
+diff_time = (datetime.datetime.now() - start).microseconds/1000
+g.logger.debug ('Face Recognition library load time took: {} milliseconds'.format(diff_time))
 
 
 def train ():
+    start = datetime.datetime.now()
     known_images_path=g.config['known_images_path']
     train_model=g.config['face_train_model']
     knn_algo = g.config['face_recog_knn_algo']
@@ -103,7 +108,8 @@ def train ():
         pickle.dump(knn,f)
         f.close()
         g.logger.debug ('wrote encoding file: {}'.format(encoding_file_name))
-
+    diff_time = (datetime.datetime.now() - start).microseconds/1000
+    g.logger.debug ('Face Recognition training took: {} milliseconds'.format(diff_time))
     
 
    

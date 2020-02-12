@@ -123,7 +123,6 @@ ap.add_argument('-c', '--config', required=True, help='config file with path')
 ap.add_argument('-e', '--eventid', required=True, help='event ID to retrieve')
 ap.add_argument('-p', '--eventpath', help='path to store object image file', default='')
 ap.add_argument('-m', '--monitorid', help='monitor id - needed for mask')
-ap.add_argument('-t', '--time', help='log time', action='store_true')
 ap.add_argument('-v', '--version', help='print version and quit',action='store_true')
 
 ap.add_argument('-f', '--file', help='internal testing use only - skips event download')
@@ -262,7 +261,7 @@ for model in g.config['models']:
         g.logger.error('Invalid model {}'.format(model))
         raise ValueError('Invalid model {}'.format(model))
 
-    g.logger.debug('|--> model:{} init took: {}s'.format(model, (datetime.datetime.now() - t_start).total_seconds()))
+    #g.logger.debug('|--> model:{} init took: {}s'.format(model, (datetime.datetime.now() - t_start).total_seconds()))
     
     # read the detection pattern we need to apply as a filter
     try:
@@ -321,7 +320,7 @@ for model in g.config['models']:
             b, l, c = m.detect(image)
 
         
-        g.logger.debug('|--> model:{} detection took: {}s'.format(model,(datetime.datetime.now() - t_start).total_seconds()))
+        #g.logger.debug('|--> model:{} detection took: {}s'.format(model,(datetime.datetime.now() - t_start).total_seconds()))
         t_start = datetime.datetime.now()
         # Now look for matched patterns in bounding boxes
         match = list(filter(r.match, l))
@@ -612,10 +611,6 @@ else:
         print (pred + '--SPLIT--'+jos )
 
     # end of matched_file
-
-if (args['time']):
-    g.logger.debug('detection took: {}s'.format((datetime.datetime.now() - start).total_seconds()))
-
 
 if g.config['delete_after_analyze'] == 'yes':
     if filename1:
