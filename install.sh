@@ -139,7 +139,7 @@ install_es() {
 
 # install proc for ML hooks
 install_hook() {
-    echo '***** Installing Hooks **********'
+    echo '*** Installing Hooks ***'
     mkdir -p "${TARGET_DATA}/bin" 2>/dev/null
     rm -fr  "${TARGET_DATA}/bin/*" 2>/dev/null
 
@@ -194,6 +194,7 @@ install_hook() {
 
     # Now install the ML hooks
     #pip install -r  hook/requirements.txt 
+    echo "*** Installing detection scripts ***"
     install -m 755 -o "${WEB_OWNER}" hook/zm_event_start.sh "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_event_end.sh "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_detect.py "${TARGET_BIN_HOOK}"
