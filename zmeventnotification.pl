@@ -324,7 +324,7 @@ $use_escontrol_interface =
   config_get_val( $config, "general", "use_escontrol_interface",
   DEFAULT_USE_ESCONTROL_INTERFACE );
 $escontrol_interface_password =
-  config_get_val( $config, "general", "escontrol_interface_password" );
+  config_get_val( $config, "general", "escontrol_interface_password" ) if ($use_escontrol_interface);
 
 # secrets need to be loaded before admin
 # Do this BEFORE any config_get_val
