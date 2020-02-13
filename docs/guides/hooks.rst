@@ -63,14 +63,29 @@ Option 1: Automatic install
 
 **Note 1:**: ``install.sh`` will not overwrite the hooks pip3 module if the version number is the same as the one you already have. To force reinstall, after you run ``install.sh`` you can manually do ``sudo -H pip3 install --upgrade --no-deps --force-reinstall hook/`` from the ``zmeventnotification`` folder. Note that normally, I will bump up the version # but this condition may kick in for you if you keep pulling master when I haven't yet bumped up versions.
 
-**Note 2:**: If you plan on using object detection, starting v5.0.0, the setup script no longer installs opencv for you. This is because you may want to install your own version with GPU accelaration or other options. You will need to either do:
+.. _opencv_install:
 
+**Note 2:**: If you plan on using object detection, starting v5.0.0 of the ES, the setup script no longer installs opencv for you. This is because you may want to install your own version with GPU accelaration or other options. There are two options to install OpenCV:
+
+  - You install a pip package. Very easy, but you don't get GPU support
+  - You compile from source. Takes longer, but you get all the right modules as well as GPU support. Instructions are simple, if you follow them well.
+
+Installing OpenCV: Using the pip package (Easy, but not recommended)
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ::
+  # Note this does NOT enable GPU support
+  # It also seems to miss modules like bgsem etc
 
-  sudo -H pip3 install opencv-python
   sudo -H pip3 install opencv-contrib-python
 
-or `install them from source <https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html>`__.
+  # NOTE: Do NOT install both opencv-contrib-python and opencv packages via pip. The contrib package includes opencv+extras
+
+
+Installing OpenCV: from source (Recommended)
+'''''''''''''''''''''''''''''''''''''''''''''''
+General installation instructions are available at the `official openCV site <https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html>`__. However, see below, if you are looking for GPU support:
+
+If you want to install a version with GPU support, I'd recommend you install OpenCV 4.2.x because it supports a CUDA backend for deep learning. Adrian's blog has a `good howto <https://www.pyimagesearch.com/2020/02/03/how-to-use-opencvs-dnn-module-with-nvidia-gpus-cuda-and-cudnn/>`__ on compiling OpenCV 4.2.x from scratch.
 
 **I would strongly recommend you build from source, if you are able to. Pre built packages are not official from OpenCV and often seem to break/seg fault on different configurations.**
 
@@ -81,7 +96,7 @@ Make sure OpenCV works
 
 .. important::
 
-  After you install opencv, make sure it works. Start python3 and inside the interpreter, do a ``import cv2``. If it seg faults, you have a problem with the package you installed. Some people have reported that doing ``sudo apt-get install libopencv-dev`` fixed the issue. Others reported dioing  ``sudo apt-get install python3-opencv`` works instead of the pip route.
+  After you install opencv, make sure it works. Start python3 and inside the interpreter, do a ``import cv2``. If it seg faults, you have a problem with the package you installed. Like I said, I've never had issues after building from source.
 
   Note that if you get an error saying ``cv2 not found`` that means you did not install it in a place python3 can find it (you might have installed it for python2 by mistake)
 

@@ -239,19 +239,10 @@ print_opencv_message() {
 
     |-------------------------- NOTE -------------------------------------|
     
-     Hook installation done, but you may also need to install the 
-     following packages: opencv-contrib-python
-     if you have not already installed them. Any version above 4.0 
-     should work.
-
-     If you want to install binary packages, simply do:
-
-     sudo -H pip3 install opencv-contrib-python
-
-     If you want to install from source, you can do that too 
-     (especially if you need GPU support etc.). Please refer to
-     https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html 
-     on how to compile opencv & opencv-contrib.
+     Hooks are installed, but please make sure you have the right version
+     of OpenCV installed. I recommend removing any pip packages you may
+     have installed of opencv* and compiling OpenCV 4.2.x from source. 
+     
 
     |----------------------------------------------------------------------|
 
