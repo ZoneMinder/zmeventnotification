@@ -399,72 +399,74 @@ General Observations
 GPU Performance benchmarking, using an image with 1 person (face+object detection) on my 1050Ti:
 (Note in the remote detection case, I am running mlapi on the same system, so same specs)
 
-** With GPU and local detection (Run 1) **
+::
 
-02/13/20 16:15:52 zmesdetect_m2[7494] DBG face_train.py:19 [Face Recognition library load time took: 959.26 milliseconds]
-02/13/20 16:15:54 zmesdetect_m2[7494] DBG face.py:87 [Finding faces took 617.892 milliseconds]
-02/13/20 16:15:55 zmesdetect_m2[7494] DBG face.py:92 [Computing face recognition distances took 504.214 milliseconds]
-02/13/20 16:15:55 zmesdetect_m2[7494] DBG face.py:103 [Matching recognized faces to known faces took 1.432 milliseconds]
-02/13/20 16:15:55 zmesdetect_m2[7494] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 415.967 milliseconds]
-02/13/20 16:15:58 zmesdetect_m2[7494] DBG yolo.py:91 [YOLO detection took: 275.253 milliseconds]
-02/13/20 16:15:59 zmesdetect_m2[7494] DBG yolo.py:122 [YOLO NMS filtering took: 2.467 milliseconds]
+  ** With GPU and local detection (Run 1) **
 
-** With GPU and local detection (Run 2, same image) **
-02/13/20 16:16:52 zmesdetect_m2[7643] DBG face_train.py:19 [Face Recognition library load time took: 949.845 milliseconds]
-02/13/20 16:16:54 zmesdetect_m2[7643] DBG face.py:87 [Finding faces took 663.26 milliseconds]
-02/13/20 16:16:55 zmesdetect_m2[7643] DBG face.py:92 [Computing face recognition distances took 517.721 milliseconds]
-02/13/20 16:16:55 zmesdetect_m2[7643] DBG face.py:103 [Matching recognized faces to known faces took 1.257 milliseconds]
-02/13/20 16:16:55 zmesdetect_m2[7643] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 416.757 milliseconds]
-02/13/20 16:16:59 zmesdetect_m2[7643] DBG yolo.py:91 [YOLO detection took: 189.495 milliseconds]
-02/13/20 16:16:59 zmesdetect_m2[7643] DBG yolo.py:122 [YOLO NMS filtering took: 1.66 milliseconds]
+  02/13/20 16:15:52 zmesdetect_m2[7494] DBG face_train.py:19 [Face Recognition library load time took: 959.26 milliseconds]
+  02/13/20 16:15:54 zmesdetect_m2[7494] DBG face.py:87 [Finding faces took 617.892 milliseconds]
+  02/13/20 16:15:55 zmesdetect_m2[7494] DBG face.py:92 [Computing face recognition distances took 504.214 milliseconds]
+  02/13/20 16:15:55 zmesdetect_m2[7494] DBG face.py:103 [Matching recognized faces to known faces took 1.432 milliseconds]
+  02/13/20 16:15:55 zmesdetect_m2[7494] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 415.967 milliseconds]
+  02/13/20 16:15:58 zmesdetect_m2[7494] DBG yolo.py:91 [YOLO detection took: 275.253 milliseconds]
+  02/13/20 16:15:59 zmesdetect_m2[7494] DBG yolo.py:122 [YOLO NMS filtering took: 2.467 milliseconds]
 
-** With GPU and local detection (Run 3, same image) **
-02/13/20 16:17:28 zmesdetect_m2[7747] DBG face_train.py:19 [Face Recognition library load time took: 997.392 milliseconds]
-02/13/20 16:17:31 zmesdetect_m2[7747] DBG face.py:87 [Finding faces took 700.605 milliseconds]
-02/13/20 16:17:31 zmesdetect_m2[7747] DBG face.py:92 [Computing face recognition distances took 575.662 milliseconds]
-02/13/20 16:17:31 zmesdetect_m2[7747] DBG face.py:103 [Matching recognized faces to known faces took 1.161 milliseconds]
-02/13/20 16:17:32 zmesdetect_m2[7747] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 372.729 milliseconds]
-02/13/20 16:17:35 zmesdetect_m2[7747] DBG yolo.py:91 [YOLO detection took: 99.312 milliseconds]
-02/13/20 16:17:35 zmesdetect_m2[7747] DBG yolo.py:122 [YOLO NMS filtering took: 1.619 milliseconds]
+  ** With GPU and local detection (Run 2, same image) **
+  02/13/20 16:16:52 zmesdetect_m2[7643] DBG face_train.py:19 [Face Recognition library load time took: 949.845 milliseconds]
+  02/13/20 16:16:54 zmesdetect_m2[7643] DBG face.py:87 [Finding faces took 663.26 milliseconds]
+  02/13/20 16:16:55 zmesdetect_m2[7643] DBG face.py:92 [Computing face recognition distances took 517.721 milliseconds]
+  02/13/20 16:16:55 zmesdetect_m2[7643] DBG face.py:103 [Matching recognized faces to known faces took 1.257 milliseconds]
+  02/13/20 16:16:55 zmesdetect_m2[7643] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 416.757 milliseconds]
+  02/13/20 16:16:59 zmesdetect_m2[7643] DBG yolo.py:91 [YOLO detection took: 189.495 milliseconds]
+  02/13/20 16:16:59 zmesdetect_m2[7643] DBG yolo.py:122 [YOLO NMS filtering took: 1.66 milliseconds]
 
-** With GPU and local detection (Run 4, same image) **
+  ** With GPU and local detection (Run 3, same image) **
+  02/13/20 16:17:28 zmesdetect_m2[7747] DBG face_train.py:19 [Face Recognition library load time took: 997.392 milliseconds]
+  02/13/20 16:17:31 zmesdetect_m2[7747] DBG face.py:87 [Finding faces took 700.605 milliseconds]
+  02/13/20 16:17:31 zmesdetect_m2[7747] DBG face.py:92 [Computing face recognition distances took 575.662 milliseconds]
+  02/13/20 16:17:31 zmesdetect_m2[7747] DBG face.py:103 [Matching recognized faces to known faces took 1.161 milliseconds]
+  02/13/20 16:17:32 zmesdetect_m2[7747] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 372.729 milliseconds]
+  02/13/20 16:17:35 zmesdetect_m2[7747] DBG yolo.py:91 [YOLO detection took: 99.312 milliseconds]
+  02/13/20 16:17:35 zmesdetect_m2[7747] DBG yolo.py:122 [YOLO NMS filtering took: 1.619 milliseconds]
 
-02/13/20 16:18:37 zmesdetect_m2[8438] DBG face_train.py:19 [Face Recognition library load time took: 26.514 milliseconds]
-02/13/20 16:18:40 zmesdetect_m2[8438] DBG face.py:87 [Finding faces too 819.668 milliseconds]
-02/13/20 16:18:40 zmesdetect_m2[8438] DBG face.py:92 [Computing face recognition distances took 532.882 milliseconds]
-02/13/20 16:18:40 zmesdetect_m2[8438] DBG face.py:103 [Matching recognized faces to known faces took 1.155 milliseconds]
-02/13/20 16:18:41 zmesdetect_m2[8438] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 475.909 milliseconds]
-02/13/20 16:18:44 zmesdetect_m2[8438] DBG yolo.py:91 [YOLO detection took: 385.332 milliseconds]
-02/13/20 16:18:44 zmesdetect_m2[8438] DBG yolo.py:122 [YOLO NMS filtering took: 2.153 milliseconds]
+  ** With GPU and local detection (Run 4, same image) **
+
+  02/13/20 16:18:37 zmesdetect_m2[8438] DBG face_train.py:19 [Face Recognition library load time took: 26.514 milliseconds]
+  02/13/20 16:18:40 zmesdetect_m2[8438] DBG face.py:87 [Finding faces too 819.668 milliseconds]
+  02/13/20 16:18:40 zmesdetect_m2[8438] DBG face.py:92 [Computing face recognition distances took 532.882 milliseconds]
+  02/13/20 16:18:40 zmesdetect_m2[8438] DBG face.py:103 [Matching recognized faces to known faces took 1.155 milliseconds]
+  02/13/20 16:18:41 zmesdetect_m2[8438] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 475.909 milliseconds]
+  02/13/20 16:18:44 zmesdetect_m2[8438] DBG yolo.py:91 [YOLO detection took: 385.332 milliseconds]
+  02/13/20 16:18:44 zmesdetect_m2[8438] DBG yolo.py:122 [YOLO NMS filtering took: 2.153 milliseconds]
 
 
-** With GPU and remote detection via MLAPI (Run 1) **
-DEBUG: Finding faces took 410.292 milliseconds
-DEBUG: Computing face recognition distances took 19.237 milliseconds
-DEBUG: Matching recognized faces to known faces took 0.942 milliseconds
-DEBUG: YOLO detection took: 631.454 milliseconds
-DEBUG: YOLO NMS filtering took: 1.612 milliseconds
+  ** With GPU and remote detection via MLAPI (Run 1) **
+  DEBUG: Finding faces took 410.292 milliseconds
+  DEBUG: Computing face recognition distances took 19.237 milliseconds
+  DEBUG: Matching recognized faces to known faces took 0.942 milliseconds
+  DEBUG: YOLO detection took: 631.454 milliseconds
+  DEBUG: YOLO NMS filtering took: 1.612 milliseconds
 
-** With GPU and remote detection via MLAPI (Run 2, same image) **
-DEBUG: Finding faces took 454.663 milliseconds
-DEBUG: Computing face recognition distances took 19.888 milliseconds
-DEBUG: Matching recognized faces to known faces took 0.996 milliseconds
-DEBUG: YOLO detection took: 63.139 milliseconds
-DEBUG: YOLO NMS filtering took: 1.992 milliseconds
+  ** With GPU and remote detection via MLAPI (Run 2, same image) **
+  DEBUG: Finding faces took 454.663 milliseconds
+  DEBUG: Computing face recognition distances took 19.888 milliseconds
+  DEBUG: Matching recognized faces to known faces took 0.996 milliseconds
+  DEBUG: YOLO detection took: 63.139 milliseconds
+  DEBUG: YOLO NMS filtering took: 1.992 milliseconds
 
-** With GPU and remote detection via MLAPI (Run 3, same image) **
-DEBUG: Finding faces took 454.351 milliseconds
-DEBUG: Computing face recognition distances took 19.684 milliseconds
-DEBUG: Matching recognized faces to known faces took 1.022 milliseconds
-DEBUG: YOLO detection took: 63.935 milliseconds
-DEBUG: YOLO NMS filtering took: 1.779 milliseconds
+  ** With GPU and remote detection via MLAPI (Run 3, same image) **
+  DEBUG: Finding faces took 454.351 milliseconds
+  DEBUG: Computing face recognition distances took 19.684 milliseconds
+  DEBUG: Matching recognized faces to known faces took 1.022 milliseconds
+  DEBUG: YOLO detection took: 63.935 milliseconds
+  DEBUG: YOLO NMS filtering took: 1.779 milliseconds
 
-** With GPU and remote detection via MLAPI (Run 4, different image) **
-DEBUG: Finding faces took 464.449 milliseconds
-DEBUG: Computing face recognition distances took 20.482 milliseconds
-DEBUG: Matching recognized faces to known faces took 1.173 milliseconds
-DEBUG: YOLO detection took: 64.402 milliseconds
-DEBUG: YOLO NMS filtering took: 3.784 milliseconds
+  ** With GPU and remote detection via MLAPI (Run 4, different image) **
+  DEBUG: Finding faces took 464.449 milliseconds
+  DEBUG: Computing face recognition distances took 20.482 milliseconds
+  DEBUG: Matching recognized faces to known faces took 1.173 milliseconds
+  DEBUG: YOLO detection took: 64.402 milliseconds
+  DEBUG: YOLO NMS filtering took: 3.784 milliseconds
 
 
 Manually testing if detection is working well
