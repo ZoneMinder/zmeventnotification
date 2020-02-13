@@ -1,8 +1,8 @@
 Breaking Changes
 ----------------
 
-Version 5.7 onwards
-~~~~~~~~~~~~~~~~~~~~
+Version 5.7.4 onwards
+~~~~~~~~~~~~~~~~~~~~~~~
 - I know support the new OpenCV 4.1.2 GPU backend support for CUDA. This will only work if you are on OpenCV 4.1.2 and have compiled it correctly to use CUDA and are using the right architecture. 
   - This adds a new attribute ``use_opencv_dnn_cuda`` in ``objectconfig.ini`` which by default is ``no``. Please read the comments in ``objectconfig.ini`` about how to use this.
 - The ES supports a control channel using which you can control its behavior remotely
