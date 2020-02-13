@@ -301,9 +301,10 @@ Picture notifications don't show images
 Starting v2.0, I support images in alarms. However, there are several
 conditions to be met: 
 
+- You must use HTTPS
 - You can't use self signed certs 
 - The IP/hostname needs to be publicly accessible (Apple/Google servers render the image) 
-- You need patches to ZM unless you are using a package that is later than Oct 11, 2018. Please read the notes in the INI file 
+- You need ZM 1.32.3 or above
 - A good way to isolate if its a URL problem or something else is replace the ``picture_url`` with a knows HTTPS url like `this <https://upload.wikimedia.org/wikipedia/commons/5/5f/Chinese_new_year_dragon_2014.jpg>`__
 
 Before you report issues, please make sure you have been diligent in
