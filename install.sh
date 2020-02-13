@@ -242,7 +242,7 @@ print_opencv_message() {
      Hooks are installed, but please make sure you have the right version
      of OpenCV installed. I recommend removing any pip packages you may
      have installed of opencv* and compiling OpenCV 4.2.x from source. 
-     
+     See https://zmeventnotification.readthedocs.io/en/latest/guides/hooks.html#opencv-install
 
     |----------------------------------------------------------------------|
 

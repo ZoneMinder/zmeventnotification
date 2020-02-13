@@ -73,6 +73,7 @@ Option 1: Automatic install
 Installing OpenCV: Using the pip package (Easy, but not recommended)
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ::
+
   # Note this does NOT enable GPU support
   # It also seems to miss modules like bgsem etc
 
