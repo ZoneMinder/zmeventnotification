@@ -11,7 +11,7 @@ class YoloRemote:
         f = open(class_file_abs_path, 'r')
         self.classes = [line.strip() for line in f.readlines()]
 
-    def set_classes(classes):
+    def set_classes(self,classes):
         self.classes = classes
         
     def get_classes(self):

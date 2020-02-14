@@ -163,6 +163,7 @@ if not g.config['ml_gateway']:
 else:
     g.logger.info('Importing remote shim classes for Yolo/Face')
     from zmes_hook_helpers.apigw import YoloRemote,FaceRemote
+    
 
 # now download image(s)
 
@@ -280,6 +281,7 @@ for model in g.config['models']:
     saved_image = None
     saved_file = None
     # Apply the model to all files
+    remote_failed = False
     for filename in [filename1, filename2]:
         if filename is None: 
             continue
@@ -294,13 +296,14 @@ for model in g.config['models']:
 
         image = image1 if filename==filename1 else image2
 
-        if g.config['ml_gateway']:
+        if g.config['ml_gateway'] and not remote_failed:
             try:
                 b,l,c = remote_detect(image,model)
             except Exception as e:
                 g.logger.error ('Error executing remote API: {}'.format(e))
                 if g.config['ml_fallback_local'] == 'yes':
                     g.logger.info ('Falling back to local execution...')
+                    remote_failed = True
                     if model == 'yolo':
                         import zmes_hook_helpers.yolo as yolo
                         m = yolo.Yolo()
@@ -331,7 +334,7 @@ for model in g.config['models']:
             g.logger.debug('Appending known faces to filter list')
             match = match + [g.config['unknown_face_name']] # unknown face
 
-            if g.config['ml_gateway']:
+            if g.config['ml_gateway'] and not remote_failed:
                 
                 data_file = g.config['base_data_path']+'/misc/known_face_names.json'
                 if os.path.exists(data_file):
