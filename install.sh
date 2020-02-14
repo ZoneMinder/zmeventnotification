@@ -144,6 +144,7 @@ install_hook() {
     rm -fr  "${TARGET_DATA}/bin/*" 2>/dev/null
 
     mkdir -p "${TARGET_DATA}/images" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/mlapi" 2>/dev/null
     mkdir -p "${TARGET_DATA}/known_faces" 2>/dev/null
     mkdir -p "${TARGET_DATA}/unknown_faces" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/yolov3" 2>/dev/null
