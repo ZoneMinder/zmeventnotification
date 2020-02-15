@@ -161,60 +161,60 @@ configuration (brilliantly) as follows:
 
 ::
 
-    sudo /usr/bin/zmeventnotification.pl --check-config
+  sudo /usr/bin/zmeventnotification.pl --check-config
 
     
-Configuration (read /etc/zm/zmeventnotification.ini):
+  Configuration (read /etc/zm/zmeventnotification.ini):
 
-Secrets file.......................... /etc/zm/secrets.ini
-Restart interval (secs)............... 172800
+  Secrets file.......................... /etc/zm/secrets.ini
+  Restart interval (secs)............... 172800
 
-Port ................................. 9000
-Address .............................. [::]
-Event check interval ................. 5
-Monitor reload interval .............. 300
+  Port ................................. 9000
+  Address .............................. [::]
+  Event check interval ................. 5
+  Monitor reload interval .............. 300
 
-Auth enabled ......................... yes
-Auth timeout ......................... 20
+  Auth enabled ......................... yes
+  Auth timeout ......................... 20
 
-Use FCM .............................. yes
-FCM API key .......................... (defined)
-Token file ........................... /var/lib/zmeventnotification/push/tokens.txt
+  Use FCM .............................. yes
+  FCM API key .......................... (defined)
+  Token file ........................... /var/lib/zmeventnotification/push/tokens.txt
 
-Use MQTT ..............................no
-MQTT Server ...........................127.0.0.1
-MQTT Username .........................(undefined)
-MQTT Password .........................(undefined)
+  Use MQTT ..............................no
+  MQTT Server ...........................127.0.0.1
+  MQTT Username .........................(undefined)
+  MQTT Password .........................(undefined)
 
-SSL enabled .......................... yes
-SSL cert file ........................ /etc/myserver/fullchain.pem
-SSL key file ......................... /etc/myserver/privkey.pem
+  SSL enabled .......................... yes
+  SSL cert file ........................ /etc/myserver/fullchain.pem
+  SSL key file ......................... /etc/myserver/privkey.pem
 
-Verbose .............................. no
-Read alarm cause ..................... yes
-Tag alarm event id ................... yes
-Use custom notification sound ........ no
+  Verbose .............................. no
+  Read alarm cause ..................... yes
+  Tag alarm event id ................... yes
+  Use custom notification sound ........ no
 
-Hook Script on Event Start ........... '/var/lib/zmeventnotification/bin/zm_event_start.sh'
-Hook Script on Event End.............. '/var/lib/zmeventnotification/bin/zm_event_end.sh'
+  Hook Script on Event Start ........... '/var/lib/zmeventnotification/bin/zm_event_start.sh'
+  Hook Script on Event End.............. '/var/lib/zmeventnotification/bin/zm_event_end.sh'
 
-Notify on Event Start (hook success).. all
-Notify on Event Start (hook fail)..... web
-Notify on Event End (hook success)... fcm,web
-Notify on Event End (hook fail)...... web
+  Notify on Event Start (hook success).. all
+  Notify on Event Start (hook fail)..... web
+  Notify on Event End (hook success)... fcm,web
+  Notify on Event End (hook fail)...... web
 
-Notify End only if Start success......yes
+  Notify End only if Start success......yes
 
-Use Hook Description........... yes
-Keep frame match type.......... yes
-Skipped monitors............... (undefined)
-Store Frame in ZM...............yes
+  Use Hook Description........... yes
+  Keep frame match type.......... yes
+  Skipped monitors............... (undefined)
+  Store Frame in ZM...............yes
 
 
-Picture URL ................... https://myserver/zm/index.php?view=image&eid=EVENTID&fid=objdetect&width=600
-Include picture................ yes
-Picture username .............. zmes
-Picture password .............. (defined)
+  Picture URL ................... https://myserver/zm/index.php?view=image&eid=EVENTID&fid=objdetect&width=600
+  Include picture................ yes
+  Picture username .............. zmes
+  Picture password .............. (defined)
 
 What is the hook section ?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -271,6 +271,12 @@ for an explanation of how this works
 Troubleshooting common situations
 ---------------------------------
 
+I just added a new monitor and the ES is not sending notifications for it
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This generally happens if you add a monitor _after_ you configure the ES.
+What you need to do is go to zmNinja's ``Menu->Settings->Event Server`` option and enable the monitor you just added and press save.
+
 The ES is missing events. I see them being triggered in ZM
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 There could be multiple issues:
@@ -295,9 +301,10 @@ Picture notifications don't show images
 Starting v2.0, I support images in alarms. However, there are several
 conditions to be met: 
 
+- You must use HTTPS
 - You can't use self signed certs 
 - The IP/hostname needs to be publicly accessible (Apple/Google servers render the image) 
-- You need patches to ZM unless you are using a package that is later than Oct 11, 2018. Please read the notes in the INI file 
+- You need ZM 1.32.3 or above
 - A good way to isolate if its a URL problem or something else is replace the ``picture_url`` with a knows HTTPS url like `this <https://upload.wikimedia.org/wikipedia/commons/5/5f/Chinese_new_year_dragon_2014.jpg>`__
 
 Before you report issues, please make sure you have been diligent in

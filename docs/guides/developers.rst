@@ -16,17 +16,21 @@ How do I talk to it?
    username/password) within 20 seconds of opening the connection
 -  If you provide an incorrect authentication or no authentication, the
    server will close your connection
--  As of today, there are 3 categories of message types your client
-   (zmNinja or your own) can exchange with the server (event
-   notification server)
+-  As of today, there are 2 categories of messages:
 
-1. auth (from client to server)
-2. control (from client to server)
-3. push (only applicable for zmNinja)
-4. alarm (from server to client)
+  - 'normal' messages that are exchanged between a client (like zmNinja) and the ES. These messages are the following types:
+    - auth (from client to server)
+    - control (from client to server)
+    - push (only applicable for zmNinja)
+    - alarm notifications (from server to client)
+
+  - 'escontrol' messages. This allows the client to change the behaviour of the ES dynamically. The changes are stored persistently in ``/var/lib/zmeventnotification/misc/admin_interface.txt``.
+
+Category: Normal messages
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Authentication messages
-^^^^^^^^^^^^^^^^^^^^^^^
+'''''''''''''''''''''''''
 
 To connect with the server you need to send the following JSON object
 (replace username/password) Note this payload is NOT encrypted. If you
@@ -66,14 +70,14 @@ No authentication received in time limit:
     {"event":"auth","type":"", "status":"Fail","reason":"NOAUTH"}
 
 Control messages
-^^^^^^^^^^^^^^^^
+''''''''''''''''''''
 
 Control messages manage the nature of notifications received/sent. As of
 today, Clients send control messages to the Server. In future this may
 be bi-directional
 
 Control message to restrict monitor IDs for events as well as interval durations for reporting
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 A client can send a control message to restrict which monitor IDs it is
 interested in. When received, the server will only send it alarms for
@@ -114,7 +118,7 @@ list comprising of comma separated 0's, one for each monitor in monitor
 list.
 
 Control message to get Event Server version
-'''''''''''''''''''''''''''''''''''''''''''
++++++++++++++++++++++++++++++++++++++++++++++
 
 A client can send a control message to request Event Server version
 
@@ -131,7 +135,7 @@ A client can send a control message to request Event Server version
     {"event":"control", "type:":"version", "version":"0.2","status":"Success","reason":""}
 
 Alarm notifications
-^^^^^^^^^^^^^^^^^^^
+'''''''''''''''''''''''
 
 Alarms are events sent from the Server to the Client
 
@@ -142,7 +146,7 @@ Alarms are events sent from the Server to the Client
     {"event":"alarm", "type":"", "status":"Success", "events":[{"EventId":"5060","Name":"Garage","MonitorId":"1"},{"EventId":"5061","MonitorId":"5","Name":"Unfinished"}]}
 
 Push Notifications (for both iOS and Android)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+''''''''''''''''''''''''''''''''''''''''''''''''''
 
 To make Push Notifications work, please make sure you read the `section
 on enabling
@@ -150,7 +154,7 @@ Push <https://github.com/pliablepixels/zmeventnotification#44-apnsgcm-howto---on
 for the event server.
 
 Concepts of Push and why it is only for zmNinja
-'''''''''''''''''''''''''''''''''''''''''''''''
+++++++++++++++++++++++++++++++++++++++++++++++++
 
 Both Apple and Google ensure that a "trusted" application server can
 send push notifications to a specific app running in a device. If they
@@ -160,7 +164,7 @@ Starting Jan 2018, I am hosting my trusted push server on Google's
 Firebase cloud. This eliminates the need for me to run my own server.
 
 Registering Push token with the server
-''''''''''''''''''''''''''''''''''''''
++++++++++++++++++++++++++++++++++++++++
 
 **Client-->Server:**
 
@@ -202,7 +206,7 @@ if Push is disabled it will send back
     {"event":"push", "type":"", "status":"Fail", "reason": "PUSHDISABLED"}
 
 Badge reset
-'''''''''''
++++++++++++++
 
 Only applies to iOS. Android push notifications don't have a concept of
 badge notifications, as it turns out.
@@ -222,6 +226,100 @@ In this example, the client requests the server to reset the badge count
 to 0. Note that you can use any other number. The next time the server
 sends a push via APNS, it will use this value. 0 makes the badge go
 away.
+
+.. _escontrol_interface:
+
+Category: escontrol messages
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+You can now control the ES dynamically using websockets. As of now, you can do the following:
+
+- mute all notifications 
+- unmute all notifications
+- restart the ES
+- reset all customizations made in the ES control admin_interface
+
+Note that any changes you make are persistently stored in  the file specified in ``escontrol_interface_file`` attribute, which by default is ``/var/lib/zmeventnotification/misc/escontrol_interface.dat``. This makes sure all settings are persistent across reboots.
+
+escontrol authentication
+'''''''''''''''''''''''''
+Just like normal messages, you need to authenticate yourself. The password is specified by what you choose in ``escontrol_interface_password`` attribute inside ``zmeventnotification.ini``.
+
+To authenticate:
+**Client-->Server:**
+
+::
+
+  {"event":"auth","category":"escontrol","data":{"password":"whatever" }}
+
+**Server-->Client:**
+
+::
+
+  {"type":"","reason":"","event":"auth","version":"5.7","status":"Success"}
+
+escontrol commands
+'''''''''''''''''''''
+
+Get current control channel settings:
+
+**Client-->Server:**
+
+::
+
+  {"event": "escontrol", "data": {"command": "get"}}
+
+**Server-->Client:**
+
+::
+
+  {"request":{"data":{"command":"get"},"event":"escontrol"},"response":"{\"notifications\":{\"9\":1,\"8\":1,\"10\":1,\"2\":1,\"5\":1,\"6\":1}}","event":"escontrol","type":"","status":"Success"}
+
+
+
+Thes only show Client-->Server messages. Responses are not shown.
+
+Mute all notifications:
+
+::
+
+  {"event":"escontrol", "data":{"command":"mute"}}
+
+Unmute all notifications:
+
+::
+
+  {"event":"escontrol", "data":{"command":"unmute"}}
+
+
+Mute only notifications for monitor IDs 2,4,6 (other IDs retain old values):
+
+::
+
+  {"event":"escontrol", "data":{"command":"mute", "monitors":[2,4,6]}}
+
+Unmute only notifications for monitors 8,12,14 (other IDs retain old values):
+
+::
+
+  {"event":"escontrol", "data":{"command":"unmute","monitors":[8,12,14]}}
+
+Restart the ES:
+
+::
+
+  {"event":"escontrol", "data":{"command":"restart"}}
+
+Reset/Clear all settings specified via this channel:
+
+  {"event":"escontrol", "data":{"command":"reset"}}
+
+Change any abitrary config value inside ``zmeventnotification.ini``:
+
+::
+
+  {"event":"escontrol", "data":{"command":"edit", "key":"use_hooks", "val":"no"}}
+
+In the above example, we have disabled hooks dynamically (``use_hooks`` is the attribute inside ``zmeventnotification.ini`` that controls if hooks will be used)
 
 Testing from command line
 ^^^^^^^^^^^^^^^^^^^^^^^^^

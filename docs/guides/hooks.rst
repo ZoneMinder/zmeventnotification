@@ -63,14 +63,30 @@ Option 1: Automatic install
 
 **Note 1:**: ``install.sh`` will not overwrite the hooks pip3 module if the version number is the same as the one you already have. To force reinstall, after you run ``install.sh`` you can manually do ``sudo -H pip3 install --upgrade --no-deps --force-reinstall hook/`` from the ``zmeventnotification`` folder. Note that normally, I will bump up the version # but this condition may kick in for you if you keep pulling master when I haven't yet bumped up versions.
 
-**Note 2:**: If you plan on using object detection, starting v5.0.0, the setup script no longer installs opencv for you. This is because you may want to install your own version with GPU accelaration or other options. You will need to either do:
+.. _opencv_install:
 
+**Note 2:**: If you plan on using object detection, starting v5.0.0 of the ES, the setup script no longer installs opencv for you. This is because you may want to install your own version with GPU accelaration or other options. There are two options to install OpenCV:
+
+  - You install a pip package. Very easy, but you don't get GPU support
+  - You compile from source. Takes longer, but you get all the right modules as well as GPU support. Instructions are simple, if you follow them well.
+
+Installing OpenCV: Using the pip package (Easy, but not recommended)
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ::
 
-  sudo -H pip3 install opencv-python
+  # Note this does NOT enable GPU support
+  # It also seems to miss modules like bgsem etc
+
   sudo -H pip3 install opencv-contrib-python
 
-or `install them from source <https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html>`__.
+  # NOTE: Do NOT install both opencv-contrib-python and opencv packages via pip. The contrib package includes opencv+extras
+
+
+Installing OpenCV: from source (Recommended)
+'''''''''''''''''''''''''''''''''''''''''''''''
+General installation instructions are available at the `official openCV site <https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html>`__. However, see below, if you are looking for GPU support:
+
+If you want to install a version with GPU support, I'd recommend you install OpenCV 4.2.x because it supports a CUDA backend for deep learning. Adrian's blog has a `good howto <https://www.pyimagesearch.com/2020/02/03/how-to-use-opencvs-dnn-module-with-nvidia-gpus-cuda-and-cudnn/>`__ on compiling OpenCV 4.2.x from scratch.
 
 **I would strongly recommend you build from source, if you are able to. Pre built packages are not official from OpenCV and often seem to break/seg fault on different configurations.**
 
@@ -81,7 +97,7 @@ Make sure OpenCV works
 
 .. important::
 
-  After you install opencv, make sure it works. Start python3 and inside the interpreter, do a ``import cv2``. If it seg faults, you have a problem with the package you installed. Some people have reported that doing ``sudo apt-get install libopencv-dev`` fixed the issue. Others reported dioing  ``sudo apt-get install python3-opencv`` works instead of the pip route.
+  After you install opencv, make sure it works. Start python3 and inside the interpreter, do a ``import cv2``. If it seg faults, you have a problem with the package you installed. Like I said, I've never had issues after building from source.
 
   Note that if you get an error saying ``cv2 not found`` that means you did not install it in a place python3 can find it (you might have installed it for python2 by mistake)
 
@@ -173,7 +189,7 @@ Starting v5.0, you can now choose to run the machine learning code on a separate
 Logging
 ~~~~~~~~~
 
-Starting version 4.0.x, the hooks now use ZM logging, thanks to a `python wrapper <https://pypi.org/project/pyzmutils/>`__ I wrote recently that taps into ZM's logging system. This also means it is no longer as easy as enabling ``log_level=debug`` in ``objdetect.ini``. Infact, that option has been removed. Follow standard ZM logging options for the hooks. Here is what I do:
+Starting version 4.0.x, the hooks now use ZM logging, thanks to a `python wrapper <https://pyzm.readthedocs.io/en/latest//>`__ I wrote recently that taps into ZM's logging system. This also means it is no longer as easy as enabling ``log_level=debug`` in ``objdetect.ini``. Infact, that option has been removed. Follow standard ZM logging options for the hooks. Here is what I do:
 
 - In ``ZM->Options->Logs:``
 
@@ -371,38 +387,86 @@ known faces images
 Performance comparison
 ~~~~~~~~~~~~~~~~~~~~~~
 
-DNNs perform very well on a GPU. My ZM server doesn't have a GPU. On a
-Intel Xeon 3.16GHz 4Core machine:
+CPU:  Intel Xeon 3.16GHz 4Core machine, with 32GB RAM
+GPU: GeForce 1050Ti
 
-With BLAS installed, here are my performance stats:
-All tests are with a 600px wide image
+General Observations
+'''''''''''''''''''''''
+- Load time of the model is generally larger than detection time, especially felt on a GPU, where detection time is short
+- Detection speeds up greatly if you use the same loaded model for subsequent detections. If you are using local detections (i.e. you don't have ml_gateway enabled in objectconfig.ini) then you are essentially exiiting the process each time an image needs to be detected and the DNN is reloaded each time. Even if you take out the model load time, given the DNN is re-initialized, your image is treated as the 'first image' to detect and performance will be lower than when using mlapi because the DNN is reused for subsequent images.
+- In general, the detection speed varies between runs, as you see below, at least using local detections.
 
-- Face Detection with CNN:
-
-::
-
-    [|--> model:face init took: 1.901829s]
-    [|--> model:face detection took: 4.218463s] (Fyi, this varies, from 4.x - 6.xs)
-
-
-- Face Detection with HOG:
+GPU Performance benchmarking, using an image with 1 person (face+object detection) on my 1050Ti:
+(Note in the remote detection case, I am running mlapi on the same system, so same specs)
 
 ::
 
-    [|--> model:face init took: 1.866364s]
-    [|--> model:face detection took: 0.263436s]
+  ** With GPU and local detection (Run 1) **
 
-- YoloV3 object detection (with full yolov3 weights)
+  02/13/20 16:15:52 zmesdetect_m2[7494] DBG face_train.py:19 [Face Recognition library load time took: 959.26 milliseconds]
+  02/13/20 16:15:54 zmesdetect_m2[7494] DBG face.py:87 [Finding faces took 617.892 milliseconds]
+  02/13/20 16:15:55 zmesdetect_m2[7494] DBG face.py:92 [Computing face recognition distances took 504.214 milliseconds]
+  02/13/20 16:15:55 zmesdetect_m2[7494] DBG face.py:103 [Matching recognized faces to known faces took 1.432 milliseconds]
+  02/13/20 16:15:55 zmesdetect_m2[7494] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 415.967 milliseconds]
+  02/13/20 16:15:58 zmesdetect_m2[7494] DBG yolo.py:91 [YOLO detection took: 275.253 milliseconds]
+  02/13/20 16:15:59 zmesdetect_m2[7494] DBG yolo.py:122 [YOLO NMS filtering took: 2.467 milliseconds]
 
-::
+  ** With GPU and local detection (Run 2, same image) **
+  02/13/20 16:16:52 zmesdetect_m2[7643] DBG face_train.py:19 [Face Recognition library load time took: 949.845 milliseconds]
+  02/13/20 16:16:54 zmesdetect_m2[7643] DBG face.py:87 [Finding faces took 663.26 milliseconds]
+  02/13/20 16:16:55 zmesdetect_m2[7643] DBG face.py:92 [Computing face recognition distances took 517.721 milliseconds]
+  02/13/20 16:16:55 zmesdetect_m2[7643] DBG face.py:103 [Matching recognized faces to known faces took 1.257 milliseconds]
+  02/13/20 16:16:55 zmesdetect_m2[7643] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 416.757 milliseconds]
+  02/13/20 16:16:59 zmesdetect_m2[7643] DBG yolo.py:91 [YOLO detection took: 189.495 milliseconds]
+  02/13/20 16:16:59 zmesdetect_m2[7643] DBG yolo.py:122 [YOLO NMS filtering took: 1.66 milliseconds]
 
-    [|--> model:yolo init took: 1.9e-05s]
-    [|--> model:yolo detection took: 2.487402s]
+  ** With GPU and local detection (Run 3, same image) **
+  02/13/20 16:17:28 zmesdetect_m2[7747] DBG face_train.py:19 [Face Recognition library load time took: 997.392 milliseconds]
+  02/13/20 16:17:31 zmesdetect_m2[7747] DBG face.py:87 [Finding faces took 700.605 milliseconds]
+  02/13/20 16:17:31 zmesdetect_m2[7747] DBG face.py:92 [Computing face recognition distances took 575.662 milliseconds]
+  02/13/20 16:17:31 zmesdetect_m2[7747] DBG face.py:103 [Matching recognized faces to known faces took 1.161 milliseconds]
+  02/13/20 16:17:32 zmesdetect_m2[7747] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 372.729 milliseconds]
+  02/13/20 16:17:35 zmesdetect_m2[7747] DBG yolo.py:91 [YOLO detection took: 99.312 milliseconds]
+  02/13/20 16:17:35 zmesdetect_m2[7747] DBG yolo.py:122 [YOLO NMS filtering took: 1.619 milliseconds]
+
+  ** With GPU and local detection (Run 4, same image) **
+
+  02/13/20 16:18:37 zmesdetect_m2[8438] DBG face_train.py:19 [Face Recognition library load time took: 26.514 milliseconds]
+  02/13/20 16:18:40 zmesdetect_m2[8438] DBG face.py:87 [Finding faces too 819.668 milliseconds]
+  02/13/20 16:18:40 zmesdetect_m2[8438] DBG face.py:92 [Computing face recognition distances took 532.882 milliseconds]
+  02/13/20 16:18:40 zmesdetect_m2[8438] DBG face.py:103 [Matching recognized faces to known faces took 1.155 milliseconds]
+  02/13/20 16:18:41 zmesdetect_m2[8438] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 475.909 milliseconds]
+  02/13/20 16:18:44 zmesdetect_m2[8438] DBG yolo.py:91 [YOLO detection took: 385.332 milliseconds]
+  02/13/20 16:18:44 zmesdetect_m2[8438] DBG yolo.py:122 [YOLO NMS filtering took: 2.153 milliseconds]
 
 
+  ** With GPU and remote detection via MLAPI (Run 1) **
+  DEBUG: Finding faces took 410.292 milliseconds
+  DEBUG: Computing face recognition distances took 19.237 milliseconds
+  DEBUG: Matching recognized faces to known faces took 0.942 milliseconds
+  DEBUG: YOLO detection took: 631.454 milliseconds
+  DEBUG: YOLO NMS filtering took: 1.612 milliseconds
 
-As always, if you are trying to figure out how this works, do this in 3
-steps:
+  ** With GPU and remote detection via MLAPI (Run 2, same image) **
+  DEBUG: Finding faces took 454.663 milliseconds
+  DEBUG: Computing face recognition distances took 19.888 milliseconds
+  DEBUG: Matching recognized faces to known faces took 0.996 milliseconds
+  DEBUG: YOLO detection took: 63.139 milliseconds
+  DEBUG: YOLO NMS filtering took: 1.992 milliseconds
+
+  ** With GPU and remote detection via MLAPI (Run 3, same image) **
+  DEBUG: Finding faces took 454.351 milliseconds
+  DEBUG: Computing face recognition distances took 19.684 milliseconds
+  DEBUG: Matching recognized faces to known faces took 1.022 milliseconds
+  DEBUG: YOLO detection took: 63.935 milliseconds
+  DEBUG: YOLO NMS filtering took: 1.779 milliseconds
+
+  ** With GPU and remote detection via MLAPI (Run 4, different image) **
+  DEBUG: Finding faces took 464.449 milliseconds
+  DEBUG: Computing face recognition distances took 20.482 milliseconds
+  DEBUG: Matching recognized faces to known faces took 1.173 milliseconds
+  DEBUG: YOLO detection took: 64.402 milliseconds
+  DEBUG: YOLO NMS filtering took: 3.784 milliseconds
 
 
 Manually testing if detection is working well

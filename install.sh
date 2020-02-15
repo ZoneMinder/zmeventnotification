@@ -15,6 +15,9 @@
 
 # --- Change these if you want --
 
+PYTHON=python3
+PIP=pip3
+
 
 
 TARGET_CONFIG='/etc/zm'
@@ -136,12 +139,14 @@ install_es() {
 
 # install proc for ML hooks
 install_hook() {
-    echo '***** Installing Hooks **********'
+    echo '*** Installing Hooks ***'
     mkdir -p "${TARGET_DATA}/bin" 2>/dev/null
     rm -fr  "${TARGET_DATA}/bin/*" 2>/dev/null
 
     mkdir -p "${TARGET_DATA}/images" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/mlapi" 2>/dev/null
     mkdir -p "${TARGET_DATA}/known_faces" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/unknown_faces" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/yolov3" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/tinyyolo" 2>/dev/null
     mkdir -p "${TARGET_DATA}/misc" 2>/dev/null
@@ -190,12 +195,13 @@ install_hook() {
 
     # Now install the ML hooks
     #pip install -r  hook/requirements.txt 
+    echo "*** Installing detection scripts ***"
     install -m 755 -o "${WEB_OWNER}" hook/zm_event_start.sh "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_event_end.sh "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_detect.py "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_train_faces.py "${TARGET_BIN_HOOK}"
     #python setup.py install && print_success "Done" || print_error "python setup failed"
-    sudo -H pip3 install hook/ && print_opencv_message || print_error "python hooks setup failed"
+    ${PY_SUDO} ${PIP} install hook/ && print_opencv_message || print_error "python hooks setup failed"
 
 }
 
@@ -234,20 +240,10 @@ print_opencv_message() {
 
     |-------------------------- NOTE -------------------------------------|
     
-     Hook installation done, but you may also need to install the 
-     following packages: opencv-python and opencv-contrib-python,
-     if you have not already installed them. Any version above 4.0 
-     should work.
-
-     If you want to install binary packages, simply do:
-
-     sudo -H pip3 install opencv-python
-     sudo -H pip3 install opencv-contrib-python
-
-     If you want to install from source, you can do that too 
-     (especially if you need GPU support etc.). Please refer to
-     https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html 
-     on how to compile opencv & opencv-contrib.
+     Hooks are installed, but please make sure you have the right version
+     of OpenCV installed. I recommend removing any pip packages you may
+     have installed of opencv* and compiling OpenCV 4.2.x from source. 
+     See https://zmeventnotification.readthedocs.io/en/latest/guides/hooks.html#opencv-install
 
     |----------------------------------------------------------------------|
 
@@ -258,7 +254,7 @@ EOF
 display_help() {
     cat << EOF
     
-    $0 [-h|--help] [--install_es|--no_install_es] [--install_hook|--no_install_hook] [--install_config|--no_install_config]
+    $0 [-h|--help] [--install_es|--no_install_es] [--install_hook|--no_install_hook] [--install_config|--no_install_config] [--nosudo]
 
         When used without any parameters executes in interactive mode
 
@@ -275,6 +271,9 @@ display_help() {
 
         --no-interactive: run automatically, but you need to specify flags for all components
 
+        --no-pysudo: If specified will install python packages 
+        without sudo (some users don't install packages globally)
+
 
 EOF
 }
@@ -287,12 +286,17 @@ check_args() {
     INSTALL_ES_CONFIG='prompt'
     INSTALL_HOOK_CONFIG='prompt'
     INTERACTIVE='yes'
+    PY_SUDO='sudo -H'
 
     for key in "${cmd_args[@]}"
     do
     case $key in
         -h|--help)
             display_help && exit
+            shift
+            ;;
+        --no-pysudo)
+            PY_SUDO=''
             shift
             ;;
         --no-interactive)

@@ -1,5 +1,44 @@
 # Changelog
 
+## [v5.7.4](https://github.com/pliablepixels/zmeventnotification/tree/v5.7.4) (2020-02-12)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.4.1...v5.7.4)
+
+**Implemented enhancements:**
+
+- Add OpenCV 4.1.2 CUDA DNN support [\#214](https://github.com/pliablepixels/zmeventnotification/issues/214)
+- API support for controlling ES behavior [\#211](https://github.com/pliablepixels/zmeventnotification/issues/211)
+- Extend pyzm to pull event image & video files [\#207](https://github.com/pliablepixels/zmeventnotification/issues/207)
+- Send JSON of detection along with string [\#206](https://github.com/pliablepixels/zmeventnotification/issues/206)
+- Allow unknown faces to be saved so its easy to train on unknown faces [\#205](https://github.com/pliablepixels/zmeventnotification/issues/205)
+- When using MLapi, fallback to local server on connection lost [\#204](https://github.com/pliablepixels/zmeventnotification/issues/204)
+- Notifications on IOS show AM/PM instead of 24hrs as set in zmninja [\#202](https://github.com/pliablepixels/zmeventnotification/issues/202)
+
+**Fixed bugs:**
+
+- ZMeventnotification locks without error \(typically after several hours\) [\#175](https://github.com/pliablepixels/zmeventnotification/issues/175)
+
+**Closed issues:**
+
+- Failover to local if mlapi server is unavailable [\#212](https://github.com/pliablepixels/zmeventnotification/issues/212)
+- /dev/shm 100% used, caused by ZMEventnotofication? [\#210](https://github.com/pliablepixels/zmeventnotification/issues/210)
+- Function is a reserved keyword in Mysql 8, resolve by quoting with backticks. [\#209](https://github.com/pliablepixels/zmeventnotification/issues/209)
+- Enable ALPR only for one Monitor [\#203](https://github.com/pliablepixels/zmeventnotification/issues/203)
+- iOS Notications does not show the type of object detected [\#201](https://github.com/pliablepixels/zmeventnotification/issues/201)
+- OpenCV Object Tracking [\#197](https://github.com/pliablepixels/zmeventnotification/issues/197)
+- Manual server start crashes [\#196](https://github.com/pliablepixels/zmeventnotification/issues/196)
+- Explore ability to add "zone name" to MQTT payload - enhancment [\#195](https://github.com/pliablepixels/zmeventnotification/issues/195)
+- Multiple zones in one camera, for diffrent objects [\#193](https://github.com/pliablepixels/zmeventnotification/issues/193)
+- Segmentation fault and bad bcrypt settings at ./zmeventnotification.pl line 1061 [\#192](https://github.com/pliablepixels/zmeventnotification/issues/192)
+- MQTT dropping event messages [\#191](https://github.com/pliablepixels/zmeventnotification/issues/191)
+- MQTT/Home assistant support - maintainer needed [\#137](https://github.com/pliablepixels/zmeventnotification/issues/137)
+
+**Merged pull requests:**
+
+- Update config.rst [\#200](https://github.com/pliablepixels/zmeventnotification/pull/200) ([undigo](https://github.com/undigo))
+- 191b mqtt publish from parent only [\#199](https://github.com/pliablepixels/zmeventnotification/pull/199) ([darknicht66](https://github.com/darknicht66))
+- fixes \#191 add MQTT tick [\#194](https://github.com/pliablepixels/zmeventnotification/pull/194) ([darknicht66](https://github.com/darknicht66))
+
 ## [v5.4.1](https://github.com/pliablepixels/zmeventnotification/tree/v5.4.1) (2019-12-22)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.2.1...v5.4.1)

@@ -83,12 +83,6 @@ def remote_detect(image, model = None):
         
 
     auth_header = {'Authorization': 'Bearer '+access_token}
-
-   
-        
-
-        
-
     ret, jpeg = cv2.imencode('.jpg', image)
     files = {'file': ('image.jpg', jpeg.tobytes())}
     
@@ -102,7 +96,7 @@ def remote_detect(image, model = None):
 
     for d in data:
        
-        label.append(d.get('type'))
+        label.append(d.get('label'))
         conf.append(float(d.get('confidence').strip('%'))/100)
         box = d.get('box')
         bbox.append(d.get('box')) 
@@ -129,7 +123,6 @@ ap.add_argument('-c', '--config', required=True, help='config file with path')
 ap.add_argument('-e', '--eventid', required=True, help='event ID to retrieve')
 ap.add_argument('-p', '--eventpath', help='path to store object image file', default='')
 ap.add_argument('-m', '--monitorid', help='monitor id - needed for mask')
-ap.add_argument('-t', '--time', help='log time', action='store_true')
 ap.add_argument('-v', '--version', help='print version and quit',action='store_true')
 
 ap.add_argument('-f', '--file', help='internal testing use only - skips event download')
@@ -170,6 +163,7 @@ if not g.config['ml_gateway']:
 else:
     g.logger.info('Importing remote shim classes for Yolo/Face')
     from zmes_hook_helpers.apigw import YoloRemote,FaceRemote
+    
 
 # now download image(s)
 
@@ -268,8 +262,8 @@ for model in g.config['models']:
         g.logger.error('Invalid model {}'.format(model))
         raise ValueError('Invalid model {}'.format(model))
 
-    g.logger.debug('|--> model:{} init took: {}s'.format(model, (datetime.datetime.now() - t_start).total_seconds()))
-    t_start = datetime.datetime.now()
+    #g.logger.debug('|--> model:{} init took: {}s'.format(model, (datetime.datetime.now() - t_start).total_seconds()))
+    
     # read the detection pattern we need to apply as a filter
     try:
         r = re.compile(g.config['detect_pattern'])
@@ -277,7 +271,7 @@ for model in g.config['models']:
         g.logger.error ('invalid pattern {}, using .*'.format(g.config['detect_pattern']))
         r = re.compile('.*')
 
-    
+    t_start = datetime.datetime.now()
     try_next_image = False # take the best of both images, currently used only by alpr
     # temporary holders, incase alpr is used but not found
     saved_bbox = []
@@ -287,6 +281,7 @@ for model in g.config['models']:
     saved_image = None
     saved_file = None
     # Apply the model to all files
+    remote_failed = False
     for filename in [filename1, filename2]:
         if filename is None: 
             continue
@@ -301,11 +296,34 @@ for model in g.config['models']:
 
         image = image1 if filename==filename1 else image2
 
-        if g.config['ml_gateway']:
-            b,l,c = remote_detect(image,model)
+        if g.config['ml_gateway'] and not remote_failed:
+            try:
+                b,l,c = remote_detect(image,model)
+            except Exception as e:
+                g.logger.error ('Error executing remote API: {}'.format(e))
+                if g.config['ml_fallback_local'] == 'yes':
+                    g.logger.info ('Falling back to local execution...')
+                    remote_failed = True
+                    if model == 'yolo':
+                        import zmes_hook_helpers.yolo as yolo
+                        m = yolo.Yolo()
+                    elif model == 'hog':
+                        import zmes_hook_helpers.hog as hog
+                        m = hog.Hog()
+                    elif model == 'face':
+                        import zmes_hook_helpers.face as face
+                        m = face.Face(upsample_times=g.config['face_upsample_times'], 
+                                num_jitters=g.config['face_num_jitters'],
+                                model=g.config['face_model'])
+                    b,l,c = m.detect(image)
+                else:
+                    raise
+
         else:   
             b, l, c = m.detect(image)
-        g.logger.debug('|--> model:{} detection took: {}s'.format(model,(datetime.datetime.now() - t_start).total_seconds()))
+
+        
+        #g.logger.debug('|--> model:{} detection took: {}s'.format(model,(datetime.datetime.now() - t_start).total_seconds()))
         t_start = datetime.datetime.now()
         # Now look for matched patterns in bounding boxes
         match = list(filter(r.match, l))
@@ -316,7 +334,7 @@ for model in g.config['models']:
             g.logger.debug('Appending known faces to filter list')
             match = match + [g.config['unknown_face_name']] # unknown face
 
-            if g.config['ml_gateway']:
+            if g.config['ml_gateway'] and not remote_failed:
                 
                 data_file = g.config['base_data_path']+'/misc/known_face_names.json'
                 if os.path.exists(data_file):
@@ -376,11 +394,12 @@ for model in g.config['models']:
                     try_next_image = False
                     # First get non plate objects
                     for idx, t_l in enumerate(l):
+                        otype = 'face' if model == 'face' else 'object'
                         obj_json.append( {
-                            'type': 'object',
+                            'type': otype,
                             'label': t_l,
                             'box':  b[idx],
-                            'confidence': c[idx]
+                            'confidence': "{:.2f}%".format(c[idx] * 100)
                         })
                     # Now add plate objects
                     for i, al in enumerate(alpr_l):
@@ -392,7 +411,8 @@ for model in g.config['models']:
                             'type': 'licenseplate',
                             'label': al,
                             'box': alpr_b[i],
-                            'confidence': alpr_c[i]
+                            #'confidence': alpr_c[i]
+                            'confidence': "{:.2f}%".format(alpr_c[i] * 100)
                         })
                 elif filename == filename1 and filename2: # no plates, but another image to try
                     g.logger.debug ('We did not find license plates in vehicles, but there is another image to try')
@@ -413,12 +433,13 @@ for model in g.config['models']:
                         image = saved_image
                         filename = saved_file
                         # store non plate objects
+                        otype = 'face' if model=='face' else 'object'
                         for idx, t_l in enumerate(l):
                             obj_json.append( {
-                                'type': 'object',
+                                'type': otype,
                                 'label': t_l,
                                 'box': b[idx],
-                                'confidence': c[idx]
+                                'confidence': "{:.2f}%".format(c[idx] * 100)
                             })
                     try_next_image = False
             else: # objects, no vehicles 
@@ -446,22 +467,24 @@ for model in g.config['models']:
                         image = saved_image
                         filename = saved_file
                     try_next_image = False
+                    otype = 'face' if model == 'face' else 'object'
                     for idx, t_l in enumerate(l):
                         obj_json.append({
                             'type': 'object',
                             'label': t_l,
                             'box': b[idx],
-                            'confidence': c[idx]
+                            'confidence': "{:.2f}%".format(c[idx] * 100)
                         })
         else: # usealpr
             g.logger.debug ('ALPR not in use, no need for look aheads in processing')
             # store objects
+            otype = 'face' if model == 'face' else 'object'
             for idx, t_l in enumerate(l):
                 obj_json.append( {
-                    'type': 'object',
+                    'type': otype,
                     'label': t_l,
                     'box': b[idx],
-                    'confidence': c[idx]
+                    'confidence': "{:.2f}%".format(c[idx] * 100)
                 })
         if b:
            # g.logger.debug ('ADDING {} and {}'.format(b,l))
@@ -492,6 +515,7 @@ if not matched_file:
         g.logger.info('No patterns found using any models in all files')
 
 else:
+    
     # we have matches
     if matched_file == filename1:
         #image = image1
@@ -557,7 +581,20 @@ else:
             
   
     pred = ''
+    detections = []
     seen = {}
+
+    if not obj_json:
+        # if we broke out early/first match
+        otype = 'face' if model == 'face' else 'object'
+        for idx, t_l in enumerate(label):
+            obj_json.append( {
+                'type': otype,
+                'label': t_l,
+                'box': bbox[idx],
+                'confidence': "{:.2f}%".format(c[idx] * 100)
+            })
+
     #g.logger.debug ('CONFIDENCE ARRAY:{}'.format(conf))
     for idx, l in enumerate(label):
         if  l not in seen:
@@ -571,13 +608,12 @@ else:
         pred = pred.rstrip(',')
         pred = prefix + 'detected:' + pred
         g.logger.info('Prediction string:{}'.format(pred))
-        print (pred)
+        jos = json.dumps(obj_json)
+        g.logger.debug('Prediction string JSON:{}'.format(jos))
+        
+        print (pred + '--SPLIT--'+jos )
 
     # end of matched_file
-
-if (args['time']):
-    g.logger.debug('detection took: {}s'.format((datetime.datetime.now() - start).total_seconds()))
-
 
 if g.config['delete_after_analyze'] == 'yes':
     if filename1:
