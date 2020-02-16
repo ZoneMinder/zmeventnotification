@@ -194,13 +194,14 @@ install_hook() {
 
 
     # Now install the ML hooks
-    #pip install -r  hook/requirements.txt 
     echo "*** Installing detection scripts ***"
     install -m 755 -o "${WEB_OWNER}" hook/zm_event_start.sh "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_event_end.sh "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_detect.py "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_train_faces.py "${TARGET_BIN_HOOK}"
     #python setup.py install && print_success "Done" || print_error "python setup failed"
+    echo "Removing old version of zmes-hooks, if any"
+    ${PY_SUDO} ${PIP} uninstall -y zmes-hooks  >/dev/null 2>&1
     ${PY_SUDO} ${PIP} install hook/ && print_opencv_message || print_error "python hooks setup failed"
 
 }

@@ -1,9 +1,0 @@
-opencv_python>=4.1.0.25
-opencv_contrib_python>=4.1.0.25
-future>=0.15.2
-numpy>=1.13.3
-requests>=2.18.4
-Shapely>=1.6.4.post2
-face_recognition>=1.2.3
-imutils>=0.5.2
-scikit-learn>=0.21.3
