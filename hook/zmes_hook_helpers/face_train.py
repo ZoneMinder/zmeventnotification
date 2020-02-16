@@ -56,6 +56,9 @@ def train ():
 
                         # imread seems to do a better job of color space conversion and orientation
                         known_face = cv2.imread('{}/{}/{}'.format(directory,entry, person))
+                        if not known_face or known_face.size == 0:
+                            g.logger.error ('Error reading file, skipping')
+                            continue
                         #known_face = face_recognition.load_image_file('{}/{}/{}'.format(directory,entry, person))
 
                         
