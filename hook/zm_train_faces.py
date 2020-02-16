@@ -4,6 +4,11 @@ import ssl
 import zmes_hook_helpers.log as log
 import zmes_hook_helpers.common_params as g
 import zmes_hook_helpers.utils as utils
+
+if __name__ == "__main__":
+    log.init(process_name='zm_train_faces', dump_console=True)
+# needs to be after log init
+
 import zmes_hook_helpers.face_train as train
 
 
@@ -15,7 +20,8 @@ if __name__ == "__main__":
     args, u = ap.parse_known_args()
     args = vars(args)
 
-    log.init(process_name='zm_train_faces', dump_console=True)
+    
+
     utils.process_config(args, g.ctx)
     train.train()
    
