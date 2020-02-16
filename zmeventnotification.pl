@@ -145,7 +145,7 @@ use constant {
 
 };
 
-my $child_forks = 0; # Global tracker of active children
+my $child_forks = 0;    # Global tracker of active children
 
 # Declare options.
 
@@ -324,7 +324,8 @@ $use_escontrol_interface =
   config_get_val( $config, "general", "use_escontrol_interface",
   DEFAULT_USE_ESCONTROL_INTERFACE );
 $escontrol_interface_password =
-  config_get_val( $config, "general", "escontrol_interface_password" ) if ($use_escontrol_interface);
+  config_get_val( $config, "general", "escontrol_interface_password" )
+  if ($use_escontrol_interface);
 
 # secrets need to be loaded before admin
 # Do this BEFORE any config_get_val
@@ -427,8 +428,7 @@ sub loadEsConfigSettings {
     config_get_val( $config, "auth", "enable", DEFAULT_AUTH_ENABLE );
   $auth_timeout =
     config_get_val( $config, "auth", "timeout", DEFAULT_AUTH_TIMEOUT );
-  $use_mqtt =
-    config_get_val( $config, "mqtt", "enable", DEFAULT_MQTT_ENABLE );
+  $use_mqtt = config_get_val( $config, "mqtt", "enable", DEFAULT_MQTT_ENABLE );
   $mqtt_server =
     config_get_val( $config, "mqtt", "server", DEFAULT_MQTT_SERVER );
   $mqtt_username = config_get_val( $config, "mqtt", "username" );
@@ -444,8 +444,7 @@ sub loadEsConfigSettings {
 
   $token_file =
     config_get_val( $config, "fcm", "token_file", DEFAULT_FCM_TOKEN_FILE );
-  $ssl_enabled =
-    config_get_val( $config, "ssl", "enable", DEFAULT_SSL_ENABLE );
+  $ssl_enabled = config_get_val( $config, "ssl", "enable", DEFAULT_SSL_ENABLE );
   $ssl_cert_file = config_get_val( $config, "ssl", "cert" );
   $ssl_key_file  = config_get_val( $config, "ssl", "key" );
   $console_logs = config_get_val( $config, "customize", "console_logs",
@@ -909,8 +908,8 @@ sub getNotificationStatusEsControl {
     return ESCONTROL_FORCE_NOTIFY;
   }
   else {
-   # printDebug( "ESCONTROL: Notification for Monitor:$id is "
-   #     . $escontrol_interface_settings{'notifications'}{$id} );
+    # printDebug( "ESCONTROL: Notification for Monitor:$id is "
+    #     . $escontrol_interface_settings{'notifications'}{$id} );
     return $escontrol_interface_settings{'notifications'}{$id};
   }
 
@@ -3302,7 +3301,6 @@ sub initSocketServer {
       checkConnection();
       processJobs();
 
-    
       printInfo("There are $child_forks active child forks...");
       my (@newEvents) = checkNewEvents();
 
