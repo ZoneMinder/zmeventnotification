@@ -1,5 +1,23 @@
 # Changelog
 
+## [v5.7.7](https://github.com/pliablepixels/zmeventnotification/tree/v5.7.7) (2020-02-20)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.7.4...v5.7.7)
+
+**Implemented enhancements:**
+
+- support OpenALPR local install \(via command line  binary\) [\#219](https://github.com/pliablepixels/zmeventnotification/issues/219)
+
+**Closed issues:**
+
+- Problem with zm\_detect.py [\#218](https://github.com/pliablepixels/zmeventnotification/issues/218)
+- openALPR on own server [\#215](https://github.com/pliablepixels/zmeventnotification/issues/215)
+- Using GPU in zm\_detect [\#213](https://github.com/pliablepixels/zmeventnotification/issues/213)
+
+**Merged pull requests:**
+
+- remove uneeded quotes. Convert " to ' where possible. [\#217](https://github.com/pliablepixels/zmeventnotification/pull/217) ([connortechnology](https://github.com/connortechnology))
+
 ## [v5.7.4](https://github.com/pliablepixels/zmeventnotification/tree/v5.7.4) (2020-02-12)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.4.1...v5.7.4)
@@ -38,6 +56,7 @@
 - Update config.rst [\#200](https://github.com/pliablepixels/zmeventnotification/pull/200) ([undigo](https://github.com/undigo))
 - 191b mqtt publish from parent only [\#199](https://github.com/pliablepixels/zmeventnotification/pull/199) ([darknicht66](https://github.com/darknicht66))
 - fixes \#191 add MQTT tick [\#194](https://github.com/pliablepixels/zmeventnotification/pull/194) ([darknicht66](https://github.com/darknicht66))
+- Multiple face and clustering support [\#174](https://github.com/pliablepixels/zmeventnotification/pull/174) ([pliablepixels](https://github.com/pliablepixels))
 
 ## [v5.4.1](https://github.com/pliablepixels/zmeventnotification/tree/v5.4.1) (2019-12-22)
 
@@ -110,7 +129,6 @@
 **Merged pull requests:**
 
 - Hangup debug [\#176](https://github.com/pliablepixels/zmeventnotification/pull/176) ([pliablepixels](https://github.com/pliablepixels))
-- Multiple face and clustering support [\#174](https://github.com/pliablepixels/zmeventnotification/pull/174) ([pliablepixels](https://github.com/pliablepixels))
 
 ## [v4.5.8](https://github.com/pliablepixels/zmeventnotification/tree/v4.5.8) (2019-11-06)
 
