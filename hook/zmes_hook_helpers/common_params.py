@@ -364,7 +364,26 @@ config_vals = {
             'section': 'alpr',
             'default': '0.3',
             'type': 'float'
-        }
+        },
+
+        # OpenALPR command line specfic
+
+         'openalpr_cmdline_binary':{
+            'section': 'alpr',
+            'default': 'alpr',
+            'type': 'string'
+        },
+        
+         'openalpr_cmdline_params':{
+            'section': 'alpr',
+            'default': '-j',
+            'type': 'string'
+        },
+        'openalpr_cmdline_min_confidence': {
+            'section': 'alpr',
+            'default': '0.3',
+            'type': 'float'
+        },
        
 
     }

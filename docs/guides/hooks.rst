@@ -263,10 +263,11 @@ instead of full yolo weights. Again, please readd the comments in
 How to use license plate recognition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Two ALPR options are provided: 
+Three ALPR options are provided: 
 
 - `Plate Recognizer <https://platerecognizer.com>`__ . It uses a deep learning model that does a far better job than OpenALPR (based on my tests). The class is abstracted, obviously, so in future I may add local models. For now, you will have to get a license key from them (they have a `free tier <https://platerecognizer.com/pricing/>`__ that allows 2500 lookups per month)
 - `OpenALPR <https://www.openalpr.com>`__ . While OpenALPR's detection is not as good as Plate Recognizer, when it does detect, it provides a lot more information (like car make/model/year etc.)
+- `OpenALPR command line <http://doc.openalpr.com/compiling.html>`__. This is a basic version of OpenALPR that can be self compiled and executed locally. It is far inferior to the cloud services and does NOT use any form of deep learning. However, it is free, and if you have a camera that has a good view of plates, it will work.
 
 To enable alpr, simple add `alpr` to `models`. You will also have to add your license key to the ``[alpr]`` section of ``objdetect.ini``
 
@@ -309,13 +310,36 @@ This is an example config that uses OpenALPR:
   # openalpr returns percents, but we convert to between 0 and 1
   openalpr_min_confidence=0.3
 
-Leave ``alpr_use_after_detection_only`` to the default values. 
+
+This is an example config that uses OpenALPR command line:
+
+::
+
+  models = yolo,alpr
+
+  [alpr]
+  alpr_service=open_alpr_cmdline
+
+  openalpr_cmdline_binary=alpr
+
+  # Do an alpr -help to see options, plug them in here
+  # like say '-j -p ca -c US' etc.
+  # keep the -j because its JSON
+
+  # Note that alpr_pattern is honored
+  # For the rest, just stuff them in the cmd line options
+
+  openalpr_cmdline_params=-j -d
+  openalpr_cmdline_min_confidence=0.3
+
+  
 
 How license plate recognition will work
 ''''''''''''''''''''''''''''''''''''''''
 
 - To save on  API calls, the code will only invoke remote APIs if a vehicle is detected
 - This also means you MUST specify yolo along with alpr
+- While the newly added openalpr_cmd_line option does not have an API limitation, it will still need yolo in front. I was too lazy to filter it out. Maybe later.
 
 
 How to use face recognition

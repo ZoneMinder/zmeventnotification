@@ -426,6 +426,12 @@ for model in g.config['models']:
                     alpr_obj = alpr.OpenAlpr(url=g.config['alpr_url'],
                                              apikey=g.config['alpr_key'],
                                              options=options)
+                elif g.config['alpr_service'] == 'open_alpr_cmdline':
+                    options = {
+                        'min_confidence': g.config['openalpr_cmdline_min_confidence'],
+                    }
+                    alpr_obj = alpr.OpenAlprCmdLine(cmd=g.config['openalpr_cmdline_binary'],
+                                             options=options)
                 else:
                     raise ValueError('ALPR service "{}" not known'.format(
                         g.config['alpr_service']))

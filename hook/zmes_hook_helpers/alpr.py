@@ -7,7 +7,7 @@ import os
 import imutils
 import json
 import base64
-
+import subprocess
 
 class AlprBase:
     def __init__(self, url=None, apikey=None, tempdir='/tmp'):
@@ -211,6 +211,57 @@ class OpenAlpr(AlprBase):
                         if veh[attribute]:
                             label = label + ',' + veh[attribute][0]['name']
 
+                x1 = round(int(plates['coordinates'][0]['x']) * xfactor)
+                y1 = round(int(plates['coordinates'][0]['y']) * yfactor)
+                x2 = round(int(plates['coordinates'][2]['x']) * xfactor)
+                y2 = round(int(plates['coordinates'][2]['y']) * yfactor)
+                labels.append(label)
+                bbox.append([x1, y1, x2, y2])
+                confs.append(conf)
+
+        return (bbox, labels, confs)
+
+class OpenAlprCmdLine(AlprBase):
+    def __init__(self, cmd=None, options={}, tempdir='/tmp'):
+        AlprBase.__init__(self, 'unused', 'unused', tempdir)
+        self.options = options
+        self.cmd = cmd + ' ' + g.config['openalpr_cmdline_params']
+        if self.cmd.lower().find('-j') == -1:
+            g.logger.Debug ('Adding -j to OpenALPR for json output')
+            self.cmd = self.cmd + ' -j'
+      
+
+        
+
+    def detect(self, object):
+        bbox = []
+        labels = []
+        confs = []
+
+        self.prepare(object)
+        self.cmd = self.cmd + ' ' + self.filename
+        g.logger.debug ('OpenALPR CmdLine Executing: {}'.format(self.cmd))
+        response = subprocess.check_output(self.cmd, shell=True)      
+        g.logger.debug ('OpenALPR CmdLine Response: {}'.format(response))
+        response = json.loads(response)
+       
+        (xfactor, yfactor) = self.getscale()
+
+        rescale = False
+
+        if self.remove_temp:
+            os.remove(filename)
+
+        if response.get('results'):
+            for plates in response.get('results'):
+                label = plates['plate']
+                conf = float(plates['confidence']) / 100
+                if conf < self.options.get('min_confidence'):
+                    g.logger.debug(
+                        'OpenALPR cmd line: discarding plate: {} because detected confidence {} is less than configured min confidence: {}'
+                        .format(label, conf, options.get('min_confidence')))
+                    continue
+                
                 x1 = round(int(plates['coordinates'][0]['x']) * xfactor)
                 y1 = round(int(plates['coordinates'][0]['y']) * yfactor)
                 x2 = round(int(plates['coordinates'][2]['x']) * xfactor)

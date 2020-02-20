@@ -1,6 +1,10 @@
 Breaking Changes
 ----------------
 
+Version 5.7.7 onwards
+~~~~~~~~~~~~~~~~~~~~~~~
+- For those who are happy to use the legacy openALPR self compiled version for license plate detection that does not use DNNs, I support that. This adds new parameters to `objectconfig.ini`. See objectconfig.ini for new parameters under the "If you are using OpenALPR command line" section.
+
 Version 5.7.4 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~
 - I know support the new OpenCV 4.1.2 GPU backend support for CUDA. This will only work if you are on OpenCV 4.1.2 and have compiled it correctly to use CUDA and are using the right architecture. 
