@@ -243,8 +243,12 @@ class OpenAlprCmdLine(AlprBase):
         g.logger.debug ('OpenALPR CmdLine Executing: {}'.format(self.cmd))
         response = subprocess.check_output(self.cmd, shell=True)      
         g.logger.debug ('OpenALPR CmdLine Response: {}'.format(response))
-        response = json.loads(response)
-       
+        try:
+            response = json.loads(response)
+        except ValueError as e:
+            g.logger.error ('Error parsing JSON from command line: {}'.format(e))
+            response = {}
+
         (xfactor, yfactor) = self.getscale()
 
         rescale = False
