@@ -332,7 +332,8 @@ This is an example config that uses OpenALPR command line:
   openalpr_cmdline_params=-j -d
   openalpr_cmdline_min_confidence=0.3
 
-  
+
+**NOTE**: The command line version depends on your ``alpr`` application to be correctly set up. You should make sure that if you do an ``alpr -j someimage.jpg`` (where ``someimage.jpg`` is a picture of a car with a license plate) that this command produces a legitimate JSON output **without** any sort of errors/warnings.  If you see any form of messages before the JSON output, this integration won't work. It seems in certain cases, the openALPR package bundled with OSes have issues, so you should `compile OpenALPR on your own <http://doc.openalpr.com/compiling.html>`__.
 
 How license plate recognition will work
 ''''''''''''''''''''''''''''''''''''''''
