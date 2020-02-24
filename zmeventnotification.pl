@@ -1705,7 +1705,7 @@ sub sendOverFCM {
   my $djson = $json;
   $djson =~ s/pass(word)?=(.*?)($|&)/pass$1=xxx$3/g;
 
-  printDebug("Final JSON being sent is: $djson");
+  printDebug("Final JSON being sent is: $djson to token: ...".substr($obj->{token},-6));
   my $req = HTTP::Request->new( 'POST', $uri );
   $req->header(
     'Content-Type'  => 'application/json',
