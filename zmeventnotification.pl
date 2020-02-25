@@ -64,7 +64,7 @@ if ( !try_use('JSON') ) {
 #
 # ==========================================================================
 
-my $app_version = '5.8';
+my $app_version = '5.9';
 
 # ==========================================================================
 #
@@ -649,7 +649,7 @@ if ($use_fcm) {
 
 }
 else {
-  printInfo('FCM disabled. Will only send out websocket notifications');
+  printInfo('FCM disabled.');
 }
 
 if ($use_mqtt) {
@@ -2933,6 +2933,7 @@ sub processNewAlarmsInFork {
   # will contain succ/fail of hook scripts, or 1 (fail) if not invoked
   my $hookResult      = 0;
   my $startHookResult = $hookResult;
+  my $startHookString = '';
 
   my $endProcessed = 0;
 
@@ -3020,6 +3021,7 @@ sub processNewAlarmsInFork {
               . '--JSON--'
               . $alarm->{Start}->{resJsonString} . "\n";
 
+
   # This updates the ZM DB with the detected description
   # we are writing resTxt not alarm cause which is only detection text
   # when we write to DB, we will add the latest notes, which may have more zones
@@ -3029,6 +3031,8 @@ sub processNewAlarmsInFork {
               . $eid
               . '--SPLIT--'
               . $resTxt . "\n";
+
+            $startHookString = $resTxt;
           }    # use_hook_desc
 
         }
@@ -3215,6 +3219,19 @@ sub processNewAlarmsInFork {
     }
     sleep(2);
   }
+
+  if ($startHookString) {
+    printDebug ("Making sure the detection text was not overwritten by ZM");
+    my $notes = getNotesFromEventDB($eid);
+    if (index($notes, 'detected:') == -1) {
+      printDebug ("ZM overwrote detection, adding detection notes back into DB [$startHookString]");
+      $notes = $startHookString . " ".$notes;
+      updateEventinZmDB ($eid, $notes);
+    } else {
+      printDebug ("All good, detection string is in place");
+    }
+  }
+  
   printDebug('exiting');
   print WRITER 'active_event_delete--TYPE--' . $mid . '--SPLIT--' . $eid . "\n";
   close(WRITER);
