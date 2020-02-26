@@ -3093,6 +3093,17 @@ sub processNewAlarmsInFork {
       }
       else {    # start processing over, so end can be processed
 
+        my $notes = getNotesFromEventDB($eid);
+        if ($startHookString) {
+          if (index($notes, 'detected:') == -1) {
+            printDebug ("ZM overwrote detection, adding detection notes back into DB [$startHookString]");
+            $notes = $startHookString . " ".$notes;
+            updateEventinZmDB ($eid, $notes);
+          } else {
+            printDebug ("DB Event notes contain detection text, all good");
+          }
+        }
+
         if ( $event_end_hook && $use_hooks ) {
 
           # invoke end hook script
@@ -3101,7 +3112,7 @@ sub processNewAlarmsInFork {
             . $eid . ' '
             . $mid . ' "'
             . $alarm->{MonitorName} . '" "'
-            . getNotesFromEventDB($eid) . '"';
+            . $notes . '"';
 
           if ($hook_pass_image_path) {
             my $event = new ZoneMinder::Event($eid);
@@ -3220,17 +3231,7 @@ sub processNewAlarmsInFork {
     sleep(2);
   }
 
-  if ($startHookString) {
-    printDebug ("Making sure the detection text was not overwritten by ZM");
-    my $notes = getNotesFromEventDB($eid);
-    if (index($notes, 'detected:') == -1) {
-      printDebug ("ZM overwrote detection, adding detection notes back into DB [$startHookString]");
-      $notes = $startHookString . " ".$notes;
-      updateEventinZmDB ($eid, $notes);
-    } else {
-      printDebug ("All good, detection string is in place");
-    }
-  }
+  
   
   printDebug('exiting');
   print WRITER 'active_event_delete--TYPE--' . $mid . '--SPLIT--' . $eid . "\n";
@@ -3286,7 +3287,7 @@ sub initSocketServer {
   else {
     printInfo('Secure WS is disabled...');
   }
-  printInfo( 'Web Socket Event Server listening on port ' . $port . '\n' );
+  printInfo( 'Web Socket Event Server listening on port ' . $port );
 
   $wss = Net::WebSocket::Server->new(
     listen => $ssl_enabled ? $ssl_server : $port,
