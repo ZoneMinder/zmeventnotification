@@ -628,21 +628,7 @@ else:
             'Writing out debug bounding box image to {}...'.format(bbox_f))
         cv2.imwrite(bbox_f, image)
 
-    if g.config['write_image_to_zm'] == 'yes':
-        if (args['eventpath']):
-            g.logger.debug('Writing detected image to {}/objdetect.jpg'.format(
-                args['eventpath']))
-            cv2.imwrite(args['eventpath'] + '/objdetect.jpg', image)
-            jf = args['eventpath'] + '/objects.json'
-            final_json = {'frame': frame_type, 'detections': obj_json}
-            g.logger.debug('Writing JSON output to {}'.format(jf))
-            with open(jf, 'w') as jo:
-                json.dump(final_json, jo)
-
-        else:
-            g.logger.error(
-                'Could not write image to ZoneMinder as eventpath not present')
-    # Now create prediction string
+    
 
     if g.config['match_past_detections'] == 'yes' and args['monitorid']:
         # point detections to post processed data set
@@ -662,7 +648,25 @@ else:
         bbox = bbox_t
         label = label_t
         conf = conf_t
+    
+    # Do this after match past detections so we don't create an objdetect if images were discarded
+    if g.config['write_image_to_zm'] == 'yes':
+        if (args['eventpath'] and len(bbox)):
+            g.logger.debug('Writing detected image to {}/objdetect.jpg'.format(
+                args['eventpath']))
+            cv2.imwrite(args['eventpath'] + '/objdetect.jpg', image)
+            jf = args['eventpath'] + '/objects.json'
+            final_json = {'frame': frame_type, 'detections': obj_json}
+            g.logger.debug('Writing JSON output to {}'.format(jf))
+            with open(jf, 'w') as jo:
+                json.dump(final_json, jo)
 
+        else:
+            g.logger.error(
+                'Could not write image to ZoneMinder as eventpath not present')
+
+
+    # Now create prediction string
     pred = ''
     detections = []
     seen = {}
