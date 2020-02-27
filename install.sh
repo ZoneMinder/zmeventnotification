@@ -194,6 +194,10 @@ install_hook() {
 
 
     # Now install the ML hooks
+
+    echo "*** Installing push api plugins ***"
+     install -m 755 -o "${WEB_OWNER}" pushapi_plugins/pushapi_pushover.py "${TARGET_BIN_HOOK}"
+
     echo "*** Installing detection scripts ***"
     install -m 755 -o "${WEB_OWNER}" hook/zm_event_start.sh "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_event_end.sh "${TARGET_BIN_HOOK}"

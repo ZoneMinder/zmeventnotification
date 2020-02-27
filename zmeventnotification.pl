@@ -89,6 +89,9 @@ use constant {
   DEFAULT_MQTT_SERVER        => '127.0.0.1',
   DEFAULT_MQTT_TICK_INTERVAL => 15,
   DEFAULT_FCM_TOKEN_FILE     => '/var/lib/zmeventnotification/push/tokens.txt',
+
+  DEFAULT_USE_API_PUSH        => 'no',
+
   DEFAULT_BASE_DATA_PATH     => '/var/lib/zmeventnotification',
   DEFAULT_SSL_ENABLE         => 'yes',
   DEFAULT_CUSTOMIZE_VERBOSE  => 'no',
@@ -174,6 +177,10 @@ my $mqtt_last_tick_time = time();
 
 my $use_fcm;
 my $fcm_api_key;
+
+my $use_api_push;
+my $api_push_script;
+
 my $token_file;
 my $fcm_date_format;
 
@@ -442,6 +449,17 @@ sub loadEsConfigSettings {
   $fcm_date_format =
     config_get_val( $config, 'fcm', 'date_format', DEFAULT_FCM_DATE_FORMAT );
 
+  $use_api_push = config_get_val ($config, 'push', 'use_api_push',DEFAULT_USE_API_PUSH );
+  if ($use_api_push) {
+    $api_push_script = config_get_val ($config, 'push', 'api_push_script');
+    Error ("You have API push enabled, but no script to handle API pushes") if (!$api_push_script);
+
+  }
+  
+
+
+
+
   $token_file =
     config_get_val( $config, 'fcm', 'token_file', DEFAULT_FCM_TOKEN_FILE );
   $ssl_enabled = config_get_val( $config, 'ssl', 'enable', DEFAULT_SSL_ENABLE );
@@ -580,6 +598,9 @@ Monitor reload interval .............. ${\(value_or_undefined($monitor_reload_in
 Auth enabled ......................... ${\(yes_or_no($auth_enabled))}
 Auth timeout ......................... ${\(value_or_undefined($auth_timeout))}
 
+Use API Push.......................... ${\(yes_or_no($use_api_push))}
+API Push Script....................... ${\(value_or_undefined($api_push_script))}
+
 Use FCM .............................. ${\(yes_or_no($use_fcm))}
 FCM Date Format....................... ${\(value_or_undefined($fcm_date_format))}
 FCM API key .......................... ${\(present_or_not($fcm_api_key))}
@@ -650,6 +671,10 @@ if ($use_fcm) {
 }
 else {
   printInfo('FCM disabled.');
+}
+
+if ($use_api_push) {
+  printInfo ("Pushes will be sent through APIs and will use $api_push_script");
 }
 
 if ($use_mqtt) {
@@ -1846,8 +1871,8 @@ sub processJobs {
           "Job: Update active_event eid:$eid, mid:$mid, type:$type, field:$key to: $val"
         );
         $active_events{$mid}->{$eid}->{$type}->{State} = $val
-          if ( $key == 'State' );
-        if ( $key == 'Cause' ) {
+          if ( $key eq 'State' );
+        if ( $key eq 'Cause' ) {
           my ( $causeTxt, $causeJson ) = split( '--JSON--', $val );
           $active_events{$mid}->{$eid}->{$type}->{Cause} = $causeTxt;
 
@@ -2790,6 +2815,7 @@ sub isAllowedChannel {
   my $event_type = shift;
   my $channel    = shift;
   my $rescode    = shift;
+
   my $retval     = 0;
 
   printDebug("isAllowedChannel: got type:$event_type resCode:$rescode");
@@ -2990,6 +3016,9 @@ sub processNewAlarmsInFork {
           }
           printInfo( 'Invoking hook on event start:' . $cmd );
 
+          if ( $cmd =~ /^(.*)$/ ) {
+              $cmd = $1;
+          }
           my $res = `$cmd`;
           chomp($res);
           my ( $resTxt, $resJsonString ) = parseDetectResults($res);
@@ -3066,6 +3095,42 @@ sub processNewAlarmsInFork {
 
       };
 
+      if ($use_api_push && $api_push_script) {
+        if (isAllowedChannel ('event_start', 'api', $hookResult )  || !$event_start_hook|| !$use_hooks) {
+          printInfo ('Sending push over API as it is allowed for event_start');
+     
+          my $api_cmd = $api_push_script. ' '
+              . $eid. ' ' 
+              . $mid. ' '
+              . ' "'.$temp_alarm_obj->{MonitorName} . '" '
+              . ' "'.$temp_alarm_obj->{Cause} . '" '
+              . " event_start";
+
+          if ($hook_pass_image_path) {
+              my $event = new ZoneMinder::Event($eid);
+              $api_cmd = $api_cmd . ' "' . $event->Path() . '"';
+              printDebug( 'Adding event path:'
+                  . $event->Path()
+                  . ' to api_cmd for image location' );
+
+          }
+          
+          
+          printInfo ("Executing API script command for event_start $api_cmd");
+          if ( $api_cmd =~ /^(.*)$/ ) {
+            $api_cmd = $1;
+          }
+          my $api_res = `$api_cmd`;
+          printInfo ("Returned from $api_cmd");
+          chomp($api_res);
+          my $api_retcode = $? >> 8;
+          printDebug ("API push script returned : $api_retcode"); 
+
+        } else {
+          printInfo ('Not sending push over API as it is not allowed for event_start');
+        }
+
+      } 
       printInfo('Matching alarm to connection rules...');
       my ($serv) = @_;
       foreach (@active_connections) {
@@ -3123,6 +3188,9 @@ sub processNewAlarmsInFork {
 
           }
           printInfo( 'Invoking hook on event end:' . $cmd );
+          if ( $cmd =~ /^(.*)$/ ) {
+              $cmd = $1;
+          }
           my $res = `$cmd`;
           chomp($res);
           my ( $resTxt, $resJsonString ) = parseDetectResults($res);
@@ -3166,9 +3234,6 @@ sub processNewAlarmsInFork {
         );
       }
       else {
-        # end will never be ready before start is ready
-        # this means we need to notify
-        printInfo('Matching alarm to connection rules...');
 
         my $cause          = $alarm->{End}->{Cause};
         my $detectJson     = $alarm->{End}->{DetectionJson} || [];
@@ -3179,6 +3244,54 @@ sub processNewAlarmsInFork {
           Cause         => $cause,
           DetectionJson => $detectJson
         };
+
+        if ($use_api_push && $api_push_script) {
+
+          if ($send_event_end_notification) {
+
+            if (isAllowedChannel ('event_start', 'api', $hookResult ) || !$event_end_hook || !$use_hooks) {
+            printInfo ('Sending push over API as it is allowed for event_end');
+
+            my $api_cmd = $api_push_script. ' '
+                . $eid. ' ' 
+                . $mid. ' '
+                . ' "'.$temp_alarm_obj->{MonitorName} . '" '
+                . ' "'.$temp_alarm_obj->{Cause} . '" '
+                . " event_end";
+
+            if ($hook_pass_image_path) {
+              my $event = new ZoneMinder::Event($eid);
+              $api_cmd = $api_cmd . ' "' . $event->Path() . '"';
+              printDebug( 'Adding event path:'
+                  . $event->Path()
+                  . ' to api_cmd for image location' );
+
+            }
+        
+            printInfo ("Executing API script command for event_end $api_cmd");
+
+            if ( $api_cmd =~ /^(.*)$/ ) {
+              $api_cmd = $1;
+            }
+            my $res = `$api_cmd`;
+            printDebug ("returned from api cmd for event_end");
+            chomp($res);
+            my $retcode = $? >> 8;
+            printDebug ("API push script returned : $retcode"); 
+
+          } else {
+            printInfo ('Not sending push over API as it is not allowed for event_start');
+          }
+
+          } else {
+            printDebug ('Not sending event_end push over API as send_event_end_notification is no');
+          }
+          
+
+      } 
+        # end will never be ready before start is ready
+        # this means we need to notify
+        printInfo('Matching alarm to connection rules...');
 
         my ($serv) = @_;
         foreach (@active_connections) {
@@ -3334,8 +3447,8 @@ sub initSocketServer {
         elsif ( $pid == 0 ) {
 
           # do this to get a proper return value
-          $SIG{CHLD} = undef;
-
+         # $SIG{CHLD} = undef;
+          local $SIG{'CHLD'} = 'DEFAULT';
           #$wss->shutdown();
           close(READER);
           $dbh = zmDbConnect(1);
