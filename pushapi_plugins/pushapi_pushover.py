@@ -86,6 +86,8 @@ if len(sys.argv) == 7:
 
 param_dict['title'] = '{} Alarm ({})'.format(mname,eid)
 param_dict['message'] = cause
+if event_type == 'event_end':
+    param_dict['title'] = 'Ended:' + param_dict['title']
 
 r = requests.post("https://api.pushover.net/1/messages.json", data = param_dict, files = files)
 print(r.text)
