@@ -90,6 +90,7 @@ if event_type == 'event_end':
     param_dict['title'] = 'Ended:' + param_dict['title']
 
 r = requests.post("https://api.pushover.net/1/messages.json", data = param_dict, files = files)
+zmlog.Debug(1,"Pushover returned:{}".format(r.text))
 print(r.text)
 
 
