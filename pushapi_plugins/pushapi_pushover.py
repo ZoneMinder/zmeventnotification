@@ -104,7 +104,7 @@ if not param_dict['token'] or param_dict['user']:
         zmlog.Debug(1, "Reading user from secrets")
 
 param_dict['title'] = '{} Alarm ({})'.format(mname,eid)
-param_dict['message'] = cause +  datetime.now().strftime('at %I:%M %p, %b-%d')
+param_dict['message'] = cause +  datetime.now().strftime(' at %I:%M %p, %b-%d')
 if event_type == 'event_end':
     param_dict['title'] = 'Ended:' + param_dict['title']
 r = requests.post("https://api.pushover.net/1/messages.json", data = param_dict, files = files)
