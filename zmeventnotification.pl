@@ -3102,7 +3102,7 @@ sub processNewAlarmsInFork {
           my $api_cmd = $api_push_script. ' '
               . $eid. ' ' 
               . $mid. ' '
-              . ' "'.$temp_alarm_obj->{MonitorName} . '" '
+              . ' "'.$temp_alarm_obj->{Name} . '" '
               . ' "'.$temp_alarm_obj->{Cause} . '" '
               . " event_start";
 
@@ -3203,10 +3203,12 @@ sub processNewAlarmsInFork {
 
           #tbd  - was this a typo? Why ->{Cause}?
           # kept it here for now
-          $alarm->{Cause} = $resTxt . ' ' . $alarm->{Cause};
-
+          #$alarm->{Cause} = $resTxt . ' ' . $alarm->{Cause};
+          $alarm->{End}->{Cause}         = $resTxt;
           #I think this is what we need
-          $alarm->{End}->{Cause}         = $resTxt . ' ' . $alarm->{Cause};
+
+          #$alarm->{End}->{Cause}         = $resTxt . ' ' . $alarm->{Cause};
+          $alarm->{End}->{Cause}         = $resTxt;
           $alarm->{End}->{DetectionJson} = decode_json($resJsonString);
 
         }
@@ -3255,7 +3257,7 @@ sub processNewAlarmsInFork {
             my $api_cmd = $api_push_script. ' '
                 . $eid. ' ' 
                 . $mid. ' '
-                . ' "'.$temp_alarm_obj->{MonitorName} . '" '
+                . ' "'.$temp_alarm_obj->{Name} . '" '
                 . ' "'.$temp_alarm_obj->{Cause} . '" '
                 . " event_end";
 
