@@ -41,7 +41,7 @@ param_dict = {
 # ========== Don't change anything below here, unless you know what you are doing 
 
 import sys
-import datetime
+from datetime import datetime
 import requests
 import pyzm.ZMLog as zmlog
 import os
@@ -85,7 +85,7 @@ if len(sys.argv) == 7:
 
 
 param_dict['title'] = '{} Alarm ({})'.format(mname,eid)
-param_dict['message'] = cause
+param_dict['message'] = cause +  datetime.now().strftime('at %I:%M %p, %b-%d')
 if event_type == 'event_end':
     param_dict['title'] = 'Ended:' + param_dict['title']
 
