@@ -55,7 +55,7 @@ def get_image(path, cause):
     if prefix == '[a]':
         return path+'/alarm.jpg'
     else:
-         return path+'/snapshot.jpg'
+        return path+'/snapshot.jpg'
 
 
 # -------- main 
