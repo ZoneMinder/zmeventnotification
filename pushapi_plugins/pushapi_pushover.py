@@ -95,7 +95,6 @@ if len(sys.argv) == 7:
 if not param_dict['token'] or param_dict['user']:
     # read from secrets
     secrets = read_secrets()
-    print (secrets)
     if not param_dict['token']:
         param_dict['token'] = secrets.get('PUSHOVER_APP_TOKEN')
         print (param_dict['token'])
