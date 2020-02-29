@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+version = 0.1
+
 # This is a sample python script for sending notifications over pushover
 # Write your own script to add a new push service, and modify 
 # api_push_script in zmeventnotification.ini to invoke that script
@@ -70,6 +72,7 @@ def read_secrets(config='/etc/zm/secrets.ini'):
 
 # -------- MAIN ---------------
 zmlog.init(name='zmeventnotification_pushapi')
+zmlog.Info('--------| Pushover Plugin v{} |--------'.format(version))
 if len(sys.argv) < 6:
     zmlog.Error ('Missing arguments, got {} arguments, was expecting at least 6: {}'.format(len(sys.argv)-1, sys.argv))
     zmlog.close()
