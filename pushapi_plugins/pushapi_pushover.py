@@ -65,7 +65,7 @@ def read_secrets(config='/etc/zm/secrets.ini'):
     from configparser import ConfigParser
     secrets_object = ConfigParser(interpolation=None)
     secrets_object.optionxform=str
-    zmlog.Debug(1,'Reading secrets from {}'.format(config))
+    zmlog.Debug(1,'eid:{} Reading secrets from {}'.format(eid,config))
     with open(config) as f:
         secrets_object.read_file(f)
     return secrets_object._sections['secrets']
@@ -89,7 +89,7 @@ files = None
 if len(sys.argv) == 7:
     image_path =  sys.argv[6]
     fname=get_image(image_path, cause)
-    zmlog.Debug (1,'Image to be used is: {}'.format(fname))
+    zmlog.Debug (1,'eid:{} Image to be used is: {}'.format(eid,fname))
     files = {
          "attachment": ("image.jpg", open(fname,"rb"), "image/jpeg")
     }
@@ -101,17 +101,22 @@ if not param_dict['token'] or param_dict['user']:
     if not param_dict['token']:
         param_dict['token'] = secrets.get('PUSHOVER_APP_TOKEN')
         print (param_dict['token'])
-        zmlog.Debug(1, "Reading token from secrets")
+        zmlog.Debug(1, "eid:{} Reading token from secrets".format(eid))
     if not param_dict['user']:
         param_dict['user'] = secrets.get('PUSHOVER_USER_KEY'),
-        zmlog.Debug(1, "Reading user from secrets")
+        zmlog.Debug(1, "eid:{} Reading user from secrets".format(eid))
 
 param_dict['title'] = '{} Alarm ({})'.format(mname,eid)
 param_dict['message'] = cause +  datetime.now().strftime(' at %I:%M %p, %b-%d')
 if event_type == 'event_end':
     param_dict['title'] = 'Ended:' + param_dict['title']
+
+disp_param_dict=param_dict.copy()
+disp_param_dict['token']='<removed>'
+disp_param_dict['user']='<removed>'
+zmlog.Debug (1, "eid:{} Pushover playload: data={} files={}".format(eid,disp_param_dict,files))
 r = requests.post("https://api.pushover.net/1/messages.json", data = param_dict, files = files)
-zmlog.Debug(1,"Pushover returned:{}".format(r.text))
+zmlog.Debug(1,"eid:{} Pushover returned:{}".format(eid, r.text))
 print(r.text)
 zmlog.close()
 
