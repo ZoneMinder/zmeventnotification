@@ -153,6 +153,7 @@ my $child_forks = 0;    # Global tracker of active children
 # Declare options.
 
 my $help;
+my $version;
 
 my $config_file;
 my $config_file_present;
@@ -264,7 +265,7 @@ use constant USAGE => <<'USAGE';
 Usage: zmeventnotification.pl [OPTION]...
 
   --help                              Print this page.
-
+  --version                           Print version.
   --config=FILE                       Read options from configuration file (default: /etc/zm/zmeventnotification.ini).
                                       Any CLI options used below will override config settings.
 
@@ -274,12 +275,13 @@ USAGE
 
 GetOptions(
   'help' => \$help,
-
+  'version' => \$version,
   'config=s'     => \$config_file,
   'check-config' => \$check_config,
 );
 
 exit( print(USAGE) ) if $help;
+exit (print($app_version)) if $version;
 
 # Read options from a configuration file.  If --config is specified, try to
 # read it and fail if it can't be read.  Otherwise, try the default

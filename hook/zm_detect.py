@@ -123,8 +123,8 @@ def append_suffix(filename, token):
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument('-c', '--config', required=True, help='config file with path')
-ap.add_argument('-e', '--eventid', required=True, help='event ID to retrieve')
+ap.add_argument('-c', '--config', help='config file with path')
+ap.add_argument('-e', '--eventid', help='event ID to retrieve')
 ap.add_argument('-p',
                 '--eventpath',
                 help='path to store object image file',
@@ -149,8 +149,13 @@ else:
 
 g.logger.info('---------| app version: {} |------------'.format(__version__))
 if args['version']:
-    print('---------| app version: {} |------------'.format(__version__))
+    print(__version__)
     exit(0)
+
+
+if not args['config'] or not args['eventid']:
+    print ('--config and --eventid are required')
+    exit(1)
 
 g.polygons = []
 
