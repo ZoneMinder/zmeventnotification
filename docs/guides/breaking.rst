@@ -1,6 +1,16 @@
 Breaking Changes
 ----------------
 
+Version 5.9.9 onwards
+~~~~~~~~~~~~~~~~~~~~~~~~~
+- You can now hyper charge your push notifications, including getting desktop notifications. See below
+- I now support 3rd party push notification systems. A popular one is `pushover <http://pushover.net>`__ that a lot of people seem to use for customizing the quality of push notifications, including critical notifications, quiet time et. al. This adds the following parameters:
+  - A new section called ``[push]`` in ``zmeventnotification.ini``  that adds two new attributes: ``use_api_push`` and ``api_push_script``
+  - I've provided a sample push script that supports pushover. This gets automatically installed when you use ``install.sh`` into ``/var/lib/zmeventnotification/bin/pushapi_pushover.py``
+  - This also addes a new channel type called ``api`` to the pre-existing ``fcm,web,mqtt`` set.
+  - You are of course, encouraged to write your own 3rd party plugins for push and PR back to the project.
+  - Read more in `this article <https://medium.com/zmninja/hypercharging-push-notifications-with-pushover-and-others-23ed9ab706>`__
+
 Version 5.7.7 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~
 - For those who are happy to use the legacy openALPR self compiled version for license plate detection that does not use DNNs, I support that. This adds new parameters to `objectconfig.ini`. See objectconfig.ini for new parameters under the "If you are using OpenALPR command line" section.

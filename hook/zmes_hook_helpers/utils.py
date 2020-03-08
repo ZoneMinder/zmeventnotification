@@ -1,7 +1,5 @@
 # utility functions that are not generic to a specific model
 
-# includes idiotic shenanigans to make things work in Python2 and Python3:
-# https://python-future.org/compatible_idioms.html
 
 from __future__ import division
 import logging
