@@ -1,5 +1,31 @@
 # Changelog
 
+## [v5.9.9](https://github.com/pliablepixels/zmeventnotification/tree/v5.9.9) (2020-03-08)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.7.7...v5.9.9)
+
+**Implemented enhancements:**
+
+- Add ability to add any arbitrary 3rd party push server [\#225](https://github.com/pliablepixels/zmeventnotification/issues/225)
+
+
+**Fixed bugs:**
+
+- ZM may overwrite detection [\#224](https://github.com/pliablepixels/zmeventnotification/issues/224)
+
+**Closed issues:**
+
+- zmeventserver not connecting to mlapi after zm upgrade [\#228](https://github.com/pliablepixels/zmeventnotification/issues/228)
+- Montage Review Calendars not updating [\#223](https://github.com/pliablepixels/zmeventnotification/issues/223)
+- Can zmeventnotification.pl update Events.ObjectScore? [\#222](https://github.com/pliablepixels/zmeventnotification/issues/222)
+- MQTT username and password not in secrets.ini  [\#220](https://github.com/pliablepixels/zmeventnotification/issues/220)
+- Motion, Object Detection and linked cameras [\#208](https://github.com/pliablepixels/zmeventnotification/issues/208)
+- No preview images on iOS and WatchOS when turning on ML Hooks [\#198](https://github.com/pliablepixels/zmeventnotification/issues/198)
+
+**Merged pull requests:**
+
+- Moves any MQTT username and password to secrets.ini [\#221](https://github.com/pliablepixels/zmeventnotification/pull/221) ([bmsleight](https://github.com/bmsleight))
+
 ## [v5.7.7](https://github.com/pliablepixels/zmeventnotification/tree/v5.7.7) (2020-02-20)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.7.4...v5.7.7)
@@ -56,7 +82,6 @@
 - Update config.rst [\#200](https://github.com/pliablepixels/zmeventnotification/pull/200) ([undigo](https://github.com/undigo))
 - 191b mqtt publish from parent only [\#199](https://github.com/pliablepixels/zmeventnotification/pull/199) ([darknicht66](https://github.com/darknicht66))
 - fixes \#191 add MQTT tick [\#194](https://github.com/pliablepixels/zmeventnotification/pull/194) ([darknicht66](https://github.com/darknicht66))
-- Multiple face and clustering support [\#174](https://github.com/pliablepixels/zmeventnotification/pull/174) ([pliablepixels](https://github.com/pliablepixels))
 
 ## [v5.4.1](https://github.com/pliablepixels/zmeventnotification/tree/v5.4.1) (2019-12-22)
 
@@ -129,6 +154,7 @@
 **Merged pull requests:**
 
 - Hangup debug [\#176](https://github.com/pliablepixels/zmeventnotification/pull/176) ([pliablepixels](https://github.com/pliablepixels))
+- Multiple face and clustering support [\#174](https://github.com/pliablepixels/zmeventnotification/pull/174) ([pliablepixels](https://github.com/pliablepixels))
 
 ## [v4.5.8](https://github.com/pliablepixels/zmeventnotification/tree/v4.5.8) (2019-11-06)
 
