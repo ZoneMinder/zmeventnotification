@@ -217,6 +217,8 @@ my $use_hook_description;
 my $keep_frame_match_type;
 my $skip_monitors;
 my %skip_monitors;
+my $hook_skip_monitors;
+my %hook_skip_monitors;
 my $hook_pass_image_path;
 
 my $picture_url;
@@ -425,6 +427,8 @@ sub loadEsConfigSettings {
   else {
     printInfo("ES will be restarted at $restart_interval seconds");
   }
+  $skip_monitors = config_get_val($config, 'general', 'skip_monitors');
+	%skip_monitors = map { $_ => !undef } split(',', $skip_monitors);
 
   # If an option set a value, leave it.  If there's a value in the config, use
   # it.  Otherwise, use a default value if it's available.
@@ -554,8 +558,8 @@ sub loadEsConfigSettings {
   $keep_frame_match_type =
     config_get_val( $config, 'hook', 'keep_frame_match_type',
     DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE );
-  $skip_monitors = config_get_val( $config, 'hook', 'skip_monitors' );
-	%skip_monitors = map { $_ => !undef } split(',', $skip_monitors);
+  $hook_skip_monitors = config_get_val( $config, 'hook', 'skip_monitors' );
+	%hook_skip_monitors = map { $_ => !undef } split(',', $hook_skip_monitors);
   $hook_pass_image_path =
     config_get_val( $config, 'hook', 'hook_pass_image_path' );
 
@@ -1365,6 +1369,11 @@ sub loadMonitors {
   my $res = $sth->execute( $Config{ZM_SERVER_ID} ? $Config{ZM_SERVER_ID} : () )
     or Fatal( "Can't execute: " . $sth->errstr() );
   while ( my $monitor = $sth->fetchrow_hashref() ) {
+
+		if ( $skip_monitors{$monitor->{Id}} ) {
+			printDebug("$$monitor{Id} is in skip list, not using hooks");
+			next;
+		}
 
     if ( zmMemVerify($monitor) ) {
       $monitor->{CurrentState}        = zmGetMonitorState($monitor);
@@ -2987,8 +2996,8 @@ sub processNewAlarmsInFork {
     if ( $alarm->{Start}->{State} eq 'pending' ) {
 
       # is this monitor blocked from hooks in config?
-      if ( $skip_monitors{$mid} ) {
-        printInfo("$mid is in skip list, not using hooks");
+      if ( $hook_skip_monitors{$mid} ) {
+        printInfo("$mid is in hook skip list, not using hooks");
         $alarm->{Start}->{State} = 'ready';
 
         # lets treat this like a hook success so it
