@@ -216,6 +216,7 @@ my $event_end_notify_if_start_success;
 my $use_hook_description;
 my $keep_frame_match_type;
 my $skip_monitors;
+my %skip_monitors;
 my $hook_pass_image_path;
 
 my $picture_url;
@@ -554,6 +555,7 @@ sub loadEsConfigSettings {
     config_get_val( $config, 'hook', 'keep_frame_match_type',
     DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE );
   $skip_monitors = config_get_val( $config, 'hook', 'skip_monitors' );
+	%skip_monitors = map { $_ => !undef } split(',', $skip_monitors);
   $hook_pass_image_path =
     config_get_val( $config, 'hook', 'hook_pass_image_path' );
 
@@ -2985,18 +2987,14 @@ sub processNewAlarmsInFork {
     if ( $alarm->{Start}->{State} eq 'pending' ) {
 
       # is this monitor blocked from hooks in config?
-      if ( $skip_monitors
-        && isInList( $skip_monitors, $mid ) )
-      {
+      if ( $skip_monitors{$mid} ) {
         printInfo("$mid is in skip list, not using hooks");
         $alarm->{Start}->{State} = 'ready';
 
         # lets treat this like a hook success so it
         # gets sent out
-        $hookResult = 0
-
-      }
-      else {    # not a blocked monitor
+        $hookResult = 0;
+      } else {    # not a blocked monitor
 
         if ( $event_start_hook && $use_hooks ) {
 
