@@ -1647,7 +1647,7 @@ sub sendOverFCM {
   elsif ( substr( $alarm->{Cause}, 0, 3 ) eq '[s]' ) {
     my $npic = $pic =~ s/BESTMATCH/snapshot/gr;
     $pic = $npic;
-    printDebug("Alarm frame matched, changing picture url to:$pic ");
+    printDebug("Snapshot frame matched, changing picture url to:$pic ");
     $alarm->{Cause} = substr( $alarm->{Cause}, 4 )
       if ( !$keep_frame_match_type );
   }
@@ -3253,7 +3253,7 @@ sub processNewAlarmsInFork {
 
           if ($send_event_end_notification) {
 
-            if (isAllowedChannel ('event_start', 'api', $hookResult ) || !$event_end_hook || !$use_hooks) {
+            if (isAllowedChannel ('event_end', 'api', $hookResult ) || !$event_end_hook || !$use_hooks) {
             printInfo ('Sending push over API as it is allowed for event_end');
 
             my $api_cmd = $api_push_script. ' '
