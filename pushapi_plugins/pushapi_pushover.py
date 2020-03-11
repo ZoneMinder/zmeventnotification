@@ -52,7 +52,9 @@ import os
 # ES passes the image path, this routine figures out which image
 # to use inside that path
 def get_image(path, cause):
-    if os.path.exists(path+'/objdetect.jpg'):
+    if os.path.exists(path+'/objdetect.gif'):
+        return path+'/objdetect.gif'
+    elif os.path.exists(path+'/objdetect.jpg'):
         return path+'/objdetect.jpg'
     prefix = cause[0:2]
     if prefix == '[a]':
@@ -89,9 +91,16 @@ files = None
 if len(sys.argv) == 7:
     image_path =  sys.argv[6]
     fname=get_image(image_path, cause)
+
     zmlog.Debug (1,'eid:{} Image to be used is: {}'.format(eid,fname))
+    f,e=os.path.splitext(fname)
+    if e.lower() == '.gif':
+        ctype = 'image/gif'
+    else:
+        ctype = 'image/jpeg'
+    zmlog.Debug (1,'Setting ctype to {} for extension {}'.format(ctype, e.lower()))
     files = {
-         "attachment": ("image.jpg", open(fname,"rb"), "image/jpeg")
+         "attachment": ("image"+e.lower(), open(fname,"rb"), ctype)
     }
 
 
@@ -100,7 +109,6 @@ if not param_dict['token'] or param_dict['user']:
     secrets = read_secrets()
     if not param_dict['token']:
         param_dict['token'] = secrets.get('PUSHOVER_APP_TOKEN')
-        print (param_dict['token'])
         zmlog.Debug(1, "eid:{} Reading token from secrets".format(eid))
     if not param_dict['user']:
         param_dict['user'] = secrets.get('PUSHOVER_USER_KEY'),
