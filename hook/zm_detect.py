@@ -165,7 +165,9 @@ g.polygons = []
 # process config file
 g.ctx = ssl.create_default_context()
 
+
 utils.process_config(args, g.ctx)
+
 
 # misc came later, so lets be safe
 if not os.path.exists(g.config['base_data_path'] + '/misc/'):
@@ -678,8 +680,11 @@ else:
                     g.logger.error('GIF: Traceback:{}'.format(traceback.format_exc()))
                    
         else:
-            g.logger.error(
-                'Could not write image to ZoneMinder as eventpath not present')
+            if not len(bbox):
+                g.logger.debug('Not writing image, as no objects recorded')
+            else:
+                g.logger.error(
+                    'Could not write image to ZoneMinder as eventpath not present')
 
 
     # Now create prediction string

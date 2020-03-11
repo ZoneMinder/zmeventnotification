@@ -1665,6 +1665,7 @@ sub sendOverFCM {
 
   print WRITER 'badge--TYPE--' . $obj->{id} . '--SPLIT--' . $badge . '\n';
   my $uri = 'https://fcm.googleapis.com/fcm/send';
+  #my $uri = 'https://fcm.googleapis.com/v1/projects/myproject-b5ae1/messages:send'
   my $json;
 
   # use zmNinja FCM key if the user did not override
