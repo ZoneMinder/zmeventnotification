@@ -64,7 +64,10 @@ class Face:
             g.logger.error ('Error loading KNN model: {}'.format(e))
 
     def get_classes(self):
-        return self.knn.classes_
+        if self.knn:
+            return self.knn.classes_
+        else:
+            return []
 
     def _rescale_rects(self, a):
         rects = []
@@ -142,7 +145,7 @@ class Face:
         matched_face_names = []
         matched_face_rects = []
 
-        for pred, loc, rec in zip(,prediction_labels
+        for pred, loc, rec in zip(prediction_labels,
                                   face_locations, are_matches):
             label = pred if rec else g.config['unknown_face_name']
             if not rec and g.config['save_unknown_faces'] == 'yes':
