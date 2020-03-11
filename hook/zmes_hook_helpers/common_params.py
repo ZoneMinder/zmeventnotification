@@ -104,6 +104,11 @@ config_vals = {
             'default': 'yes',
             'type': 'string'
         },
+        'create_gif':{
+            'section': 'general',
+            'default': 'no',
+            'type': 'string'
+        },
         'write_debug_image':{
             'section': 'general',
             'default': 'yes',
