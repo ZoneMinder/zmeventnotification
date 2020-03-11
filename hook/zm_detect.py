@@ -24,6 +24,9 @@ import zmes_hook_helpers.utils as utils
 import zmes_hook_helpers.image_manip as img
 import zmes_hook_helpers.common_params as g
 
+import traceback
+
+
 import zmes_hook_helpers.alpr as alpr
 from zmes_hook_helpers.__init__ import __version__
 
@@ -665,7 +668,15 @@ else:
             g.logger.debug('Writing JSON output to {}'.format(jf))
             with open(jf, 'w') as jo:
                 json.dump(final_json, jo)
-
+            
+            if g.config['create_gif'] == 'yes':
+                g.logger.debug('GIF: Creating burst...')
+                try:
+                    img.createGif(args['eventid'],args['eventpath']+'/objdetect.gif')
+                except Exception as e:
+                    g.logger.error('Error creating GIF:{}'.format(e))
+                    g.logger.error('GIF: Traceback:{}'.format(traceback.format_exc()))
+                   
         else:
             g.logger.error(
                 'Could not write image to ZoneMinder as eventpath not present')
