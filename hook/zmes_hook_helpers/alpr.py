@@ -119,7 +119,7 @@ class PlateRecognizer(AlprBase):
         if self.remove_temp:
             os.remove(filename)
 
-        for plates in response['results']:
+        for plates in response.get('results'):
             label = plates['plate']
             dscore = plates['dscore']
             score = plates['score']
@@ -137,6 +137,8 @@ class PlateRecognizer(AlprBase):
                     'ALPR: discarding plate:{} because its dscore:{}/score:{} are not in range of configured dscore:{} score:{}'
                     .format(label, dscore, score, options.get('min_dscore'),
                             options.get('min_score')))
+
+        g.logger.debug ('Exiting ALPR with labels:{}'.format(labels))
         return (bbox, labels, confs)
 
 
