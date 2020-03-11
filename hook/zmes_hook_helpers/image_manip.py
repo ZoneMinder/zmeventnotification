@@ -5,8 +5,67 @@ import cv2
 import numpy as np
 import pickle
 import re
-
+import requests
+import time
 # Generic image related algorithms
+
+
+def createGif(eid,fname):
+
+
+    import imageio
+    from pygifsicle import optimize
+    url = '{}/index.php?view=image&width=400&eid={}&username={}&password={}'.format(g.config['portal'],eid,g.config['user'],g.config['password'])
+    api_url = '{}/events/{}.json?username={}&password={}'.format(g.config['api_portal'],eid,g.config['user'],g.config['password'])
+    disp_api_url='{}/events/{}.json?username={}&password=***'.format(g.config['api_portal'],eid,g.config['user'])
+
+    tries = 3
+    while True and tries:
+        g.logger.debug (f'GIF: Getting {disp_api_url}')
+        r = requests.get(api_url).json()['event']['Event']
+        g.logger.debug (f'GIF: Response {r}')
+        if r['Frames'] is None:
+            g.logger.debug ('Not enough frames written for me to create a GIF, sleeping...')
+            tries = tries - 1
+            time.sleep(20)
+        else:
+            g.logger.debug ('GIF: Got sufficient frames')
+            break
+        # fid is the anchor frame
+    if not tries:
+        g.logger.error ('GIF: Bailing, failed too many times')
+        return
+    s_aid=r.get('AlarmFrameId')
+    s_sid=r.get('MaxScoreFrameId')
+    if not s_aid and not s_sid:
+        raise ValueError('GIF: API missing AlarmframeId/MaxScoreFrameId. cannot create gif')
+    fid=int(s_sid)
+    if s_aid is not None:
+        fid = int(s_aid)
+
+    totframes=int(r['Frames'])
+    length=round(float(r['Length']))
+    fps=round(totframes/length)
+    g.logger.debug ('GIF: event fps={}'.format(fps))
+
+    target_fps = 2
+    buffer_seconds = 2 #seconds
+
+    start_frame = int(max(fid - (buffer_seconds*fps),1))
+    end_frame = int(min(totframes, fid + (buffer_seconds*fps)))
+    skip =round(fps/target_fps)
+
+    g.logger.debug (f'GIF: anchor={fid} start={start_frame} end={end_frame} skip={skip}')
+    images = []
+    for i in range(start_frame, end_frame, skip):
+        p_url=url+'&fid={}'.format(i)
+        g.logger.debug (f'GIF: Grabbing Frame:{i}')
+        images.append(imageio.imread(p_url))
+    g.logger.debug ('GIF: Saving...')
+    imageio.mimsave(fname, images, format='GIF', fps=target_fps)
+    g.logger.debug ('GIF:Optimizing...')
+    optimize(source=fname, colors=256)
+    g.logger.debug (f'GIF: saved to {fname}')
 
 # once all bounding boxes are detected, we check to see if any of them
 # intersect the polygons, if specified
