@@ -301,9 +301,10 @@ def process_config(args, ctx):
                         g.polygons.append({'name': k, 'value': str2tuple(v)})
                         g.logger.debug('adding polygon: {} [{}]'.format(k, v))
 
-                # now import zones if needed
-                if g.config['import_zm_zones'] == 'yes':
-                    import_zm_zones(args['monitorid'])
+            # now import zones if needed
+            # this should be done irrespective of a monitor section
+            if g.config['import_zm_zones'] == 'yes':
+                import_zm_zones(args['monitorid'])
 
         else:
             g.logger.info(
