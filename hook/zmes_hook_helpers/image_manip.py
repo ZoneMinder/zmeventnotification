@@ -7,38 +7,39 @@ import pickle
 import re
 import requests
 import time
+import os
+import traceback
 # Generic image related algorithms
 
 
 def createGif(eid,fname):
-
-
     import imageio
     from pygifsicle import optimize
-    url = '{}/index.php?view=image&width=400&eid={}&username={}&password={}'.format(g.config['portal'],eid,g.config['user'],g.config['password'])
+    url = '{}/index.php?view=image&width={}&eid={}&username={}&password={}'.format(g.config['portal'],g.config['animation_width'],eid,g.config['user'],g.config['password'])
     api_url = '{}/events/{}.json?username={}&password={}'.format(g.config['api_portal'],eid,g.config['user'],g.config['password'])
     disp_api_url='{}/events/{}.json?username={}&password=***'.format(g.config['api_portal'],eid,g.config['user'])
 
-    tries = 3
+    tries = g.config['animation_max_tries']
+    sleep_secs = g.config['animation_retry_sleep']
     while True and tries:
-        g.logger.debug (f'GIF: Getting {disp_api_url}')
+        g.logger.debug (f'animation: Getting {disp_api_url}')
         r = requests.get(api_url).json()['event']['Event']
-        g.logger.debug (f'GIF: Response {r}')
+        g.logger.debug (f'animation: Response {r}')
         if r['Frames'] is None:
-            g.logger.debug ('Not enough frames written for me to create a GIF, sleeping...')
+            g.logger.debug (f'No frames found yet via API, deferring check for {sleep_secs} seconds...')
             tries = tries - 1
-            time.sleep(20)
+            time.sleep(sleep_secs)
         else:
-            g.logger.debug ('GIF: Got sufficient frames')
+            g.logger.debug ('animation: Got sufficient frames')
             break
         # fid is the anchor frame
     if not tries:
-        g.logger.error ('GIF: Bailing, failed too many times')
+        g.logger.error ('animation: Bailing, failed too many times')
         return
     s_aid=r.get('AlarmFrameId')
     s_sid=r.get('MaxScoreFrameId')
     if not s_aid and not s_sid:
-        raise ValueError('GIF: API missing AlarmframeId/MaxScoreFrameId. cannot create gif')
+        raise ValueError('animation: API missing AlarmframeId/MaxScoreFrameId. cannot create gif')
     fid=int(s_sid)
     if s_aid is not None:
         fid = int(s_aid)
@@ -46,7 +47,7 @@ def createGif(eid,fname):
     totframes=int(r['Frames'])
     length=round(float(r['Length']))
     fps=round(totframes/length)
-    g.logger.debug ('GIF: event fps={}'.format(fps))
+    g.logger.debug ('animation: event fps={}'.format(fps))
 
     target_fps = 2
     buffer_seconds = 2 #seconds
@@ -55,17 +56,28 @@ def createGif(eid,fname):
     end_frame = int(min(totframes, fid + (buffer_seconds*fps)))
     skip =round(fps/target_fps)
 
-    g.logger.debug (f'GIF: anchor={fid} start={start_frame} end={end_frame} skip={skip}')
+    g.logger.debug (f'animation: anchor={fid} start={start_frame} end={end_frame} skip={skip}')
+    g.logger.debug('animation: Grabbing frames...')
     images = []
     for i in range(start_frame, end_frame, skip):
         p_url=url+'&fid={}'.format(i)
-        g.logger.debug (f'GIF: Grabbing Frame:{i}')
-        images.append(imageio.imread(p_url))
-    g.logger.debug ('GIF: Saving...')
-    imageio.mimsave(fname, images, format='GIF', fps=target_fps)
-    g.logger.debug ('GIF:Optimizing...')
-    optimize(source=fname, colors=256)
-    g.logger.debug (f'GIF: saved to {fname}')
+        g.logger.debug (f'animation: Grabbing Frame:{i}')
+        try:
+            images.append(imageio.imread(p_url))
+        except Exception as e:
+            g.logger.error (f'Error downloading frame {i}: Error:{e}')
+
+    g.logger.debug ('animation: Saving...')
+    try:
+        imageio.mimsave(fname, images, format='GIF', fps=target_fps)
+        g.logger.debug ('animation:Optimizing...')
+        optimize(source=fname, colors=256)
+        size = os.stat(fname).st_size
+        g.logger.debug (f'animation: saved to {fname}, size {size} bytes')
+    except Exception as e:
+        g.logger.error('animation: Traceback:{}'.format(traceback.format_exc()))
+
+    
 
 # once all bounding boxes are detected, we check to see if any of them
 # intersect the polygons, if specified

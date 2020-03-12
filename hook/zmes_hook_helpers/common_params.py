@@ -104,11 +104,6 @@ config_vals = {
             'default': 'yes',
             'type': 'string'
         },
-        'create_gif':{
-            'section': 'general',
-            'default': 'no',
-            'type': 'string'
-        },
         'write_debug_image':{
             'section': 'general',
             'default': 'yes',
@@ -133,6 +128,29 @@ config_vals = {
             'section': 'general',
             'default': '(127,140,141)',
             'type': 'eval'
+        },
+
+        # animation for push
+
+        'create_animation':{
+            'section': 'animation',
+            'default': 'no',
+            'type': 'string'
+        },
+        'animation_width':{
+            'section': 'animation',
+            'default': '400',
+            'type': 'int'
+        },
+        'animation_retry_sleep':{
+            'section': 'animation',
+            'default': '15',
+            'type': 'int'
+        },
+        'animation_max_tries':{
+            'section': 'animation',
+            'default': '4',
+            'type': 'int'
         },
 
         # General ML
