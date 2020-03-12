@@ -149,7 +149,7 @@ config_vals = {
         },
         'animation_max_tries':{
             'section': 'animation',
-            'default': '4',
+            'default': '3',
             'type': 'int'
         },
 

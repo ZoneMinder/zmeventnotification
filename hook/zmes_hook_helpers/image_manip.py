@@ -12,40 +12,55 @@ import traceback
 # Generic image related algorithms
 
 
-def createGif(eid,fname):
+def createGif(frametype, eid,fname):
     import imageio
     from pygifsicle import optimize
     url = '{}/index.php?view=image&width={}&eid={}&username={}&password={}'.format(g.config['portal'],g.config['animation_width'],eid,g.config['user'],g.config['password'])
     api_url = '{}/events/{}.json?username={}&password={}'.format(g.config['api_portal'],eid,g.config['user'],g.config['password'])
     disp_api_url='{}/events/{}.json?username={}&password=***'.format(g.config['api_portal'],eid,g.config['user'])
 
-    tries = g.config['animation_max_tries']
+    rtries = g.config['animation_max_tries']
     sleep_secs = g.config['animation_retry_sleep']
-    while True and tries:
-        g.logger.debug (f'animation: Getting {disp_api_url}')
-        r = requests.get(api_url).json()['event']['Event']
-        g.logger.debug (f'animation: Response {r}')
-        if r['Frames'] is None:
-            g.logger.debug (f'No frames found yet via API, deferring check for {sleep_secs} seconds...')
-            tries = tries - 1
-            time.sleep(sleep_secs)
+    fid = None
+    while True and rtries:
+        ctries = g.config['animation_max_tries']-rtries+1
+        g.logger.debug (f'animation: Try:{ctries} Getting {disp_api_url}')
+        r = requests.get(api_url).json()
+        r_e = r['event']['Event']
+        r_f = r['event']['Frame']
+        rf_len = len(r_f)
+
+        if frametype == 'alarm':
+            fid  = int(r_e.get('AlarmFrameId'))
+        elif frametype == 'snapshot':
+            fid = int(r_e.get('MaxScoreFrameId'))
         else:
-            g.logger.debug ('animation: Got sufficient frames')
-            break
+            fid = int(frameid)
+
+        #g.logger.debug (f'animation: Response {r}')
+        if r_f is None or not rf_len:
+            g.logger.debug (f'No frames found yet via API, deferring check for {sleep_secs} seconds...')
+            rtries = rtries - 1
+            time.sleep(sleep_secs)
+            continue
+
+        if not rf_len > fid+20:
+            g.logger.debug (f'I\'ve got {rf_len} frames, but that\'s not enough as anchor frame is type:{frametype}:{fid}, deferring check for {sleep_secs} seconds...')
+            rtries = rtries - 1
+            time.sleep(sleep_secs)
+            continue
+
+
+        g.logger.debug ('animation: Got {} frames'.format(len(r_f)))
+        break
         # fid is the anchor frame
-    if not tries:
+    if not rtries:
         g.logger.error ('animation: Bailing, failed too many times')
         return
-    s_aid=r.get('AlarmFrameId')
-    s_sid=r.get('MaxScoreFrameId')
-    if not s_aid and not s_sid:
-        raise ValueError('animation: API missing AlarmframeId/MaxScoreFrameId. cannot create gif')
-    fid=int(s_sid)
-    if s_aid is not None:
-        fid = int(s_aid)
+  
 
-    totframes=int(r['Frames'])
-    length=round(float(r['Length']))
+    totframes=len(r_f)
+    length=round(float(r_f[-1]['Delta']))
     fps=round(totframes/length)
     g.logger.debug ('animation: event fps={}'.format(fps))
 

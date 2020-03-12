@@ -671,10 +671,11 @@ else:
             with open(jf, 'w') as jo:
                 json.dump(final_json, jo)
             
-            if g.config['create_animation'] == 'yes':
+            
+            if g.config['create_animation'] == 'yes' and False:
                 g.logger.debug('animation: Creating burst...')
                 try:
-                    img.createGif(args['eventid'],args['eventpath']+'/objdetect.gif')
+                    img.createGif(frame_type, args['eventid'],args['eventpath']+'/objdetect.gif')
                 except Exception as e:
                     g.logger.error('Error creating animation:{}'.format(e))
                     g.logger.error('animation: Traceback:{}'.format(traceback.format_exc()))
