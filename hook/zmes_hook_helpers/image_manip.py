@@ -61,7 +61,7 @@ def createGif(eid,fname):
     images = []
     for i in range(start_frame, end_frame, skip):
         p_url=url+'&fid={}'.format(i)
-        g.logger.debug (f'animation: Grabbing Frame:{i}')
+        #g.logger.debug (f'animation: Grabbing Frame:{i}')
         try:
             images.append(imageio.imread(p_url))
         except Exception as e:
