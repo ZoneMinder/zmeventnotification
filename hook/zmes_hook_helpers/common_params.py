@@ -73,6 +73,11 @@ config_vals = {
             'default': 'snapshot',
             'type': 'string'
         },
+        'bestmatch_order': {
+            'section':'general',
+            'default': 'a,s',
+            'type':'string',
+        },
         'wait': {
             'section': 'general',
             'default':'0',

@@ -321,7 +321,11 @@ for model in g.config['models']:
     saved_file = None
     # Apply the model to all files
     remote_failed = False
-    for filename in [filename1, filename2]:
+
+    # default order is alarm, snapshot
+    frame_order = [filename2, filename1] if g.config['bestmatch_order'] == 's,a' else [filename1,filename2]
+
+    for filename in frame_order:
         if filename is None:
             continue
         #filename = './car.jpg'
