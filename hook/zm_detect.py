@@ -672,7 +672,7 @@ else:
                 json.dump(final_json, jo)
             
             
-            if g.config['create_animation'] == 'yes' and False:
+            if g.config['create_animation'] == 'yes':
                 g.logger.debug('animation: Creating burst...')
                 try:
                     img.createGif(frame_type, args['eventid'],args['eventpath']+'/objdetect.gif')
