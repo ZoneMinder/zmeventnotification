@@ -122,7 +122,7 @@ if event_type == 'event_end':
 disp_param_dict=param_dict.copy()
 disp_param_dict['token']='<removed>'
 disp_param_dict['user']='<removed>'
-zmlog.Debug (1, "eid:{} Pushover playload: data={} files={}".format(eid,disp_param_dict,files))
+zmlog.Debug (1, "eid:{} Pushover payload: data={} files={}".format(eid,disp_param_dict,files))
 r = requests.post("https://api.pushover.net/1/messages.json", data = param_dict, files = files)
 zmlog.Debug(1,"eid:{} Pushover returned:{}".format(eid, r.text))
 print(r.text)
