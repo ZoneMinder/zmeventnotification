@@ -52,8 +52,8 @@ import os
 # ES passes the image path, this routine figures out which image
 # to use inside that path
 def get_image(path, cause):
-    if os.path.exists(path+'/objdetect.gif'):
-        return path+'/objdetect.gif'
+    if os.path.exists(path+'/objdetect.mp4'):
+        return path+'/objdetect.mp4'
     elif os.path.exists(path+'/objdetect.jpg'):
         return path+'/objdetect.jpg'
     prefix = cause[0:2]
@@ -94,8 +94,8 @@ if len(sys.argv) == 7:
 
     zmlog.Debug (1,'eid:{} Image to be used is: {}'.format(eid,fname))
     f,e=os.path.splitext(fname)
-    if e.lower() == '.gif':
-        ctype = 'image/gif'
+    if e.lower() == '.mp4':
+        ctype = 'video/mp4'
     else:
         ctype = 'image/jpeg'
     zmlog.Debug (1,'Setting ctype to {} for extension {}'.format(ctype, e.lower()))

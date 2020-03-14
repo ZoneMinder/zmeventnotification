@@ -12,9 +12,9 @@ import traceback
 # Generic image related algorithms
 
 
-def createGif(frametype, eid,fname):
+def createAnimation(frametype, eid,fname):
     import imageio
-    from pygifsicle import optimize
+    #from pygifsicle import optimize
     url = '{}/index.php?view=image&width={}&eid={}&username={}&password={}'.format(g.config['portal'],g.config['animation_width'],eid,g.config['user'],g.config['password'])
     api_url = '{}/events/{}.json?username={}&password={}'.format(g.config['api_portal'],eid,g.config['user'],g.config['password'])
     disp_api_url='{}/events/{}.json?username={}&password=***'.format(g.config['api_portal'],eid,g.config['user'])
@@ -65,7 +65,7 @@ def createGif(frametype, eid,fname):
     g.logger.debug ('animation: event fps={}'.format(fps))
 
     target_fps = 2
-    buffer_seconds = 2 #seconds
+    buffer_seconds = 5 #seconds
 
     start_frame = int(max(fid - (buffer_seconds*fps),1))
     end_frame = int(min(totframes, fid + (buffer_seconds*fps)))
@@ -82,11 +82,11 @@ def createGif(frametype, eid,fname):
         except Exception as e:
             g.logger.error (f'Error downloading frame {i}: Error:{e}')
 
-    g.logger.debug ('animation: Saving...')
+    g.logger.debug (f'animation: Saving {fname}...')
     try:
-        imageio.mimsave(fname, images, format='GIF', fps=target_fps)
-        g.logger.debug ('animation:Optimizing...')
-        optimize(source=fname, colors=256)
+        imageio.mimsave(fname, images, format='mp4', fps=target_fps)
+        #g.logger.debug ('animation:Optimizing...')
+        #optimize(source=fname, colors=256)
         size = os.stat(fname).st_size
         g.logger.debug (f'animation: saved to {fname}, size {size} bytes')
     except Exception as e:
