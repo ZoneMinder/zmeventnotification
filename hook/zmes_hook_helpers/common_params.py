@@ -142,6 +142,11 @@ config_vals = {
             'default': 'no',
             'type': 'string'
         },
+        'animation_types':{
+            'section': 'animation',
+            'default': 'mp4',
+            'type': 'string'
+        },
         'animation_width':{
             'section': 'animation',
             'default': '400',
