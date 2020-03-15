@@ -64,7 +64,7 @@ if ( !try_use('JSON') ) {
 #
 # ==========================================================================
 
-my $app_version = '5.9';
+my $app_version = '5.10';
 
 # ==========================================================================
 #
@@ -1615,6 +1615,10 @@ sub sendOverFCM {
     printDebug(
       'FCM called when hook failed, so making sure we do not use objdetect in url'
     );
+
+    # could be any of these
+    $pic = $pic =~ s/objdetect_mp4/snapshot/gr;
+    $pic = $pic =~ s/objdetect_gif/snapshot/gr;
     $pic = $pic =~ s/objdetect/snapshot/gr;
   }
 
