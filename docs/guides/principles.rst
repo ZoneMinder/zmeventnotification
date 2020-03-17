@@ -10,6 +10,7 @@ This guide is meant to give you an idea of how the Event Notification Server (ES
 The ES is a perl process (typically ``/usr/bin/zmeventnotification.pl``) that acts like just any other ZM daemon (there are many) that is started by ZoneMinder when it starts up. Specifically, the ES gets "auto-started" only if you have enabled ``OPT_USE_EVENT_NOTIFICATION`` in your ``Zoneminder->System`` menu options. Technically, ZM uses a 'control' process called ``zmdc.pl`` that starts a bunch of important daemons (see `here <https://github.com/ZoneMinder/zoneminder/blob/release-1.34/scripts/zmdc.pl.in#L93>`__ for a list of daemons) and keeps a tab on them. If any of them die, they get restarted.
 
 .. sidebar:: Configuration files
+    
     This may be a good place to talk about configuration files. The ES has many customizations that are controlled by ``/etc/zm/zmeventnotification.ini``. If you are using hooks, they are controlled by ``/etc/zm/objectconfig.ini``. Both these files use ``/etc/zm/secrets.ini`` to move personal information away from config files. Study both these ini files well. They are heavily commented for your benefit.
 
 2: Detecting New Events
@@ -65,6 +66,7 @@ Why do I say above that you *may* get a notification?
 You'd think if the channels conditions are met and the hook conditions are met, then those channels *will* get a notification. Not quite. 
 
 .. note::
+
     There is another "configuration" file that impacts this decision process. This only applies to the "fcm" channel and is not documented very much. So read this section well.
 
 There is another file, ``/var/lib/zmeventnotification/push/tokens.txt`` that dictates if events are finally sent or not. This pre-dates all the hook stuff and was created really so that zmNinja could receive notifications from the ES.
@@ -91,6 +93,7 @@ The contents above show I have 2 devices configured, one is an iOS device and th
 - column 5: Finally, this tells us if push is enabled or disabled for this device. There are two ways to disable - you can disable push notifications for zmNinja on your device, or you can simply uncheck "use event server" in zmNinja. This is for the latter case. If you uncheck "use event server", we need to be able to tell the ES that even though it has a token on file, it should not send notifications.
 
 .. important::
+
     It is important to note here that if zmNinja is not able to connect to the ES at least for the first time, you will never receive notifications. Check your ``tokens.txt`` file to make sure you have entries. If you don't that means zmNinja can't reach your ES.
 
   
