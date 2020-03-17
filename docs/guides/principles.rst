@@ -24,7 +24,7 @@ Once the ES is up and running, it uses shared memory to know when new events are
 -----------------------------------------------------
 When the ES detects a new event, it forks a sub-process to handle that event and continues its loop to listening for new events (by polling SHM). There is exactly one fork for each new event and that fork typically lives till the event is completely finished.
 
-Step 3.1: Hooks (Optional)
+3.1: Hooks (Optional)
 ***************************
 
 If you are *not* using hooks, that is ``use_hooks=no`` in ``/etc/zm/zmeventnotification.ini`` then directly skip to the next section.
@@ -43,6 +43,13 @@ The ES has no idea what the event start script does. All it cares about is the "
 So at this stage, we have a new event and we need to decide if the ES will send out a notification. The following factors matter:
 
 - If you had hooks enabled, and the hook succeeded (i.e. return value of ``0``), then the notification *may* be sent to the channels you specified in ``event_start_notify_on_hook_success``. If the hook failed (i.e. return value of non zero, then the notification *may* be sent to the channels specified in ``event_start_notify_on_hook_fail``)
+
+.. sidebar:: Summary of rules:
+
+  * if hooks are used, needs to return 0 as exit status
+  * channel must be in the notify_on_xxx attribute
+  * if FCM, monitor must be in tokens.txt for that device
+  * if FCM, delay must be > delay specified in tokens.txt
 
 3.2.1: Wait what is a channel?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
