@@ -11,6 +11,7 @@ Event NotificationServer Documentation
         
         guides/breaking
         guides/install
+        guides/principles
         guides/hooks      
         guides/config
         guides/es_faq

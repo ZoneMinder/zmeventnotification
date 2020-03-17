@@ -1,6 +1,12 @@
 Breaking Changes
 ----------------
 
+Version  5.10 onwards
+~~~~~~~~~~~~~~~~~~~~~~
+- Added support for live animations as part of push messages. This requires an upgraded zmNinja app (``1.3.0.91`` or above) as well as ZoneMinder master (1.35) as of Mar 17 2020. Without these two updates, live notifications will not work. Specifically:
+  - This introduces a new section in ``objectconfig.ini`` called ``[animation]``. Please read the config for more details.
+  - You are also going to have to re-run ``install.sh`` to install new dependencies
+
 Version 5.9.9 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 - You can now hyper charge your push notifications, including getting desktop notifications. See below

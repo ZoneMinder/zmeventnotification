@@ -486,7 +486,7 @@ notifications:
 Here is how to debug and report:
 
 -  Enable Debug logs in zmNinja (Setting->Developer Options->Enable
-   Debug Log)
+   Debug Log), if zmNinja is part of the problem
 -  SSH into your zoneminder server
 -  Stop the zmeventnotification doing
    ``sudo zmdc.pl stop zmeventnotification.pl``
