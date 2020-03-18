@@ -155,13 +155,13 @@ There are interesting things you can do with the ``<FID>`` part.
 * ``fid=BESTMATCH`` - this will replace the frameID with whichever frame objects were detected
 * ``fid=objdetect`` 
 
-.. sidebar:: MP4 vs GIF animations
+.. note:: Animations
 
-   Animations are a new concept and requires ZM 1.35+. Animations can be created around the time of alarm and sent to you as a live notification, so you see moving frames in your push message. MP4 is more space efficient and animates approximately +-5 seconds around the frame with objects. GIF animation takes more space and animates approximately +-2 seconds around the frame with objects.
+   Animations are a new concept and requires ZM 1.35+. Animations can be created around the time of alarm and sent to you as a live notification, so you see moving frames in your push message. You can create animations as MP4 or GIF files (or both). MP4 is more space efficient and animates approximately +-5 seconds around the frame with objects. GIF animation takes more space and animates approximately +-2 seconds around the frame with objects.
   
   - in ZM 1.34 and below this will extract the frame that has objects with borders around them (static image)
   - in ZM 1.35+ if you have opted to create a GIF animation, this will return the GIF animation of the event or the frame with borders around the objects (static image)
-  
+
 * ``fid=objdetect_gif``
 
   - only ZM 1.35+. Returns the GIF animation for the alarmed event if it exists
