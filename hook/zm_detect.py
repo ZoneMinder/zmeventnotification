@@ -17,6 +17,7 @@ import pickle
 import json
 import time
 import requests
+import subprocess
 #import hashlib
 
 import zmes_hook_helpers.log as log
@@ -150,7 +151,13 @@ if args['monitorid']:
 else:
     log.init(process_name='zmesdetect')
 
-g.logger.info('---------| app version: {} |------------'.format(__version__))
+es_version='(?)'
+try:
+    es_version=subprocess.check_output(['/usr/bin/zmeventnotification.pl', '--version']).decode('ascii')
+except:
+    pass
+
+g.logger.info('---------| hook version: {}, ES version: {} |------------'.format(__version__, es_version))
 if args['version']:
     print(__version__)
     exit(0)

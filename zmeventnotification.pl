@@ -64,7 +64,7 @@ if ( !try_use('JSON') ) {
 #
 # ==========================================================================
 
-my $app_version = '5.10';
+my $app_version = '5.11';
 
 # ==========================================================================
 #
@@ -280,8 +280,12 @@ GetOptions(
   'check-config' => \$check_config,
 );
 
+if ($app_version) {
+  print($app_version);
+  exit(0);
+}
+
 exit( print(USAGE) ) if $help;
-exit (print($app_version)) if $version;
 
 # Read options from a configuration file.  If --config is specified, try to
 # read it and fail if it can't be read.  Otherwise, try the default
