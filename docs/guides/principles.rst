@@ -137,14 +137,38 @@ So let's assume that all checks have passed above and we are now about to send t
   - If it is Websockets, we use ``Net::WebSocket``, another perl package to send the message
   - If it is a 3rd party push service, then we rely on ``api_push_script`` in `zmeventnotification.ini`` to send the message.
 
-  5.1 Notification Payload
-  -------------------------
-  Irrespective of the protocol, the notification message typically consists of:
+5.1 Notification Payload
+***************************
+Irrespective of the protocol, the notification message typically consists of:
+
+* Alarm text
+* if you are using ``fcm`` or ``push_api``, you can also include an image of the alarm. That picture is typically a URL, specified in ``picture_url`` inside ``zmeventnotification.ini``
+* If you are sending over MQTT, there is additional data, including a JSON structure that provides the detection text in an easily parseable structure (``detection`` field)
+* There are some other fields included as well
+
+5.1.1 Image inside the notification payload
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We mentioned above that the image is contained in the ``picture_url`` attribute. Let's dive into that a bit. The format of the picture url is: ``https://pliablepixels.duckdns.org:8889/zm/index.php?view=image&eid=EVENTID&fid=<FID>&width=600``
+
+There are interesting things you can do with the ``<FID>`` part.
+
+* ``fid=BESTMATCH`` - this will replace the frameID with whichever frame objects were detected
+* ``fid=objdetect`` 
+
+.. sidebar:: MP4 vs GIF animations
+
+   Animations are a new concept and requires ZM 1.35+. Animations can be created around the time of alarm and sent to you as a live notification, so you see moving frames in your push message. MP4 is more space efficient and animates approximately +-5 seconds around the frame with objects. GIF animation takes more space and animates approximately +-2 seconds around the frame with objects.
   
-  * Alarm text
-  * if you are using ``fcm`` or ``push_api``, you can also include an image of the alarm. That picture is typically a URL, specified in ``picture_url`` inside ``zmeventnotification.ini``
-  * If you are sending over MQTT, there is additional data, including a JSON structure that provides the detection text in an easily parseable structure (``detection`` field)
-  * There are some other fields included as well
+  - in ZM 1.34 and below this will extract the frame that has objects with borders around them (static image)
+  - in ZM 1.35+ if you have opted to create a GIF animation, this will return the GIF animation of the event or the frame with borders around the objects (static image)
+  
+* ``fid=objdetect_gif``
+
+  - only ZM 1.35+. Returns the GIF animation for the alarmed event if it exists
+* ``fid=objdetect_mp4``
+
+  - only ZM 1.35+. Returns the MP4 animation for the alarmed event if it exists
+
 
 
 How Machine Learning works
