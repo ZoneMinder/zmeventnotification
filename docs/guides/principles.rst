@@ -141,6 +141,7 @@ As described earlier, the entry point to all the machine learning goodness start
 * The detection scripts DO NOT analyze all frames recorded so far. That would take too long (well, not if you have a powerful GPU). It only analyzes two frames at most, depending on your ``frame_id`` value in ``objectconfig.ini``.  Those two frames are ``snapshot`` and ``alarm``, assuming you set ``frame_id=bestmatch``
 * ``snapshot`` is the frame that has the highest score. It is very possible this frame changes *after* the detection is done, because it is entirely possible that another frame with a higher score is recorded by ZM as the event proceeds. 
 * There are various steps to detection:
+
   1. Match all the rules in ``objectconfig.ini`` (example type(s) of detection for that monitor, etc.) 
   2. Do the actual detection
   3. Make sure the detections meet the rules in ``objectconfig.ini`` (example, it intersects  the polygon boundaries, category of detections, etc.)
