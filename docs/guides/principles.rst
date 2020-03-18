@@ -125,3 +125,17 @@ Everything above was when an event first starts. The ES also allows similar func
 * When the event ends, the ES will check the ZM DB to see if the detection text it wrote during start still exists. It may have been overwritten if ZM detect more motion after the detection. As of today, ZM keeps its notes in memory and doesn't know some other entity has updated the notes and overwrites it. 
 * At this stage, the fork that was started when the event started exits
    
+How Machine Learning works
++++++++++++++++++++++++++++
+
+There is a dedicate document that describes how hooks work at :doc:`guides/hooks`. Refer to that for details. This section will describe high level principles.
+
+As described earlier, the entry point to all the machine learning goodness starts with ``/var/lib/zmeventnotitication/bin/zm_detect.py``. This file reads ``/etc/zm/objectconfig.ini`` and based on the many settings there goes about doing various forms of detection. There are some important things to remember:
+
+* When the hooks are invoked, ZM has *just started* recording the event. Which means there are only limited frames to analyze. Infact, at times, if you see the detection scripts are not able to download frames, then it is possible they haven't yet been written to disk by ZM. This is a good situation to use the ``wait`` attribute in ``objectconfig.ini`` and wait for a few seconds before it tries to get frames. 
+* The detection scripts DO NOT analyze all frames recorded so far. That would take too long (well, not if you have a powerful GPU). It only analyzes two frames at most, depending on your ``frame_id`` value in ``objectconfig.ini``.  Those two frames are ``snapshot`` and ``alarm``, assuming you set ``frame_id=bestmatch``
+* ``snapshot`` is the frame that has the highest score. It is very possible this frame changes *after* the detection is done, because it is entirely possible that another frame with a higher score is recorded by ZM as the event proceeds. 
+
+.. sidebar:: Gotcha
+
+    If you ever wonder why detection did not work when the ES invoked it, but worked just fine when you ran the detection manually, this may be why: during detection the snapshot was different from the final value.
