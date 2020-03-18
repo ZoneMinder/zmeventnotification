@@ -2,9 +2,12 @@ Key Principles - Event Notification Server  and Hooks
 =======================================================
 
 Summary
--------
++++++++++
 This guide is meant to give you an idea of how the Event Notification Server (ES) works, how it invokes hooks and how notifications are finally sent out.
 
+
+From Event Detection to Notification
++++++++++++++++++++++++++++++++++++++
 1: How it starts
 ----------------------
 The ES is a perl process (typically ``/usr/bin/zmeventnotification.pl``) that acts like just any other ZM daemon (there are many) that is started by ZoneMinder when it starts up. Specifically, the ES gets "auto-started" only if you have enabled ``OPT_USE_EVENT_NOTIFICATION`` in your ``Zoneminder->System`` menu options. Technically, ZM uses a 'control' process called ``zmdc.pl`` that starts a bunch of important daemons (see `here <https://github.com/ZoneMinder/zoneminder/blob/release-1.34/scripts/zmdc.pl.in#L93>`__ for a list of daemons) and keeps a tab on them. If any of them die, they get restarted.
