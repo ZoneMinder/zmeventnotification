@@ -112,7 +112,7 @@ The contents above show I have 2 devices configured, one is an iOS device and th
 
     It is important to note here that if zmNinja is not able to connect to the ES at least for the first time, you will never receive notifications. Check your ``tokens.txt`` file to make sure you have entries. If you don't that means zmNinja can't reach your ES.
 
-  4: Deciding what to do when a new event ends
+4: Deciding what to do when a new event ends
 -----------------------------------------------------
 Everything above was when an event first starts. The ES also allows similar functions for when an event *ends*. It pretty much follows the flow defined in  :ref:`when_event_starts` with the following differences:
 
