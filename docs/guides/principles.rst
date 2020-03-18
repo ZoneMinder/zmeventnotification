@@ -20,6 +20,8 @@ Once the ES is up and running, it uses shared memory to know when new events are
 * The ES *must* run on the same server that ZM is running on. If you are using a multi-server system, you need an ES *per* server.
 * If an event starts and ends before the ES checks SHM, this event may be missed. If you are seeing that happening, reduce ``event_check_interval`` in ``zmeventnotification.ini``. By default this is set to 5 seconds, which means events that open and close in a span of 5 seconds have a potential of being missed, if they start immediately after the ES checks for new events.
 
+.. _when_event_starts:
+
 3: Deciding what to do when a new event starts
 -----------------------------------------------------
 When the ES detects a new event, it forks a sub-process to handle that event and continues its loop to listening for new events (by polling SHM). There is exactly one fork for each new event and that fork typically lives till the event is completely finished.
@@ -36,13 +38,16 @@ So when you have hooks enabled, the script that is invoked when a new event is d
 * It invokes `/var/lib/zmeventnotification/bin/zm_detect.py` that is the actual script that does the fancy detection and waits for a response. If this python file detects objects that meet the criteria in ``/etc/zm/objectconfig.ini`` it will return an exit code of ``0`` (success) with a text string describing the objects, else it will return an exit code of ``1`` (fail) 
 * It passes on the output and the return value of the script back to the ES
 
+* At this stage, if hooks were used and it returned a success (``0``) and ``use_hook_description=yes`` in ``zmeventnotification.ini`` then the detection text gets written to the ZM DB for the event
+
 The ES has no idea what the event start script does. All it cares about is the "return value". If it returns ``0`` that means the hook "succeeded" and if it returned any non ``0`` value, the script failed. This return code makes a difference on whether the final notification is sent out or not, as you will see later.
 
 3.2: Will the ES send a notification?
 ********************************************
 So at this stage, we have a new event and we need to decide if the ES will send out a notification. The following factors matter:
 
-- If you had hooks enabled, and the hook succeeded (i.e. return value of ``0``), then the notification *may* be sent to the channels you specified in ``event_start_notify_on_hook_success``. If the hook failed (i.e. return value of non zero, then the notification *may* be sent to the channels specified in ``event_start_notify_on_hook_fail``)
+* If you had hooks enabled, and the hook succeeded (i.e. return value of ``0``), then the notification *may* be sent to the channels you specified in ``event_start_notify_on_hook_success``. 
+* If the hook failed (i.e. return value of non zero, then the notification *may* be sent to the channels specified in ``event_start_notify_on_hook_fail``)
 
 .. sidebar:: Summary of rules:
 
@@ -107,5 +112,13 @@ The contents above show I have 2 devices configured, one is an iOS device and th
 
     It is important to note here that if zmNinja is not able to connect to the ES at least for the first time, you will never receive notifications. Check your ``tokens.txt`` file to make sure you have entries. If you don't that means zmNinja can't reach your ES.
 
-  
+  4: Deciding what to do when a new event ends
+-----------------------------------------------------
+Everything above was when an event first starts. The ES also allows similar functions for when an event *ends*. It pretty much follows the flow defined in  :ref:`when_event_starts` with the following differences:
+
+* The hook, if enabled is defined by ``event_end_hook`` inside ``zmeventnotification.ini``
+* The default end script which is usually ``/var/lib/zmeventnotification/bin/zm_event_end.sh`` doesn't do anything. All the image recognition happens at the event start. Feel free to modify it to do anything you want. As of now, its just a "pass through" that returns a success (``0``) exit code
+* Sending notification rules are the same as the start section, except that ``event_end_notify_on_hook_success`` and ``event_end_notify_on_hook_fail`` are used for channel rules in ``zmeventnotification.ini``
+* When the event ends, the ES will check the ZM DB to see if the detection text it wrote during start still exists. It may have been overwritten if ZM detect more motion after the detection. As of today, ZM keeps its notes in memory and doesn't know some other entity has updated the notes and overwrites it. 
+* At this stage, the fork that was started when the event started exits
    
