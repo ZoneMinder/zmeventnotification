@@ -61,10 +61,11 @@ So at this stage, we have a new event and we need to decide if the ES will send 
 
 3.2.1: Wait what is a channel?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-At a high level, there are 3 types of clients that are interested in receiving notifications:
+At a high level, there are 4 types of clients that are interested in receiving notifications:
 
 * zmNinja: the mobile app that uses Firebase Cloud Messaging (FCM) to get push notifications. This is the "fcm" channel
 * Any websocket client: This included zmNinja desktop and any other custom client you may have written to get notifications via web sockets. This is the "web" channel
+* receivers that use MQTT. This is the "mqtt" channel.
 * Any 3rd party push solution which you may be using to deliver push notifications. A popular one is "pushover" for which I provide a `plugin <https://github.com/pliablepixels/zmeventnotification/blob/master/pushapi_plugins/pushapi_pushover.py>`__. This is the "api" channel.
 
 So, for example:
@@ -125,6 +126,27 @@ Everything above was when an event first starts. The ES also allows similar func
 * When the event ends, the ES will check the ZM DB to see if the detection text it wrote during start still exists. It may have been overwritten if ZM detect more motion after the detection. As of today, ZM keeps its notes in memory and doesn't know some other entity has updated the notes and overwrites it. 
 * At this stage, the fork that was started when the event started exits
    
+5: Actually sending the notification
+-------------------------------------
+So let's assume that all checks have passed above and we are now about to send the notification. What is actually sent?
+
+* ``zmeventnotification.pl`` finally sends out the message. The exact protocol depends on the channel:
+
+  - If it is FCM, the message is sent using FCM API
+  - If it is MQTT, we use  use ``MQTT::Simple`` (a perl package) to send the message
+  - If it is Websockets, we use ``Net::WebSocket``, another perl package to send the message
+  - If it is a 3rd party push service, then we rely on ``api_push_script`` in `zmeventnotification.ini`` to send the message.
+
+  5.1 Notification Payload
+  -------------------------
+  Irrespective of the protocol, the notification message typically consists of:
+  
+  * Alarm text
+  * if you are using ``fcm`` or ``push_api``, you can also include an image of the alarm. That picture is typically a URL, specified in ``picture_url`` inside ``zmeventnotification.ini``
+  * If you are sending over MQTT, there is additional data, including a JSON structure that provides the detection text in an easily parseable structure (``detection`` field)
+  * There are some other fields included as well
+
+
 How Machine Learning works
 +++++++++++++++++++++++++++
 
