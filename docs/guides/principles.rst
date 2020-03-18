@@ -52,7 +52,7 @@ So at this stage, we have a new event and we need to decide if the ES will send 
 .. sidebar:: Summary of rules:
 
   * if hooks are used, needs to return 0 as exit status
-  * channel must be in the notify_on_xxx attribute
+  * channel must be in the notify_on_*xxx* attribute
   * if FCM, monitor must be in tokens.txt for that device
   * if FCM, delay must be > delay specified in tokens.txt
 
