@@ -52,8 +52,10 @@ import os
 # ES passes the image path, this routine figures out which image
 # to use inside that path
 def get_image(path, cause):
-    if os.path.exists(path+'/objdetect.mp4'):
-        return path+'/objdetect.mp4'
+    # as of Mar 2020, pushover doesn't support
+    # mp4
+    if os.path.exists(path+'/objdetect.gif'):
+        return path+'/objdetect.gif'
     elif os.path.exists(path+'/objdetect.jpg'):
         return path+'/objdetect.jpg'
     prefix = cause[0:2]
