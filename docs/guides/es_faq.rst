@@ -473,7 +473,7 @@ Debugging and reporting problems
 STOP. Before you shoot me an email, **please** make sure you have read
 the `common problems <#troubleshooting-common-situations>`__ and have
 followed *every step* of the `install guide <#how-do-i-install-it>`__
-and in sequence. I can't emphasize how important it is.
+and in sequence. I can't emphasize how important it is to be diligent.
 
 There could be several reasons why you may not be receiving
 notifications:
@@ -481,7 +481,7 @@ notifications:
 -  Your event server is not running
 -  Your app is not able to reach the server
 -  You have enabled SSL but the certificate is invalid
--  The event server is rejecting the connections
+-  Your configuration is incorrect (either in ``zmeventnotification.ini`` or ``objectconfig.ini``)
 
 Here is how to debug and report:
 
@@ -501,9 +501,9 @@ When you send ES/detection logs:
 - Make sure you see ``DBG`` logs (Debug). If you only see ``INF`` logs, you haven't followed the instructions above to enable debug logs. Read :ref:`hooks-logging` again.
 - Don't just send me a slice of what you think is relevant. Please don't think you know what to send me. Let me decide that. From your side, send me the full logs. By full logs, I mean:
 
-  - If you think your detection is *not* working for an event, say eid=77985, send me *all* the ES logs starting from 'PARENT: New event 77985 reported for Monitor:<etc>'  to 'PARENT: Job: Deleting active_event eid:77985, mid:<etc>'. That is, everthing from start to end of that event. Also send me *all* the detection logs. Let's say the monitor in question was Monitor Id:2. Then the detection logs will be in ``/var/log/zm/zmesdetect_m2.log``. Send me *all* the logs from the start to the finish for that event.
+  - If you think your detection is *not* working for an event, say eid=77985, send me *all* the ES logs starting from ``PARENT: New event 77985 reported for Monitor:<etc>`` to ``PARENT: Job: Deleting active_event eid:77985, mid:<etc>``. That is, everthing from start to end of that event. Also send me *all* the detection logs. Let's say the monitor in question was Monitor Id:2. Then the detection logs will be in ``/var/log/zm/zmesdetect_m2.log``. Send me *all* the logs from the start to the finish for that event.
 
-  - If you have issues starting the ES, send me *all* logs starting from when the ES starts after you do a `sudo zmdc.pl restart  zmeventnotification.pl`
+  - If you have issues starting the ES, send me *all* logs starting from when the ES starts after you do a ``sudo zmdc.pl restart  zmeventnotification.pl``
 
 To monitor logs:
 
