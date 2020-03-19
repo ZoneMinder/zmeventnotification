@@ -17,7 +17,7 @@ Limitations
 ~~~~~~~~~~~
 
 - Only tested with ZM 1.32+. May or may not work with older versions
-- Needs Python3 (I used to support Python2, but not any more). Python2 will be deprecated in 2020. May as well update.
+- Needs Python3 (Python2 is not supported)
 
 What
 ~~~~
@@ -61,11 +61,9 @@ Option 1: Automatic install
     sudo -H ./install.sh # and follow the prompts
 
 
-**Note 1:**: ``install.sh`` will not overwrite the hooks pip3 module if the version number is the same as the one you already have. To force reinstall, after you run ``install.sh`` you can manually do ``sudo -H pip3 install --upgrade --no-deps --force-reinstall hook/`` from the ``zmeventnotification`` folder. Note that normally, I will bump up the version # but this condition may kick in for you if you keep pulling master when I haven't yet bumped up versions.
-
 .. _opencv_install:
 
-**Note 2:**: If you plan on using object detection, starting v5.0.0 of the ES, the setup script no longer installs opencv for you. This is because you may want to install your own version with GPU accelaration or other options. There are two options to install OpenCV:
+**Note:**: If you plan on using object detection, starting v5.0.0 of the ES, the setup script no longer installs opencv for you. This is because you may want to install your own version with GPU accelaration or other options. There are two options to install OpenCV:
 
   - You install a pip package. Very easy, but you don't get GPU support
   - You compile from source. Takes longer, but you get all the right modules as well as GPU support. Instructions are simple, if you follow them well.
@@ -184,35 +182,6 @@ Sidebar: Local vs. Remote Machine Learning
 Starting v5.0, you can now choose to run the machine learning code on a separate server. This can free up your local ZM server resources if you have memory/CPU constraints. See :ref:`this FAQ entry <local_remote_ml>`.
 
 
-.. _hooks-logging:
-
-Logging
-~~~~~~~~~
-
-
-
-Starting version 4.0.x, the hooks now use ZM logging, thanks to a `python wrapper <https://pyzm.readthedocs.io/en/latest//>`__ I wrote recently that taps into ZM's logging system. This also means it is no longer as easy as enabling ``log_level=debug`` in ``objdetect.ini``. Infact, that option has been removed. Follow standard ZM logging options for the hooks. Here is what I do:
-
-- In ``ZM->Options->Logs:``
-
-  - LOG_LEVEL_FILE = debug
-  - LOG_LEVEL_SYSLOG = Info
-  - LOG_LEVEL_DATABASE = Info
-  - LOG_DEBUG is on
-  - LOG_DEBUG_TARGET = ``_zmesdetect`` (if you have other targets, just separate them with ``|`` - example, ``_zmc|_zmesdetect``). If you want to enable debug logs for both the ES and the hooks, your target will look like ``_zmesdetect|_zmeventnotification``. You can also enable debug logs for just one monitor's hooks like so: ``_zmesdetect_m5|_zmeventnotification``. This will enable debug logs only when hooks are run for monitor 5.
-
-  The above config. will store debug logs in my ``/var/log/zm`` directory, while Info level logs will be recorded in syslog and DB.
-
-  You will likely need to restart ZM after this.
-
-  So now, to view hooks/detect logs, all I do is:
-
-  ::
-
-    tail -F  /var/log/zm/zmesdetect*.log
-
-  Note that the detection code registers itself as ``zmesdetect`` with ZM. When it is invoked with a specific monitor ID (usually the case), then the component is named ``zmesdetect_mX.log`` where ``X`` is the monitor ID. In other words, that now gives you one log per monitor (just like ``/var/log/zm/zmc_mX.log``) which makes it easy to debug/isolate. Also note we are doing ``tail -F`` not ``tail -f``. ``-F`` tracks files as they get logrotated as well.
-
 Troubleshooting
 ~~~~~~~~~~~~~~~
 
@@ -220,8 +189,7 @@ Troubleshooting
    questions without investigating logs yourself
 -  Always run ``zm_event_start.sh`` in manual mode first to make sure it
    works
--  To get debug logs, Make sure your ``LOG_DEBUG`` in ZM Options->Logs is set to on and your ``LOG_DEBUG_TARGET`` option includes ``_zmesdetect`` (or is empty)
--  You can view debug logs for detection by doing ``tail -F /var/log/zm/zmesdetect*.log``
+-  Make sure you've set up debug logging as described in :ref:`hooks-logging`
 -  One of the big reasons why object detection fails is because the hook
    is not able to download the image to check. This may be because your
    ZM version is old or other errors. Some common issues:

@@ -124,15 +124,23 @@ STEP 4: Execute the install script
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **NOTE** : By default ``install.sh`` moves the ES script to ``/usr/bin``. 
-If your ZM install is elsewhere, like ``/usr/local/bin`` please modify the ``TARGET_BIN`` variable
-in ``install.sh`` before executing it.
+If your ZM install is elsewhere, like ``/usr/local/bin`` please modify the ``TARGET_BIN`` variable in ``install.sh`` before executing it.
 
 ::
 
-  sudo ./install.sh
+  sudo -H ./install.sh
 
 
 Follow prompts. Note that just copying the ES perl file to ``/usr/bin`` is not sufficient. You also have to install the updated machine learning hook files if you are using them. That is why ``install.sh`` is better. If you are updating, make sure not to overwrite your config files (but please read breaking changes to see if any config files have changed). Note that the install script makes a backup of your old config files using ``~n`` suffixes where ``n`` is the backup number. However, never hurts to make your own backup first. 
+
+
+Note that you can also automate updates like so:
+
+::
+
+  sudo -H ./install.sh --install-hook --install-es --no-install-config --no-interactive
+
+The above will install/update the hooks, install/update the ES server but will not overwrite your existing config files. **NOTE** that newer versions of the ES/detection scripts may introduce new parameters in ``zmeventnotification.ini`` and ``objectconfig.ini``. You may need to paste them in manually, so always read :doc:`breaking`
 
 STEP 5: Start the new updated server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -465,6 +473,41 @@ zmeventnotification.pl and use ``enable = 0`` in the ``[ssl]`` section
 of the configuration file. **Remember to ensure that your EventServer
 URL in zmNinja does NOT use wss too - change it to ws**
 
+
+.. _hooks-logging:
+
+Logging
+~~~~~~~~~
+
+Setting up logging in both ES and detection (if you use them) is critical to be able to diagnose issues. Here is what I do:
+
+- In ``ZM->Options->Logs:``
+
+  - LOG_DEBUG is on
+  - LOG_LEVEL_FILE = debug
+  - LOG_LEVEL_SYSLOG = Info
+  - LOG_LEVEL_DATABASE = Info
+  - LOG_DEBUG_TARGET = ``_zmesdetect|_zmeventnotification``. This enables DEBUG logs for both detection and event server scripts. Iff you have other targets, just separate them with ``|`` - example, ``_zmc|_zmesdetect``. If you only want to track detection logs and not ES logs, just do  ``_zmesdetect``. You can also enable debug logs for just one monitor's hooks like so: ``_zmesdetect_m5|_zmeventnotification``. This will enable debug logs only when hooks are run for monitor 5. Just remember this: "detection logs" only deal with detecting objects. The ES logs will tell you whether the detection text was received properly, whether it was written to ZM DB properly and whether it was sent out in a notification.
+
+  The above config. will store debug logs in my ``/var/log/zm`` directory, while Info level logs will be recorded in syslog and DB.
+
+  You will likely need to restart ZM after this.
+
+  So now, to view hooks/detect logs, all I do is:
+
+  ::
+
+    tail -F  /var/log/zm/zmesdetect*.log 
+
+  To view ES + hooks/detect logs:
+
+  ::
+
+    tail -F  /var/log/zm/zmesdetect*.log /var/log/zm/zmeventnotification.log
+
+  Note that the detection code registers itself as ``zmesdetect`` with ZM. When it is invoked with a specific monitor ID (usually the case), then the component is named ``zmesdetect_mX.log`` where ``X`` is the monitor ID. In other words, that now gives you one log per monitor (just like ``/var/log/zm/zmc_mX.log``) which makes it easy to debug/isolate. Also note we are doing ``tail -F`` not ``tail -f``. ``-F`` tracks files as they get logrotated as well.
+
+
 .. _debug_reporting_es:
 
 Debugging and reporting problems
@@ -475,28 +518,30 @@ the `common problems <#troubleshooting-common-situations>`__ and have
 followed *every step* of the `install guide <#how-do-i-install-it>`__
 and in sequence. I can't emphasize how important it is to be diligent.
 
-There could be several reasons why you may not be receiving
-notifications:
+STOP (redux): Please don't send me emails without relevant logs (unless of course, it is to do with situations where, say, zmNinja doesn't load and you can't extract logs). Read :ref:`hooks-logging`.
+
+There could be several reasons why your output may not be what you are expecting:
 
 -  Your event server is not running
+-  You are running multiple instances of the ES and you don't know it
 -  Your app is not able to reach the server
 -  You have enabled SSL but the certificate is invalid
 -  Your configuration is incorrect (either in ``zmeventnotification.ini`` or ``objectconfig.ini``)
 
 Here is how to debug and report:
 
-If your problem involves zmNinja:
+**If your problem involves zmNinja:**
 
 -  Enable Debug logs in zmNinja (Setting->Developer Options->Enable
    Debug Log), if zmNinja is part of the problem
 
-- Clear zmNinja logs and then replicate the issue. Send me zmNinja logs right after that. Tat way it is easier for me to zero in to what the problem may be. If you send me a whole bunch of logs, unrelated to your issue, I'll likely not know what is going on.
+- Clear zmNinja logs and then replicate the issue. Send me zmNinja logs right after that. That way it is easier for me to zero in to what the problem may be. If you send me a whole bunch of logs, unrelated to your issue, I'll likely not know what is going on.
 
-If your problem involves the ES and/or the hooks:
+**If your problem involves the ES and/or the hooks:**
 
 - Enable ZM debug logs for both ES (and hooks if you use them) as described in :ref:`hooks-logging`. Note that ES debug logs are different from hooks debug logs. You need to enable both if you use them. 
 
-When you send ES/detection logs:
+**When you send ES/detection logs:**
 
 - Make sure you see ``DBG`` logs (Debug). If you only see ``INF`` logs, you haven't followed the instructions above to enable debug logs. Read :ref:`hooks-logging` again.
 - Don't just send me a slice of what you think is relevant. Please don't think you know what to send me. Let me decide that. From your side, send me the full logs. By full logs, I mean:
@@ -512,8 +557,6 @@ To monitor logs:
 - Start another terminal and tail logs like so ``tail -F /var/log/zm/zmeventnotification.log /var/log/zm/zmesdetect_m*.log``. If you are NOT using hooks, simply do ``tail -F /var/log/zm/zmeventnotification.log``
 - Note that we are using ``-F`` and not ``-f`` for tail. ``-F`` tracks files as they change, which may happen when logs are rotated.
 - Make sure you see logs like this in the logs window like so: (this example shows logs from both ES and hooks)
-
-
 
 ::
 
@@ -566,7 +609,7 @@ from the source when accessing another URL via the Referral header
 **So it's encrypted, but passing password is a bad idea. Why not some
 token?**
 
--  Well, now that ZM supports login tokens (starting 1.33), I'll get to supporting it.
+-  Well, now that ZM supports login tokens (starting 1.33), I'll get to supporting it, eventually.
 
 **Why WSS and not WS?**
 
