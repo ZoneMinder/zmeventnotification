@@ -189,6 +189,8 @@ Starting v5.0, you can now choose to run the machine learning code on a separate
 Logging
 ~~~~~~~~~
 
+
+
 Starting version 4.0.x, the hooks now use ZM logging, thanks to a `python wrapper <https://pyzm.readthedocs.io/en/latest//>`__ I wrote recently that taps into ZM's logging system. This also means it is no longer as easy as enabling ``log_level=debug`` in ``objdetect.ini``. Infact, that option has been removed. Follow standard ZM logging options for the hooks. Here is what I do:
 
 - In ``ZM->Options->Logs:``
@@ -197,7 +199,7 @@ Starting version 4.0.x, the hooks now use ZM logging, thanks to a `python wrappe
   - LOG_LEVEL_SYSLOG = Info
   - LOG_LEVEL_DATABASE = Info
   - LOG_DEBUG is on
-  - LOG_DEBUG_TARGET = ``_zmesdetect`` (if you have other targets, just separate them with ``|`` - example, ``_zmc|_zmesdetect``). If you want to enable debug logs for both the ES and the hooks, your target will look like ``_zmesdetect|_zmeventnotification``. You can also enabled debug logs for just one monitor's hooks like so: ``_zmesdetect_m5|_zmeventnotification``. This will enable debug logs only when hooks are run for monitor 5.
+  - LOG_DEBUG_TARGET = ``_zmesdetect`` (if you have other targets, just separate them with ``|`` - example, ``_zmc|_zmesdetect``). If you want to enable debug logs for both the ES and the hooks, your target will look like ``_zmesdetect|_zmeventnotification``. You can also enable debug logs for just one monitor's hooks like so: ``_zmesdetect_m5|_zmeventnotification``. This will enable debug logs only when hooks are run for monitor 5.
 
   The above config. will store debug logs in my ``/var/log/zm`` directory, while Info level logs will be recorded in syslog and DB.
 

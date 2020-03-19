@@ -489,21 +489,31 @@ If your problem involves zmNinja:
 
 -  Enable Debug logs in zmNinja (Setting->Developer Options->Enable
    Debug Log), if zmNinja is part of the problem
--  SSH into your zoneminder server
--  Stop the zmeventnotification doing
-   ``sudo zmdc.pl stop zmeventnotification.pl``
--  Make sure there are no stale processes running of zmeventnotification
-   by doing ``ps -aef | grep zmeventnotification`` and making sure it
-   doesn't show existing processes (ignore the one that says
-   ``grep <something>``)
 
-- Make sure ES debug logs are on. 
-  - Enable ZM debug logs for both ES (and hooks if you use them) as described in :ref:`hooks-logging`. Note that ES debug logs are different from hooks debug logs. You need to enable both if you use them. 
+- Clear zmNinja logs and then replicate the issue. Send me zmNinja logs right after that. Tat way it is easier for me to zero in to what the problem may be. If you send me a whole bunch of logs, unrelated to your issue, I'll likely not know what is going on.
+
+If your problem involves the ES and/or the hooks:
+
+- Enable ZM debug logs for both ES (and hooks if you use them) as described in :ref:`hooks-logging`. Note that ES debug logs are different from hooks debug logs. You need to enable both if you use them. 
+
+When you send ES/detection logs:
+
+- Make sure you see ``DBG`` logs (Debug). If you only see ``INF`` logs, you haven't followed the instructions above to enable debug logs. Read :ref:`hooks-logging` again.
+- Don't just send me a slice of what you think is relevant. Please don't think you know what to send me. Let me decide that. From your side, send me the full logs. By full logs, I mean:
+
+  - If you think your detection is *not* working for an event, say eid=77985, send me *all* the ES logs starting from 'PARENT: New event 77985 reported for Monitor:<etc>'  to 'PARENT: Job: Deleting active_event eid:77985, mid:<etc>'. That is, everthing from start to end of that event. Also send me *all* the detection logs. Let's say the monitor in question was Monitor Id:2. Then the detection logs will be in ``/var/log/zm/zmesdetect_m2.log``. Send me *all* the logs from the start to the finish for that event.
+
+  - If you have issues starting the ES, send me *all* logs starting from when the ES starts after you do a `sudo zmdc.pl restart  zmeventnotification.pl`
+
+To monitor logs:
+
 -  Start a terminal and start zmeventnotification manually from
    command line like so ``sudo -u www-data /usr/bin/zmeventnotification.pl``
 - Start another terminal and tail logs like so ``tail -F /var/log/zm/zmeventnotification.log /var/log/zm/zmesdetect_m*.log``. If you are NOT using hooks, simply do ``tail -F /var/log/zm/zmeventnotification.log``
 - Note that we are using ``-F`` and not ``-f`` for tail. ``-F`` tracks files as they change, which may happen when logs are rotated.
 - Make sure you see logs like this in the logs window like so: (this example shows logs from both ES and hooks)
+
+
 
 ::
 

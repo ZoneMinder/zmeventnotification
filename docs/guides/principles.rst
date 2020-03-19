@@ -174,7 +174,7 @@ There are interesting things you can do with the ``<FID>`` part.
 How Machine Learning works
 +++++++++++++++++++++++++++
 
-There is a dedicate document that describes how hooks work at :doc:`hooks`. Refer to that for details. This section will describe high level principles.
+There is a dedicated document that describes how hooks work at :doc:`hooks`. Refer to that for details. This section will describe high level principles.
 
 As described earlier, the entry point to all the machine learning goodness starts with ``/var/lib/zmeventnotitication/bin/zm_detect.py``. This file reads ``/etc/zm/objectconfig.ini`` and based on the many settings there goes about doing various forms of detection. There are some important things to remember:
 
