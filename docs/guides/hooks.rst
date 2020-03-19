@@ -68,6 +68,11 @@ Option 1: Automatic install
   - You install a pip package. Very easy, but you don't get GPU support
   - You compile from source. Takes longer, but you get all the right modules as well as GPU support. Instructions are simple, if you follow them well.
 
+  .. important::
+
+  However you choose to install openCV, you need a minimum version of `4.1.1`. Using a version below that will very likely not work.
+
+
 Installing OpenCV: Using the pip package (Easy, but not recommended)
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ::
