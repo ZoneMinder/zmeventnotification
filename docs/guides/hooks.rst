@@ -70,7 +70,7 @@ Option 1: Automatic install
 
   .. important::
 
-  However you choose to install openCV, you need a minimum version of `4.1.1`. Using a version below that will very likely not work.
+    However you choose to install openCV, you need a minimum version of `4.1.1`. Using a version below that will very likely not work.
 
 
 Installing OpenCV: Using the pip package (Easy, but not recommended)
@@ -194,7 +194,7 @@ Troubleshooting
    questions without investigating logs yourself
 -  Always run ``zm_event_start.sh`` in manual mode first to make sure it
    works
--  Make sure you've set up debug logging as described in :ref:`hooks-logging`
+-  Make sure you've set up debug logging as described in :ref:`es-hooks-logging`
 -  One of the big reasons why object detection fails is because the hook
    is not able to download the image to check. This may be because your
    ZM version is old or other errors. Some common issues:

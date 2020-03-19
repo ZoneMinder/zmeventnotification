@@ -474,7 +474,7 @@ of the configuration file. **Remember to ensure that your EventServer
 URL in zmNinja does NOT use wss too - change it to ws**
 
 
-.. _hooks-logging:
+.. _es-hooks-logging:
 
 Logging
 ~~~~~~~~~
@@ -518,7 +518,7 @@ the `common problems <#troubleshooting-common-situations>`__ and have
 followed *every step* of the `install guide <#how-do-i-install-it>`__
 and in sequence. I can't emphasize how important it is to be diligent.
 
-STOP (redux): Please don't send me emails without relevant logs (unless of course, it is to do with situations where, say, zmNinja doesn't load and you can't extract logs). Read :ref:`hooks-logging`.
+STOP (redux): Please don't send me emails without relevant logs (unless of course, it is to do with situations where, say, zmNinja doesn't load and you can't extract logs). Read :ref:`es-hooks-logging`.
 
 There could be several reasons why your output may not be what you are expecting:
 
@@ -527,6 +527,7 @@ There could be several reasons why your output may not be what you are expecting
 -  Your app is not able to reach the server
 -  You have enabled SSL but the certificate is invalid
 -  Your configuration is incorrect (either in ``zmeventnotification.ini`` or ``objectconfig.ini``)
+-  You did not upgrade correctly (i.e. you updated hooks, but not the ES or vice-versa)
 
 Here is how to debug and report:
 
@@ -539,11 +540,20 @@ Here is how to debug and report:
 
 **If your problem involves the ES and/or the hooks:**
 
-- Enable ZM debug logs for both ES (and hooks if you use them) as described in :ref:`hooks-logging`. Note that ES debug logs are different from hooks debug logs. You need to enable both if you use them. 
+- Enable ZM debug logs for both ES (and hooks if you use them) as described in :ref:`es-hooks-logging`. Note that ES debug logs are different from hooks debug logs. You need to enable both if you use them. 
 
 **When you send ES/detection logs:**
 
-- Make sure you see ``DBG`` logs (Debug). If you only see ``INF`` logs, you haven't followed the instructions above to enable debug logs. Read :ref:`hooks-logging` again.
+- Make sure your ES and hooks versions have the same ``MAJOR.minor`` versions. This will show in the detection script logs. For example:
+
+::
+
+  03/19/20 06:45:03 zmesdetect_m2[21409] INF zm_detect.py:160 [---------| hook version: 5.10.1, ES version: 5.10 |------------]
+
+This shows my ES version is ``5.10`` and hooks version  is ``5.10.1``, which is good. If you saw ``5.9.4`` and ``5.10``, for example, we have a problem. Upgrade again and please upgrade both hooks and ES.
+
+
+- Make sure you see ``DBG`` logs (Debug). If you only see ``INF`` logs, you haven't followed the instructions above to enable debug logs. Read :ref:`es-hooks-logging` again.
 - Don't just send me a slice of what you think is relevant. Please don't think you know what to send me. Let me decide that. From your side, send me the full logs. By full logs, I mean:
 
   - If you think your detection is *not* working for an event, say eid=77985, send me *all* the ES logs starting from ``PARENT: New event 77985 reported for Monitor:<etc>`` to ``PARENT: Job: Deleting active_event eid:77985, mid:<etc>``. That is, everthing from start to end of that event. Also send me *all* the detection logs. Let's say the monitor in question was Monitor Id:2. Then the detection logs will be in ``/var/log/zm/zmesdetect_m2.log``. Send me *all* the logs from the start to the finish for that event.
