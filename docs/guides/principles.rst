@@ -85,7 +85,7 @@ You'd think if the channels conditions are met and the hook conditions are met, 
 
 .. note::
 
-    There is another "configuration" file that impacts this decision process. This only applies to the "fcm" channel and is not documented very much. So read this section well.
+    ``tokens.txt`` is another "configuration" file that impacts the decision process for sending a notification out. This only applies to the "fcm" channel (i.e. mobile push notification) and is not documented very much. So read this section well.
 
 There is another file, ``/var/lib/zmeventnotification/push/tokens.txt`` that dictates if events are finally sent or not. This pre-dates all the hook stuff and was created really so that zmNinja could receive notifications from the ES.
 
@@ -115,6 +115,8 @@ The contents above show I have 2 devices configured, one is an iOS device and th
 .. important::
 
     It is important to note here that if zmNinja is not able to connect to the ES at least for the first time, you will never receive notifications. Check your ``tokens.txt`` file to make sure you have entries. If you don't that means zmNinja can't reach your ES.
+
+You will also note that ``tokens.txt`` does not contain any other entries besides android and iOS. zmNinja desktop does not feature here, for example. That is because ``tokens.txt`` only exists to store FCM registrations. zmNinja desktop only receives notifications when it is running and via websockets, so that connection is established when the desktop app runs. FCM tokens on the other hand need to be remembered, because zmNinja may not be running in your phone and the ES still nees to send out notifications to all tokens (devices) that might have previously registered.
 
 4: Deciding what to do when a new event ends
 -----------------------------------------------------
