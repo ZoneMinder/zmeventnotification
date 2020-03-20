@@ -178,6 +178,20 @@ Whatever value is finally used for ``<FID>`` is what we call the "anchor" frame.
   - only ZM 1.35+. Returns the MP4 animation for the alarmed event if it exists
 
 
+Controlling the Event Server
+++++++++++++++++++++++++++++
+There is both a static and dynamic way to control the ES.
+
+- You can change parameters in ``zmeventnotification.ini``. This will however require you to restart the ES (``sudo zmdc.pl restart  zmeventnotification.pl``). You can also change hook related parameters in ``objectconfig.ini`` and they will automatically take effect for the next detection (because the hook scripts restart with each invocation), if you are using local detections.
+
+- So obviously, there was a need to allow for programmatic change to the ES and dynamically.
+That is what the "ES control interface" does. It is a websocket based interface that requires authentication. Once you authenticate, you can change any ES parameter that is in the config. Read more about it: :ref:`escontrol_interface`. 
+
+Just remember:
+  
+  - admin override via this channel takes precedence over config file
+  - admin overrides are stored in a different file ``/var/lib/zmeventnotification/misc/escontrol_interface.dat`` and are encoded. So if you are confused why your config changes to the ini file are not working, and you have enabled this control interface, check for that dat file and remove it to start from scratch.
+
 How Machine Learning works
 +++++++++++++++++++++++++++
 
