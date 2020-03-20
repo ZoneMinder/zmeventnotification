@@ -280,7 +280,7 @@ GetOptions(
   'check-config' => \$check_config,
 );
 
-if ($app_version) {
+if ($version) {
   print($app_version);
   exit(0);
 }
