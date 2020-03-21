@@ -6,8 +6,8 @@ from inspect import getframeinfo, stack
 
 
 class wrapperLogger():
-    def __init__(self, name, dump_console):
-        zmlog.init(name=name)
+    def __init__(self, name, override, dump_console):
+        zmlog.init(name=name, override=override)
         self.dump_console = dump_console
 
     def debug(self, msg):
@@ -35,5 +35,5 @@ class wrapperLogger():
         pass
 
 
-def init(process_name=None, dump_console=False):
-    g.logger = wrapperLogger(name=process_name, dump_console=dump_console)
+def init(process_name=None, override={}, dump_console=False):
+    g.logger = wrapperLogger(name=process_name, override=override, dump_console=dump_console)

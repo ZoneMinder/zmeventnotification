@@ -146,10 +146,17 @@ ap.add_argument('-f',
 args, u = ap.parse_known_args()
 args = vars(args)
 
+if not args['config'] or not args['eventid']:
+    print ('--config and --eventid are required')
+    exit(1)
+
+utils.get_pyzm_config(args)
+
+
 if args['monitorid']:
-    log.init(process_name='zmesdetect_' + 'm' + args['monitorid'])
+    log.init(process_name='zmesdetect_' + 'm' + args['monitorid'], override=g.config['pyzm_overrides'])
 else:
-    log.init(process_name='zmesdetect')
+    log.init(process_name='zmesdetect',override=g.config['pyzm_overrides'])
 
 es_version='(?)'
 try:
@@ -163,16 +170,11 @@ if args['version']:
     exit(0)
 
 
-if not args['config'] or not args['eventid']:
-    print ('--config and --eventid are required')
-    exit(1)
 
 g.polygons = []
 
 # process config file
 g.ctx = ssl.create_default_context()
-
-
 utils.process_config(args, g.ctx)
 
 

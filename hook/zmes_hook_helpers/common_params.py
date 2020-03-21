@@ -18,6 +18,12 @@ config_vals = {
             'default': '/var/lib/zmeventnotification',
             'type': 'string'
         },
+        'pyzm_overrides': {
+            'section': 'general',
+            'default': "{}",
+            'type': 'dict',
+
+        },
         'portal':{
             'section': 'general',
             'default': '',

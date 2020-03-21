@@ -11,6 +11,7 @@ import urllib
 import json
 import time
 import re
+import ast
 
 from configparser import ConfigParser
 import zmes_hook_helpers.common_params as g
@@ -188,19 +189,27 @@ def download_files(args):
 
     return filename1, filename2, filename1_bbox, filename2_bbox
 
+def get_pyzm_config(args):
+    g.config['pyzm_overrides'] = {}
+    config_file = ConfigParser(interpolation=None)
+    config_file.read(args['config'])
+    if config_file.has_option('general', 'pyzm_overrides'):
+        pyzm_overrides = config_file.get('general', 'pyzm_overrides')
+        g.config['pyzm_overrides'] =  ast.literal_eval(pyzm_overrides) if pyzm_overrides else {}     
+
 
 def process_config(args, ctx):
     # parse config file into a dictionary with defaults
 
-    g.config = {}
+    #g.config = {}
     has_secrets = False
     secrets_file = None
 
     def _correct_type(val, t):
         if t == 'int':
             return int(val)
-        elif t == 'eval':
-            return eval(val) if val else None
+        elif t == 'eval' or t == 'dict':
+            return ast.literal_eval(val) if val else None
         elif t == 'str_split':
             return str_split(val) if val else None
         elif t == 'string':
