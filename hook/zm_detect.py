@@ -730,6 +730,7 @@ else:
         pred = pred.rstrip(',')
         pred = prefix + 'detected:' + pred
         g.logger.info('Prediction string:{}'.format(pred))
+       # g.logger.error (f"Returning THIS IS {obj_json}")
         jos = json.dumps(obj_json)
         g.logger.debug('Prediction string JSON:{}'.format(jos))
 

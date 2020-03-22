@@ -175,4 +175,5 @@ class Face:
             matched_face_names.append(label)
             conf.append(1)
 
+        #g.logger.debug(f'FACE:Returning: {matched_face_rects}, {matched_face_names}, {conf}')
         return matched_face_rects, matched_face_names, conf
