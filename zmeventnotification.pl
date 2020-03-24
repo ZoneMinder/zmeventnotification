@@ -3264,7 +3264,7 @@ sub processNewAlarmsInFork {
 
           if ($send_event_end_notification) {
 
-            if (isAllowedChannel ('event_start', 'api', $hookResult ) || !$event_end_hook || !$use_hooks) {
+            if (isAllowedChannel ('event_end', 'api', $hookResult ) || !$event_end_hook || !$use_hooks) {
             printInfo ('Sending push over API as it is allowed for event_end');
 
             my $api_cmd = $api_push_script. ' '
