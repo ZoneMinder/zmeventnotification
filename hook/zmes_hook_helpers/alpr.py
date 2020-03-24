@@ -119,24 +119,25 @@ class PlateRecognizer(AlprBase):
         if self.remove_temp:
             os.remove(filename)
 
-        for plates in response.get('results'):
-            label = plates['plate']
-            dscore = plates['dscore']
-            score = plates['score']
-            if dscore >= options.get('min_dscore') and score >= options.get(
-                    'min_score'):
-                x1 = round(int(plates['box']['xmin']) * xfactor)
-                y1 = round(int(plates['box']['ymin']) * yfactor)
-                x2 = round(int(plates['box']['xmax']) * xfactor)
-                y2 = round(int(plates['box']['ymax']) * yfactor)
-                labels.append(label)
-                bbox.append([x1, y1, x2, y2])
-                confs.append(plates['score'])
-            else:
-                g.logger.debug(
-                    'ALPR: discarding plate:{} because its dscore:{}/score:{} are not in range of configured dscore:{} score:{}'
-                    .format(label, dscore, score, options.get('min_dscore'),
-                            options.get('min_score')))
+        if response.get('results'):
+            for plates in response.get('results'):
+                label = plates['plate']
+                dscore = plates['dscore']
+                score = plates['score']
+                if dscore >= options.get('min_dscore') and score >= options.get(
+                        'min_score'):
+                    x1 = round(int(plates['box']['xmin']) * xfactor)
+                    y1 = round(int(plates['box']['ymin']) * yfactor)
+                    x2 = round(int(plates['box']['xmax']) * xfactor)
+                    y2 = round(int(plates['box']['ymax']) * yfactor)
+                    labels.append(label)
+                    bbox.append([x1, y1, x2, y2])
+                    confs.append(plates['score'])
+                else:
+                    g.logger.debug(
+                        'ALPR: discarding plate:{} because its dscore:{}/score:{} are not in range of configured dscore:{} score:{}'
+                        .format(label, dscore, score, options.get('min_dscore'),
+                                options.get('min_score')))
 
         g.logger.debug ('Exiting ALPR with labels:{}'.format(labels))
         return (bbox, labels, confs)
