@@ -75,6 +75,18 @@ def createAnimation(frametype, eid,fname, types):
     g.logger.debug (f'animation: anchor={fid} start={start_frame} end={end_frame} skip={skip}')
     g.logger.debug('animation: Grabbing frames...')
     images = []
+    od_images = []
+
+    od_url= '{}/index.php?view=image&eid={}&fid={}&username={}&password={}&width={}'.format(g.config['portal'],eid,fid,g.config['user'],g.config['password'],g.config['animation_width'])
+    g.logger.debug (f'Grabbing anchor frame: {fid}...')
+    try:
+        od_frame = imageio.imread(od_url)
+        # 1 second @ 2fps
+        od_images.append(od_frame)
+        od_images.append(od_frame)
+    except Exception as e:
+        g.logger.error (f'Error downloading anchor  frame: Error:{e}')
+
     for i in range(start_frame, end_frame+1, skip):
         p_url=url+'&fid={}'.format(i)
         #g.logger.debug (f'animation: Grabbing Frame:{i}')
@@ -87,9 +99,12 @@ def createAnimation(frametype, eid,fname, types):
     try:
         if 'mp4' in types.lower():
             g.logger.debug ('Creating MP4...')
-            imageio.mimsave(fname+'.mp4', images, format='mp4', fps=target_fps)
+            mp4_final = od_images.copy()
+            mp4_final.extend(images)
+            imageio.mimwrite(fname+'.mp4', mp4_final, format='mp4', fps=target_fps)
             size = os.stat(fname+'.mp4').st_size
             g.logger.debug (f'animation: saved to {fname}.mp4, size {size} bytes, frames: {len(images)}')
+
         if 'gif' in types.lower():
             from pygifsicle import optimize
             g.logger.debug ('Creating GIF...')
@@ -105,7 +120,9 @@ def createAnimation(frametype, eid,fname, types):
                 gif_images = images[0+s1:-s2]
                 g.logger.debug (f'For GIF, slicing {s1} to -{s2} from a total of {len(images)}')
                 g.logger.debug ('animation:Saving...')
-                imageio.mimsave(fname+'.gif', gif_images, format='gif', fps=target_fps)
+                gif_final = od_images.copy()
+                gif_final.extend(gif_images)
+                imageio.mimwrite(fname+'.gif', gif_final, format='gif', fps=target_fps)
                 g.logger.debug ('animation:Optimizing...')
                 optimize(source=fname+'.gif', colors=256)
                 size = os.stat(fname+'.gif').st_size

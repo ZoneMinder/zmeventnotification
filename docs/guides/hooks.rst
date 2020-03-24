@@ -219,6 +219,15 @@ Troubleshooting
 Types of detection
 ~~~~~~~~~~~~~~~~~~
 
+As of today, the following detection types are supported - these are all attributes you can put into the ``model`` attribute. You can put multiple and comma separate them as well.
+
+* ``yolo`` - An object detector. Detects 80 types of objects.
+
+  * Yolo supports two modes, a ``tiny`` mode that takes less resources and is faster. And a regular mode, that is more accurate but resource hungry. These models are controlled by the ``weights`` and ``config`` files you use with yolo. 
+* ``hog`` - A very innacurate, but very fast person detector. Use this *only* if you are not able to run yolo, even with the "tiny" weights.
+* ``face`` - face detection and recognition
+* ``alpr`` - license plate recognition. Needs to be paired with yolo (i.e. ``yolo,alpr``)
+
 You can switch detection type by using
 ``model=<detection_type1>,<detection_type2>,....`` in your
 ``objectconfig.ini``
