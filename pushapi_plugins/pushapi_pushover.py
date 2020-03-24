@@ -52,7 +52,11 @@ import os
 # ES passes the image path, this routine figures out which image
 # to use inside that path
 def get_image(path, cause):
-    if os.path.exists(path+'/objdetect.jpg'):
+    # as of Mar 2020, pushover doesn't support
+    # mp4
+    if os.path.exists(path+'/objdetect.gif'):
+        return path+'/objdetect.gif'
+    elif os.path.exists(path+'/objdetect.jpg'):
         return path+'/objdetect.jpg'
     prefix = cause[0:2]
     if prefix == '[a]':
@@ -89,9 +93,16 @@ files = None
 if len(sys.argv) == 7:
     image_path =  sys.argv[6]
     fname=get_image(image_path, cause)
+
     zmlog.Debug (1,'eid:{} Image to be used is: {}'.format(eid,fname))
+    f,e=os.path.splitext(fname)
+    if e.lower() == '.mp4':
+        ctype = 'video/mp4'
+    else:
+        ctype = 'image/jpeg'
+    zmlog.Debug (1,'Setting ctype to {} for extension {}'.format(ctype, e.lower()))
     files = {
-         "attachment": ("image.jpg", open(fname,"rb"), "image/jpeg")
+         "attachment": ("image"+e.lower(), open(fname,"rb"), ctype)
     }
 
 
@@ -100,7 +111,6 @@ if not param_dict['token'] or param_dict['user']:
     secrets = read_secrets()
     if not param_dict['token']:
         param_dict['token'] = secrets.get('PUSHOVER_APP_TOKEN')
-        print (param_dict['token'])
         zmlog.Debug(1, "eid:{} Reading token from secrets".format(eid))
     if not param_dict['user']:
         param_dict['user'] = secrets.get('PUSHOVER_USER_KEY'),
@@ -114,7 +124,7 @@ if event_type == 'event_end':
 disp_param_dict=param_dict.copy()
 disp_param_dict['token']='<removed>'
 disp_param_dict['user']='<removed>'
-zmlog.Debug (1, "eid:{} Pushover playload: data={} files={}".format(eid,disp_param_dict,files))
+zmlog.Debug (1, "eid:{} Pushover payload: data={} files={}".format(eid,disp_param_dict,files))
 r = requests.post("https://api.pushover.net/1/messages.json", data = param_dict, files = files)
 zmlog.Debug(1,"eid:{} Pushover returned:{}".format(eid, r.text))
 print(r.text)

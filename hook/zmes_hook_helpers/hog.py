@@ -30,10 +30,15 @@ class Hog:
         labels = []
         classes = []
         conf = []
+        rects = []
 
         for i in r:
             labels.append('person')
             classes.append('person')
-            conf.append(1)
+            conf.append(1.0)
+            i = i.tolist()
+            (x1,y1,x2,y2) = (round(i[0]),round(i[1]),round(i[0]+i[2]), round(i[1]+i[3]))
+            rects.append((x1,y1,x2,y2))
 
-        return r, labels, conf
+        #g.logger.debug(f'HOG:Returning: {rects}, {labels}, {conf}')
+        return rects, labels, conf

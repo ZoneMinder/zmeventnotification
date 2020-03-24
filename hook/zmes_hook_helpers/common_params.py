@@ -18,6 +18,12 @@ config_vals = {
             'default': '/var/lib/zmeventnotification',
             'type': 'string'
         },
+        'pyzm_overrides': {
+            'section': 'general',
+            'default': "{}",
+            'type': 'dict',
+
+        },
         'portal':{
             'section': 'general',
             'default': '',
@@ -72,6 +78,11 @@ config_vals = {
             'section': 'general',
             'default': 'snapshot',
             'type': 'string'
+        },
+        'bestmatch_order': {
+            'section':'general',
+            'default': 'a,s',
+            'type':'string',
         },
         'wait': {
             'section': 'general',
@@ -128,6 +139,34 @@ config_vals = {
             'section': 'general',
             'default': '(127,140,141)',
             'type': 'eval'
+        },
+
+        # animation for push
+
+        'create_animation':{
+            'section': 'animation',
+            'default': 'no',
+            'type': 'string'
+        },
+        'animation_types':{
+            'section': 'animation',
+            'default': 'mp4',
+            'type': 'string'
+        },
+        'animation_width':{
+            'section': 'animation',
+            'default': '400',
+            'type': 'int'
+        },
+        'animation_retry_sleep':{
+            'section': 'animation',
+            'default': '15',
+            'type': 'int'
+        },
+        'animation_max_tries':{
+            'section': 'animation',
+            'default': '3',
+            'type': 'int'
         },
 
         # General ML

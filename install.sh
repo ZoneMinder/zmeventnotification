@@ -208,6 +208,10 @@ install_hook() {
     ${PY_SUDO} ${PIP} uninstall -y zmes-hooks  >/dev/null 2>&1
     ${PY_SUDO} ${PIP} install hook/ && print_opencv_message || print_error "python hooks setup failed"
 
+    echo "Installing package deps..."
+    echo "Installing gifsicle, if needed..."
+    ${PY_SUDO} apt-get install gifsicle -qq
+
 }
 
 

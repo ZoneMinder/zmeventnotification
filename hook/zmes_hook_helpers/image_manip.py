@@ -5,14 +5,122 @@ import cv2
 import numpy as np
 import pickle
 import re
-
+import requests
+import time
+import os
+import traceback
 # Generic image related algorithms
+
+
+def createAnimation(frametype, eid,fname, types):
+    import imageio
+    url = '{}/index.php?view=image&width={}&eid={}&username={}&password={}'.format(g.config['portal'],g.config['animation_width'],eid,g.config['user'],g.config['password'])
+    api_url = '{}/events/{}.json?username={}&password={}'.format(g.config['api_portal'],eid,g.config['user'],g.config['password'])
+    disp_api_url='{}/events/{}.json?username={}&password=***'.format(g.config['api_portal'],eid,g.config['user'])
+
+    rtries = g.config['animation_max_tries']
+    sleep_secs = g.config['animation_retry_sleep']
+    fid = None
+    totframes = 0
+    length = 0
+    fps = 0
+
+    target_fps = 2
+    buffer_seconds = 5 #seconds
+    while True and rtries:
+        g.logger.debug (f"animation: Try:{g.config['animation_max_tries']-rtries+1} Getting {disp_api_url}")
+        r = requests.get(api_url).json()
+        r_event = r['event']['Event']
+        r_frame = r['event']['Frame']
+        r_frame_len = len(r_frame)
+
+        if frametype == 'alarm':
+            fid  = int(r_event.get('AlarmFrameId'))
+        elif frametype == 'snapshot':
+            fid = int(r_event.get('MaxScoreFrameId'))
+        else:
+            fid = int(frameid)
+
+        #g.logger.debug (f'animation: Response {r}')
+        if r_frame is None or not r_frame_len:
+            g.logger.debug (f'No frames found yet via API, deferring check for {sleep_secs} seconds...')
+            rtries = rtries - 1
+            time.sleep(sleep_secs)
+            continue
+    
+        totframes=len(r_frame)
+        total_time=round(float(r_frame[-1]['Delta']))
+        fps=round(totframes/total_time)
+
+        if not r_frame_len >= fid+fps*buffer_seconds:
+            g.logger.debug (f'I\'ve got {r_frame_len} frames, but that\'s not enough as anchor frame is type:{frametype}:{fid}, deferring check for {sleep_secs} seconds...')
+            rtries = rtries - 1
+            time.sleep(sleep_secs)
+            continue
+
+        g.logger.debug ('animation: Got {} frames'.format(r_frame_len))
+        break
+        # fid is the anchor frame
+    if not rtries:
+        g.logger.error ('animation: Bailing, failed too many times')
+        return
+  
+
+  
+    g.logger.debug ('animation: event fps={}'.format(fps))
+    start_frame = int(max(fid - (buffer_seconds*fps),1))
+    end_frame = int(min(totframes, fid + (buffer_seconds*fps)))
+    skip =round(fps/target_fps)
+
+    g.logger.debug (f'animation: anchor={fid} start={start_frame} end={end_frame} skip={skip}')
+    g.logger.debug('animation: Grabbing frames...')
+    images = []
+    for i in range(start_frame, end_frame+1, skip):
+        p_url=url+'&fid={}'.format(i)
+        #g.logger.debug (f'animation: Grabbing Frame:{i}')
+        try:
+            images.append(imageio.imread(p_url))
+        except Exception as e:
+            g.logger.error (f'Error downloading frame {i}: Error:{e}')
+
+    g.logger.debug (f'animation: Saving {fname}...')
+    try:
+        if 'mp4' in types.lower():
+            g.logger.debug ('Creating MP4...')
+            imageio.mimsave(fname+'.mp4', images, format='mp4', fps=target_fps)
+            size = os.stat(fname+'.mp4').st_size
+            g.logger.debug (f'animation: saved to {fname}.mp4, size {size} bytes, frames: {len(images)}')
+        if 'gif' in types.lower():
+            from pygifsicle import optimize
+            g.logger.debug ('Creating GIF...')
+
+            # Let's slice the right amount from images
+            # GIF uses a +- 2 second buffer
+            gif_buffer_seconds=2
+            gif_start_frame = int(max(fid - (gif_buffer_seconds*fps),1))
+            gif_end_frame = int(min(totframes, fid + (gif_buffer_seconds*fps)))
+            s1 = round((gif_start_frame - start_frame)/skip)
+            s2 = round((end_frame - gif_end_frame)/skip)
+            if s1 >=0 and  s2 >=0:
+                gif_images = images[0+s1:-s2]
+                g.logger.debug (f'For GIF, slicing {s1} to -{s2} from a total of {len(images)}')
+                g.logger.debug ('animation:Saving...')
+                imageio.mimsave(fname+'.gif', gif_images, format='gif', fps=target_fps)
+                g.logger.debug ('animation:Optimizing...')
+                optimize(source=fname+'.gif', colors=256)
+                size = os.stat(fname+'.gif').st_size
+                g.logger.debug (f'animation: saved to {fname}.gif, size {size} bytes, frames:{len(gif_images)}')
+            else:
+                g.logger.debug (f'Bailing in GIF creation, range is weird start:{s1}:end offset {-s2}')
+
+        
+        
+    except Exception as e:
+        g.logger.error('animation: Traceback:{}'.format(traceback.format_exc()))
 
 # once all bounding boxes are detected, we check to see if any of them
 # intersect the polygons, if specified
 # it also makes sure only patterns specified in detect_pattern are drawn
-
-
 def processPastDetection(bbox, label, conf, mid):
 
     try:

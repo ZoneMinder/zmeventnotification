@@ -20,7 +20,7 @@ How do the hooks actually invoke object detection?
 
 How To Debug Issues
 ---------------------
-* Refer to :ref:`hooks-logging`
+* Refer to :ref:`es-hooks-logging`
 
 
 It looks like when ES invokes the hooks, it misses objects, but when I run it manually, it detects it just fine

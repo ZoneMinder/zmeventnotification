@@ -71,8 +71,8 @@ def train():
                             number_of_times_to_upsample=upsample_times)
                         if len(face_locations) != 1:
                             g.logger.error(
-                                'File {} has multiple faces, cannot use for training. Ignoring...'
-                                .format(person))
+                                'File {} has {} faces, cannot use for training. We need exactly 1 face. If you think you have only 1 face try using "cnn" for training mode. Ignoring...'
+                                .format(person), len(face_locations))
                         else:
                             face_encodings = face_recognition.face_encodings(
                                 known_face,
@@ -94,10 +94,9 @@ def train():
 
                 if len(face_locations) != 1:
                     g.logger.error(
-                        'File {} has multiple faces, cannot use for training. Ignoring...'
-                        .format(entry))
+                                'File {} has {} faces, cannot use for training. We need exactly 1 face. If you think you have only 1 face try using "cnn" for training mode. Ignoring...'
+                                .format(person), len(face_locations))
                 else:
-
                     face_encodings = face_recognition.face_encodings(
                         known_face,
                         known_face_locations=face_locations,

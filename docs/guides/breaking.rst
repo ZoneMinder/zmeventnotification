@@ -1,6 +1,12 @@
 Breaking Changes
 ----------------
 
+Version  5.10 onwards
+~~~~~~~~~~~~~~~~~~~~~~
+- Added support for live animations as part of push messages. This requires an upgraded zmNinja app (``1.3.0.91`` or above) as well as ZoneMinder master (1.35) as of Mar 17 2020. Without these two updates, live notifications will not work. Specifically:
+  - This introduces a new section in ``objectconfig.ini`` called ``[animation]``. Please read the config for more details.
+  - You are also going to have to re-run ``install.sh`` to install new dependencies
+
 Version 5.9.9 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 - You can now hyper charge your push notifications, including getting desktop notifications. See below
@@ -60,7 +66,7 @@ Version 4.1 onwards
 ~~~~~~~~~~~~~~~~~~~~
 - Hook versions will now always be ``<ES version>.x``, so in this case ``4.1.x``
 - Hooks have now migrated to using a `proper python ZM logger module <https://pypi.org/project/pyzmutils/>`__ so it better integrates with ZM logging 
-- To view detection logs, you now need to follow the standard ZM logging process. See :ref:`hooks-logging` documentation for more details)
+- To view detection logs, you now need to follow the standard ZM logging process. See :ref:`es-hooks-logging` documentation for more details)
 - You no longer have to manually install python requirements, the setup process should automatically install them
 - If you are using MQTT and your  ``MQTT:Simple`` library was installed a while ago, you may need to update it. A new ``login`` method was added
   to that library on Dec 2018 which is required (`ref <https://github.com/Juerd/Net-MQTT-Simple/blob/cf01b43c27893a07185d4b58ff87db183d08b0e9/Changes#L21>`__)

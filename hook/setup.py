@@ -7,7 +7,7 @@ import codecs
 
 from setuptools import setup
 
-#Package meta-data.
+#Package meta-data
 NAME = 'zmes_hooks'
 DESCRIPTION = 'ZoneMinder EventServer hooks'
 URL = 'https://github.com/pliablepixels/zmeventserver/'
@@ -15,7 +15,7 @@ AUTHOR_EMAIL = 'pliablepixels@gmail.com'
 AUTHOR = 'Pliable Pixels'
 LICENSE = 'GPL'
 INSTALL_REQUIRES = [
-    'numpy', 'requests', 'Shapely', 'imutils', 'pyzm', 'scikit-learn', 'future'
+    'numpy', 'requests', 'Shapely', 'imutils', 'pyzm>=0.1.8', 'scikit-learn', 'future', 'imageio','imageio-ffmpeg','pygifsicle'
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))

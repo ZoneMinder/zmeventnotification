@@ -17,12 +17,16 @@ import pickle
 import json
 import time
 import requests
+import subprocess
 #import hashlib
 
 import zmes_hook_helpers.log as log
 import zmes_hook_helpers.utils as utils
 import zmes_hook_helpers.image_manip as img
 import zmes_hook_helpers.common_params as g
+
+import traceback
+
 
 import zmes_hook_helpers.alpr as alpr
 from zmes_hook_helpers.__init__ import __version__
@@ -142,27 +146,37 @@ ap.add_argument('-f',
 args, u = ap.parse_known_args()
 args = vars(args)
 
-if args['monitorid']:
-    log.init(process_name='zmesdetect_' + 'm' + args['monitorid'])
-else:
-    log.init(process_name='zmesdetect')
+if not args['config'] or not args['eventid']:
+    print ('--config and --eventid are required')
+    exit(1)
 
-g.logger.info('---------| app version: {} |------------'.format(__version__))
+utils.get_pyzm_config(args)
+
+
+if args['monitorid']:
+    log.init(process_name='zmesdetect_' + 'm' + args['monitorid'], override=g.config['pyzm_overrides'])
+else:
+    log.init(process_name='zmesdetect',override=g.config['pyzm_overrides'])
+
+es_version='(?)'
+try:
+    es_version=subprocess.check_output(['/usr/bin/zmeventnotification.pl', '--version']).decode('ascii')
+except:
+    pass
+
+g.logger.info('---------| hook version: {}, ES version: {} |------------'.format(__version__, es_version))
 if args['version']:
     print(__version__)
     exit(0)
 
 
-if not args['config'] or not args['eventid']:
-    print ('--config and --eventid are required')
-    exit(1)
 
 g.polygons = []
 
 # process config file
 g.ctx = ssl.create_default_context()
-
 utils.process_config(args, g.ctx)
+
 
 # misc came later, so lets be safe
 if not os.path.exists(g.config['base_data_path'] + '/misc/'):
@@ -316,7 +330,11 @@ for model in g.config['models']:
     saved_file = None
     # Apply the model to all files
     remote_failed = False
-    for filename in [filename1, filename2]:
+
+    # default order is alarm, snapshot
+    frame_order = [filename2, filename1] if g.config['bestmatch_order'] == 's,a' else [filename1,filename2]
+
+    for filename in frame_order:
         if filename is None:
             continue
         #filename = './car.jpg'
@@ -665,10 +683,22 @@ else:
             g.logger.debug('Writing JSON output to {}'.format(jf))
             with open(jf, 'w') as jo:
                 json.dump(final_json, jo)
-
+            
+            
+            if g.config['create_animation'] == 'yes':
+                g.logger.debug('animation: Creating burst...')
+                try:
+                    img.createAnimation(frame_type, args['eventid'],args['eventpath']+'/objdetect', g.config['animation_types'])
+                except Exception as e:
+                    g.logger.error('Error creating animation:{}'.format(e))
+                    g.logger.error('animation: Traceback:{}'.format(traceback.format_exc()))
+                   
         else:
-            g.logger.error(
-                'Could not write image to ZoneMinder as eventpath not present')
+            if not len(bbox):
+                g.logger.debug('Not writing image, as no objects recorded')
+            else:
+                g.logger.error(
+                    'Could not write image to ZoneMinder as eventpath not present')
 
 
     # Now create prediction string
@@ -700,6 +730,7 @@ else:
         pred = pred.rstrip(',')
         pred = prefix + 'detected:' + pred
         g.logger.info('Prediction string:{}'.format(pred))
+       # g.logger.error (f"Returning THIS IS {obj_json}")
         jos = json.dumps(obj_json)
         g.logger.debug('Prediction string JSON:{}'.format(jos))
 

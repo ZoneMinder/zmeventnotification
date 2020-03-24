@@ -633,6 +633,7 @@ Send event end notification............${\(yes_or_no($send_event_end_notificatio
 Use Hooks............................. ${\(yes_or_no($use_hooks))}
 Hook Script on Event Start ........... ${\(value_or_undefined($event_start_hook))}
 Hook Script on Event End.............. ${\(value_or_undefined($event_end_hook))}
+Hook Skipped monitors................. ${\(value_or_undefined($hook_skip_monitors))}
 
 Notify on Event Start (hook success).. ${\(value_or_undefined($event_start_notify_on_hook_success))}
 Notify on Event Start (hook fail)..... ${\(value_or_undefined($event_start_notify_on_hook_fail))}

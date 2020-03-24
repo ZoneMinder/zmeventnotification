@@ -57,11 +57,17 @@ class Face:
             )
 
             train.train()
-        with open(encoding_file_name, 'rb') as f:
-            self.knn = pickle.load(f)
+        try:
+            with open(encoding_file_name, 'rb') as f:
+                self.knn = pickle.load(f)
+        except Exception as e:
+            g.logger.error ('Error loading KNN model: {}'.format(e))
 
     def get_classes(self):
-        return self.knn.classes_
+        if self.knn:
+            return self.knn.classes_
+        else:
+            return []
 
     def _rescale_rects(self, a):
         rects = []
@@ -112,12 +118,25 @@ class Face:
             return [], [], []
 
         # Use the KNN model to find the best matches for the test face
+      
         start = datetime.datetime.now()
-        closest_distances = self.knn.kneighbors(face_encodings, n_neighbors=1)
-        are_matches = [
-            closest_distances[0][i][0] <= g.config['face_recog_dist_threshold']
-            for i in range(len(face_locations))
-        ]
+
+        if self.knn:
+            closest_distances = self.knn.kneighbors(face_encodings, n_neighbors=1)
+            are_matches = [
+                closest_distances[0][i][0] <= g.config['face_recog_dist_threshold']
+                for i in range(len(face_locations))
+                
+            ]
+            prediction_labels = self.knn.predict(face_encodings)
+
+        else:
+            # There were no faces to compare
+            # create a set of non matches for each face found
+            are_matches = [False] * len(face_locations)
+            prediction_labels = [''] * len(face_locations)
+            g.logger.debug ('No faces to match, so creating empty set')
+
         diff_time = (datetime.datetime.now() - start).microseconds / 1000
         g.logger.debug(
             'Matching recognized faces to known faces took {} milliseconds'.
@@ -126,7 +145,7 @@ class Face:
         matched_face_names = []
         matched_face_rects = []
 
-        for pred, loc, rec in zip(self.knn.predict(face_encodings),
+        for pred, loc, rec in zip(prediction_labels,
                                   face_locations, are_matches):
             label = pred if rec else g.config['unknown_face_name']
             if not rec and g.config['save_unknown_faces'] == 'yes':
@@ -156,4 +175,5 @@ class Face:
             matched_face_names.append(label)
             conf.append(1)
 
+        #g.logger.debug(f'FACE:Returning: {matched_face_rects}, {matched_face_names}, {conf}')
         return matched_face_rects, matched_face_names, conf
