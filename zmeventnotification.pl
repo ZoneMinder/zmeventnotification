@@ -561,7 +561,7 @@ sub loadEsConfigSettings {
   $keep_frame_match_type =
     config_get_val( $config, 'hook', 'keep_frame_match_type',
     DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE );
-  $hook_skip_monitors = config_get_val( $config, 'hook', 'skip_monitors' );
+  $hook_skip_monitors = config_get_val( $config, 'hook', 'hook_skip_monitors' );
 	%hook_skip_monitors = map { $_ => !undef } split(',', $hook_skip_monitors);
   $hook_pass_image_path =
     config_get_val( $config, 'hook', 'hook_pass_image_path' );
@@ -605,6 +605,7 @@ Port ................................. ${\(value_or_undefined($port))}
 Address .............................. ${\(value_or_undefined($address))}
 Event check interval ................. ${\(value_or_undefined($event_check_interval))}
 Monitor reload interval .............. ${\(value_or_undefined($monitor_reload_interval))}
+Skipped monitors............... ${\(value_or_undefined($skip_monitors))}
 
 Auth enabled ......................... ${\(yes_or_no($auth_enabled))}
 Auth timeout ......................... ${\(value_or_undefined($auth_timeout))}
@@ -647,7 +648,6 @@ Notify End only if Start success......${\(yes_or_no($event_end_notify_if_start_s
 
 Use Hook Description........... ${\(yes_or_no($use_hook_description))}
 Keep frame match type.......... ${\(yes_or_no($keep_frame_match_type))}
-Skipped monitors............... ${\(value_or_undefined($skip_monitors))}
 Store Frame in ZM...............${\(yes_or_no($hook_pass_image_path))}
 
 
@@ -1375,7 +1375,7 @@ sub loadMonitors {
   while ( my $monitor = $sth->fetchrow_hashref() ) {
 
 		if ( $skip_monitors{$monitor->{Id}} ) {
-			printDebug("$$monitor{Id} is in skip list, not using hooks");
+			printDebug("$$monitor{Id} is in skip list, not going to process");
 			next;
 		}
 
