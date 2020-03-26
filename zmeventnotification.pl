@@ -592,18 +592,18 @@ ${\(
 )}:
 
 Secrets file.......................... ${\(value_or_undefined($secrets_filename))}
-Base data path.........................${\(value_or_undefined($base_data_path))}
+Base data path........................ ${\(value_or_undefined($base_data_path))}
 Restart interval (secs)............... ${\(value_or_undefined($restart_interval))}
 
-Use admin interface ...................${\(yes_or_no($use_escontrol_interface))}
-Admin interface password...............${\(present_or_not($escontrol_interface_password))}
-Admin interface persistence file ......${\(value_or_undefined($escontrol_interface_file))}
+Use admin interface .................. ${\(yes_or_no($use_escontrol_interface))}
+Admin interface password.............. ${\(present_or_not($escontrol_interface_password))}
+Admin interface persistence file ..... ${\(value_or_undefined($escontrol_interface_file))}
 
 Port ................................. ${\(value_or_undefined($port))}
 Address .............................. ${\(value_or_undefined($address))}
 Event check interval ................. ${\(value_or_undefined($event_check_interval))}
 Monitor reload interval .............. ${\(value_or_undefined($monitor_reload_interval))}
-Skipped monitors............... ${\(value_or_undefined($skip_monitors))}
+Skipped monitors...................... ${\(value_or_undefined($skip_monitors))}
 
 Auth enabled ......................... ${\(yes_or_no($auth_enabled))}
 Auth timeout ......................... ${\(value_or_undefined($auth_timeout))}
@@ -639,20 +639,18 @@ Hook Skipped monitors................. ${\(value_or_undefined($hook_skip_monitor
 
 Notify on Event Start (hook success).. ${\(value_or_undefined($event_start_notify_on_hook_success))}
 Notify on Event Start (hook fail)..... ${\(value_or_undefined($event_start_notify_on_hook_fail))}
-Notify on Event End (hook success)... ${\(value_or_undefined($event_end_notify_on_hook_success))}
-Notify on Event End (hook fail)...... ${\(value_or_undefined($event_end_notify_on_hook_fail))}
+Notify on Event End (hook success).... ${\(value_or_undefined($event_end_notify_on_hook_success))}
+Notify on Event End (hook fail)....... ${\(value_or_undefined($event_end_notify_on_hook_fail))}
+Notify End only if Start success...... ${\(yes_or_no($event_end_notify_if_start_success))}
 
-Notify End only if Start success......${\(yes_or_no($event_end_notify_if_start_success))}
+Use Hook Description.................. ${\(yes_or_no($use_hook_description))}
+Keep frame match type................. ${\(yes_or_no($keep_frame_match_type))}
+Store Frame in ZM......................${\(yes_or_no($hook_pass_image_path))}
 
-Use Hook Description........... ${\(yes_or_no($use_hook_description))}
-Keep frame match type.......... ${\(yes_or_no($keep_frame_match_type))}
-Store Frame in ZM...............${\(yes_or_no($hook_pass_image_path))}
-
-
-Picture URL ................... ${\(value_or_undefined($picture_url))}
-Include picture................ ${\(yes_or_no($include_picture))}
-Picture username .............. ${\(value_or_undefined($picture_portal_username))}
-Picture password .............. ${\(present_or_not($picture_portal_password))}
+Picture URL .......................... ${\(value_or_undefined($picture_url))}
+Include picture....................... ${\(yes_or_no($include_picture))}
+Picture username ..................... ${\(value_or_undefined($picture_portal_username))}
+Picture password ..................... ${\(present_or_not($picture_portal_password))}
 
 EOF
   );
