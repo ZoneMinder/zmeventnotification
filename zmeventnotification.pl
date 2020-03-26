@@ -216,6 +216,9 @@ my $event_end_notify_if_start_success;
 my $use_hook_description;
 my $keep_frame_match_type;
 my $skip_monitors;
+my %skip_monitors;
+my $hook_skip_monitors;
+my %hook_skip_monitors;
 my $hook_pass_image_path;
 
 my $picture_url;
@@ -284,7 +287,6 @@ if ($version) {
   print($app_version);
   exit(0);
 }
-
 exit( print(USAGE) ) if $help;
 
 # Read options from a configuration file.  If --config is specified, try to
@@ -428,6 +430,8 @@ sub loadEsConfigSettings {
   else {
     printInfo("ES will be restarted at $restart_interval seconds");
   }
+  $skip_monitors = config_get_val($config, 'general', 'skip_monitors');
+	%skip_monitors = map { $_ => !undef } split(',', $skip_monitors);
 
   # If an option set a value, leave it.  If there's a value in the config, use
   # it.  Otherwise, use a default value if it's available.
@@ -557,7 +561,8 @@ sub loadEsConfigSettings {
   $keep_frame_match_type =
     config_get_val( $config, 'hook', 'keep_frame_match_type',
     DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE );
-  $skip_monitors = config_get_val( $config, 'hook', 'skip_monitors' );
+  $hook_skip_monitors = config_get_val( $config, 'hook', 'skip_monitors' );
+	%hook_skip_monitors = map { $_ => !undef } split(',', $hook_skip_monitors);
   $hook_pass_image_path =
     config_get_val( $config, 'hook', 'hook_pass_image_path' );
 
@@ -631,6 +636,7 @@ Send event end notification............${\(yes_or_no($send_event_end_notificatio
 Use Hooks............................. ${\(yes_or_no($use_hooks))}
 Hook Script on Event Start ........... ${\(value_or_undefined($event_start_hook))}
 Hook Script on Event End.............. ${\(value_or_undefined($event_end_hook))}
+Hook Skipped monitors................. ${\(value_or_undefined($hook_skip_monitors))}
 
 Notify on Event Start (hook success).. ${\(value_or_undefined($event_start_notify_on_hook_success))}
 Notify on Event Start (hook fail)..... ${\(value_or_undefined($event_start_notify_on_hook_fail))}
@@ -1368,6 +1374,11 @@ sub loadMonitors {
     or Fatal( "Can't execute: " . $sth->errstr() );
   while ( my $monitor = $sth->fetchrow_hashref() ) {
 
+		if ( $skip_monitors{$monitor->{Id}} ) {
+			printDebug("$$monitor{Id} is in skip list, not using hooks");
+			next;
+		}
+
     if ( zmMemVerify($monitor) ) {
       $monitor->{CurrentState}        = zmGetMonitorState($monitor);
       $monitor->{CurrentEvent}        = zmGetLastEvent($monitor);
@@ -1619,10 +1630,6 @@ sub sendOverFCM {
     printDebug(
       'FCM called when hook failed, so making sure we do not use objdetect in url'
     );
-
-    # could be any of these
-    $pic = $pic =~ s/objdetect_mp4/snapshot/gr;
-    $pic = $pic =~ s/objdetect_gif/snapshot/gr;
     $pic = $pic =~ s/objdetect/snapshot/gr;
   }
 
@@ -1673,7 +1680,6 @@ sub sendOverFCM {
 
   print WRITER 'badge--TYPE--' . $obj->{id} . '--SPLIT--' . $badge . '\n';
   my $uri = 'https://fcm.googleapis.com/fcm/send';
-  #my $uri = 'https://fcm.googleapis.com/v1/projects/myproject-b5ae1/messages:send'
   my $json;
 
   # use zmNinja FCM key if the user did not override
@@ -2994,18 +3000,14 @@ sub processNewAlarmsInFork {
     if ( $alarm->{Start}->{State} eq 'pending' ) {
 
       # is this monitor blocked from hooks in config?
-      if ( $skip_monitors
-        && isInList( $skip_monitors, $mid ) )
-      {
-        printInfo("$mid is in skip list, not using hooks");
+      if ( $hook_skip_monitors{$mid} ) {
+        printInfo("$mid is in hook skip list, not using hooks");
         $alarm->{Start}->{State} = 'ready';
 
         # lets treat this like a hook success so it
         # gets sent out
-        $hookResult = 0
-
-      }
-      else {    # not a blocked monitor
+        $hookResult = 0;
+      } else {    # not a blocked monitor
 
         if ( $event_start_hook && $use_hooks ) {
 
