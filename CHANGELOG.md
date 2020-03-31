@@ -1,5 +1,31 @@
 # Changelog
 
+## [v5.11.2](https://github.com/pliablepixels/zmeventnotification/tree/v5.11.2) (2020-03-31)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.9.9...v5.11.2)
+
+**Implemented enhancements:**
+
+- Add ability to skip monitors in ES \(not just hooks\) [\#240](https://github.com/pliablepixels/zmeventnotification/issues/240)
+- Add option for bestmatch priority  [\#237](https://github.com/pliablepixels/zmeventnotification/issues/237)
+- Add live push notification support [\#235](https://github.com/pliablepixels/zmeventnotification/issues/235)
+
+**Fixed bugs:**
+
+- zm\_zones don't get imported if there is no monitor section in objectconfig.ini for the provided monitor id [\#230](https://github.com/pliablepixels/zmeventnotification/issues/230)
+
+**Closed issues:**
+
+- cant authenticate to MQTT broker [\#231](https://github.com/pliablepixels/zmeventnotification/issues/231)
+- Events being missed. [\#229](https://github.com/pliablepixels/zmeventnotification/issues/229)
+- Detected licence plates missing in notes [\#227](https://github.com/pliablepixels/zmeventnotification/issues/227)
+
+**Merged pull requests:**
+
+- Fix typo in version option handling [\#239](https://github.com/pliablepixels/zmeventnotification/pull/239) ([lpomfrey](https://github.com/lpomfrey))
+- General skip monitors [\#234](https://github.com/pliablepixels/zmeventnotification/pull/234) ([connortechnology](https://github.com/connortechnology))
+- small efficiency improvement [\#233](https://github.com/pliablepixels/zmeventnotification/pull/233) ([connortechnology](https://github.com/connortechnology))
+
 ## [v5.9.9](https://github.com/pliablepixels/zmeventnotification/tree/v5.9.9) (2020-03-08)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.7.7...v5.9.9)
@@ -7,7 +33,7 @@
 **Implemented enhancements:**
 
 - Add ability to add any arbitrary 3rd party push server [\#225](https://github.com/pliablepixels/zmeventnotification/issues/225)
-
+- Add native component support to Home Assistant for ES events [\#141](https://github.com/pliablepixels/zmeventnotification/issues/141)
 
 **Fixed bugs:**
 
@@ -15,6 +41,7 @@
 
 **Closed issues:**
 
+- zm\_train\_faces.py fails [\#232](https://github.com/pliablepixels/zmeventnotification/issues/232)
 - zmeventserver not connecting to mlapi after zm upgrade [\#228](https://github.com/pliablepixels/zmeventnotification/issues/228)
 - Montage Review Calendars not updating [\#223](https://github.com/pliablepixels/zmeventnotification/issues/223)
 - Can zmeventnotification.pl update Events.ObjectScore? [\#222](https://github.com/pliablepixels/zmeventnotification/issues/222)
