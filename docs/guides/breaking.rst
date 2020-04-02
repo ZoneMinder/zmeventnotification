@@ -1,6 +1,10 @@
 Breaking Changes
 ----------------
 
+Version 5.12 onwards
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+- If you are using platerecognition.com local SDK for ALPR, their SDK and cloud versions have slightly different API formats. There is a new attribute called ``alpr_api_type`` in ``objectconfig.ini`` that should be set to ``local`` to handle this. 
+
 Version  5.11 onwards
 ~~~~~~~~~~~~~~~~~~~~~~
 - ``skip_monitors`` in ``zmeventnotification.ini`` is now called ``hook_skip_monitors`` to correctly reflect this only means hooks will be skipped for these monitors. A new attribute ``skip_monitors`` has been added that controls which monitors the ES will skip completely (That is, no analysis /otifications at all for these monitors)

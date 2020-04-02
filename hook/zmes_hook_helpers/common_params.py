@@ -358,6 +358,11 @@ config_vals = {
             'default': '.*',
             'type': 'string'
         },
+        'alpr_api_type':{
+            'section': 'alpr',
+            'default': 'cloud',
+            'type': 'string'
+        },
 
         # Plate recognition specific
         'platerec_stats':{
@@ -366,11 +371,7 @@ config_vals = {
             'type': 'string'
         },
 
-        'platerec_type':{
-            'section': 'alpr',
-            'default': 'cloud',
-            'type': 'string'
-        },
+       
         'platerec_regions':{
             'section': 'alpr',
             'default': None,

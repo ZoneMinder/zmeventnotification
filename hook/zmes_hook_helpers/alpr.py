@@ -12,7 +12,7 @@ import subprocess
 class AlprBase:
     def __init__(self, url=None, apikey=None, tempdir='/tmp'):
         if not apikey:
-            raise ValueError('Invalid or missing API key passed')
+            g.logger.debug ('No API key specified, hopefully you do not need one')
         self.apikey = apikey
         self.tempdir = tempdir
         self.url = url
@@ -76,13 +76,17 @@ class PlateRecognizer(AlprBase):
         self.options = options
 
     def stats(self):
-        if g.config['platerec_type'] == 'local':
+        if g.config['alpr_api_type'] != 'cloud':
             g.logger.debug ('local SDK does not provide stats')
             return {}
         try:
+            if self.apikey:
+                 headers={'Authorization': 'Token ' + self.apikey}
+            else:
+                headers={}
             response = requests.get(
                 self.url + '/statistics/',
-                headers={'Authorization': 'Token ' + self.apikey})
+               headers=headers)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             response = {'error': str(e)}
@@ -102,7 +106,7 @@ class PlateRecognizer(AlprBase):
         with open(self.filename, 'rb') as fp:
             try:
                 platerec_url = self.url
-                if g.config['platerec_type'] == 'cloud':
+                if g.config['alpr_api_type'] == 'cloud':
                     platerec_url += '/plate-reader'
                 payload = self.options.get('regions')
                 response = requests.post(
@@ -162,7 +166,7 @@ class OpenAlpr(AlprBase):
             self.url = 'https://api.openalpr.com/v2/recognize'
 
         g.logger.debug(
-            'PlateRecognizer ALPR initialized with options {} and url: {}'.
+            'Open ALPR initialized with options {} and url: {}'.
             format(options, self.url))
         self.options = options
 
