@@ -681,9 +681,12 @@ else:
             jf = args['eventpath'] + '/objects.json'
             final_json = {'frame': frame_type, 'detections': obj_json}
             g.logger.debug('Writing JSON output to {}'.format(jf))
-            with open(jf, 'w') as jo:
-                json.dump(final_json, jo)
-            
+            try:
+                with open(jf, 'w') as jo:
+                    json.dump(final_json, jo)
+            except Exception as e:
+                g.logger.error(f'Error creating {jf}:{e}')
+                
             
             if g.config['create_animation'] == 'yes':
                 g.logger.debug('animation: Creating burst...')

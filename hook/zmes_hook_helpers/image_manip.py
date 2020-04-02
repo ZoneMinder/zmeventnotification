@@ -29,7 +29,15 @@ def createAnimation(frametype, eid,fname, types):
     buffer_seconds = 5 #seconds
     while True and rtries:
         g.logger.debug (f"animation: Try:{g.config['animation_max_tries']-rtries+1} Getting {disp_api_url}")
-        r = requests.get(api_url).json()
+        r = None
+        try:
+            resp = requests.get(api_url)
+            resp.raise_for_status()
+            r = resp.json()
+        except requests.exceptions.RequestException as e:
+            g.logger.error(f'{e}')
+            continue
+
         r_event = r['event']['Event']
         r_frame = r['event']['Frame']
         r_frame_len = len(r_frame)

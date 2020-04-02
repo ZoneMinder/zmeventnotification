@@ -122,7 +122,7 @@ class PlateRecognizer(AlprBase):
                     f'Plate recognizer rejected the upload with: {e}.',
                     'results': []
                 }
-                g.logger.debug(
+                g.logger.error(
                     f'Plate recognizer rejected the upload with {e}'
                 )
             else:
