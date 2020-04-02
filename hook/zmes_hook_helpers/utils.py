@@ -33,7 +33,7 @@ def rescale_polygons(xfactor, yfactor):
             newp.append((newx, newy))
         newps.append({'name': p['name'], 'value': newp})
     g.logger.debug('resized polygons x={}/y={}: {}'.format(
-        xfactor, yfactor, newps))
+        xfactor, yfactor, newps),level=2)
     g.polygons = newps
 
 
@@ -56,7 +56,7 @@ def str_split(my_str):
 # Imports zone definitions from ZM
 def import_zm_zones(mid):
     url = g.config['portal'] + '/api/zones/forMonitor/' + mid + '.json'
-    g.logger.debug('Getting ZM zones using {}?user=xxx&pass=yyy'.format(url))
+    g.logger.debug('Getting ZM zones using {}?user=xxx&pass=yyy'.format(url),level=2)
     url = url + '?user=' + g.config['user']
     url = url + '&pass=' + g.config['password']
 
@@ -66,7 +66,7 @@ def import_zm_zones(mid):
         main_handler = urllib.request.HTTPHandler()
 
     if g.config['basic_user']:
-        g.logger.debug('Basic auth config found, associating handlers')
+        g.logger.debug('Basic auth config found, associating handlers',level=2)
         password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
         top_level_url = g.config['portal']
         password_mgr.add_password(None, top_level_url, g.config['basic_user'],
@@ -106,7 +106,7 @@ def download_files(args):
         main_handler = urllib.request.HTTPHandler()
 
     if g.config['basic_user']:
-        g.logger.debug('Basic auth config found, associating handlers')
+        g.logger.debug('Basic auth config found, associating handlers',level=2)
         password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
         top_level_url = g.config['portal']
         password_mgr.add_password(None, top_level_url, g.config['basic_user'],
@@ -233,7 +233,7 @@ def process_config(args, ctx):
                 .format(v['section'], k, val))
 
         if val and val[0] == '!':  # its a secret token, so replace
-            g.logger.debug('Secret token found in config: {}'.format(val))
+            g.logger.debug('Secret token found in config: {}'.format(val),level=2)
             if not has_secrets:
                 raise ValueError(
                     'Secret token found, but no secret file specified')
@@ -302,13 +302,13 @@ def process_config(args, ctx):
                         # This means its a legit config key that needs to be overriden
                         g.logger.debug(
                             '[{}] overrides key:{} with value:{}'.format(
-                                sec, k, v))
+                                sec, k, v),level=2)
                         g.config[k] = _correct_type(v,
                                                     g.config_vals[k]['type'])
                     else:
                         # This means its a polygon for the monitor
                         g.polygons.append({'name': k, 'value': str2tuple(v)})
-                        g.logger.debug('adding polygon: {} [{}]'.format(k, v))
+                        g.logger.debug('adding polygon: {} [{}]'.format(k, v),level=2)
 
             # now import zones if needed
             # this should be done irrespective of a monitor section
@@ -338,4 +338,4 @@ def process_config(args, ctx):
                 g.config[gk] = g.config[gk].replace('{{' + sub_var + '}}',
                                                     g.config[sub_var])
                 g.logger.debug('key [{}] is \'{}\' after substitution'.format(
-                    gk, g.config[gk]))
+                    gk, g.config[gk]),level=2)

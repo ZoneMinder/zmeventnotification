@@ -19,7 +19,7 @@ class AlprBase:
 
     def setkey(self, key=None):
         self.apikey = key
-        g.logger.debug('Key changed')
+        g.logger.debug('Key changed',level=2)
 
     def stats(self):
         g.logger.debug('stats not implemented in base class')
@@ -57,7 +57,7 @@ class AlprBase:
             img_new = None
             g.logger.debug(
                 'ALPR will use {}x{} but Yolo uses {}x{} so ALPR boxes will be scaled {}x and {}y'
-                .format(oldw, oldh, neww, newh, xfactor, yfactor))
+                .format(oldw, oldh, neww, newh, xfactor, yfactor),level=2)
         else:
             xfactor = 1
             yfactor = 1
@@ -127,7 +127,7 @@ class PlateRecognizer(AlprBase):
                 )
             else:
                 response = response.json()
-                g.logger.debug('ALPR JSON: {}'.format(response))
+                g.logger.debug('ALPR JSON: {}'.format(response),level=2)
 
         (xfactor, yfactor) = self.getscale()
 
@@ -154,7 +154,7 @@ class PlateRecognizer(AlprBase):
                         .format(label, dscore, score, options.get('min_dscore'),
                                 options.get('min_score')))
 
-        g.logger.debug ('Exiting ALPR with labels:{}'.format(labels))
+        g.logger.debug ('Exiting ALPR with labels:{}'.format(labels),level=2)
         return (bbox, labels, confs)
 
 
@@ -193,14 +193,15 @@ class OpenAlpr(AlprBase):
                                                    params)
                 g.logger.debug('Trying OpenALPR with url:' + rurl)
                 response = requests.post(rurl, files={'image': fp})
+                response.raise_for_status()
             except requests.exceptions.RequestException as e:
                 response = {
                     'error':
-                    'Open ALPR rejected the upload. You either have a bad API key or a bad image',
+                    f'Open ALPR rejected the upload with {e}',
                     'results': []
                 }
                 g.logger.debug(
-                    'Open APR rejected the upload. You either have a bad API key or a bad image'
+                    f'Open APR rejected the upload with {e}'
                 )
             else:
                 response = response.json()
@@ -246,7 +247,7 @@ class OpenAlprCmdLine(AlprBase):
         self.options = options
         self.cmd = cmd + ' ' + g.config['openalpr_cmdline_params']
         if self.cmd.lower().find('-j') == -1:
-            g.logger.Debug ('Adding -j to OpenALPR for json output')
+            g.logger.Debug ('Adding -j to OpenALPR for json output',level=2)
             self.cmd = self.cmd + ' -j'
       
 

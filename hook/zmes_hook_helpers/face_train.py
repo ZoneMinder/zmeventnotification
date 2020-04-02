@@ -116,7 +116,7 @@ def train():
             'No known faces found to train, encoding file not created')
     else:
         n_neighbors = int(round(math.sqrt(len(known_face_names))))
-        g.logger.debug('Using n_neighbors to be: {}'.format(n_neighbors))
+        g.logger.debug('Using n_neighbors to be: {}'.format(n_neighbors),level=2)
         knn = neighbors.KNeighborsClassifier(n_neighbors=n_neighbors,
                                              algorithm=knn_algo,
                                              weights='distance')

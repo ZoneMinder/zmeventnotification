@@ -58,7 +58,7 @@ class Yolo:
         if self.initialize:
             g.logger.debug('Initializing Yolo')
             g.logger.debug('config:{}, weights:{}'.format(
-                config_file_abs_path, weights_file_abs_path))
+                config_file_abs_path, weights_file_abs_path),level=2)
             start = datetime.datetime.now()
             self.populate_class_labels()
             self.net = cv2.dnn.readNet(weights_file_abs_path,

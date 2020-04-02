@@ -97,7 +97,7 @@ def createAnimation(frametype, eid,fname, types):
 
     for i in range(start_frame, end_frame+1, skip):
         p_url=url+'&fid={}'.format(i)
-        #g.logger.debug (f'animation: Grabbing Frame:{i}')
+        g.logger.debug (f'animation: Grabbing Frame:{i}',level=2)
         try:
             images.append(imageio.imread(p_url))
         except Exception as e:
@@ -158,7 +158,7 @@ def processPastDetection(bbox, label, conf, mid):
             'Monitor ID not specified, cannot match past detections')
         return bbox, label, conf
     mon_file = g.config['image_path'] + '/monitor-' + mid + '-data.pkl'
-    g.logger.debug('trying to load ' + mon_file)
+    g.logger.debug('trying to load ' + mon_file,level=2)
     try:
         fh = open(mon_file, "rb")
         saved_bs = pickle.load(fh)
@@ -263,14 +263,14 @@ def processFilters(bbox, label, conf, match):
         #g.logger.debug ("BEFORE INSERT: {}".format(b))
         b.insert(1, (b[1][0], b[0][1]))
         b.insert(3, (b[0][0], b[2][1]))
-        g.logger.debug("intersection: polygon in process={}".format(b))
+        g.logger.debug("intersection: polygon in process={}".format(b),level=2)
         obj = Polygon(b)
         for p in g.polygons:
             poly = Polygon(p['value'])
             if obj.intersects(poly):
                 if label[idx] in match:
                     g.logger.debug('{} intersects object:{}[{}]'.format(
-                        p['name'], label[idx], b))
+                        p['name'], label[idx], b),level=2)
                     new_label.append(label[idx])
                     new_bbox.append(old_b)
                     new_conf.append(conf[idx])
@@ -336,6 +336,7 @@ def getValidPlateDetections(bbox, label, conf):
             poly = Polygon(p['value'])
             # Lets make sure the license plate doesn't cover the full polygon area
             # if it did, its very likey a bogus reading
+
             if obj.intersects(poly):
                 res = 'Plate:{} at {} intersects polygon:{} at {} '.format(
                     label[idx], obj, p['name'], poly)
@@ -347,7 +348,7 @@ def getValidPlateDetections(bbox, label, conf):
                     doesIntersect = True
                 else:
                     res = res + 'but also contains polygon, assuming it to be INVALID'
-                g.logger.debug(res)
+                    g.logger.debug(res, level=2)
                 if doesIntersect: break
         # out of poly loop
         if not doesIntersect:

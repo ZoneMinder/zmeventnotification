@@ -52,7 +52,7 @@ def remote_detect(image, model=None):
 
     data_file = g.config['base_data_path'] + '/zm_login.json'
     if os.path.exists(data_file):
-        g.logger.debug('Found token file, checking if token has not expired')
+        g.logger.debug('Found token file, checking if token has not expired', level=2)
         with open(data_file) as json_file:
             data = json.load(json_file)
         generated = data['time']
@@ -82,7 +82,7 @@ def remote_detect(image, model=None):
         if not access_token:
             raise ValueError('Error getting remote API token {}'.format(data))
             return
-        g.logger.debug('Writing new token for future use')
+        g.logger.debug('Writing new token for future use',level=2)
         with open(data_file, 'w') as json_file:
             wdata = {
                 'token': access_token,
@@ -398,7 +398,7 @@ for model in g.config['models']:
                     with open(data_file) as json_file:
                         data = json.load(json_file)
                         g.logger.debug('Read from existing names: {}'.format(
-                            data['names']))
+                            data['names']),level=2)
                         m.set_classes(data['names'])
                 else:
                     g.logger.debug('Fetching known names from remote gateway')
@@ -480,9 +480,9 @@ for model in g.config['models']:
                         })
                     # Now add plate objects
                     for i, al in enumerate(alpr_l):
-                        g.logger.info(
+                        g.logger.debug(
                             'ALPR Found {} at {} with score:{}'.format(
-                                al, alpr_b[i], alpr_c[i]))
+                                al, alpr_b[i], alpr_c[i]),level=2)
                         b.append(alpr_b[i])
                         l.append(al)
                         c.append(alpr_c[i])
@@ -513,7 +513,7 @@ for model in g.config['models']:
                         'We did not find license plates, and there are no more images to try'
                     )
                     if saved_bbox:
-                        g.logger.debug('Going back to matches in first image')
+                        g.logger.debug('Going back to matches in first image',level=2)
                         b = saved_bbox
                         l = saved_labels
                         c = saved_conf
@@ -574,7 +574,7 @@ for model in g.config['models']:
                         })
         else:  # usealpr
             g.logger.debug(
-                'ALPR not in use, no need for look aheads in processing')
+                'ALPR not in use, no need for look aheads in processing',level=2)
             # store objects
             otype = 'face' if model == 'face' else 'object'
             for idx, t_l in enumerate(l):
@@ -594,12 +594,12 @@ for model in g.config['models']:
                 g.logger.info('labels found: {}'.format(l))
                 g.logger.debug(
                     'match found in {}, breaking file loop...'.format(
-                        filename))
+                        filename), level=2)
                 matched_file = filename
                 break  # if we found a match, no need to process the next file
             else:
                 g.logger.debug(
-                    'Going to try next image before we decide the best one to use'
+                    'Going to try next image before we decide the best one to use',level=2
                 )
         else:
             g.logger.debug('No match found in {} using model:{}'.format(
@@ -608,7 +608,7 @@ for model in g.config['models']:
     # model loop
     if matched_file and g.config['detection_mode'] == 'first':
         g.logger.debug(
-            'detection mode is set to first, breaking out of model loop...')
+            'detection mode is set to first, breaking out of model loop...',level=2)
         break
 
 # all models loops, all files looped
