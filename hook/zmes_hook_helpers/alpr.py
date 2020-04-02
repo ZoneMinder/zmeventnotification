@@ -36,9 +36,11 @@ class AlprBase:
             cv2.imwrite(filename, object)
             self.remove_temp = True
         else:
-            g.logger.debug('supplied object is a file')
+            g.logger.debug(f'supplied object is a file {object}')
             self.filename = object
+           
             self.remove_temp = False
+  
 
     def getscale(self):
         if g.config['resize'] != 'no':
@@ -74,10 +76,14 @@ class PlateRecognizer(AlprBase):
         self.options = options
 
     def stats(self):
+        if g.config['platerec_type'] == 'local':
+            g.logger.debug ('local SDK does not provide stats')
+            return {}
         try:
             response = requests.get(
                 self.url + '/statistics/',
                 headers={'Authorization': 'Token ' + self.apikey})
+            response.raise_for_status()
         except requests.exceptions.RequestException as e:
             response = {'error': str(e)}
         else:
@@ -95,20 +101,25 @@ class PlateRecognizer(AlprBase):
                 json.dumps(self.stats())))
         with open(self.filename, 'rb') as fp:
             try:
+                platerec_url = self.url
+                if g.config['platerec_type'] == 'cloud':
+                    platerec_url += '/plate-reader'
                 payload = self.options.get('regions')
                 response = requests.post(
-                    self.url + '/plate-reader/',
+                   platerec_url,
+                    #self.url ,
                     files=dict(upload=fp),
                     data=payload,
                     headers={'Authorization': 'Token ' + self.apikey})
+                response.raise_for_status()
             except requests.exceptions.RequestException as e:
                 response = {
                     'error':
-                    'Plate recognizer rejected the upload. You either have a bad API key or a bad image',
+                    f'Plate recognizer rejected the upload with: {e}.',
                     'results': []
                 }
                 g.logger.debug(
-                    'Plate recognizer rejected the upload. You either have a bad API key or a bad image'
+                    f'Plate recognizer rejected the upload with {e}'
                 )
             else:
                 response = response.json()
@@ -161,6 +172,7 @@ class OpenAlpr(AlprBase):
         confs = []
 
         self.prepare(object)
+     
         with open(self.filename, 'rb') as fp:
             try:
                 options = self.options

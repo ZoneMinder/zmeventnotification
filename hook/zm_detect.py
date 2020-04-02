@@ -739,7 +739,10 @@ else:
     # end of matched_file
 
 if g.config['delete_after_analyze'] == 'yes':
-    if filename1:
-        os.remove(filename1)
-    if filename2:
-        os.remove(filename2)
+    try:
+        if filename1:
+            os.remove(filename1)
+        if filename2:
+            os.remove(filename2)
+    except Exception as e:
+        g.logger.error (f'Could not delete file(s):{e}')

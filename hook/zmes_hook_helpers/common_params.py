@@ -365,6 +365,12 @@ config_vals = {
             'default': 'no',
             'type': 'string'
         },
+
+        'platerec_type':{
+            'section': 'alpr',
+            'default': 'cloud',
+            'type': 'string'
+        },
         'platerec_regions':{
             'section': 'alpr',
             'default': None,
