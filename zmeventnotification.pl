@@ -1622,6 +1622,11 @@ sub sendOverFCM {
   my $eid   = $alarm->{EventId};
   my $mname = $alarm->{Name};
 
+  if(!isInList($obj->{monlist}, $mid)) {
+    printDebug ("Skipping FCM notification as $mid is excluded from zmNinja monitor list");
+    return;
+  }
+
   my $pic = $picture_url =~ s/EVENTID/$eid/gr;
   if ( $resCode == 1 ) {
     printDebug(
