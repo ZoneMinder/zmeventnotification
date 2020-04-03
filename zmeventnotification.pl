@@ -1622,11 +1622,6 @@ sub sendOverFCM {
   my $eid   = $alarm->{EventId};
   my $mname = $alarm->{Name};
 
-  if(!isInList($obj->{monlist}, $mid)) {
-    printDebug ("Skipping FCM notification as $mid is excluded from zmNinja monitor list");
-    return;
-  }
-
   my $pic = $picture_url =~ s/EVENTID/$eid/gr;
   if ( $resCode == 1 ) {
     printDebug(
@@ -2684,6 +2679,8 @@ sub isInList {
   my $monlist = shift;
   my $mid     = shift;
 
+  return 1 if ($monlist eq "");
+
   my @mids = split( ',', $monlist );
   my $found = 0;
   foreach (@mids) {
@@ -2911,7 +2908,7 @@ sub shouldSendEventToConn {
   my $connId = $ac->{id};
   printInfo("Checking alarm rules for $id");
 
-  if ( $monlist eq "" || isInList( $monlist, $alarm->{MonitorId} ) ) {
+  if ( isInList( $monlist, $alarm->{MonitorId} ) ) {
     my $mint = getInterval( $intlist, $monlist, $alarm->{MonitorId} );
     my $elapsed;
     my $t = time();
@@ -3332,7 +3329,13 @@ sub processNewAlarmsInFork {
 
         my ($serv) = @_;
         foreach (@active_connections) {
-          sendEvent( $temp_alarm_obj, $_, 'event_end', $hookResult );
+
+           if(isInList($_->{monlist}, $temp_alarm_obj->{MonitorId})) {
+             sendEvent( $temp_alarm_obj, $_, 'event_end', $hookResult );
+           } else {
+            printDebug ("Skipping FCM notification as Monitor:".$temp_alarm_obj->{Name}."(".$temp_alarm_obj->{MonitorId}.") is excluded from zmNinja monitor list");
+          }
+          
         }    # foreach active_connections
       }
 
