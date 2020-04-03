@@ -5,7 +5,8 @@
 
 from __future__ import division
 import sys
-import cv2
+#lets do this _after_ log init so we log it
+#import cv2
 import argparse
 import datetime
 import os
@@ -18,17 +19,13 @@ import json
 import time
 import requests
 import subprocess
-#import hashlib
-
-import zmes_hook_helpers.log as log
-import zmes_hook_helpers.utils as utils
-import zmes_hook_helpers.image_manip as img
-import zmes_hook_helpers.common_params as g
-
 import traceback
 
-
-import zmes_hook_helpers.alpr as alpr
+# Modules that load cv2 will go later 
+# so we can log misses
+import zmes_hook_helpers.log as log
+import zmes_hook_helpers.utils as utils
+import zmes_hook_helpers.common_params as g
 from zmes_hook_helpers.__init__ import __version__
 
 auth_header = None
@@ -146,8 +143,12 @@ ap.add_argument('-f',
 args, u = ap.parse_known_args()
 args = vars(args)
 
-if not args['config'] or not args['eventid']:
-    print ('--config and --eventid are required')
+if not args['config']:
+    print ('--config required')
+    exit(1)
+
+if not args['file'] and not args['eventid']:
+    print ('--eventid required')
     exit(1)
 
 utils.get_pyzm_config(args)
@@ -169,8 +170,19 @@ if args['version']:
     print(__version__)
     exit(0)
 
+try:
+    import cv2
+except ImportError as e:
+    g.logger.error (f'{e}: You might not have installed OpenCV as per install instructions. Remember, it is not automatically installed')
+    exit(1)
 
-
+# load modules that depend on cv2
+try:
+    import zmes_hook_helpers.image_manip as img
+    import zmes_hook_helpers.alpr as alpr
+except Exception as e:
+    g.logger.error (f'{e}')
+    exit(1)
 g.polygons = []
 
 # process config file
