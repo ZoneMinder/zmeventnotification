@@ -3182,8 +3182,8 @@ sub processNewAlarmsInFork {
             printDebug(
               "ZM overwrote detection, adding detection notes back into DB [$startHookString]"
             );
-            $notes = $startHookString . " " . $notes;
-            updateEventinZmDB( $eid, $notes );
+            # This will be prefixed, so no need to add old notes back
+            updateEventinZmDB( $eid, $startHookString );
           }
           else {
             printDebug("DB Event notes contain detection text, all good");
@@ -3225,7 +3225,7 @@ sub processNewAlarmsInFork {
           #tbd  - was this a typo? Why ->{Cause}?
           # kept it here for now
           #$alarm->{Cause} = $resTxt . ' ' . $alarm->{Cause};
-          $alarm->{End}->{Cause} = $resTxt;
+          #$alarm->{End}->{Cause} = $resTxt;
 
           #I think this is what we need
 
