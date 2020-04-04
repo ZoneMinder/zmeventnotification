@@ -208,9 +208,12 @@ else:
 # now download image(s)
 
 if not args['file']:
-    filename1, filename2, filename1_bbox, filename2_bbox = utils.download_files(
-        args)
-
+    try:
+        filename1, filename2, filename1_bbox, filename2_bbox = utils.download_files(
+            args)
+    except Exception as e:
+        g.logger.fatal(f'Error downloading files: {e}')
+    
     # filename_alarm will be the first frame to analyze (typically alarm)
     # filename_snapshot will be the second frame to analyze only if the first fails (typically snapshot)
 else:

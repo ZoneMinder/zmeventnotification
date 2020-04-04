@@ -31,6 +31,13 @@ class wrapperLogger():
         if (self.dump_console):
             print('CONSOLE:' + msg)
 
+    def fatal(self, msg):
+        idx = min(len(stack()), 1)
+        caller = getframeinfo(stack()[idx][0])
+        zmlog.Fatal(msg, caller)
+        if (self.dump_console):
+            print('CONSOLE:' + msg)
+
     def setLevel(self, level):
         pass
 
