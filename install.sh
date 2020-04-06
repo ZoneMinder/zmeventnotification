@@ -263,7 +263,7 @@ EOF
 display_help() {
     cat << EOF
     
-    $0 [-h|--help] [--install_es|--no_install_es] [--install_hook|--no_install_hook] [--install_config|--no_install_config] [--nosudo]
+    $0 [-h|--help] [--install_es|--no_install_es] [--install_hook|--no_install_hook] [--install_config|--no_install_config] [--no-pysudo]
 
         When used without any parameters executes in interactive mode
 
