@@ -3180,7 +3180,7 @@ sub processNewAlarmsInFork {
         if ($startHookString) {
           if ( index( $notes, 'detected:' ) == -1 ) {
             printDebug(
-              "ZM overwrote detection, adding detection notes back into DB [$startHookString]"
+              "ZM overwrote detection DB has: $notes], adding detection notes back into DB [$startHookString]"
             );
             # This will be prefixed, so no need to add old notes back
             updateEventinZmDB( $eid, $startHookString );
