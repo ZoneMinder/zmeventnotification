@@ -9,13 +9,15 @@ import requests
 import time
 import os
 import traceback
+import urllib.parse
 # Generic image related algorithms
 
 
 def createAnimation(frametype, eid,fname, types):
     import imageio
-    url = '{}/index.php?view=image&width={}&eid={}&username={}&password={}'.format(g.config['portal'],g.config['animation_width'],eid,g.config['user'],g.config['password'])
-    api_url = '{}/events/{}.json?username={}&password={}'.format(g.config['api_portal'],eid,g.config['user'],g.config['password'])
+
+    url = '{}/index.php?view=image&width={}&eid={}&username={}&password={}'.format(g.config['portal'],g.config['animation_width'],eid,g.config['user'],urllib.parse.quote(g.config['password'], safe=''))
+    api_url = '{}/events/{}.json?username={}&password={}'.format(g.config['api_portal'],eid,g.config['user'],urllib.parse(g.config['password'], safe=''))
     disp_api_url='{}/events/{}.json?username={}&password=***'.format(g.config['api_portal'],eid,g.config['user'])
 
     rtries = g.config['animation_max_tries']
@@ -85,7 +87,7 @@ def createAnimation(frametype, eid,fname, types):
     images = []
     od_images = []
 
-    od_url= '{}/index.php?view=image&eid={}&fid={}&username={}&password={}&width={}'.format(g.config['portal'],eid,fid,g.config['user'],g.config['password'],g.config['animation_width'])
+    od_url= '{}/index.php?view=image&eid={}&fid={}&username={}&password={}&width={}'.format(g.config['portal'],eid,fid,g.config['user'],urllib.parse.quote(g.config['password'], safe=''),g.config['animation_width'])
     g.logger.debug (f'Grabbing anchor frame: {fid}...')
     try:
         od_frame = imageio.imread(od_url)

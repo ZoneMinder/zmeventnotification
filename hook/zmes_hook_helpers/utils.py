@@ -12,6 +12,7 @@ import json
 import time
 import re
 import ast
+import urllib.parse
 
 from configparser import ConfigParser
 import zmes_hook_helpers.common_params as g
@@ -58,7 +59,7 @@ def import_zm_zones(mid):
     url = g.config['portal'] + '/api/zones/forMonitor/' + mid + '.json'
     g.logger.debug('Getting ZM zones using {}?user=xxx&pass=yyy'.format(url),level=2)
     url = url + '?user=' + g.config['user']
-    url = url + '&pass=' + g.config['password']
+    url = url + '&pass=' + urllib.parse.quote(g.config['password'], safe='')
 
     if g.config['portal'].lower().startswith('https://'):
         main_handler = urllib.request.HTTPSHandler(context=g.ctx)
