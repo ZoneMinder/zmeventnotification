@@ -2,6 +2,7 @@
 images/*
 # general things to ignore
 build/
+out/
 dist/
 *.egg-info/
 *.egg

@@ -101,6 +101,7 @@ def download_files(args):
             g.config['wait']))
         time.sleep(g.config['wait'])
 
+    
     if g.config['portal'].lower().startswith('https://'):
         main_handler = urllib.request.HTTPSHandler(context=g.ctx)
     else:
@@ -340,3 +341,15 @@ def process_config(args, ctx):
                                                     g.config[sub_var])
                 g.logger.debug('key [{}] is \'{}\' after substitution'.format(
                     gk, g.config[gk]),level=2)
+
+    # Now munge config if testing args provide
+    if args['file']:
+        g.config['wait'] = 0
+        
+    if  args['output_path']:
+        g.config['image_path'] = args['output_path']
+        g.config['write_debug_image'] = 'yes'
+    
+    if args['file']:
+        g.config['write_image_to_zm'] = 'no'
+       

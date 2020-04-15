@@ -136,6 +136,9 @@ ap.add_argument('-v',
                 help='print version and quit',
                 action='store_true')
 
+ap.add_argument('-o', '--output-path',
+                help='internal testing use only - path for debug images to be written')
+
 ap.add_argument('-f',
                 '--file',
                 help='internal testing use only - skips event download')
@@ -212,7 +215,8 @@ if not args['file']:
         filename1, filename2, filename1_bbox, filename2_bbox = utils.download_files(
             args)
     except Exception as e:
-        g.logger.fatal(f'Error downloading files: {e}')
+        g.logger.error(f'Error downloading files: {e}')
+        g.logger.fatal('animation: Traceback:{}'.format(traceback.format_exc()))
     
     # filename_alarm will be the first frame to analyze (typically alarm)
     # filename_snapshot will be the second frame to analyze only if the first fails (typically snapshot)
