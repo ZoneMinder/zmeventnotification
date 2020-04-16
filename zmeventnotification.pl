@@ -1275,18 +1275,26 @@ sub checkNewEvents() {
     # Alert only happens after alarm. The state before alarm
     # is STATE_PRE_ALERT. This is needed to catch alarms
     # that occur in < polling time of ES and then moves to ALERT
-    #if ( $state == STATE_ALARM || $state == STATE_ALERT ) {  
-    # Disabled on Apr 16, 2020: Problem is we may re-trigger the alarm
-    # after processing it as alarm may be in alert state for a while
-    if ( $state == STATE_ALARM ) {
-      if ( !$active_events{$mid}->{$current_event} ) {
+    if ( $state == STATE_ALARM || $state == STATE_ALERT ) {  
+   
+      if  (!$active_events{$mid}->{$current_event}) {
 
+        if ($active_events{$mid}->{last_event_processed} >= $current_event) {
+          printDebug ("Discarding new event id: $current_event as last processed eid for this monitor is: ".$active_events{$mid}->{last_event_processed});
+          next;
+
+        }
+         
+         
+       
         # this means we haven't previously worked on this alarm
         # so create an event start object for this monitor
+        
         $eventFound++;
 
         # First we need to close any other open events for this monitor
         foreach my $ev ( keys %{ $active_events{$mid} } ) {
+          next if $ev == 'last_event_processed';
           if ( !$active_events{$mid}->{$ev}->{End} ) {
             printDebug(
               "Closing unclosed event:$ev of Monitor:$mid as we are in a new event"
@@ -1321,14 +1329,14 @@ sub checkNewEvents() {
             . ' (Name:'
             . $monitor->{Name} . ') '
             . $alarm_cause
-            . "\n" );
+            . "[last processed eid:".$active_events{$mid}->{last_event_processed}."]" );
 
         push @newEvents,
           {
           Alarm      => $active_events{$mid}->{$current_event},
           MonitorObj => $monitor
           };
-
+        $active_events{$mid}->{last_event_processed} = $current_event;
       }
       else {
  # state alarm and it is present in the active event list, so we've worked on it
