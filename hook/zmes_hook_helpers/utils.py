@@ -347,9 +347,11 @@ def process_config(args, ctx):
         g.config['wait'] = 0
         
     if  args['output_path']:
+        g.logger.debug ('Output path modified to {}'.format(args['output_path']))
         g.config['image_path'] = args['output_path']
         g.config['write_debug_image'] = 'yes'
     
     if args['file']:
         g.config['write_image_to_zm'] = 'no'
+        g.polygons = [];
        

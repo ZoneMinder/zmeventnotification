@@ -168,16 +168,18 @@ try:
 except:
     pass
 
-g.logger.info('---------| hook version: {}, ES version: {} |------------'.format(__version__, es_version))
-if args['version']:
-    print(__version__)
-    exit(0)
 
 try:
     import cv2
 except ImportError as e:
-    g.logger.error (f'{e}: You might not have installed OpenCV as per install instructions. Remember, it is not automatically installed')
-    exit(1)
+    g.logger.fatal (f'{e}: You might not have installed OpenCV as per install instructions. Remember, it is NOT automatically installed')
+
+g.logger.info('---------| hook version: {}, ES version: {} , OpenCV version: {}|------------'.format(__version__, es_version, cv2.__version__))
+if args['version']:
+    print(__version__)
+    exit(0)
+
+
 
 # load modules that depend on cv2
 try:
@@ -223,7 +225,7 @@ if not args['file']:
 else:
     g.logger.debug('TESTING ONLY: reading image from {}'.format(args['file']))
     filename1 = args['file']
-    filename1_bbox = append_suffix(filename1, '-bbox')
+    filename1_bbox = g.config['image_path']+'/'+append_suffix(filename1, '-bbox')
     filename2 = None
     filename2_bbox = None
 
@@ -732,11 +734,12 @@ else:
         # if we broke out early/first match
         otype = 'face' if model == 'face' else 'object'
         for idx, t_l in enumerate(label):
+            print (idx, t_l)
             obj_json.append({
                 'type': otype,
                 'label': t_l,
                 'box': bbox[idx],
-                'confidence': "{:.2f}%".format(c[idx] * 100)
+                'confidence': "{:.2f}%".format(conf[idx] * 100)
             })
 
     #g.logger.debug ('CONFIDENCE ARRAY:{}'.format(conf))
