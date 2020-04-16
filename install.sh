@@ -18,6 +18,12 @@
 PYTHON=python3
 PIP=pip3
 
+# Models to install
+# If you don't want them, pass them as variables to install.sh
+# example: sudo INSTALL_YOLO=no ./install.sh
+INSTALL_YOLO=${INSTALL_YOLO:-yes}
+INSTALL_TINYYOLO=${INSTALL_TINYYOLO:-yes}
+INSTALL_CSPN=${INSTALL_CSPN:-yes}
 
 
 TARGET_CONFIG='/etc/zm'
@@ -51,6 +57,12 @@ print_error() {
     COLOR="\033[1;31m"
     NOCOLOR="\033[0m"
     echo -e "${COLOR}ERROR:${NOCOLOR}$1"
+}
+
+print_important() {
+    COLOR="\033[0;34m"
+    NOCOLOR="\033[0m"
+    echo -e "${COLOR}IMPORTANT:${NOCOLOR}$1"
 }
 
 print_warning() {
@@ -122,6 +134,13 @@ verify_config() {
 
     [[ ${INSTALL_HOOK} != 'no' ]] && echo "The hook files will be installed to ${TARGET_DATA} sub-folders"
     [[ ${INSTALL_HOOK_CONFIG} != 'no' ]] && echo "The hook config files will be installed to ${TARGET_CONFIG}"
+
+    echo
+    echo "Models that will be checked/installed:"
+    echo "Yolo: ${INSTALL_YOLO}"
+    echo "TinyYolo: ${INSTALL_TINYYOLO}"
+    echo "CSPN: ${INSTALL_CSPN}"
+
     echo
      [[ ${INTERACTIVE} == 'yes' ]] && read -p "If any of this looks wrong, please hit Ctrl+C and edit the variables in this script..."
 
@@ -149,49 +168,77 @@ install_hook() {
     mkdir -p "${TARGET_DATA}/unknown_faces" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/yolov3" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/tinyyolo" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/models/cspn" 2>/dev/null
     mkdir -p "${TARGET_DATA}/misc" 2>/dev/null
     echo "everything that does not fit anywhere else :-)" > "${TARGET_DATA}/misc/README.txt" 2>/dev/null
     
 
-    # If you don't already have data files, get them
-    # First YOLOV3
-    echo 'Checking for YoloV3 data files....'
-    targets=('yolov3.cfg' 'yolov3_classes.txt' 'yolov3.weights')
-    sources=('https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg'
-             'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
-             'https://pjreddie.com/media/files/yolov3.weights')
+    if [ "${INSTALL_YOLO}" == "yes" ]
+    then
+      # If you don't already have data files, get them
+      # First YOLOV3
+      echo 'Checking for YoloV3 data files....'
+      targets=('yolov3.cfg' 'yolov3_classes.txt' 'yolov3.weights')
+      sources=('https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg'
+              'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
+              'https://pjreddie.com/media/files/yolov3.weights')
 
-    for ((i=0;i<${#targets[@]};++i))
-    do
-        if [ ! -f "${TARGET_DATA}/models/yolov3/${targets[i]}" ]
-        then
-            ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/yolov3/${targets[i]}"
-        else
-            echo "${targets[i]} exists, no need to download"
+      for ((i=0;i<${#targets[@]};++i))
+      do
+          if [ ! -f "${TARGET_DATA}/models/yolov3/${targets[i]}" ]
+          then
+              ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/yolov3/${targets[i]}"
+          else
+              echo "${targets[i]} exists, no need to download"
 
-        fi
-    done
+          fi
+      done
+    fi
 
+    if [ "${INSTALL_TINYYOLO}" == "yes" ]
+    then
+      # Next up, TinyYOLO
+      echo
+      echo 'Checking for TinyYOLO data files...'
+      targets=('yolov3-tiny.cfg' 'yolov3-tiny.txt' 'yolov3-tiny.weights')
+      sources=('https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg'
+              'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
+              'https://pjreddie.com/media/files/yolov3-tiny.weights')
 
-    # Next up, TinyYOLO
+      for ((i=0;i<${#targets[@]};++i))
+      do
+          if [ ! -f "${TARGET_DATA}/models/tinyyolo/${targets[i]}" ]
+          then
+              ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/tinyyolo/${targets[i]}"
+          else
+              echo "${targets[i]} exists, no need to download"
+
+          fi
+      done
+    fi
+
+  if [ "${INSTALL_CSPN}" == "yes" ]
+  then
+    # Next up, CSPNet
     echo
-    echo 'Checking for TinyYOLO data files...'
-    targets=('yolov3-tiny.cfg' 'yolov3-tiny.txt' 'yolov3-tiny.weights')
-    sources=('https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg'
+    echo 'Checking for CSPNet data files...'
+    print_warning 'Note, you need OpenCV > 4.3 for CSPNet to work'
+    targets=('csresnext50-panet-spp-original-optimal.cfg' 'coco.names')
+    sources=('https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/csresnext50-panet-spp-original-optimal.cfg'
              'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
-             'https://pjreddie.com/media/files/yolov3-tiny.weights')
+            )
 
     for ((i=0;i<${#targets[@]};++i))
     do
-        if [ ! -f "${TARGET_DATA}/models/tinyyolo/${targets[i]}" ]
+        if [ ! -f "${TARGET_DATA}/models/cspn/${targets[i]}" ]
         then
-            ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/tinyyolo/${targets[i]}"
+            ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/cspn/${targets[i]}"
         else
             echo "${targets[i]} exists, no need to download"
 
         fi
     done
-
+  fi
 
     # Now install the ML hooks
 
@@ -239,6 +286,26 @@ install_hook_config() {
     echo "====> Remember to fill in the right values in the config files, or your system won't work! <============="
     echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN_HOOK}/zm_event_start.sh! <========"
     echo
+}
+
+# returns 'ok' if openCV version >= version passed 
+check_opencv_version() {
+    MAJOR=$1
+    MINOR=$2
+    CVVERS=`${PYTHON} -c "import cv2; print (cv2.__version__)" 2>/dev/null`
+    if [ -z "${CVVERS}" ]; then
+            echo "fail"
+            return 1
+    fi
+    IFS='.'
+    list=($CVVERS)
+    if [ ${list[0]} -ge ${MAJOR} ] && [ ${list[1]} -ge ${MINOR} ]; then
+            echo "ok"
+            return 0
+    else
+            echo "fail"
+            return 1
+    fi
 }
 
 print_opencv_message() {
@@ -408,4 +475,14 @@ fi
 
 # Make sure webserver can access them
 chown -R ${WEB_OWNER}:${WEB_GROUP} "${TARGET_DATA}"
+
+if [ "${INSTALL_CSPN}" == "yes" ] && [ ! -f "${TARGET_DATA}/models/cspn/csresnext50-panet-spp-original-optimal_final.weights" ]
+    then
+      print_important '*************************************************************'
+      print_important 'You need to manually download CSPN weights'
+      print_important 'NOTE: Please download https://drive.google.com/open?id=1_NnfVgj0EDtb_WLNoXV8Mo7WKgwdYZCc'
+      print_important "And place it inside ${TARGET_DATA}/models/cspn"
+      print_important '*************************************************************'
+
+    fi
 
