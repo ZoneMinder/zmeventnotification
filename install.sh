@@ -222,7 +222,7 @@ install_hook() {
     # Next up, CSPNet
     echo
     echo 'Checking for CSPNet data files...'
-    print_warning 'Note, you need OpenCV > 4.3 for CSPNet to work'
+    print_warning 'Note, you need OpenCV >= 4.3 for CSPNet to work'
     targets=('csresnext50-panet-spp-original-optimal.cfg' 'coco.names')
     sources=('https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/csresnext50-panet-spp-original-optimal.cfg'
              'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'

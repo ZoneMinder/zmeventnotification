@@ -64,7 +64,7 @@ if ( !try_use('JSON') ) {
 #
 # ==========================================================================
 
-my $app_version = '5.12';
+my $app_version = '5.13';
 
 # ==========================================================================
 #
@@ -1275,7 +1275,10 @@ sub checkNewEvents() {
     # Alert only happens after alarm. The state before alarm
     # is STATE_PRE_ALERT. This is needed to catch alarms
     # that occur in < polling time of ES and then moves to ALERT
-    if ( $state == STATE_ALARM || $state == STATE_ALERT ) {
+    #if ( $state == STATE_ALARM || $state == STATE_ALERT ) {  
+    # Disabled on Apr 16, 2020: Problem is we may re-trigger the alarm
+    # after processing it as alarm may be in alert state for a while
+    if ( $state == STATE_ALARM ) {
       if ( !$active_events{$mid}->{$current_event} ) {
 
         # this means we haven't previously worked on this alarm
@@ -1431,6 +1434,7 @@ sub getNotesFromEventDB {
     or Fatal( "getNotesFromEventDB: Can't execute: " . $sth->errstr() );
   my $notes = $sth->fetchrow_hashref();
   $sth->finish();
+  
   return $notes->{Notes};
 }
 
