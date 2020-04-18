@@ -205,7 +205,7 @@ Starting v5.0, you can now choose to run the machine learning code on a separate
 Which models should I use?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  As of April 2020, I'd recommend you use CSPR for object detection. It is both faster and more accurate than YoloV3. Note however that I've not enabled it by default, because that model requires OpenCV 4.3 or above. If you use it with versions less than 4.3, it will either error out, or not detect anything. **Please Note** that the CSPR weights file needs to be *manually downloaded* and placed in the right place. If you don't have OpenCV >=4.3, use YoloV3. 
+-  If you are using OpenCV 4.3 or above, I'd recommend you use CSPR for object detection. It is both faster and more accurate than YoloV3. Note however that I've not enabled it by default, because that model requires OpenCV 4.3 or above. If you use it with versions less than 4.3, it will either error out, or not detect anything. **Please Note** that the CSPR weights file needs to be *manually downloaded* and placed in the right place. If you don't have OpenCV >=4.3, use YoloV3. 
 
 - If you are constrained in memory, use tinyyolo
 
