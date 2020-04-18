@@ -61,6 +61,19 @@ Option 1: Automatic install
     sudo -H ./install.sh # and follow the prompts
 
 
+.. _install_specific_models:
+
+Starting version 5.13.3, you can *optionally* choose to only install specific models by passing them as variables to the install script. The variables are labelled as ``INSTALL_<model>`` with possible values of ``yes`` (default) or ``no``. ``<model>`` is the specific model.
+
+So for example:
+
+::
+
+  sudo INSTALL_CSPN=no INSTALL_TINYYOLO=no ./install.sh
+
+Will only install the ``YOLOv3 (full)`` model but will skip the ``CSPN (Cross Stage Partial Networks)`` model and the "Tiny YOLO" models.
+
+
 .. _opencv_install:
 
 **Note:**: If you plan on using object detection, starting v5.0.0 of the ES, the setup script no longer installs opencv for you. This is because you may want to install your own version with GPU accelaration or other options. There are two options to install OpenCV:
@@ -185,6 +198,18 @@ To upgrade at a later stage, see :ref:`upgrade_es_hooks`.
 Sidebar: Local vs. Remote Machine Learning
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Starting v5.0, you can now choose to run the machine learning code on a separate server. This can free up your local ZM server resources if you have memory/CPU constraints. See :ref:`this FAQ entry <local_remote_ml>`.
+
+
+.. _supported_models:
+
+Which models should I use?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  As of April 2020, I'd recommend you use CSPR for object detection. It is both faster and more accurate than YoloV3. Note however that I've not enabled it by default, because that model requires OpenCV 4.3 or above. If you use it with versions less than 4.3, it will either error out, or not detect anything. **Please Note** that the CSPR weights file needs to be *manually downloaded* and placed in the right place. If you don't have OpenCV >=4.3, use YoloV3. 
+
+- If you are constrained in memory, use tinyyolo
+
+- For face recognition, use ``face_model=cnn`` for more accuracy and ``face_model=hog`` for better speed
 
 
 Troubleshooting
@@ -346,8 +371,19 @@ dependencies that takes time (including dlib) and not everyone wants it.
         wiki <https://github.com/ageitgey/face_recognition/wiki/Face-Recognition-Accuracy-Problems>`__
         of this library to know more about its limitations. Also note that I found `cnn` mode is much more accurage than `hog` mode. However, `cnn` comes with a speed and memory tradeoff.
 
-Configuring face recognition
-''''''''''''''''''''''''''''
+Using the right face recognition modes
+'''''''''''''''''''''''''''''''''''''''
+
+- Face recognition uses dlib. Note that in ``objectconfig.ini`` you have two options of face detection/recognition. Dlib has two modes of operation (controlled by ``face_model``). Face recognition works in two steps:
+  - A: Detect a face
+  - B: Recognize a face
+
+``face_model`` affects step A. If you use ``cnn`` as a value, it will use a DNN to detect a face. If you use ``hog`` as a value, it will use a much faster method to detect a face. ``cnn`` is *much* more accurate in finding faces than ``hog`` but much slower. In my experience, ``hog`` works ok for front faces while ``cnn`` detects profiles/etc as well. 
+
+Step B kicks in only after step A succeeds (i.e. a face has been detected). The algorithm used there is common irrespective of whether you found a face via ``hog`` or ``cnn``.
+
+Configuring face recognition directories
+''''''''''''''''''''''''''''''''''''''''''
 
 -  Make sure you have images of people you want to recognize in
    ``/var/lib/zmeventnotification/known_faces``
