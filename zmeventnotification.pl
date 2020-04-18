@@ -1357,8 +1357,8 @@ sub loadMonitor {
   printInfo( "loadMonitor: re-loading monitor " . $monitor->{Name} );
   zmMemInvalidate($monitor);
   if ( zmMemVerify($monitor) ) {    # This will re-init shared memory
-    $monitor->{CurrentState} = zmGetMonitorState($monitor);
-    $monitor->{CurrentEvent} = zmGetLastEvent($monitor);
+    $monitor->{LastState} = zmGetMonitorState($monitor);
+    $monitor->{LastEvent} = zmGetLastEvent($monitor);
     return 1;
   }
   return 0;                         # coming here means verify failed
@@ -1388,8 +1388,8 @@ sub loadMonitors {
     }
 
     if ( zmMemVerify($monitor) ) {
-      $monitor->{CurrentState}        = zmGetMonitorState($monitor);
-      $monitor->{CurrentEvent}        = zmGetLastEvent($monitor);
+      $monitor->{LastState}        = zmGetMonitorState($monitor);
+      $monitor->{LastEvent}        = zmGetLastEvent($monitor);
       $new_monitors{ $monitor->{Id} } = $monitor;
     }
     else {
