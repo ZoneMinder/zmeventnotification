@@ -88,6 +88,7 @@ use constant {
   DEFAULT_MQTT_ENABLE        => 'no',
   DEFAULT_MQTT_SERVER        => '127.0.0.1',
   DEFAULT_MQTT_TICK_INTERVAL => 15,
+  DEFAULT_MQTT_RETAIN        => 'no',
   DEFAULT_FCM_TOKEN_FILE     => '/var/lib/zmeventnotification/push/tokens.txt',
 
   DEFAULT_USE_API_PUSH => 'no',
@@ -174,6 +175,7 @@ my $mqtt_server;
 my $mqtt_username;
 my $mqtt_password;
 my $mqtt_tick_interval;
+my $mqtt_retain;
 my $mqtt_last_tick_time = time();
 
 my $use_fcm;
@@ -453,6 +455,8 @@ sub loadEsConfigSettings {
   $mqtt_tick_interval =
     config_get_val( $config, 'mqtt', 'tick_interval',
     DEFAULT_MQTT_TICK_INTERVAL );
+  $mqtt_retain =
+    config_get_val( $config, 'mqtt', 'retain', DEFAULT_MQTT_RETAIN );
 
   $use_fcm = config_get_val( $config, 'fcm', 'enable', DEFAULT_FCM_ENABLE );
   $fcm_api_key = config_get_val( $config, 'fcm', 'api_key', NINJA_API_KEY );
@@ -620,6 +624,7 @@ Use MQTT ............................. ${\(yes_or_no($use_mqtt))}
 MQTT Server .......................... ${\(value_or_undefined($mqtt_server))}
 MQTT Username ........................ ${\(value_or_undefined($mqtt_username))}
 MQTT Password ........................ ${\(present_or_not($mqtt_password))}
+MQTT Retain .......................... ${\(yes_or_no($mqtt_retain))}
 MQTT Tick Interval ................... ${\(value_or_undefined($mqtt_tick_interval))}
 
 SSL enabled .......................... ${\(yes_or_no($ssl_enabled))}
@@ -1921,7 +1926,14 @@ sub processJobs {
         printDebug("Job: MQTT Publish on topic: $topic");
         foreach (@active_connections) {
           if ( ( $_->{id} eq $id ) && exists $_->{mqtt_conn} ) {
-            $_->{mqtt_conn}->publish( $topic => $payload );
+            if ( $mqtt_retain ) {
+              printDebug("Job: MQTT Publish with retain");
+              $_->{mqtt_conn}->retain( $topic => $payload );
+            }
+            else {
+              printDebug("Job: MQTT Publish");
+              $_->{mqtt_conn}->publish( $topic => $payload );
+            }
           }
         }
       }
