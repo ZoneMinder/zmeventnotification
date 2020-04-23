@@ -3,6 +3,7 @@ Breaking Changes
 
 Version 5.13.3 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+- New attribute ``es_debug_level`` in ``zmeventnotification.ini`` that controls debug level verbosity. Default is ``2``
 - New CSPNet support with ResNeXt (requires OpenCV 4.3 or above)
   - Note that this requires a **manual model download** as the model is in a google drive link and all automated download scripts are hacks that stop working after a while.
 - You can now choose which models to download as part of ``./install.sh``. See :ref:`install_specific_models`
