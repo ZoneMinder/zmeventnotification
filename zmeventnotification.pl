@@ -814,7 +814,7 @@ my $zmdc_active = 0;
 printInfo("|------- Starting ES version: $app_version ---------|");
 printDebug( "Started with: perl:" . $^X . " and command:" . $0 ,1);
 
-my $zmdc_status = `zmdc.pl status zmeventnotisfication.pl`;
+my $zmdc_status = `zmdc.pl status zmeventnotification.pl`;
 if ( index( $zmdc_status, 'running since' ) != -1 ) {
   $zmdc_active = 1;
   printDebug(
