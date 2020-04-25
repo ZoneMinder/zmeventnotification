@@ -121,19 +121,19 @@ def download_files(args):
 
     if g.config['frame_id'] == 'bestmatch':
         # download both alarm and snapshot
-        filename1 = g.config['image_path'] + '/' + args[
-            'eventid'] + '-alarm.jpg'
-        filename1_bbox = g.config['image_path'] + '/' + args[
-            'eventid'] + '-alarm-bbox.jpg'
-        filename2 = g.config['image_path'] + '/' + args[
-            'eventid'] + '-snapshot.jpg'
-        filename2_bbox = g.config['image_path'] + '/' + args[
-            'eventid'] + '-snapshot-bbox.jpg'
+        filename1 = g.config['image_path'] + '/' + args.get(
+            'eventid') + '-alarm.jpg'
+        filename1_bbox = g.config['image_path'] + '/' + args.get(
+            'eventid') + '-alarm-bbox.jpg'
+        filename2 = g.config['image_path'] + '/' + args.get(
+            'eventid') + '-snapshot.jpg'
+        filename2_bbox = g.config['image_path'] + '/' + args.get(
+            'eventid') + '-snapshot-bbox.jpg'
 
-        url = g.config['portal'] + '/index.php?view=image&eid=' + args[
-            'eventid'] + '&fid=alarm'
-        durl = g.config['portal'] + '/index.php?view=image&eid=' + args[
-            'eventid'] + '&fid=alarm'
+        url = g.config['portal'] + '/index.php?view=image&eid=' + args.get(
+            'eventid')+ '&fid=alarm'
+        durl = g.config['portal'] + '/index.php?view=image&eid=' + args.get(
+            'eventid') + '&fid=alarm'
         if g.config['user']:
             url = url + '&username=' + g.config[
                 'user'] + '&password=' + urllib.parse.quote(
@@ -149,10 +149,10 @@ def download_files(args):
         with open(filename1, 'wb') as output_file:
             output_file.write(input_file.read())
 
-        url = g.config['portal'] + '/index.php?view=image&eid=' + args[
-            'eventid'] + '&fid=snapshot'
-        durl = g.config['portal'] + '/index.php?view=image&eid=' + args[
-            'eventid'] + '&fid=snapshot'
+        url = g.config['portal'] + '/index.php?view=image&eid=' + args.get(
+            'eventid') + '&fid=snapshot'
+        durl = g.config['portal'] + '/index.php?view=image&eid=' + args.get(
+            'eventid') + '&fid=snapshot'
         if g.config['user']:
             url = url + '&username=' + g.config[
                 'user'] + '&password=' + urllib.parse.quote(
@@ -169,16 +169,16 @@ def download_files(args):
 
     else:
         # only download one
-        filename1 = g.config['image_path'] + '/' + args['eventid'] + '.jpg'
-        filename1_bbox = g.config['image_path'] + '/' + args[
-            'eventid'] + '-bbox.jpg'
+        filename1 = g.config['image_path'] + '/' + args.get('eventid') + '.jpg'
+        filename1_bbox = g.config['image_path'] + '/' + args.get(
+            'eventid') + '-bbox.jpg'
         filename2 = None
         filename2_bbox = None
 
-        url = g.config['portal'] + '/index.php?view=image&eid=' + args[
-            'eventid'] + '&fid=' + g.config['frame_id']
-        durl = g.config['portal'] + '/index.php?view=image&eid=' + args[
-            'eventid'] + '&fid=' + g.config['frame_id']
+        url = g.config['portal'] + '/index.php?view=image&eid=' + args.get(
+            'eventid') + '&fid=' + g.config['frame_id']
+        durl = g.config['portal'] + '/index.php?view=image&eid=' + args.get(
+            'eventid') + '&fid=' + g.config['frame_id']
         if g.config['user']:
             url = url + '&username=' + g.config[
                 'user'] + '&password=' + urllib.parse.quote(
@@ -194,7 +194,7 @@ def download_files(args):
 def get_pyzm_config(args):
     g.config['pyzm_overrides'] = {}
     config_file = ConfigParser(interpolation=None)
-    config_file.read(args['config'])
+    config_file.read(args.get('config'))
     if config_file.has_option('general', 'pyzm_overrides'):
         pyzm_overrides = config_file.get('general', 'pyzm_overrides')
         g.config['pyzm_overrides'] =  ast.literal_eval(pyzm_overrides) if pyzm_overrides else {}     
@@ -258,7 +258,7 @@ def process_config(args, ctx):
     # main
     try:
         config_file = ConfigParser(interpolation=None)
-        config_file.read(args['config'])
+        config_file.read(args.get('config'))
 
         if config_file.has_option('general', 'secrets'):
             secrets_filename = config_file.get('general', 'secrets')
@@ -293,8 +293,8 @@ def process_config(args, ctx):
 
         # Check if we have a custom overrides for this monitor
 
-        if 'monitorid' in args and args['monitorid']:
-            sec = 'monitor-{}'.format(args['monitorid'])
+        if 'monitorid' in args and args.get('monitorid'):
+            sec = 'monitor-{}'.format(args.get('monitorid'))
             if sec in config_file:
                 # we have a specific section for this monitor
                 for item in config_file[sec].items():
@@ -315,14 +315,14 @@ def process_config(args, ctx):
             # now import zones if needed
             # this should be done irrespective of a monitor section
             if g.config['import_zm_zones'] == 'yes':
-                import_zm_zones(args['monitorid'])
+                import_zm_zones(args.get('monitorid'))
 
         else:
             g.logger.info(
                 'Ignoring monitor specific settings, as you did not provide a monitor id'
             )
     except Exception as e:
-        g.logger.error('Error parsing config:{}'.format(args['config']))
+        g.logger.error('Error parsing config:{}'.format(args.get('config')))
         g.logger.error('Error was:{}'.format(e))
         exit(0)
 
@@ -343,15 +343,15 @@ def process_config(args, ctx):
                     gk, g.config[gk]),level=2)
 
     # Now munge config if testing args provide
-    if args['file']:
+    if args.get('file'):
         g.config['wait'] = 0
+        g.config['write_image_to_zm'] = 'no'
+        g.polygons = []
+       
         
-    if  args['output_path']:
-        g.logger.debug ('Output path modified to {}'.format(args['output_path']))
-        g.config['image_path'] = args['output_path']
+    if  args.get('output_path'):
+        g.logger.debug ('Output path modified to {}'.format(args.get('output_path')))
+        g.config['image_path'] = args.get('output_path')
         g.config['write_debug_image'] = 'yes'
     
-    if args['file']:
-        g.config['write_image_to_zm'] = 'no'
-        g.polygons = [];
-       
+   

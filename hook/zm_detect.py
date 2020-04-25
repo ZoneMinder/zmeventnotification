@@ -146,19 +146,19 @@ ap.add_argument('-f',
 args, u = ap.parse_known_args()
 args = vars(args)
 
-if not args['config']:
+if not args.get('config'):
     print ('--config required')
     exit(1)
 
-if not args['file'] and not args['eventid']:
+if not args.get('file')and not args.get('eventid'):
     print ('--eventid required')
     exit(1)
 
 utils.get_pyzm_config(args)
 
 
-if args['monitorid']:
-    log.init(process_name='zmesdetect_' + 'm' + args['monitorid'], override=g.config['pyzm_overrides'])
+if args.get('monitorid'):
+    log.init(process_name='zmesdetect_' + 'm' + args.get('monitorid'), override=g.config['pyzm_overrides'])
 else:
     log.init(process_name='zmesdetect',override=g.config['pyzm_overrides'])
 
@@ -175,7 +175,7 @@ except ImportError as e:
     g.logger.fatal (f'{e}: You might not have installed OpenCV as per install instructions. Remember, it is NOT automatically installed')
 
 g.logger.info('---------| hook version: {}, ES version: {} , OpenCV version: {}|------------'.format(__version__, es_version, cv2.__version__))
-if args['version']:
+if args.get('version'):
     print(__version__)
     exit(0)
 
@@ -212,7 +212,7 @@ else:
 
 # now download image(s)
 
-if not args['file']:
+if not args.get('file'):
     try:
         filename1, filename2, filename1_bbox, filename2_bbox = utils.download_files(
             args)
@@ -223,8 +223,8 @@ if not args['file']:
     # filename_alarm will be the first frame to analyze (typically alarm)
     # filename_snapshot will be the second frame to analyze only if the first fails (typically snapshot)
 else:
-    g.logger.debug('TESTING ONLY: reading image from {}'.format(args['file']))
-    filename1 = args['file']
+    g.logger.debug('TESTING ONLY: reading image from {}'.format(args.get('file')))
+    filename1 = args.get('file')
     filename1_bbox = g.config['image_path']+'/'+append_suffix(filename1, '-bbox')
     filename2 = None
     filename2_bbox = None
@@ -674,17 +674,17 @@ else:
 
     
 
-    if g.config['match_past_detections'] == 'yes' and args['monitorid']:
+    if g.config['match_past_detections'] == 'yes' and args.get('monitorid'):
         # point detections to post processed data set
         g.logger.info('Removing matches to past detections')
         bbox_t, label_t, conf_t = img.processPastDetection(
-            bbox, label, conf, args['monitorid'])
+            bbox, label, conf, args.get('monitorid'))
         # save current objects for future comparisons
         g.logger.debug(
             'Saving detections for monitor {} for future match'.format(
-                args['monitorid']))
-        mon_file = g.config['image_path'] + '/monitor-' + args[
-            'monitorid'] + '-data.pkl'
+                args.get('monitorid')))
+        mon_file = g.config['image_path'] + '/monitor-' + args.get(
+            'monitorid') + '-data.pkl'
         f = open(mon_file, "wb")
         pickle.dump(bbox, f)
         pickle.dump(label, f)
@@ -695,11 +695,11 @@ else:
     
     # Do this after match past detections so we don't create an objdetect if images were discarded
     if g.config['write_image_to_zm'] == 'yes':
-        if (args['eventpath'] and len(bbox)):
+        if (args.get('eventpath') and len(bbox)):
             g.logger.debug('Writing detected image to {}/objdetect.jpg'.format(
-                args['eventpath']))
-            cv2.imwrite(args['eventpath'] + '/objdetect.jpg', image)
-            jf = args['eventpath'] + '/objects.json'
+                args.get('eventpath')))
+            cv2.imwrite(args.get('eventpath') + '/objdetect.jpg', image)
+            jf = args.get('eventpath')+ '/objects.json'
             final_json = {'frame': frame_type, 'detections': obj_json}
             g.logger.debug('Writing JSON output to {}'.format(jf))
             try:
@@ -712,7 +712,7 @@ else:
             if g.config['create_animation'] == 'yes':
                 g.logger.debug('animation: Creating burst...')
                 try:
-                    img.createAnimation(frame_type, args['eventid'],args['eventpath']+'/objdetect', g.config['animation_types'])
+                    img.createAnimation(frame_type, args.get('eventid'),args.get('eventpath')+'/objdetect', g.config['animation_types'])
                 except Exception as e:
                     g.logger.error('Error creating animation:{}'.format(e))
                     g.logger.error('animation: Traceback:{}'.format(traceback.format_exc()))
@@ -729,12 +729,12 @@ else:
     pred = ''
     detections = []
     seen = {}
-
+    
     if not obj_json:
         # if we broke out early/first match
         otype = 'face' if model == 'face' else 'object'
         for idx, t_l in enumerate(label):
-            print (idx, t_l)
+            #print (idx, t_l)
             obj_json.append({
                 'type': otype,
                 'label': t_l,
@@ -758,7 +758,6 @@ else:
        # g.logger.error (f"Returning THIS IS {obj_json}")
         jos = json.dumps(obj_json)
         g.logger.debug('Prediction string JSON:{}'.format(jos))
-
         print(pred + '--SPLIT--' + jos)
 
     # end of matched_file
