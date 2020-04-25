@@ -1,5 +1,37 @@
 # Changelog
 
+## [v5.13.3](https://github.com/pliablepixels/zmeventnotification/tree/v5.13.3) (2020-04-25)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.11.3...v5.13.3)
+
+**Implemented enhancements:**
+
+- MQTT Retain option [\#246](https://github.com/pliablepixels/zmeventnotification/issues/246)
+
+**Fixed bugs:**
+
+- Error when using import\_zm\_zones=yes \(incorrect encoding of password\) [\#245](https://github.com/pliablepixels/zmeventnotification/issues/245)
+- Event server sends FCS event\_end\_notification for not subscribed monitors [\#242](https://github.com/pliablepixels/zmeventnotification/issues/242)
+- Sometimes there are duplicate entries in event notes. [\#238](https://github.com/pliablepixels/zmeventnotification/issues/238)
+- /dev/shm 100% used, caused by ZMEventnotification? [\#210](https://github.com/pliablepixels/zmeventnotification/issues/210)
+
+**Closed issues:**
+
+- Error when running zm\_train\_faces.py \(KeyError: 'file'\) [\#250](https://github.com/pliablepixels/zmeventnotification/issues/250)
+- Better images for notifications  [\#244](https://github.com/pliablepixels/zmeventnotification/issues/244)
+- Feature suggestion: Support forced alarm trigger via MQTT [\#243](https://github.com/pliablepixels/zmeventnotification/issues/243)
+- bad bcrypt settings at line 1473 [\#241](https://github.com/pliablepixels/zmeventnotification/issues/241)
+- platerecognizer.com SDK call fails [\#236](https://github.com/pliablepixels/zmeventnotification/issues/236)
+
+**Merged pull requests:**
+
+- Update zmeventnotification.pl [\#249](https://github.com/pliablepixels/zmeventnotification/pull/249) ([makers-mark](https://github.com/makers-mark))
+- add MQTT Retain flag option [\#247](https://github.com/pliablepixels/zmeventnotification/pull/247) ([darknicht66](https://github.com/darknicht66))
+
+## [v5.11.3](https://github.com/pliablepixels/zmeventnotification/tree/v5.11.3) (2020-04-02)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.11.2...v5.11.3)
+
 ## [v5.11.2](https://github.com/pliablepixels/zmeventnotification/tree/v5.11.2) (2020-03-31)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.9.9...v5.11.2)
@@ -92,7 +124,6 @@
 **Closed issues:**
 
 - Failover to local if mlapi server is unavailable [\#212](https://github.com/pliablepixels/zmeventnotification/issues/212)
-- /dev/shm 100% used, caused by ZMEventnotofication? [\#210](https://github.com/pliablepixels/zmeventnotification/issues/210)
 - Function is a reserved keyword in Mysql 8, resolve by quoting with backticks. [\#209](https://github.com/pliablepixels/zmeventnotification/issues/209)
 - Enable ALPR only for one Monitor [\#203](https://github.com/pliablepixels/zmeventnotification/issues/203)
 - iOS Notications does not show the type of object detected [\#201](https://github.com/pliablepixels/zmeventnotification/issues/201)
