@@ -82,13 +82,14 @@ def createAnimation(frametype, eid,fname, types):
     end_frame = int(min(totframes, fid + (buffer_seconds*fps)))
     skip =round(fps/target_fps)
 
-    g.logger.debug (f'animation: anchor={fid} start={start_frame} end={end_frame} skip={skip}')
+    g.logger.debug (f'animation: anchor={frametype} start={start_frame} end={end_frame} skip={skip}')
     g.logger.debug('animation: Grabbing frames...')
     images = []
     od_images = []
 
-    od_url= '{}/index.php?view=image&eid={}&fid={}&username={}&password={}&width={}'.format(g.config['portal'],eid,fid,g.config['user'],urllib.parse.quote(g.config['password'], safe=''),g.config['animation_width'])
-    g.logger.debug (f'Grabbing anchor frame: {fid}...')
+    # use frametype  (alarm/snapshot) to get od anchor, because fid can be wrong when translating from videos
+    od_url= '{}/index.php?view=image&eid={}&fid={}&username={}&password={}&width={}'.format(g.config['portal'],eid,frametype,g.config['user'],urllib.parse.quote(g.config['password'], safe=''),g.config['animation_width'])
+    g.logger.debug (f'Grabbing anchor frame: {frametype}...')
     try:
         od_frame = imageio.imread(od_url)
         # 1 second @ 2fps
