@@ -438,7 +438,7 @@ GPU: GeForce 1050Ti
 General Observations
 ^^^^^^^^^^^^^^^^^^^^^^^
 - Load time of the model is generally larger than detection time, especially felt on a GPU, where detection time is short
-- Detection speeds up greatly if you use the same loaded model for subsequent detections. If you are using local detections (i.e. you don't have ml_gateway enabled in objectconfig.ini) then you are essentially exiiting the process each time an image needs to be detected and the DNN is reloaded each time. Even if you take out the model load time, given the DNN is re-initialized, your image is treated as the 'first image' to detect and performance will be lower than when using mlapi because the DNN is reused for subsequent images.
+- Detection speeds up greatly if you use the same loaded model for subsequent detections. If you are using local detections (i.e. you don't have ml_gateway enabled in objectconfig.ini) then you are essentially exiting the process each time an image needs to be detected and the DNN is reloaded each time. Even if you take out the model load time, given the DNN is re-initialized, your image is treated as the 'first image' to detect and performance will be lower than when using mlapi because the DNN is reused for subsequent images.
 - In general, the detection speed varies between runs, as you see below, at least using local detections.
 
 GPU Performance benchmarking, using an image with 1 person (face+object detection) on my 1050Ti:
