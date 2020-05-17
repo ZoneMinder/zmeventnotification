@@ -162,6 +162,9 @@ install_hook() {
     mkdir -p "${TARGET_DATA}/bin" 2>/dev/null
     rm -fr  "${TARGET_DATA}/bin/*" 2>/dev/null
 
+    #don't delete contrib so custom user files remain
+    mkdir -p "${TARGET_DATA}/contrib" 2>/dev/null
+
     mkdir -p "${TARGET_DATA}/images" 2>/dev/null
     mkdir -p "${TARGET_DATA}/mlapi" 2>/dev/null
     mkdir -p "${TARGET_DATA}/known_faces" 2>/dev/null
@@ -251,6 +254,17 @@ install_hook() {
     install -m 755 -o "${WEB_OWNER}" hook/zm_detect.py "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_train_faces.py "${TARGET_BIN_HOOK}"
     #python setup.py install && print_success "Done" || print_error "python setup failed"
+
+    echo
+    echo "*** Installing user contributions ***"
+    cp notes/contrib_guidelines.md "${TARGET_DATA}/contrib"
+    for file in contrib/*; do
+    echo "Copying over ${file}..."
+      install -m 755 -o "${WEB_OWNER}" "$file" "${TARGET_DATA}/contrib"
+    done
+    echo
+    
+
     echo "Removing old version of zmes-hooks, if any"
     ${PY_SUDO} ${PIP} uninstall -y zmes-hooks  >/dev/null 2>&1
     ${PY_SUDO} ${PIP} install hook/ && print_opencv_message || print_error "python hooks setup failed"

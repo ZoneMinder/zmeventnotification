@@ -64,7 +64,7 @@ if ( !try_use('JSON') ) {
 #
 # ==========================================================================
 
-my $app_version = '5.13';
+my $app_version = '5.14';
 
 # ==========================================================================
 #
@@ -204,6 +204,8 @@ my $send_event_end_notification;
 my $use_hooks;
 my $event_start_hook;
 my $event_end_hook;
+my $event_start_hook_notify_userscript;
+my $event_end_hook_notify_userscript;
 
 my $event_start_notify_on_hook_fail;
 my $event_start_notify_on_hook_success;
@@ -516,6 +518,8 @@ sub loadEsConfigSettings {
     config_get_val( $config, 'customize', 'use_hooks', DEFAULT_USE_HOOKS );
 
   $event_start_hook = config_get_val( $config, 'hook', 'event_start_hook' );
+  $event_start_hook_notify_userscript = config_get_val( $config, 'hook', 'event_start_hook_notify_userscript' );
+  $event_end_hook_notify_userscript = config_get_val( $config, 'hook', 'event_end_hook_notify_userscript' );
 
   # backward compatibility
   $event_start_hook = config_get_val( $config, 'hook', 'hook_script' )
@@ -644,7 +648,9 @@ Send event end notification............${\(yes_or_no($send_event_end_notificatio
 
 Use Hooks............................. ${\(yes_or_no($use_hooks))}
 Hook Script on Event Start ........... ${\(value_or_undefined($event_start_hook))}
+User Script on Event Start.............${\(value_or_undefined($event_start_hook_notify_userscript))}
 Hook Script on Event End.............. ${\(value_or_undefined($event_end_hook))}
+User Script on Event End.............${\(value_or_undefined($event_end_hook_notify_userscript))}
 Hook Skipped monitors................. ${\(value_or_undefined($hook_skip_monitors))}
 
 Notify on Event Start (hook success).. ${\(value_or_undefined($event_start_notify_on_hook_success))}
@@ -3052,6 +3058,35 @@ sub processNewAlarmsInFork {
             "hook start returned with text:$resTxt json:$resJsonString exit:$hookResult",1
           );
 
+          if ($event_start_hook_notify_userscript) {
+            my $user_cmd =
+              $event_start_hook_notify_userscript . ' '
+            . $hookResult. ' '
+            . $eid . ' '
+            . $mid . ' '
+            . '"'.$alarm->{MonitorName} .'" '
+            . '"'.$resTxt.'" '
+            . '"'.$resJsonString.'" ';
+
+
+            if ($hook_pass_image_path) {
+              my $event = new ZoneMinder::Event($eid);
+              $user_cmd = $user_cmd . ' "' . $event->Path() . '"';
+              printDebug( 'Adding event path:'
+                  . $event->Path()
+                  . ' to $user_cmd for image location' ,1);
+
+            }
+
+            if ( $user_cmd =~ /^(.*)$/ ) {
+              $user_cmd = $1;
+            }
+            printDebug ("invoking user start notification script $user_cmd",1);
+            my $user_res = `$user_cmd`;
+          } # user notify script
+          
+          
+
           if ( $use_hook_description && $hookResult == 0 ) {
 
        # lets append it to any existing motion notes
@@ -3241,6 +3276,34 @@ sub processNewAlarmsInFork {
           #$alarm->{End}->{Cause}         = $resTxt . ' ' . $alarm->{Cause};
           $alarm->{End}->{Cause}         = $resTxt;
           $alarm->{End}->{DetectionJson} = decode_json($resJsonString);
+
+
+
+          if ($event_end_hook_notify_userscript) {
+            my $user_cmd =
+              $event_end_hook_notify_userscript . ' '
+            . $hookResult. ' '
+            . $eid . ' '
+            . $mid . ' '
+            . '"'.$alarm->{MonitorName} .'" '
+            . '"'.$resTxt.'" '
+            . '"'.$resJsonString.'" ';
+
+            if ($hook_pass_image_path) {
+              my $event = new ZoneMinder::Event($eid);
+              $user_cmd = $user_cmd . ' "' . $event->Path() . '"';
+              printDebug( 'Adding event path:'
+                  . $event->Path()
+                  . ' to $user_cmd for image location' ,2);
+
+            }
+
+            if ( $user_cmd =~ /^(.*)$/ ) {
+              $user_cmd = $1;
+            }
+            printDebug ("invoking user end notification script $user_cmd",1);
+            my $user_res = `$user_cmd`;
+          } # user notify script
 
         }
         else {
