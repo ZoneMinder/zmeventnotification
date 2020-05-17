@@ -127,6 +127,10 @@ Everything above was when an event first starts. The ES also allows similar func
 * Sending notification rules are the same as the start section, except that ``event_end_notify_on_hook_success`` and ``event_end_notify_on_hook_fail`` are used for channel rules in ``zmeventnotification.ini``
 * When the event ends, the ES will check the ZM DB to see if the detection text it wrote during start still exists. It may have been overwritten if ZM detect more motion after the detection. As of today, ZM keeps its notes in memory and doesn't know some other entity has updated the notes and overwrites it. 
 * At this stage, the fork that was started when the event started exits
+
+User triggers after event_start and event_end
+----------------------------------------------
+Starting version ``5.14`` I also support two new triggers called ``event_start_hook_notify_userscript`` and ``event_end_hook_notify_userscript``. If specified, they are invoked so that the user can perform any housekeeping jobs that are necessary. These triggers are useful if you want to use the default object detection scripts *as well* as doing your own things after it.
    
 5: Actually sending the notification
 -------------------------------------
@@ -185,6 +189,7 @@ There is both a static and dynamic way to control the ES.
 - You can change parameters in ``zmeventnotification.ini``. This will however require you to restart the ES (``sudo zmdc.pl restart  zmeventnotification.pl``). You can also change hook related parameters in ``objectconfig.ini`` and they will automatically take effect for the next detection (because the hook scripts restart with each invocation), if you are using local detections.
 
 - So obviously, there was a need to allow for programmatic change to the ES and dynamically.
+
 That is what the "ES control interface" does. It is a websocket based interface that requires authentication. Once you authenticate, you can change any ES parameter that is in the config. Read more about it: :ref:`escontrol_interface`. 
 
 Just remember:
