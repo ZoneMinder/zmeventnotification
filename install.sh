@@ -257,7 +257,7 @@ install_hook() {
 
     echo
     echo "*** Installing user contributions ***"
-    cp docs/guides/contrib_guidelines.md "${TARGET_DATA}/contrib"
+    cp docs/guides/contrib_guidelines.rst "${TARGET_DATA}/contrib"
     for file in contrib/*; do
     echo "Copying over ${file}..."
       install -m 755 -o "${WEB_OWNER}" "$file" "${TARGET_DATA}/contrib"
