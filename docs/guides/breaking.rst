@@ -1,6 +1,16 @@
 Breaking Changes
 ----------------
 
+Version 5.14.4 onwards
+~~~~~~~~~~~~~~~~~~~~~~~
+- Added ability for users to PR contrib modules
+  See :doc:`guides/contrib_guidelines`
+- ``zmeventnotification.ini`` adds two new attributes that makes it simpler for users
+  to keep object detection plugin hooks intact *and also* trigger their own scripts 
+  for housekeeping. See the ini script for documentation on ``event_start_hook_notify_userscript``
+and ``event_end_hook_notify_userscript``
+
+
 Version 5.13.3 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 - New attribute ``es_debug_level`` in ``zmeventnotification.ini`` that controls debug level verbosity. Default is ``2``
