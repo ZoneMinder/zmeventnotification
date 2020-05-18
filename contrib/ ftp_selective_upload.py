@@ -4,19 +4,19 @@ version = 0.1
 
 
 '''
-Author: 0n3man (Brian P)
-Contact: 6378553
+Author: Brian P
+Contact: 0n3man
 
 Intended trigger: "event_start_hook_notify_userscript"
-Description:
+Description: 
 
-The intent of this script is to push images that contain objects of interest from zoneminder (ZM)
-to an FTP server.  It was developed to allow an alternative to MQTT integration between ZM and
-home assistant (HA).  FTP was used because most cameras support an FTP interface, and so if you’ve
-stared with cameras pushing pictures to HA via FTP, this script allows you to integrate ZM with HA
-in the similar fashion.  My work flow is ZM detects objects, this script pushes images with things
-I care about to HA, HA has a file watcher that kicks off events which can be used in automations.
-My primary use case is for HA to send me pictures containing people when my HA home alarm is turned on.
+The intent of this script is to push images that contain objects of interest from zoneminder (ZM) 
+to an FTP server.  It was developed to allow an alternative to MQTT integration between ZM and 
+home assistant (HA).  FTP was used because most cameras support an FTP interface, and so if you’ve 
+stared with cameras pushing pictures to HA via FTP, this script allows you to integrate ZM with HA 
+in the similar fashion.  My work flow is ZM detects objects, this script pushes images with things 
+I care about to HA, HA has a file watcher that kicks off events which can be used in automations.  
+My primary use case is for HA to send me pictures containing people when my HA home alarm is turned on.  
 That said, this script can be used to push any ZM pictures with detected objects over to an FTP sever.
 
 The script pulls the following parameters from your ZM secrects.ini file:
@@ -27,8 +27,8 @@ FTP_SERVER=IPorDomainNameOfFTPSerever
 FTP_CAREABOUT=CommaSeparatedListOfObject
 FTP_BASEDIR=directyExtentionUsedOnFTPfilename
 
-For a picture to be pushed to the FTP server an object from the FTP_CAREABOUT parameter must have been
-identified in the picture.  An example of FTP_CAREABOUT might be “person,car”.  So if a person or a
+For a picture to be pushed to the FTP server an object from the FTP_CAREABOUT parameter must have been 
+identified in the picture.  An example of FTP_CAREABOUT might be “person,car”.  So if a person or a 
 car is detect in the picture it is sent out via FTP. The file is stored on the FTP server with a
 filename of /FTP_BASEDIR/MONITOR_NAME/detectedObject-YY-MM-DD-HH-SS.jpg
 
@@ -37,8 +37,8 @@ filename of /FTP_BASEDIR/MONITOR_NAME/detectedObject-YY-MM-DD-HH-SS.jpg
 # Arguments:
 # All scripts invoked with the xxx_userscript tags
 # get the following args passed
-#   ARG1: Hook result - 0 if object was detected, 1 if not.
-#         Always check this FIRST  as the json/text string
+#   ARG1: Hook result - 0 if object was detected, 1 if not. 
+#         Always check this FIRST  as the json/text string 
 #         will be empty if this is 1
 #
 #   ARG2: Event ID
@@ -83,7 +83,7 @@ def read_secrets(config='/etc/zm/secrets.ini'):
     return secrets_object._sections['secrets']
 
 # -------- MAIN ---------------
-zmlog.init(name='ftp_detected_image')
+zmlog.init(name='ftp_selective_upload')
 zmlog.Info('--------| FTP Plugin v{} |--------'.format(version))
 #zmlog.Info ("I got {} arguments".format(len(sys.argv)))
 #zmlog.Info ("Arguments:  {}".format(sys.argv[1:]))
@@ -116,13 +116,15 @@ preExt,fileExt= os.path.splitext(fname)
 reason = None
 for item in careaboutlist:
     if item in cause:
-        reason = item
-        break
+        if reason is None:
+            reason = item
+        else:
+            reason = reason + "-" + item
 
 # Only FTP if file matches something we care about
 if not reason:
     zmlog.Info('eid:{} File not transfered, no care about objects {} in {}'.format(eid,careaboutlist,cause))
-    exiti()
+    exit()
 
 #Build the FTP command and file path
 ftpcmd = 'STOR ' + dirBase + mname + '/' + reason + '-' + datetime.now().strftime('%x-%X').replace('/','-',3) + fileExt
