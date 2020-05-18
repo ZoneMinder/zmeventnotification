@@ -203,7 +203,7 @@ def processPastDetection(bbox, label, conf, mid):
         b = list(zip(it, it))
 
         b.insert(1, (b[1][0], b[0][1]))
-        b.insert(3, (b[0][0], b[1][1]))
+        b.insert(3, (b[0][0], b[2][1]))
         #g.logger.debug ("Past detection: {}@{}".format(saved_ls[idx],b))
         #g.logger.debug ('BOBK={}'.format(b))
         obj = Polygon(b)
@@ -214,7 +214,7 @@ def processPastDetection(bbox, label, conf, mid):
             it = iter(saved_b)
             saved_b = list(zip(it, it))
             saved_b.insert(1, (saved_b[1][0], saved_b[0][1]))
-            saved_b.insert(3, (saved_b[0][0], saved_b[1][1]))
+            saved_b.insert(3, (saved_b[0][0], saved_b[2][1]))
             saved_obj = Polygon(saved_b)
             max_diff_pixels = max_diff_area
 
