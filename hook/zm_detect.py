@@ -649,9 +649,28 @@ else:
         #image = image2
         bbox_f = filename2_bbox
 
-    #for idx, b in enumerate(bbox):
-    #g.logger.debug ("DRAWING {}".format(b))
+   
+    # let's remove past detections first, if enabled 
+    if g.config['match_past_detections'] == 'yes' and args.get('monitorid'):
+        # point detections to post processed data set
+        g.logger.info('Removing matches to past detections')
+        bbox_t, label_t, conf_t = img.processPastDetection(
+            bbox, label, conf, args.get('monitorid'))
+        # save current objects for future comparisons
+        g.logger.debug(
+            'Saving detections for monitor {} for future match'.format(
+                args.get('monitorid')))
+        mon_file = g.config['image_path'] + '/monitor-' + args.get(
+            'monitorid') + '-data.pkl'
+        f = open(mon_file, "wb")
+        pickle.dump(bbox, f)
+        pickle.dump(label, f)
+        pickle.dump(conf, f)
+        bbox = bbox_t
+        label = label_t
+        conf = conf_t
 
+    # now we draw boxes
     out = img.draw_bbox(image, bbox, label, classes, conf, None,
                         g.config['show_percent'] == 'yes')
     image = out
@@ -672,27 +691,6 @@ else:
             'Writing out debug bounding box image to {}...'.format(bbox_f))
         cv2.imwrite(bbox_f, image)
 
-    
-
-    if g.config['match_past_detections'] == 'yes' and args.get('monitorid'):
-        # point detections to post processed data set
-        g.logger.info('Removing matches to past detections')
-        bbox_t, label_t, conf_t = img.processPastDetection(
-            bbox, label, conf, args.get('monitorid'))
-        # save current objects for future comparisons
-        g.logger.debug(
-            'Saving detections for monitor {} for future match'.format(
-                args.get('monitorid')))
-        mon_file = g.config['image_path'] + '/monitor-' + args.get(
-            'monitorid') + '-data.pkl'
-        f = open(mon_file, "wb")
-        pickle.dump(bbox, f)
-        pickle.dump(label, f)
-        pickle.dump(conf, f)
-        bbox = bbox_t
-        label = label_t
-        conf = conf_t
-    
     # Do this after match past detections so we don't create an objdetect if images were discarded
     if g.config['write_image_to_zm'] == 'yes':
         if (args.get('eventpath') and len(bbox)):
