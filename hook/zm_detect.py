@@ -21,7 +21,7 @@ import requests
 import subprocess
 import traceback
 
-# Modules that load cv2 will go later 
+# Modules that load cv2 will go later
 # so we can log misses
 import zmes_hook_helpers.log as log
 import zmes_hook_helpers.utils as utils
@@ -219,7 +219,7 @@ if not args.get('file'):
     except Exception as e:
         g.logger.error(f'Error downloading files: {e}')
         g.logger.fatal('animation: Traceback:{}'.format(traceback.format_exc()))
-    
+
     # filename_alarm will be the first frame to analyze (typically alarm)
     # filename_snapshot will be the second frame to analyze only if the first fails (typically snapshot)
 else:
@@ -559,7 +559,7 @@ for model in g.config['models']:
                     g.logger.debug(
                         'There was no vehicle detected by Yolo in this image')
                     '''
-                    # For now, don't force ALPR in the next (snapshot image) 
+                    # For now, don't force ALPR in the next (snapshot image)
                     # only do it if yolo gets a vehicle there
                     # may change this later
                     try_next_image = True
@@ -652,9 +652,11 @@ else:
     #for idx, b in enumerate(bbox):
     #g.logger.debug ("DRAWING {}".format(b))
 
-    out = img.draw_bbox(image, bbox, label, classes, conf, None,
-                        g.config['show_percent'] == 'yes')
-    image = out
+    # save variables as they stand now incase user had pass_detection removal enabled
+    # but still wants to see all objects boxed, even if they're removed
+    bbox_o = bbox
+    label_o = label
+    conf_o = conf
 
     if g.config['frame_id'] == 'bestmatch':
         if matched_file == filename1:
@@ -670,9 +672,11 @@ else:
     if g.config['write_debug_image'] == 'yes':
         g.logger.debug(
             'Writing out debug bounding box image to {}...'.format(bbox_f))
-        cv2.imwrite(bbox_f, image)
+        out = img.draw_bbox(image, bbox, label, classes, conf, None,
+                        g.config['show_percent'] == 'yes')
+        cv2.imwrite(bbox_f, out)
 
-    
+
 
     if g.config['match_past_detections'] == 'yes' and args.get('monitorid'):
         # point detections to post processed data set
@@ -692,10 +696,19 @@ else:
         bbox = bbox_t
         label = label_t
         conf = conf_t
-    
+
     # Do this after match past detections so we don't create an objdetect if images were discarded
     if g.config['write_image_to_zm'] == 'yes':
         if (args.get('eventpath') and len(bbox)):
+
+            # create image and either box all detected or only ones not previously detected
+            if g.config['only_box_new_objs'] == 'yes':
+                out = img.draw_bbox(image, bbox, label, classes, conf, None,
+                        g.config['show_percent'] == 'yes')
+            else:
+                out = img.draw_bbox(image, bbox_o, label_o, classes, conf_o, None,
+                        g.config['show_percent'] == 'yes')
+            image = out
             g.logger.debug('Writing detected image to {}/objdetect.jpg'.format(
                 args.get('eventpath')))
             cv2.imwrite(args.get('eventpath') + '/objdetect.jpg', image)
@@ -707,8 +720,8 @@ else:
                     json.dump(final_json, jo)
             except Exception as e:
                 g.logger.error(f'Error creating {jf}:{e}')
-                
-            
+
+
             if g.config['create_animation'] == 'yes':
                 g.logger.debug('animation: Creating burst...')
                 try:
@@ -716,7 +729,7 @@ else:
                 except Exception as e:
                     g.logger.error('Error creating animation:{}'.format(e))
                     g.logger.error('animation: Traceback:{}'.format(traceback.format_exc()))
-                   
+
         else:
             if not len(bbox):
                 g.logger.debug('Not writing image, as no objects recorded')
@@ -729,7 +742,7 @@ else:
     pred = ''
     detections = []
     seen = {}
-    
+
     if not obj_json:
         # if we broke out early/first match
         otype = 'face' if model == 'face' else 'object'
