@@ -652,12 +652,6 @@ else:
     #for idx, b in enumerate(bbox):
     #g.logger.debug ("DRAWING {}".format(b))
 
-    # save variables as they stand now incase user had pass_detection removal enabled
-    # but still wants to see all objects boxed, even if they're removed
-    bbox_o = bbox
-    label_o = label
-    conf_o = conf
-
     if g.config['frame_id'] == 'bestmatch':
         if matched_file == filename1:
             prefix = '[a] '  # we will first analyze alarm
@@ -675,8 +669,6 @@ else:
         out = img.draw_bbox(image, bbox, label, classes, conf, None,
                         g.config['show_percent'] == 'yes')
         cv2.imwrite(bbox_f, out)
-
-
 
     if g.config['match_past_detections'] == 'yes' and args.get('monitorid'):
         # point detections to post processed data set
@@ -701,12 +693,7 @@ else:
     if g.config['write_image_to_zm'] == 'yes':
         if (args.get('eventpath') and len(bbox)):
 
-            # create image and either box all detected or only ones not previously detected
-            if g.config['only_box_new_objs'] == 'yes':
-                out = img.draw_bbox(image, bbox, label, classes, conf, None,
-                        g.config['show_percent'] == 'yes')
-            else:
-                out = img.draw_bbox(image, bbox_o, label_o, classes, conf_o, None,
+            out = img.draw_bbox(image, bbox, label, classes, conf, None,
                         g.config['show_percent'] == 'yes')
             image = out
             g.logger.debug('Writing detected image to {}/objdetect.jpg'.format(
