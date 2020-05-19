@@ -1,4 +1,4 @@
-Guidelines for contrib/ 
+Guidelines for contrib
 =======================
 
 The ``contrib/`` directory is for user provided scripts. These scripts could be for push, hooks or other things.
