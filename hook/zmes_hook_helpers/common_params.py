@@ -69,6 +69,11 @@ config_vals = {
             'default': 'no',
             'type': 'string'
         },
+        'only_box_new_objs':{
+            'section': 'general',
+            'default': 'no',
+            'type': 'string'
+        },
         'past_det_max_diff_area':{
             'section': 'general',
             'default': '5%',
