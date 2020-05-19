@@ -5,13 +5,14 @@ version = 0.1
 
 '''
 Author: Brian P
-Contact: 0n3man
+Contact: 0n3man (github)
 
 Intended trigger: "event_start_hook_notify_userscript"
 Description: 
 
-The intent of this script is to push images that contain objects of interest from zoneminder (ZM) 
-to an FTP server.  It was developed to allow an alternative to MQTT integration between ZM and 
+This script pushes images with detected objects to a designated FTP server.
+
+It was developed to allow an alternative to MQTT integration between ZM and 
 home assistant (HA).  FTP was used because most cameras support an FTP interface, and so if you’ve 
 stared with cameras pushing pictures to HA via FTP, this script allows you to integrate ZM with HA 
 in the similar fashion.  My work flow is ZM detects objects, this script pushes images with things 
@@ -30,7 +31,7 @@ FTP_BASEDIR=directyExtentionUsedOnFTPfilename
 For a picture to be pushed to the FTP server an object from the FTP_CAREABOUT parameter must have been 
 identified in the picture.  An example of FTP_CAREABOUT might be “person,car”.  So if a person or a 
 car is detect in the picture it is sent out via FTP. The file is stored on the FTP server with a
-filename of /FTP_BASEDIR/MONITOR_NAME/detectedObject-YY-MM-DD-HH-SS.jpg
+filename of /FTP_BASEDIR/MONITOR_NAME/detectedObjects-YY-MM-DD-HH-SS.jpg
 
 '''
 
@@ -84,7 +85,7 @@ def read_secrets(config='/etc/zm/secrets.ini'):
 
 # -------- MAIN ---------------
 zmlog.init(name='ftp_selective_upload')
-zmlog.Info('--------| FTP Plugin v{} |--------'.format(version))
+zmlog.Info('--------| Selective FTP Plugin v{} |--------'.format(version))
 #zmlog.Info ("I got {} arguments".format(len(sys.argv)))
 #zmlog.Info ("Arguments:  {}".format(sys.argv[1:]))
 
@@ -123,7 +124,7 @@ for item in careaboutlist:
 
 # Only FTP if file matches something we care about
 if not reason:
-    zmlog.Info('eid:{} File not transfered, no care about objects {} in {}'.format(eid,careaboutlist,cause))
+    zmlog.Info('eid:{} File not transfered as cause[{}] did not match care about list [{}]'.format(eid,cause, careaboutlist))
     exit()
 
 #Build the FTP command and file path
@@ -137,5 +138,5 @@ session.storbinary(ftpcmd, file)     # send the file
 file.close()                                    # close file and FTP
 session.quit()
 
-zmlog.Debug(1,"eid:{} FTP done".format(eid))
+zmlog.Debug(1,"eid:{} FTP upload done".format(eid))
 zmlog.close()
