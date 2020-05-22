@@ -500,3 +500,5 @@ if [ "${INSTALL_CSPN}" == "yes" ] && [ ! -f "${TARGET_DATA}/models/cspn/csresnex
 
     fi
 
+echo
+echo "*** Please remember to start the Event Server after this update ***" 
