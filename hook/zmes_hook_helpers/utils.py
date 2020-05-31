@@ -148,6 +148,7 @@ def download_files(args):
             raise
         with open(filename1, 'wb') as output_file:
             output_file.write(input_file.read())
+            output_file.close()
 
         url = g.config['portal'] + '/index.php?view=image&eid=' + args.get(
             'eventid') + '&fid=snapshot'
@@ -166,6 +167,7 @@ def download_files(args):
             raise
         with open(filename2, 'wb') as output_file:
             output_file.write(input_file.read())
+            output_file.close()
 
     else:
         # only download one
@@ -188,7 +190,7 @@ def download_files(args):
         input_file = opener.open(url)
         with open(filename1, 'wb') as output_file:
             output_file.write(input_file.read())
-
+            output_file.close()
     return filename1, filename2, filename1_bbox, filename2_bbox
 
 def get_pyzm_config(args):

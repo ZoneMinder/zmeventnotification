@@ -87,6 +87,7 @@ def remote_detect(image, model=None):
                 'time': time.time()
             }
             json.dump(wdata, json_file)
+            json_file.close()
 
     auth_header = {'Authorization': 'Bearer ' + access_token}
     ret, jpeg = cv2.imencode('.jpg', image)
@@ -669,6 +670,7 @@ else:
         bbox = bbox_t
         label = label_t
         conf = conf_t
+        f.close()
 
     # now we draw boxes
     out = img.draw_bbox(image, bbox, label, classes, conf, None,
@@ -703,6 +705,7 @@ else:
             try:
                 with open(jf, 'w') as jo:
                     json.dump(final_json, jo)
+                    jo.close()
             except Exception as e:
                 g.logger.error(f'Error creating {jf}:{e}')
                 
