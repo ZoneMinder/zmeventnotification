@@ -152,7 +152,7 @@ install_es() {
     echo '***** Installing ES **********'
     mkdir -p "${TARGET_DATA}/push" 2>/dev/null
     install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN_ES}" && 
-            print_success "Completed, but you will still have to install ES dependencies as per https://github.com/pliablepixels/zmeventnotification/blob/master/README.md#install-dependencies"  || print_error "failed"
+            print_success "Completed, but you will still have to install ES dependencies as per https://zmeventnotification.readthedocs.io/en/latest/guides/install.html#install-dependencies"  || print_error "failed"
     #echo "Done, but you will still have to manually install all ES dependencies as per https://github.com/pliablepixels/zmeventnotification#how-do-i-install-it"
 }
 
@@ -332,7 +332,7 @@ print_opencv_message() {
     
      Hooks are installed, but please make sure you have the right version
      of OpenCV installed. I recommend removing any pip packages you may
-     have installed of opencv* and compiling OpenCV 4.2.x from source. 
+     have installed of opencv* and compiling OpenCV 4.3.x from source. 
      See https://zmeventnotification.readthedocs.io/en/latest/guides/hooks.html#opencv-install
 
     |----------------------------------------------------------------------|
