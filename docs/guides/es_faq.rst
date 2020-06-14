@@ -243,7 +243,7 @@ Related to ``hook`` we also have a ``hook_description`` attribute. When
 set to 1, the text returned by the hook script will overwrite the alarm
 text that is notified.
 
-We also have a ``skip_monitors`` attribute. This is a comma separated
+We also have a ``hook_skip_monitors`` attribute. This is a comma separated
 list of monitors. When alarms occur in those monitors, hooks will not be
 called and the ES will directly send out notifications (if enabled in
 ES). This is useful when you don't want to invoke hooks for certain
