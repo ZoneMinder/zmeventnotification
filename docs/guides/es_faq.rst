@@ -314,6 +314,8 @@ conditions to be met:
 - The IP/hostname needs to be publicly accessible (Apple/Google servers render the image) 
 - You need ZM 1.32.3 or above
 - A good way to isolate if its a URL problem or something else is replace the ``picture_url`` with a knows HTTPS url like `this <https://upload.wikimedia.org/wikipedia/commons/5/5f/Chinese_new_year_dragon_2014.jpg>`__
+  Note that when you use a test image, comment out ``picture_portal_username`` and
+  ``picture_portal_password`` so they are not auto appended.
 
 Before you report issues, please make sure you have been diligent in
 testing - Try with a public URL as indicated above. This is important. -
