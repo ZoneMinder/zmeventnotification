@@ -185,14 +185,47 @@ install it in the phone. Why that is needed only for WSS and not for
 HTTPS is a mystery to me. The alternative is to run the eventserver in
 WS mode by disabling SSL.
 
-Making sure everything is running (in manual mode)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  I am assuming you have downloaded the files to your current directory
-   in the step below
--  Make sure you do a ``chmod a+x ./zmeventnotification.pl``
+Install the server (optionally along with hooks) 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**NOTE** : By default ``install.sh`` moves the ES script to ``/usr/bin``. 
+If your ZM install is elsewhere, like ``/usr/local/bin`` please modify the ``TARGET_BIN`` variable
+in ``install.sh`` before executing it.
+
+-  You can now move the ES to the right place by simply doing
+   ``sudo ./install.sh`` and following prompts. Other options are below:
+-  Execute ``sudo ./install.sh --no-install-hook`` to move the ES to the
+   right place without installing machine learning hooks
+
+
+
+Update the configuration files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When you install the ES, it comes with default configuration files. They key files
+are:
+
+- ``/etc/zm/zmeventnotification.ini`` - various parameters that control the ES
+- ``/etc/zm/objectconfig.ini`` - various parameters that control the machine learning hooks
+- ``/etc/zm/secrets.ini`` - a common key/value mapping file where you store your personal configurations
+
+You **always** have to modify ``/etc/zm/secrets.ini`` to your server settings. Please review
+the keys and update them with your settings. At the least, you will need to modify:
+
+- ``ZM_USER`` - the username used to log into your ZM web console
+- ``ZM_PASSWORD`` - the password for your ZM web console
+- ``ZM_PORTAL`` - the URL for your ZM instance (typically ``https://<domain>/zm``)
+- ``ZM_API_PORTAL`` - the URL for your ZM API instance (typically ``https://<portal>/api``)
+- ``ES_CERT_FILE`` and ``ES_KEY_FILE`` - the certificates to use if you are using HTTPS
+
+Next, You can/should run it manually at first to check if it works
+
+Optional but Recommended: Making sure everything is running (in manual mode)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 -  Start the event server manually first using
-   ``sudo -u www-data ./zmeventnotification.pl --config ./zmeventnotification.ini``
+   ``sudo -u www-data /usr/bin/zmeventnotification.pl``
    (Note that if you omit ``--config`` it will look for
    ``/etc/zm/zmeventnotification.ini`` and if that doesn't exist, it
    will use default values) and make sure you check syslogs to ensure
@@ -212,17 +245,9 @@ Making sure everything is running (in manual mode)
    wrong. See :ref:`this section <debug_reporting_es>` later that describes how to make sure its all working fine
    from command line.
 
-Install the server (optionally along with hooks) 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Making sure the ES gets auto-started when ZM starts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**NOTE** : By default ``install.sh`` moves the ES script to ``/usr/bin``. 
-If your ZM install is elsewhere, like ``/usr/local/bin`` please modify the ``TARGET_BIN`` variable
-in ``install.sh`` before executing it.
-
--  You can now move the ES to the right place by simply doing
-   ``sudo ./install.sh`` and following prompts. Other options are below:
--  Execute ``sudo ./install.sh --no-install-hook`` to move the ES to the
-   right place without installing machine learning hooks
 -  In ZM 1.32.0 and above, go to your web interface, and go to
    ``Options->Systems`` and enable ``OPT_USE_EVENTNOTIFICATION`` and you
    are all set.
@@ -256,5 +281,3 @@ won't know why
    started
 -  To check if its running do a
    ``zmdc.pl status zmeventnotification.pl``
-
-You can/should run it manually at first to check if it works
