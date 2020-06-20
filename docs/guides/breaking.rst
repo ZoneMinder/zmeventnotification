@@ -3,7 +3,14 @@ Breaking Changes
 
 Version 5.15.5 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~~
-- 
+- ``zmeventnotification.ini`` has a new attribute, ``topic`` under ``[mqtt]``
+  which lets you set the topic name for the messages
+
+- ``objectconfig.ini`` has a new attribute, ``only_triggered_zm_zones``. When set to yes,
+  this will remove objects that don't fall into zones that ZM detects motion in.
+  Make sure you read the comments in ``objectconfig.ini`` above the attribute
+  to understand its limitations
+
 
 Version 5.14.4 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~
