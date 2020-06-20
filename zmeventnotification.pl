@@ -87,6 +87,7 @@ use constant {
   DEFAULT_FCM_ENABLE         => 'yes',
   DEFAULT_MQTT_ENABLE        => 'no',
   DEFAULT_MQTT_SERVER        => '127.0.0.1',
+  DEFAULT_MQTT_TOPIC         => 'zoneminder',
   DEFAULT_MQTT_TICK_INTERVAL => 15,
   DEFAULT_MQTT_RETAIN        => 'no',
   DEFAULT_FCM_TOKEN_FILE     => '/var/lib/zmeventnotification/push/tokens.txt',
@@ -173,6 +174,7 @@ my $auth_timeout;
 
 my $use_mqtt;
 my $mqtt_server;
+my $mqtt_topic;
 my $mqtt_username;
 my $mqtt_password;
 my $mqtt_tick_interval;
@@ -454,6 +456,8 @@ sub loadEsConfigSettings {
   $use_mqtt = config_get_val( $config, 'mqtt', 'enable', DEFAULT_MQTT_ENABLE );
   $mqtt_server =
     config_get_val( $config, 'mqtt', 'server', DEFAULT_MQTT_SERVER );
+  $mqtt_topic =
+    config_get_val( $config, 'mqtt', 'topic', DEFAULT_MQTT_TOPIC );
   $mqtt_username = config_get_val( $config, 'mqtt', 'username' );
   $mqtt_password = config_get_val( $config, 'mqtt', 'password' );
   $mqtt_tick_interval =
@@ -630,6 +634,7 @@ Token file ........................... ${\(value_or_undefined($token_file))}
 
 Use MQTT ............................. ${\(yes_or_no($use_mqtt))}
 MQTT Server .......................... ${\(value_or_undefined($mqtt_server))}
+MQTT Topic ........................... ${\(value_or_undefined($mqtt_topic))}
 MQTT Username ........................ ${\(value_or_undefined($mqtt_username))}
 MQTT Password ........................ ${\(present_or_not($mqtt_password))}
 MQTT Retain .......................... ${\(yes_or_no($mqtt_retain))}
@@ -1575,7 +1580,7 @@ sub sendOverMQTTBroker {
   );
 
   printDebug( 'requesting MQTT Publishing Job for EID:' . $alarm->{EventId} ,2);
-  my $topic = join( '/', 'zoneminder', $alarm->{MonitorId} );
+  my $topic = join( '/', $mqtt_topic, $alarm->{MonitorId} );
 
   # Net:MQTT:Simple does not appear to be thread/fork safe so send message to
   # parent process via pipe to create a mqtt_publish job.
