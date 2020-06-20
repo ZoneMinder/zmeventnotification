@@ -17,10 +17,11 @@
 # change this to the path of the object detection config"
 CONFIG_FILE="/etc/zm/objectconfig.ini"
 EVENT_PATH="$5"
+REASON="$4"
 
 
 # use arrays instead of strings to avoid quote hell
-DETECTION_SCRIPT=(/var/lib/zmeventnotification/bin/zm_detect.py --monitorid $2 --eventid $1 --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" )
+DETECTION_SCRIPT=(/var/lib/zmeventnotification/bin/zm_detect.py --monitorid $2 --eventid $1 --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}"  )
 
 RESULTS=$("${DETECTION_SCRIPT[@]}" | grep "detected:")
 

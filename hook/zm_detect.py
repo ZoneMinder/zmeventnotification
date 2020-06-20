@@ -144,6 +144,9 @@ ap.add_argument('-f',
                 '--file',
                 help='internal testing use only - skips event download')
 
+
+ap.add_argument('-r', '--reason', help='reason for event (notes field in ZM)')
+
 args, u = ap.parse_known_args()
 args = vars(args)
 
@@ -254,7 +257,7 @@ if filename2:  # may be none
             'Error reading file {}. It either does not exist or is invalid'.
             format(filename2))
 # create a scaled polygon for object intersection checks
-if not g.polygons:
+if not g.polygons and not g.config['only_triggered_zm_zones']:
     g.polygons.append({
         'name': 'full_image',
         'value': [(0, 0), (oldw, 0), (oldw, oldh), (0, oldh)]

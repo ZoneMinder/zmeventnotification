@@ -135,6 +135,11 @@ config_vals = {
             'default': 'no',
             'type': 'string',
         },
+        'only_triggered_zm_zones':{
+            'section': 'general',
+            'default': 'no',
+            'type': 'string',
+        },
         'poly_color':{
             'section': 'general',
             'default': '(127,140,141)',
