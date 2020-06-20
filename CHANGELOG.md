@@ -1,6 +1,39 @@
 # Changelog
 
-## [v5.13.3](https://github.com/pliablepixels/zmeventnotification/tree/v5.13.3) (2020-04-25)
+## [v5.15.5](https://github.com/pliablepixels/zmeventnotification/tree/v5.15.5) (2020-06-20)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.13.3...v5.15.5)
+
+**Implemented enhancements:**
+
+- Allow feature to limit object detection only to zones ZM detected motion in, at the time of reporting to ES [\#273](https://github.com/pliablepixels/zmeventnotification/issues/273)
+- Create a placeholder for user invoked scripts that don't need messing with OD scripts [\#259](https://github.com/pliablepixels/zmeventnotification/issues/259)
+
+**Fixed bugs:**
+
+- Docs Issue: Making sure everything is running \(in manual mode\) [\#270](https://github.com/pliablepixels/zmeventnotification/issues/270)
+
+**Closed issues:**
+
+- question:  understanding alerts and object detection \(with import\_zones\) [\#271](https://github.com/pliablepixels/zmeventnotification/issues/271)
+- question: skip\_monitors and hook\_skip\_monitors [\#269](https://github.com/pliablepixels/zmeventnotification/issues/269)
+- Training faces [\#268](https://github.com/pliablepixels/zmeventnotification/issues/268)
+- Fatal SQL Error [\#264](https://github.com/pliablepixels/zmeventnotification/issues/264)
+- CSPR configuration  [\#258](https://github.com/pliablepixels/zmeventnotification/issues/258)
+- Questions about detect pattern in zones and alpr known plates [\#256](https://github.com/pliablepixels/zmeventnotification/issues/256)
+- Enhancement: don't tag items reported in previous alert [\#255](https://github.com/pliablepixels/zmeventnotification/issues/255)
+- Problem with own push\_api script [\#254](https://github.com/pliablepixels/zmeventnotification/issues/254)
+- Error downloading files: unknown url type [\#252](https://github.com/pliablepixels/zmeventnotification/issues/252)
+- Getting Constant Notifications - "Last Time Not Found" [\#248](https://github.com/pliablepixels/zmeventnotification/issues/248)
+
+**Merged pull requests:**
+
+- add a configuration option to set the topic for MQTT instead of the h… [\#272](https://github.com/pliablepixels/zmeventnotification/pull/272) ([dennyreiter](https://github.com/dennyreiter))
+- ftp\_detect\_image.py contrib script [\#261](https://github.com/pliablepixels/zmeventnotification/pull/261) ([0n3man](https://github.com/0n3man))
+- Update image\_manip.py [\#260](https://github.com/pliablepixels/zmeventnotification/pull/260) ([0n3man](https://github.com/0n3man))
+- spelling fix [\#253](https://github.com/pliablepixels/zmeventnotification/pull/253) ([firefly2442](https://github.com/firefly2442))
+
+## [v5.13.3](https://github.com/pliablepixels/zmeventnotification/tree/v5.13.3) (2020-04-27)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.11.3...v5.13.3)
 
@@ -17,6 +50,7 @@
 
 **Closed issues:**
 
+- zmeventnotification.pl crash when i open zmninja [\#251](https://github.com/pliablepixels/zmeventnotification/issues/251)
 - Error when running zm\_train\_faces.py \(KeyError: 'file'\) [\#250](https://github.com/pliablepixels/zmeventnotification/issues/250)
 - Better images for notifications  [\#244](https://github.com/pliablepixels/zmeventnotification/issues/244)
 - Feature suggestion: Support forced alarm trigger via MQTT [\#243](https://github.com/pliablepixels/zmeventnotification/issues/243)
@@ -187,10 +221,6 @@
 - MQTT Enhancement [\#179](https://github.com/pliablepixels/zmeventnotification/issues/179)
 - FR: ZmNinja - Zmeventnotification selection [\#152](https://github.com/pliablepixels/zmeventnotification/issues/152)
 
-**Merged pull requests:**
-
-- Dev [\#181](https://github.com/pliablepixels/zmeventnotification/pull/181) ([pliablepixels](https://github.com/pliablepixels))
-
 ## [v4.6.1](https://github.com/pliablepixels/zmeventnotification/tree/v4.6.1) (2019-11-21)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v4.5.8...v4.6.1)
@@ -329,6 +359,7 @@
 
 **Merged pull requests:**
 
+- Dev [\#181](https://github.com/pliablepixels/zmeventnotification/pull/181) ([pliablepixels](https://github.com/pliablepixels))
 - add secret support [\#168](https://github.com/pliablepixels/zmeventnotification/pull/168) ([pliablepixels](https://github.com/pliablepixels))
 - Fix formatting of code block on Hooks guide page [\#166](https://github.com/pliablepixels/zmeventnotification/pull/166) ([davidjb](https://github.com/davidjb))
 - Fixing MQTT Insecure connection [\#146](https://github.com/pliablepixels/zmeventnotification/pull/146) ([artistan82](https://github.com/artistan82))
