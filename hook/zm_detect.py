@@ -257,7 +257,7 @@ if filename2:  # may be none
             'Error reading file {}. It either does not exist or is invalid'.
             format(filename2))
 # create a scaled polygon for object intersection checks
-if not g.polygons and not g.config['only_triggered_zm_zones']:
+if not g.polygons and g.config['only_triggered_zm_zones'] == 'no':
     g.polygons.append({
         'name': 'full_image',
         'value': [(0, 0), (oldw, 0), (oldw, oldh), (0, oldh)]
