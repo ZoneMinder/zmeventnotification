@@ -56,6 +56,7 @@ def str_split(my_str):
 
 # Imports zone definitions from ZM
 def import_zm_zones(mid, reason):
+    match_reason = True if g.config['only_triggered_zm_zones']=='yes' else False
     url = g.config['portal'] + '/api/zones/forMonitor/' + mid + '.json'
     g.logger.debug('Getting ZM zones using {}?user=xxx&pass=yyy'.format(url),level=2)
     url = url + '?user=' + g.config['user']
@@ -90,7 +91,7 @@ def import_zm_zones(mid, reason):
     # honor ZM motion zones
 
     reason_zones = []
-    if reason and 'Motion:' in reason:
+    if match_reason and reason and 'Motion:' in reason:
         rz = reason.split('Motion:')
         if len(rz) > 1:
             rz = rz[1]
@@ -99,7 +100,7 @@ def import_zm_zones(mid, reason):
 
 
     for item in j['zones']:
-        if 'All' in reason_zones or item['Zone']['Name'] in reason_zones:
+        if not match_reason or 'All' in reason_zones or item['Zone']['Name'] in reason_zones:
             g.polygons.append({
                 'name': item['Zone']['Name'],
                 'value': str2tuple(item['Zone']['Coords'])
