@@ -335,7 +335,7 @@ def process_config(args, ctx):
                             g.logger.debug ('ignoring polygon: {} as only_triggered_zm_zones is true'.format(k), level=2)
             # now import zones if needed
             # this should be done irrespective of a monitor section
-            if g.config['only_triggered_zm_zones']:
+            if g.config['only_triggered_zm_zones'] == 'yes':
                 g.config['import_zm_zones'] = 'yes'
             if g.config['import_zm_zones'] == 'yes':
                 import_zm_zones(args.get('monitorid'), args.get('reason'))
