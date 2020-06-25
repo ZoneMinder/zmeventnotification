@@ -328,7 +328,7 @@ def process_config(args, ctx):
                                                     g.config_vals[k]['type'])
                     else:
                         # This means its a polygon for the monitor
-                        if not g.config['only_triggered_zm_zones']:
+                        if not g.config['only_triggered_zm_zones'] == 'yes':
                             g.polygons.append({'name': k, 'value': str2tuple(v)})
                             g.logger.debug('adding polygon: {} [{}]'.format(k, v),level=2)
                         else:
