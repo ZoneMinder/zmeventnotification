@@ -58,9 +58,11 @@ def str_split(my_str):
 def import_zm_zones(mid, reason):
     match_reason = True if g.config['only_triggered_zm_zones']=='yes' else False
     url = g.config['portal'] + '/api/zones/forMonitor/' + mid + '.json'
-    g.logger.debug('Getting ZM zones using {}?username=xxx&password=yyy'.format(url),level=2)
+    g.logger.debug('Getting ZM zones using {}?username=xxx&password=yyy&user=xxx&pass=yyy'.format(url),level=2)
     url = url + '?username=' + g.config['user']
     url = url + '&password=' + urllib.parse.quote(g.config['password'], safe='')
+    url = url + '&user=' + g.config['user']
+    url = url + '&pass=' + urllib.parse.quote(g.config['password'], safe='')
 
     if g.config['portal'].lower().startswith('https://'):
         main_handler = urllib.request.HTTPSHandler(context=g.ctx)
