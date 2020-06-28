@@ -222,7 +222,7 @@ if not args.get('file'):
             args)
     except Exception as e:
         g.logger.error(f'Error downloading files: {e}')
-        g.logger.fatal('animation: Traceback:{}'.format(traceback.format_exc()))
+        g.logger.fatal('error: Traceback:{}'.format(traceback.format_exc()))
     
     # filename_alarm will be the first frame to analyze (typically alarm)
     # filename_snapshot will be the second frame to analyze only if the first fails (typically snapshot)
