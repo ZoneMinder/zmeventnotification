@@ -10,7 +10,7 @@ Version 5.15.6 onwards
 
 - In this release, I've also taken a necessary step towards model naming 
   normalization. Basically, ``Yolo`` models are now ``YoloV3`` and ``CSPN`` 
-  is now ``Yolov4``. This is because this is the terminology `Alexy <https://github.com/AlexeyAB/darknet>`__ has started
+  is now ``Yolov4``. This is because this is the terminology `Alexey <https://github.com/AlexeyAB/darknet>`__ has started
   using in his repo. This means you will have to change your ``objectconfig.ini`` and align it with
   the same ``objectconfig.ini`` provided in this repo. I've also normalized the names
   of the config, weights and name files for each model. The short of all of this is, look under

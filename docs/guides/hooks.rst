@@ -207,15 +207,17 @@ See :ref:`this FAQ entry <local_remote_ml>`.
 Which models should I use?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  Yolov3 is the most common model. That being said, I found using CSPN weights along with yolo to be better. 
-   Note however that I've not enabled it by default, because that model requires OpenCV 4.3 or above. 
-   If you use it with versions less than 4.3, it will either error out, or not detect anything. 
-   **Please Note** that the CSPN weights file needs to be *manually downloaded* and placed in the right place. 
-   If you don't have OpenCV >=4.3, use YoloV3. Note that if you use CSPN, just keep model name to yolo and switch the
-   weights
+-  Starting 5.15.6, you have the option of using YoloV3 or YoloV4. V3 is the original one
+   while V4 is an optimized version by Alexey. See `here <https://github.com/AlexeyAB/darknet>`__.
+   V4 is faster, and is supposed to be more accurate but YMMV. Note that you need a version GREATER than 4.3
+   of OpenCV to use YoloV4
 
 - If you are constrained in memory, use tinyyolo
 
+- Each model can further be customized for accuracy vs speed by modifying parameters in
+  their respective ``.cfg`` files. Start `here <https://github.com/AlexeyAB/darknet#pre-trained-models>`__ and then
+  browse the `issues list <https://github.com/AlexeyAB/darknet/issues>`__.
+  
 - For face recognition, use ``face_model=cnn`` for more accuracy and ``face_model=hog`` for better speed
 
 
