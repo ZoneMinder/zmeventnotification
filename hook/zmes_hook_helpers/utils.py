@@ -83,7 +83,10 @@ def import_zm_zones(mid, reason):
     try:
         input_file = opener.open(url)
     except HTTPError as e:
-        g.logger.error(e)
+        g.logger.error(f'HTTP Error in import_zm_zones:{e}')
+        raise
+    except Exception as e:
+        g.logger.error(f'General error in import_zm_zones:{e}')
         raise
 
     c = input_file.read()
