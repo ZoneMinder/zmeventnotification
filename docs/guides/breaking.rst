@@ -22,7 +22,7 @@ Version 5.15.6 onwards
   As of Jun 30,2020, that is the master branch of openCV as 4.3.0 is the latest stable version.
   The updated version of YoloV4 that requires certain functions that were committed on Apr 30.
   See `here <https://github.com/opencv/opencv/issues/17148>`__. So if you suddently see an error like:
-   ``Unsupported activation: mish in function 'ReadDarknetFromCfgStream'`` popping up with YoloV4, 
+  ``Unsupported activation: mish in function 'ReadDarknetFromCfgStream'`` popping up with YoloV4, 
   that is a sign that you need to get a later version of OpenCV.
 
 - There is a new "Tiny Yolo V4" that hasn't yet been integrated into OpenCV. Apparently,
