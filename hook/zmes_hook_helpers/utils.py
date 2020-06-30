@@ -13,6 +13,7 @@ import time
 import re
 import ast
 import urllib.parse
+import traceback
 
 from configparser import ConfigParser
 import zmes_hook_helpers.common_params as g
@@ -352,6 +353,7 @@ def process_config(args, ctx):
     except Exception as e:
         g.logger.error('Error parsing config:{}'.format(args.get('config')))
         g.logger.error('Error was:{}'.format(e))
+        g.logger.fatal('error: Traceback:{}'.format(traceback.format_exc()))
         exit(0)
 
     # Now lets make sure we take care of parameter substitutions {{}}
