@@ -6,6 +6,7 @@
 
 **Closed issues:**
 
+- Various breaking updates to 5.15.6 [\#281](https://github.com/pliablepixels/zmeventnotification/issues/281)
 - Function process\_config\(\) not checking only\_triggered\_zm\_zones correctly [\#277](https://github.com/pliablepixels/zmeventnotification/issues/277)
 - ZoneMinder zones are always imported regardless of the setting of import\_zm\_zones [\#275](https://github.com/pliablepixels/zmeventnotification/issues/275)
 
