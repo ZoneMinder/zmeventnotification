@@ -1,6 +1,15 @@
 # Changelog
 
-## [v5.15.5](https://github.com/pliablepixels/zmeventnotification/tree/v5.15.5) (2020-06-20)
+## [v5.15.6](https://github.com/pliablepixels/zmeventnotification/tree/v5.15.6) (2020-06-30)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.15.5...v5.15.6)
+
+**Closed issues:**
+
+- Function process\_config\(\) not checking only\_triggered\_zm\_zones correctly [\#277](https://github.com/pliablepixels/zmeventnotification/issues/277)
+- ZoneMinder zones are always imported regardless of the setting of import\_zm\_zones [\#275](https://github.com/pliablepixels/zmeventnotification/issues/275)
+
+## [v5.15.5](https://github.com/pliablepixels/zmeventnotification/tree/v5.15.5) (2020-06-25)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.13.3...v5.15.5)
 
@@ -15,6 +24,7 @@
 
 **Closed issues:**
 
+- No patterns found using any models in all files [\#274](https://github.com/pliablepixels/zmeventnotification/issues/274)
 - question:  understanding alerts and object detection \(with import\_zones\) [\#271](https://github.com/pliablepixels/zmeventnotification/issues/271)
 - question: skip\_monitors and hook\_skip\_monitors [\#269](https://github.com/pliablepixels/zmeventnotification/issues/269)
 - Training faces [\#268](https://github.com/pliablepixels/zmeventnotification/issues/268)
@@ -28,6 +38,9 @@
 
 **Merged pull requests:**
 
+- Update query parameters in utils.py to fix authentication failure [\#279](https://github.com/pliablepixels/zmeventnotification/pull/279) ([cornercase](https://github.com/cornercase))
+- Modify process\_config\(\) to properly check only\_triggered\_zm\_zones for… [\#278](https://github.com/pliablepixels/zmeventnotification/pull/278) ([neillbell](https://github.com/neillbell))
+- Properly check the state of only\_triggered\_zm\_zones  [\#276](https://github.com/pliablepixels/zmeventnotification/pull/276) ([neillbell](https://github.com/neillbell))
 - add a configuration option to set the topic for MQTT instead of the h… [\#272](https://github.com/pliablepixels/zmeventnotification/pull/272) ([dennyreiter](https://github.com/dennyreiter))
 - ftp\_detect\_image.py contrib script [\#261](https://github.com/pliablepixels/zmeventnotification/pull/261) ([0n3man](https://github.com/0n3man))
 - Update image\_manip.py [\#260](https://github.com/pliablepixels/zmeventnotification/pull/260) ([0n3man](https://github.com/0n3man))
@@ -221,6 +234,10 @@
 - MQTT Enhancement [\#179](https://github.com/pliablepixels/zmeventnotification/issues/179)
 - FR: ZmNinja - Zmeventnotification selection [\#152](https://github.com/pliablepixels/zmeventnotification/issues/152)
 
+**Merged pull requests:**
+
+- Dev [\#181](https://github.com/pliablepixels/zmeventnotification/pull/181) ([pliablepixels](https://github.com/pliablepixels))
+
 ## [v4.6.1](https://github.com/pliablepixels/zmeventnotification/tree/v4.6.1) (2019-11-21)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v4.5.8...v4.6.1)
@@ -359,7 +376,6 @@
 
 **Merged pull requests:**
 
-- Dev [\#181](https://github.com/pliablepixels/zmeventnotification/pull/181) ([pliablepixels](https://github.com/pliablepixels))
 - add secret support [\#168](https://github.com/pliablepixels/zmeventnotification/pull/168) ([pliablepixels](https://github.com/pliablepixels))
 - Fix formatting of code block on Hooks guide page [\#166](https://github.com/pliablepixels/zmeventnotification/pull/166) ([davidjb](https://github.com/davidjb))
 - Fixing MQTT Insecure connection [\#146](https://github.com/pliablepixels/zmeventnotification/pull/146) ([artistan82](https://github.com/artistan82))

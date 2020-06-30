@@ -20,10 +20,11 @@ PIP=pip3
 
 # Models to install
 # If you don't want them, pass them as variables to install.sh
-# example: sudo INSTALL_YOLO=no ./install.sh
-INSTALL_YOLO=${INSTALL_YOLO:-yes}
-INSTALL_TINYYOLO=${INSTALL_TINYYOLO:-yes}
-INSTALL_CSPN=${INSTALL_CSPN:-yes}
+# example: sudo INSTALL_YOLO4=no ./install.sh
+INSTALL_YOLOV3=${INSTALL_YOLOV3:-yes}
+INSTALL_YOLOV4=${INSTALL_YOLOV4:-yes}
+INSTALL_TINYYOLOV3=${INSTALL_TINYYOLOV3:-yes}
+INSTALL_YOLOV3=${INSTALL_YOLOV3:-yes}
 
 
 TARGET_CONFIG='/etc/zm'
@@ -137,9 +138,9 @@ verify_config() {
 
     echo
     echo "Models that will be checked/installed:"
-    echo "Yolo: ${INSTALL_YOLO}"
-    echo "TinyYolo: ${INSTALL_TINYYOLO}"
-    echo "CSPN: ${INSTALL_CSPN}"
+    echo "Yolo 3: ${INSTALL_YOLOV3}"
+    echo "Yolo 4: ${INSTALL_YOLOV4}"
+    echo "TinyYolo 3: ${INSTALL_TINYYOLOV3}"
 
     echo
      [[ ${INTERACTIVE} == 'yes' ]] && read -p "If any of this looks wrong, please hit Ctrl+C and edit the variables in this script..."
@@ -149,7 +150,7 @@ verify_config() {
 
 # move proc for zmeventnotification.pl
 install_es() {
-    echo '***** Installing ES **********'
+    echo '*** Installing ES ***'
     mkdir -p "${TARGET_DATA}/push" 2>/dev/null
     install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN_ES}" && 
             print_success "Completed, but you will still have to install ES dependencies as per https://zmeventnotification.readthedocs.io/en/latest/guides/install.html#install-dependencies"  || print_error "failed"
@@ -171,20 +172,23 @@ install_hook() {
     mkdir -p "${TARGET_DATA}/unknown_faces" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/yolov3" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/tinyyolo" 2>/dev/null
-    mkdir -p "${TARGET_DATA}/models/cspn" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/models/yolov4" 2>/dev/null
     mkdir -p "${TARGET_DATA}/misc" 2>/dev/null
     echo "everything that does not fit anywhere else :-)" > "${TARGET_DATA}/misc/README.txt" 2>/dev/null
     
 
-    if [ "${INSTALL_YOLO}" == "yes" ]
+    if [ "${INSTALL_YOLOV3}" == "yes" ]
     then
       # If you don't already have data files, get them
       # First YOLOV3
       echo 'Checking for YoloV3 data files....'
-      targets=('yolov3.cfg' 'yolov3_classes.txt' 'yolov3.weights')
+      targets=('yolov3.cfg' 'coco.names' 'yolov3.weights')
       sources=('https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg'
               'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
               'https://pjreddie.com/media/files/yolov3.weights')
+
+      [ -f "${TARGET_DATA}/models/yolov3/yolov3_classes.txt" ] && rm "${TARGET_DATA}/models/yolov3/yolov3_classes.txt"
+      
 
       for ((i=0;i<${#targets[@]};++i))
       do
@@ -198,15 +202,17 @@ install_hook() {
       done
     fi
 
-    if [ "${INSTALL_TINYYOLO}" == "yes" ]
+    if [ "${INSTALL_TINYYOLOV3}" == "yes" ]
     then
-      # Next up, TinyYOLO
+      # Next up, TinyYOLOV3
       echo
-      echo 'Checking for TinyYOLO data files...'
-      targets=('yolov3-tiny.cfg' 'yolov3-tiny.txt' 'yolov3-tiny.weights')
+      echo 'Checking for TinyYOLOV3 data files...'
+      targets=('yolov3-tiny.cfg' 'coco.names' 'yolov3-tiny.weights')
       sources=('https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg'
               'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
               'https://pjreddie.com/media/files/yolov3-tiny.weights')
+
+      [ -f "${TARGET_DATA}/models/tinyyolo/yolov3-tiny.txt" ] && rm "${TARGET_DATA}/models/yolov3/yolov3-tiny.txt"
 
       for ((i=0;i<${#targets[@]};++i))
       do
@@ -220,22 +226,31 @@ install_hook() {
       done
     fi
 
-  if [ "${INSTALL_CSPN}" == "yes" ]
+  if [ "${INSTALL_YOLOV4}" == "yes" ]
   then
-    # Next up, CSPNet
+
+    # Next up, YoloV4
+    if [ -d "${TARGET_DATA}/models/cspn" ]
+    then 
+        echo "Removing old CSPN files, it is YoloV4 now"
+        rm -rf "${TARGET_DATA}/models/cspn" 2>/dev/null
+    fi
+
+    
     echo
-    echo 'Checking for CSPNet data files...'
-    print_warning 'Note, you need OpenCV >= 4.3 for CSPNet to work'
-    targets=('csresnext50-panet-spp-original-optimal.cfg' 'coco.names')
-    sources=('https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/csresnext50-panet-spp-original-optimal.cfg'
+    echo 'Checking for YOLOV4 data files...'
+    print_warning 'Note, you need OpenCV > 4.3 for Yolov4 to work'
+    targets=('yolov4.cfg' 'coco.names' 'yolov4.weights')
+    sources=('https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4.cfg'
              'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
+             'https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights'
             )
 
     for ((i=0;i<${#targets[@]};++i))
     do
-        if [ ! -f "${TARGET_DATA}/models/cspn/${targets[i]}" ]
+        if [ ! -f "${TARGET_DATA}/models/yolov4/${targets[i]}" ]
         then
-            ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/cspn/${targets[i]}"
+            ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/yolov4/${targets[i]}"
         else
             echo "${targets[i]} exists, no need to download"
 
@@ -490,15 +505,7 @@ fi
 # Make sure webserver can access them
 chown -R ${WEB_OWNER}:${WEB_GROUP} "${TARGET_DATA}"
 
-if [ "${INSTALL_CSPN}" == "yes" ] && [ ! -f "${TARGET_DATA}/models/cspn/csresnext50-panet-spp-original-optimal_final.weights" ]
-    then
-      print_important '*************************************************************'
-      print_important 'You need to manually download CSPN weights'
-      print_important 'NOTE: Please download https://drive.google.com/open?id=1_NnfVgj0EDtb_WLNoXV8Mo7WKgwdYZCc'
-      print_important "And place it inside ${TARGET_DATA}/models/cspn"
-      print_important '*************************************************************'
 
-    fi
 
 echo
 echo "*** Please remember to start the Event Server after this update ***" 

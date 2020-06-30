@@ -1,6 +1,35 @@
 Breaking Changes
 ----------------
 
+Version 5.15.6 onwards
+~~~~~~~~~~~~~~~~~~~~~~~~~
+- I got lazy with 5.15.5. There were some errors that I fixed post 5.15
+  which I 'post-pushed' into 5.15.5. It is possible you installed 5.15.5 and
+  don't have these fixes. In other words, if your 5.15.5 is broken, Please
+  upgrade.
+
+- In this release, I've also taken a necessary step towards model naming 
+  normalization. Basically, ``Yolo`` models are now ``YoloV3`` and ``CSPN`` 
+  is now ``Yolov4``. This is because this is the terminology `Alexy <https://github.com/AlexeyAB/darknet>`__ has started
+  using in his repo. This means you will have to change your ``objectconfig.ini`` and align it with
+  the same ``objectconfig.ini`` provided in this repo. I've also normalized the names
+  of the config, weights and name files for each model. The short of all of this is, look under
+  the ``[yolo]`` section of the sample config and replace your current yolo paths.
+  Note that I assume you use ``install.sh`` to install. If not, you'll have to manually
+  rename the old model names to the new ones.
+
+- If you plan to use YoloV4, the minimum version requirement is the version *after* 4.3.0.
+  As of Jun 30,2020, that is the master branch of openCV as 4.3.0 is the latest stable version.
+  The updated version of YoloV4 that requires certain functions that were committed on Apr 30.
+  See `here <https://github.com/opencv/opencv/issues/17148>`__. So if you suddently see an error like:
+  `` Unsupported activation: mish in function 'ReadDarknetFromCfgStream'`` popping up with YoloV4, 
+  that is a sign that you need to get a later version of OpenCV.
+
+- There is a new "Tiny Yolo V4" that hasn't yet been integrated into OpenCV. Apparently,
+  that offers a lot of improvement over V3. However, that will require you to recompile OpenCV again
+  after it is integrated. If you don't want to do this twice, once for YoloV4 and again for TinyYolov4,
+  wait a bit before you use YoloV4, till `this issue <https://github.com/opencv/opencv/issues/17666>`__ is addressed.
+
 Version 5.15.5 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~~
 - ``zmeventnotification.ini`` has a new attribute, ``topic`` under ``[mqtt]``
