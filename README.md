@@ -19,6 +19,9 @@ Documentation
 - Documentation, including installation, FAQ etc.are [here for the latest stable release](https://zmeventnotification.readthedocs.io/en/stable/) and [here for the master branch](https://zmeventnotification.readthedocs.io/en/latest/)
 - Always refer to the [Breaking Changes](https://zmeventnotification.readthedocs.io/en/latest/guides/breaking.html) document before you upgrade.
 
+Requirements
+-------------
+- Python 3.6 or above
 
 Screenshots
 ------------
