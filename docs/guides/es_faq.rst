@@ -476,7 +476,8 @@ As it turns out many folks run ZM inside the LAN only and don't want to
 deal with certificates. Fair enough. For that situation, edit
 zmeventnotification.pl and use ``enable = 0`` in the ``[ssl]`` section
 of the configuration file. **Remember to ensure that your EventServer
-URL in zmNinja does NOT use wss too - change it to ws**
+URL in zmNinja does NOT use wss too - change it to ws**. Also remember to
+restart the ES after this change.
 
 
 .. _es-hooks-logging:
