@@ -366,11 +366,11 @@ connect to the event server. This may be because of several reasons:
 
 * Your event server IP/DNS is not reachable from your phone 
 
-* If you are using SSL, your certificates are invalid (try disabling SSL first - both
-on the event server and on zmNinja)
+* If you are using SSL, your certificates are invalid (try disabling SSL first - both 
+  on the event server and on zmNinja)
 
-* Your zmNinja configuration is wrong (the most common error I see is the server has SSL disabled, but
-zmNinja is configured to use ``wss://`` instead of ``ws://``)
+* Your zmNinja configuration is wrong (the most common error I see is the server has 
+  SSL disabled, but  zmNinja is configured to use ``wss://`` instead of ``ws://``)
 
 7. Assuming the above worked, go to zmNinja logs in the app. Somewhere
    in the logs, you should see a line similar to:
