@@ -74,6 +74,11 @@ config_vals = {
             'default': '5%',
             'type': 'string'
         },
+        'max_object_size':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
         'frame_id':{
             'section': 'general',
             'default': 'snapshot',

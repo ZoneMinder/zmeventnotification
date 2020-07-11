@@ -265,6 +265,8 @@ def processFilters(bbox, label, conf, match):
     new_bbox = []
     new_conf = []
 
+    
+
     for idx, b in enumerate(bbox):
 
         doesIntersect = False
@@ -281,6 +283,9 @@ def processFilters(bbox, label, conf, match):
         b.insert(3, (b[0][0], b[2][1]))
         g.logger.debug("intersection: polygon in process={}".format(b),level=2)
         obj = Polygon(b)
+
+       
+
         for p in g.polygons:
             poly = Polygon(p['value'])
             if obj.intersects(poly):

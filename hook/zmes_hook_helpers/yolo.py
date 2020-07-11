@@ -5,6 +5,7 @@ import sys
 import cv2
 import time
 import datetime
+import re
 
 # Class to handle Yolo based detection
 
@@ -147,6 +148,28 @@ class Yolo:
             y = box[1]
             w = box[2]
             h = box[3]
+
+            object_area = w * h
+            max_object_area = object_area
+
+            if g.config['max_object_size']:
+                g.logger.debug('Max object size found to be:'.format(g.config['max_object_size']),level=3)
+                # Let's make sure its the right size
+                m = re.match('(\d*\.?\d*)(px|%)?$', g.config['max_object_size'],
+                            re.IGNORECASE)
+                if m:
+                    max_object_area = float(m.group(1))
+                    if m.group(2) == '%':
+                        max_object_area = float(m.group(1))/100.0*(modelH * modelW)
+                        g.logger.debug ('Converted {}% to {}'.format(m.group(1), max_object_area), level=2);
+                else:
+                    g.logger.error('max_object_area misformatted: {} - ignoring'.format(
+                        g.config['max_object_area']))
+                    
+                if (object_area > max_object_area):
+                    g.logger.debug ('Ignoring object:{}, as its area: {}px exceeds max_object_area of {}px'.format(str(self.classes[class_ids[i]]), object_area, max_object_area))
+                    continue
+
             if confidences[i] >= g.config['yolo_min_confidence']:
                 bbox.append([
                     int(round(x)),
