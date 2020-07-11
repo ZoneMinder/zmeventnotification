@@ -125,23 +125,29 @@ verify_config() {
     echo "Your webserver group seems to be ${WEB_GROUP}"
     echo "wget is at ${WGET}"
     echo
+
     echo "Install Event Server: ${INSTALL_ES}"
     echo "Install Event Server config: ${INSTALL_ES_CONFIG}"
     echo "Install Hooks: ${INSTALL_HOOK}"
     echo "Install Hooks config: ${INSTALL_HOOK_CONFIG}"
+    echo "Download and install models (if needed): ${DOWNLOAD_MODELS}"
     echo
+
     [[ ${INSTALL_ES} != 'no' ]] && echo "The Event Server will be installed to ${TARGET_BIN_ES}"
     [[ ${INSTALL_ES_CONFIG} != 'no' ]] && echo "The Event Server config will be installed to ${TARGET_CONFIG}"
 
-    [[ ${INSTALL_HOOK} != 'no' ]] && echo "The hook files will be installed to ${TARGET_DATA} sub-folders"
-    [[ ${INSTALL_HOOK_CONFIG} != 'no' ]] && echo "The hook config files will be installed to ${TARGET_CONFIG}"
+    [[ ${INSTALL_HOOK} != 'no' ]] && echo "Hooks will be installed to ${TARGET_DATA} sub-folders"
+    [[ ${INSTALL_HOOK_CONFIG} != 'no' ]] && echo "Hook config files will be installed to ${TARGET_CONFIG}"
 
     echo
-    echo "Models that will be checked/installed:"
-    echo "Yolo 3: ${INSTALL_YOLOV3}"
-    echo "Yolo 4: ${INSTALL_YOLOV4}"
-    echo "TinyYolo 3: ${INSTALL_TINYYOLOV3}"
+    if [[ ${DOWNLOAD_MODELS} == 'yes' ]]
+    then
+        echo "Models that will be checked/installed:"
+        echo "Yolo 3: ${INSTALL_YOLOV3}"
+        echo "Yolo 4: ${INSTALL_YOLOV4}"
+        echo "TinyYolo 3: ${INSTALL_TINYYOLOV3}"
 
+    fi
     echo
      [[ ${INTERACTIVE} == 'yes' ]] && read -p "If any of this looks wrong, please hit Ctrl+C and edit the variables in this script..."
 
@@ -176,88 +182,93 @@ install_hook() {
     mkdir -p "${TARGET_DATA}/misc" 2>/dev/null
     echo "everything that does not fit anywhere else :-)" > "${TARGET_DATA}/misc/README.txt" 2>/dev/null
     
-
-    if [ "${INSTALL_YOLOV3}" == "yes" ]
+    if [ "${DOWNLOAD_MODELS}" == "yes" ]
     then
-      # If you don't already have data files, get them
-      # First YOLOV3
-      echo 'Checking for YoloV3 data files....'
-      targets=('yolov3.cfg' 'coco.names' 'yolov3.weights')
-      sources=('https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg'
-              'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
-              'https://pjreddie.com/media/files/yolov3.weights')
 
-      [ -f "${TARGET_DATA}/models/yolov3/yolov3_classes.txt" ] && rm "${TARGET_DATA}/models/yolov3/yolov3_classes.txt"
-      
-
-      for ((i=0;i<${#targets[@]};++i))
-      do
-          if [ ! -f "${TARGET_DATA}/models/yolov3/${targets[i]}" ]
-          then
-              ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/yolov3/${targets[i]}"
-          else
-              echo "${targets[i]} exists, no need to download"
-
-          fi
-      done
-    fi
-
-    if [ "${INSTALL_TINYYOLOV3}" == "yes" ]
-    then
-      # Next up, TinyYOLOV3
-      echo
-      echo 'Checking for TinyYOLOV3 data files...'
-      targets=('yolov3-tiny.cfg' 'coco.names' 'yolov3-tiny.weights')
-      sources=('https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg'
-              'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
-              'https://pjreddie.com/media/files/yolov3-tiny.weights')
-
-      [ -f "${TARGET_DATA}/models/tinyyolo/yolov3-tiny.txt" ] && rm "${TARGET_DATA}/models/yolov3/yolov3-tiny.txt"
-
-      for ((i=0;i<${#targets[@]};++i))
-      do
-          if [ ! -f "${TARGET_DATA}/models/tinyyolo/${targets[i]}" ]
-          then
-              ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/tinyyolo/${targets[i]}"
-          else
-              echo "${targets[i]} exists, no need to download"
-
-          fi
-      done
-    fi
-
-  if [ "${INSTALL_YOLOV4}" == "yes" ]
-  then
-
-    # Next up, YoloV4
-    if [ -d "${TARGET_DATA}/models/cspn" ]
-    then 
-        echo "Removing old CSPN files, it is YoloV4 now"
-        rm -rf "${TARGET_DATA}/models/cspn" 2>/dev/null
-    fi
-
-    
-    echo
-    echo 'Checking for YOLOV4 data files...'
-    print_warning 'Note, you need OpenCV > 4.3 for Yolov4 to work'
-    targets=('yolov4.cfg' 'coco.names' 'yolov4.weights')
-    sources=('https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4.cfg'
-             'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
-             'https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights'
-            )
-
-    for ((i=0;i<${#targets[@]};++i))
-    do
-        if [ ! -f "${TARGET_DATA}/models/yolov4/${targets[i]}" ]
+        if [ "${INSTALL_YOLOV3}" == "yes" ]
         then
-            ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/yolov4/${targets[i]}"
-        else
-            echo "${targets[i]} exists, no need to download"
+        # If you don't already have data files, get them
+        # First YOLOV3
+        echo 'Checking for YoloV3 data files....'
+        targets=('yolov3.cfg' 'coco.names' 'yolov3.weights')
+        sources=('https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg'
+                'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
+                'https://pjreddie.com/media/files/yolov3.weights')
 
+        [ -f "${TARGET_DATA}/models/yolov3/yolov3_classes.txt" ] && rm "${TARGET_DATA}/models/yolov3/yolov3_classes.txt"
+        
+
+        for ((i=0;i<${#targets[@]};++i))
+        do
+            if [ ! -f "${TARGET_DATA}/models/yolov3/${targets[i]}" ]
+            then
+                ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/yolov3/${targets[i]}"
+            else
+                echo "${targets[i]} exists, no need to download"
+
+            fi
+        done
         fi
-    done
-  fi
 
+        if [ "${INSTALL_TINYYOLOV3}" == "yes" ]
+        then
+        # Next up, TinyYOLOV3
+        echo
+        echo 'Checking for TinyYOLOV3 data files...'
+        targets=('yolov3-tiny.cfg' 'coco.names' 'yolov3-tiny.weights')
+        sources=('https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg'
+                'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
+                'https://pjreddie.com/media/files/yolov3-tiny.weights')
+
+        [ -f "${TARGET_DATA}/models/tinyyolo/yolov3-tiny.txt" ] && rm "${TARGET_DATA}/models/yolov3/yolov3-tiny.txt"
+
+        for ((i=0;i<${#targets[@]};++i))
+        do
+            if [ ! -f "${TARGET_DATA}/models/tinyyolo/${targets[i]}" ]
+            then
+                ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/tinyyolo/${targets[i]}"
+            else
+                echo "${targets[i]} exists, no need to download"
+
+            fi
+        done
+        fi
+
+        if [ "${INSTALL_YOLOV4}" == "yes" ]
+        then
+
+            # Next up, YoloV4
+            if [ -d "${TARGET_DATA}/models/cspn" ]
+            then 
+                echo "Removing old CSPN files, it is YoloV4 now"
+                rm -rf "${TARGET_DATA}/models/cspn" 2>/dev/null
+            fi
+
+            
+            echo
+            echo 'Checking for YOLOV4 data files...'
+            print_warning 'Note, you need OpenCV > 4.3 for Yolov4 to work'
+            targets=('yolov4.cfg' 'coco.names' 'yolov4.weights')
+            sources=('https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4.cfg'
+                    'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
+                    'https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights'
+                    )
+
+            for ((i=0;i<${#targets[@]};++i))
+            do
+                if [ ! -f "${TARGET_DATA}/models/yolov4/${targets[i]}" ]
+                then
+                    ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/yolov4/${targets[i]}"
+                else
+                    echo "${targets[i]} exists, no need to download"
+
+                fi
+            done
+        fi
+    else
+        echo "Skipping model downloads"
+    fi
+    
     # Now install the ML hooks
 
     echo "*** Installing push api plugins ***"
@@ -359,7 +370,7 @@ EOF
 display_help() {
     cat << EOF
     
-    $0 [-h|--help] [--install-es|--no-install-es] [--install-hook|--no-install-hook] [--install-config|--no-install-config] [--no-pysudo]
+    $0 [-h|--help] [--install-es|--no-install-es] [--install-hook|--no-install-hook] [--install-config|--no-install-config] [--no-pysudo] [--no-download-models]
 
         When used without any parameters executes in interactive mode
 
@@ -379,6 +390,9 @@ display_help() {
         --no-pysudo: If specified will install python packages 
         without sudo (some users don't install packages globally)
 
+        --no-download-models: If specified will not download any models.
+        You may want to do this if using mlapi
+
 
 EOF
 }
@@ -392,12 +406,18 @@ check_args() {
     INSTALL_HOOK_CONFIG='prompt'
     INTERACTIVE='yes'
     PY_SUDO='sudo -H'
+    DOWNLOAD_MODELS='yes'
 
     for key in "${cmd_args[@]}"
     do
     case $key in
         -h|--help)
             display_help && exit
+            shift
+            ;;
+
+        --no-download-models)
+            DOWNLOAD_MODELS='no'
             shift
             ;;
         --no-pysudo)
