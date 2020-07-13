@@ -22,9 +22,10 @@ PIP=pip3
 # If you don't want them, pass them as variables to install.sh
 # example: sudo INSTALL_YOLO4=no ./install.sh
 INSTALL_YOLOV3=${INSTALL_YOLOV3:-yes}
-INSTALL_YOLOV4=${INSTALL_YOLOV4:-yes}
 INSTALL_TINYYOLOV3=${INSTALL_TINYYOLOV3:-yes}
-INSTALL_YOLOV3=${INSTALL_YOLOV3:-yes}
+
+INSTALL_YOLOV4=${INSTALL_YOLOV4:-yes}
+INSTALL_TINYYOLOV4=${INSTALL_TINYYOLOV4:-yes}
 
 
 TARGET_CONFIG='/etc/zm'
@@ -143,9 +144,11 @@ verify_config() {
     if [[ ${DOWNLOAD_MODELS} == 'yes' ]]
     then
         echo "Models that will be checked/installed:"
-        echo "Yolo 3: ${INSTALL_YOLOV3}"
-        echo "Yolo 4: ${INSTALL_YOLOV4}"
-        echo "TinyYolo 3: ${INSTALL_TINYYOLOV3}"
+        echo "Yolo V3: ${INSTALL_YOLOV3}"
+        echo "TinyYolo V3: ${INSTALL_TINYYOLOV3}"
+        echo "Yolo V4: ${INSTALL_YOLOV4}"
+        echo "Tiny Yolo V4": ${INSTALL_TINYYOLOV4}
+       
 
     fi
     echo
@@ -177,7 +180,8 @@ install_hook() {
     mkdir -p "${TARGET_DATA}/known_faces" 2>/dev/null
     mkdir -p "${TARGET_DATA}/unknown_faces" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/yolov3" 2>/dev/null
-    mkdir -p "${TARGET_DATA}/models/tinyyolo" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/models/tinyyolov3" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/models/tinyyolov4" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/yolov4" 2>/dev/null
     mkdir -p "${TARGET_DATA}/misc" 2>/dev/null
     echo "everything that does not fit anywhere else :-)" > "${TARGET_DATA}/misc/README.txt" 2>/dev/null
@@ -213,6 +217,8 @@ install_hook() {
         if [ "${INSTALL_TINYYOLOV3}" == "yes" ]
         then
         # Next up, TinyYOLOV3
+
+        [ -d "${TARGET_DATA}/models/tinyyolo" ] && mv "${TARGET_DATA}/models/tinyyolo" "${TARGET_DATA}/models/tinyyolov3"
         echo
         echo 'Checking for TinyYOLOV3 data files...'
         targets=('yolov3-tiny.cfg' 'coco.names' 'yolov3-tiny.weights')
@@ -220,18 +226,40 @@ install_hook() {
                 'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
                 'https://pjreddie.com/media/files/yolov3-tiny.weights')
 
-        [ -f "${TARGET_DATA}/models/tinyyolo/yolov3-tiny.txt" ] && rm "${TARGET_DATA}/models/yolov3/yolov3-tiny.txt"
+        [ -f "${TARGET_DATA}/models/tinyyolov3/yolov3-tiny.txt" ] && rm "${TARGET_DATA}/models/yolov3/yolov3-tiny.txt"
 
         for ((i=0;i<${#targets[@]};++i))
         do
-            if [ ! -f "${TARGET_DATA}/models/tinyyolo/${targets[i]}" ]
+            if [ ! -f "${TARGET_DATA}/models/tinyyolov3/${targets[i]}" ]
             then
-                ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/tinyyolo/${targets[i]}"
+                ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/tinyyolov3/${targets[i]}"
             else
                 echo "${targets[i]} exists, no need to download"
 
             fi
         done
+        fi
+
+        if [ "${INSTALL_TINYYOLOV4}" == "yes" ]
+        then
+            # Next up, TinyYOLOV4
+            echo
+            echo 'Checking for TinyYOLOV4 data files...'
+            targets=('yolov4-tiny.cfg' 'coco.names' 'yolov4-tiny.weights')
+            sources=('https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4-tiny.cfg'
+                    'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
+                    'https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre/yolov4-tiny.weights')
+
+            for ((i=0;i<${#targets[@]};++i))
+            do
+                if [ ! -f "${TARGET_DATA}/models/tinyyolov4/${targets[i]}" ]
+                then
+                    ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/tinyyolov4/${targets[i]}"
+                else
+                    echo "${targets[i]} exists, no need to download"
+
+                fi
+            done
         fi
 
         if [ "${INSTALL_YOLOV4}" == "yes" ]
