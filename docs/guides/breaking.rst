@@ -1,6 +1,21 @@
 Breaking Changes
 ----------------
 
+Version 5.15.7 onwards
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- The ``<>/models/tinyyolo`` directory is now ``<>/models/tinyyolov3``.
+  ``install.sh`` will automatically move it, but remember to change your
+  ``objectonfig.ini`` path if you are using tiny yolo.
+
+- You now have an option to use the new Tiny Yolo V4 models which will be 
+  automatically downloaded unless you disabled it (You'll need OpenCV master
+  as of Jul 11, 2020 as support for it was only merged 6 days ago)
+
+- A new attribute, ``max_object_area`` has been introduced in ``objectconfig.ini``.
+  This specifies the largest area a detected object should take inside the image. 
+  You can keep it as a % or px value. Remember the image is resized to 416x416. better
+  to keep in %
+
 Version 5.15.6 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 - I got lazy with 5.15.5. There were some errors that I fixed post 5.15
@@ -18,17 +33,14 @@ Version 5.15.6 onwards
   Note that I assume you use ``install.sh`` to install. If not, you'll have to manually
   rename the old model names to the new ones.
 
-- If you plan to use YoloV4, the minimum version requirement is the version *after* 4.3.0.
-  As of Jun 30,2020, that is the master branch of openCV as 4.3.0 is the latest stable version.
+- If you plan to use YoloV4 (full or Tiny) the minimum version requirement is the version *after* 4.3.0.
+  As of Jul 11,2020, that is the master branch of openCV as 4.3.0 is the latest stable version.
   The updated version of YoloV4 that requires certain functions that were committed on Apr 30.
   See `here <https://github.com/opencv/opencv/issues/17148>`__. So if you suddently see an error like:
   ``Unsupported activation: mish in function 'ReadDarknetFromCfgStream'`` popping up with YoloV4, 
-  that is a sign that you need to get a later version of OpenCV.
+  that is a sign that you need to get a later version of OpenCV. Note that TinyYoloV4 was merged after Jul 6,
+  so if you get errors with TinyYoloV4, you'll need to upgrade Open CV master.
 
-- There is a new "Tiny Yolo V4" that hasn't yet been integrated into OpenCV. Apparently,
-  that offers a lot of improvement over V3. However, that will require you to recompile OpenCV again
-  after it is integrated. If you don't want to do this twice, once for YoloV4 and again for TinyYolov4,
-  wait a bit before you use YoloV4, till `this issue <https://github.com/opencv/opencv/issues/17666>`__ is addressed.
 
 Version 5.15.5 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~~
