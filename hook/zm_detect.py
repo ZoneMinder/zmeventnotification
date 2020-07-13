@@ -147,6 +147,8 @@ ap.add_argument('-f',
 
 ap.add_argument('-r', '--reason', help='reason for event (notes field in ZM)')
 
+ap.add_argument('-n', '--notes', help='updates notes field in ZM with detections', action='store_true')
+
 args, u = ap.parse_known_args()
 args = vars(args)
 
@@ -774,3 +776,58 @@ if g.config['delete_after_analyze'] == 'yes':
             os.remove(filename2)
     except Exception as e:
         g.logger.error (f'Could not delete file(s):{e}')
+
+if args.get('notes') and pred:
+    # We want to update our DB notes with the detection string
+    g.logger.debug ('Updating notes for EID:{}'.format(args.get('eventid')))
+    import pyzm.api as zmapi
+    api_options = {
+            'apiurl': g.config['api_portal'],
+            'portalurl': g.config['portal'],
+            'user': g.config['user'],
+            'password': g.config['password'],
+            'logger': g.logger # We connect the API to zmlog 
+            #'logger': None, # use none if you don't want to log to ZM,
+            #'disable_ssl_cert_check': True
+        }
+    try:
+        
+        myapi = zmapi.ZMApi(options=api_options)
+
+    except Exception as e:
+        print ('Error during login: {}'.format(str(e)))
+        print(traceback.format_exc())
+        exit(0) # Let's continue with zmdetect
+
+    url = '{}/events/{}.json'.format(g.config['api_portal'], args['eventid'])
+    
+    try:
+        ev = myapi._make_request(url=url,  type='get')
+    except Exception as e:
+        g.logger.error ('Error during event notes retrieval: {}'.format(str(e)))
+        print(traceback.format_exc())
+        exit(0) # Let's continue with zmdetect
+
+    new_notes = pred
+    if ev.get('event',{}).get('Event',{}).get('Notes'): 
+        old_notes = ev['event']['Event']['Notes']
+        old_notes_split = old_notes.split('Motion:')
+        old_d = old_notes_split[0] # old detection
+        try:
+            old_m = old_notes_split[1] 
+        except IndexError:
+            old_m = ''
+        new_notes = pred + 'Motion:'+ old_m
+        g.logger.debug ('Replacing old note:{} with new note:{}'.format(old_notes, new_notes))
+        
+
+    payload = {}
+    payload['Event[Notes]'] = new_notes
+    try:
+        ev = myapi._make_request(url=url, payload=payload, type='put')
+    except Exception as e:
+        print ('Error during notes update: {}'.format(str(e)))
+        print(traceback.format_exc())
+        exit(0) # Let's continue with zmdetect
+    
+        
