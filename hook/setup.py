@@ -39,7 +39,7 @@ def find_version(*file_paths):
 
 
 setup(name=NAME,
-      version=find_version('zmes_hook_helpers', '__init__.py'),
+      version=find_version('zm_ml', '__init__.py'),
       description=DESCRIPTION,
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
@@ -49,9 +49,9 @@ setup(name=NAME,
       license=LICENSE,
       install_requires=INSTALL_REQUIRES,
       py_modules=[
-          'zmes_hook_helpers.common_params', 'zmes_hook_helpers.log',
-          'zmes_hook_helpers.yolo', 'zmes_hook_helpers.hog',
-          'zmes_hook_helpers.face', 'zmes_hook_helpers.face_train',
-          'zmes_hook_helpers.alpr', 'zmes_hook_helpers.image_manip',
-          'zmes_hook_helpers.apigw', 'zmes_hook_helpers.utils'
+          'zm_ml.common_params', 'zm_ml.log',
+          'zm_ml.yolo', 'zm_ml.hog',
+          'zm_ml.face', 'zm_ml.face_train',
+          'zm_ml.alpr', 'zm_ml.image_manip',
+          'zm_ml.apigw', 'zm_ml.utils'
       ])

@@ -1,6 +1,6 @@
 import numpy as np
-import zmes_hook_helpers.common_params as g
-import zmes_hook_helpers.log as log
+import zm_ml.common_params as g
+import zm_ml.log as log
 import sys
 import cv2
 import time
@@ -21,10 +21,7 @@ class Yolo:
         self.classes = None
 
     def populate_class_labels(self):
-        if g.config['yolo_type'] == 'tiny':
-            class_file_abs_path = g.config['tiny_labels']
-        else:
-            class_file_abs_path = g.config['labels']
+        class_file_abs_path = g.config['object_labels']
         f = open(class_file_abs_path, 'r')
         self.classes = [line.strip() for line in f.readlines()]
 
@@ -49,12 +46,9 @@ class Yolo:
             .format(Width, Height, modelW, modelH))
         scale = 0.00392  # 1/255, really. Normalize inputs.
 
-        if g.config['yolo_type'] == 'tiny':
-            config_file_abs_path = g.config['tiny_config']
-            weights_file_abs_path = g.config['tiny_weights']
-        else:
-            config_file_abs_path = g.config['config']
-            weights_file_abs_path = g.config['weights']
+   
+        config_file_abs_path = g.config['object_config']
+        weights_file_abs_path = g.config['object_weights']
 
         if self.initialize:
             g.logger.debug('Initializing Yolo')
@@ -66,7 +60,7 @@ class Yolo:
                                        config_file_abs_path)
             #self.net = cv2.dnn.readNetFromDarknet(config_file_abs_path, weights_file_abs_path)
 
-            if g.config['use_opencv_dnn_cuda'] == 'yes':
+            if g.config['object_processor'] == 'gpu':
                 (maj, minor, patch) = cv2.__version__.split('.')
                 min_ver = int(maj + minor)
                 if min_ver < 42:
@@ -111,8 +105,8 @@ class Yolo:
         conf_threshold = 0.2
 
         # first nms filter out with a yolo confidence of 0.2 (or less)
-        if g.config['yolo_min_confidence'] < conf_threshold:
-            conf_threshold = g.config['yolo_min_confidence']
+        if g.config['object_min_confidence'] < conf_threshold:
+            conf_threshold = g.config['object_min_confidence']
 
         for out in outs:
             for detection in out:
@@ -152,10 +146,10 @@ class Yolo:
             object_area = w * h
             max_object_area = object_area
 
-            if g.config['max_object_size']:
-                g.logger.debug('Max object size found to be:'.format(g.config['max_object_size']),level=3)
+            if g.config['max_detection_size']:
+                g.logger.debug('Max object size found to be:'.format(g.config['max_detection_size']),level=3)
                 # Let's make sure its the right size
-                m = re.match('(\d*\.?\d*)(px|%)?$', g.config['max_object_size'],
+                m = re.match('(\d*\.?\d*)(px|%)?$', g.config['max_detection_size'],
                             re.IGNORECASE)
                 if m:
                     max_object_area = float(m.group(1))
@@ -170,7 +164,7 @@ class Yolo:
                     g.logger.debug ('Ignoring object:{}, as its area: {}px exceeds max_object_area of {}px'.format(str(self.classes[class_ids[i]]), object_area, max_object_area))
                     continue
 
-            if confidences[i] >= g.config['yolo_min_confidence']:
+            if confidences[i] >= g.config['object_min_confidence']:
                 bbox.append([
                     int(round(x)),
                     int(round(y)),
@@ -182,7 +176,7 @@ class Yolo:
                 g.logger.info(
                     'object:{} at {} has a acceptable confidence:{} compared to min confidence of: {}, adding'
                     .format(label[-1], bbox[-1], conf[-1],
-                            g.config['yolo_min_confidence']))
+                            g.config['object_min_confidence']))
             else:
                 g.logger.info(
                     'rejecting object:{} at {} because its confidence is :{} compared to min confidence of: {}'
@@ -191,6 +185,6 @@ class Yolo:
                         int(round(y)),
                         int(round(x + w)),
                         int(round(y + h))
-                    ], confidences[i], g.config['yolo_min_confidence']))
+                    ], confidences[i], g.config['object_min_confidence']))
 
         return bbox, label, conf

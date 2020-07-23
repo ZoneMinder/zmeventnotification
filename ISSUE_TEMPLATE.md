@@ -10,7 +10,7 @@ Before you create an issue, please make sure you have read the [README](https://
 (If your question is about the machine learning looks)
 You can get the version by doing:
 ```
-python3 -c "import zmes_hook_helpers as h; print (h.__version__)"
+python3 -c "import zm_ml; print (zm_ml.__version__)"
 ```
 
 

@@ -9,9 +9,9 @@ import ssl
 import os
 import datetime
 
-import zmes_hook_helpers.log as log
-import zmes_hook_helpers.common_params as g
-import zmes_hook_helpers.utils as utils
+import zm_ml.log as log
+import zm_ml.common_params as g
+import zm_ml.utils as utils
 
 start = datetime.datetime.now()
 diff_time = (datetime.datetime.now() - start).microseconds / 1000

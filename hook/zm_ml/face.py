@@ -1,7 +1,7 @@
 import numpy as np
-import zmes_hook_helpers.common_params as g
-import zmes_hook_helpers.log as log
-import zmes_hook_helpers.face_train as train
+import zm_ml.common_params as g
+import zm_ml.log as log
+import zm_ml.face_train as train
 import face_recognition
 import sys
 import os

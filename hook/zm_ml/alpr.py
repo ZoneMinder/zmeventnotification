@@ -1,6 +1,6 @@
 import numpy as np
-import zmes_hook_helpers.common_params as g
-import zmes_hook_helpers.log as log
+import zm_ml.common_params as g
+import zm_ml.log as log
 import cv2
 import requests
 import os

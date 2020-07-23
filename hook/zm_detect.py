@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # Main detection script that loads different detection models
-# look at zmes_hook_helpers for different detectors
+# look at zm_ml for different detectors
 
 from __future__ import division
 import sys
@@ -23,10 +23,10 @@ import traceback
 
 # Modules that load cv2 will go later 
 # so we can log misses
-import zmes_hook_helpers.log as log
-import zmes_hook_helpers.utils as utils
-import zmes_hook_helpers.common_params as g
-from zmes_hook_helpers.__init__ import __version__
+import zm_ml.log as log
+import zm_ml.utils as utils
+import zm_ml.common_params as g
+from zm_ml.__init__ import __version__
 
 auth_header = None
 # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
@@ -189,8 +189,8 @@ if args.get('version'):
 
 # load modules that depend on cv2
 try:
-    import zmes_hook_helpers.image_manip as img
-    import zmes_hook_helpers.alpr as alpr
+    import zm_ml.image_manip as img
+    import zm_ml.alpr as alpr
 except Exception as e:
     g.logger.error (f'{e}')
     exit(1)
@@ -209,12 +209,12 @@ if not os.path.exists(g.config['base_data_path'] + '/misc/'):
         pass  # if two detects run together with a race here
 
 if not g.config['ml_gateway']:
-    g.logger.info('Importing local classes for Yolo/Face')
-    import zmes_hook_helpers.yolo as yolo
-    import zmes_hook_helpers.hog as hog
+    g.logger.info('Importing local classes for Object/Face')
+    import zm_ml.object as object_detection
+    import zm_ml.hog as hog
 else:
-    g.logger.info('Importing remote shim classes for Yolo/Face')
-    from zmes_hook_helpers.apigw import YoloRemote, FaceRemote
+    g.logger.info('Importing remote shim classes for Object/Face')
+    from zm_ml.apigw import ObjectRemote, FaceRemote
 
 # now download image(s)
 
@@ -289,22 +289,22 @@ label = []
 conf = []
 classes = []
 
-use_alpr = True if 'alpr' in g.config['models'] else False
+use_alpr = True if 'alpr' in g.config['detection_sequence'] else False
 g.logger.debug('User ALPR if vehicle found: {}'.format(use_alpr))
 # labels that could have license plates. See https://github.com/pjreddie/darknet/blob/master/data/coco.names
 
-for model in g.config['models']:
+for model in g.config['detection_sequence']:
     # instaniate the right model
     # after instantiation run all files with it,
     # so no need to do 2x instantiations
 
     t_start = datetime.datetime.now()
 
-    if model == 'yolo':
+    if model == 'object':
         if g.config['ml_gateway']:
-            m = YoloRemote()
+            m = ObjectRemote().get_model()
         else:
-            m = yolo.Yolo()
+            m = object_detection.Object().get_model()
     elif model == 'hog':
         m = hog.Hog()
     elif model == 'face':
@@ -312,23 +312,23 @@ for model in g.config['models']:
             m = FaceRemote()
         else:
             try:
-                import zmes_hook_helpers.face as face
+                import zm_ml.face as face
             except ImportError:
                 g.logger.error(
                     'Error importing face recognition. Make sure you did sudo -H pip3 install face_recognition'
                 )
                 raise
-
+             
             m = face.Face(upsample_times=g.config['face_upsample_times'],
                           num_jitters=g.config['face_num_jitters'],
                           model=g.config['face_model'])
     elif model == 'alpr':
         if g.config['alpr_use_after_detection_only'] == 'yes':
             #g.logger.debug ('Skipping ALPR as it is configured to only be used after object detection')
-            continue  # we would have handled it after YOLO
+            continue  # we would have handled it after object
         else:
             g.logger.info(
-                'Standalone ALPR is not supported today. Please use after yolo'
+                'Standalone ALPR is not supported today. Please use after object'
             )
             continue
 
@@ -384,14 +384,14 @@ for model in g.config['models']:
                 if g.config['ml_fallback_local'] == 'yes':
                     g.logger.info('Falling back to local execution...')
                     remote_failed = True
-                    if model == 'yolo':
-                        import zmes_hook_helpers.yolo as yolo
-                        m = yolo.Yolo()
+                    if model == 'object':
+                        import zm_ml.object as object_detection
+                        m = object_detection.Object()
                     elif model == 'hog':
-                        import zmes_hook_helpers.hog as hog
+                        import zm_ml.hog as hog
                         m = hog.Hog()
                     elif model == 'face':
-                        import zmes_hook_helpers.face as face
+                        import zm_ml.face as face
                         m = face.Face(
                             upsample_times=g.config['face_upsample_times'],
                             num_jitters=g.config['face_num_jitters'],
@@ -563,10 +563,10 @@ for model in g.config['models']:
             else:  # objects, no vehicles
                 if filename == filename1 and filename2:
                     g.logger.debug(
-                        'There was no vehicle detected by Yolo in this image')
+                        'There was no vehicle detected by object detection in this image')
                     '''
                     # For now, don't force ALPR in the next (snapshot image) 
-                    # only do it if yolo gets a vehicle there
+                    # only do it if object_detection gets a vehicle there
                     # may change this later
                     try_next_image = True
                     saved_bbox = b
@@ -795,8 +795,8 @@ if args.get('notes') and pred:
         myapi = zmapi.ZMApi(options=api_options)
 
     except Exception as e:
-        print ('Error during login: {}'.format(str(e)))
-        print(traceback.format_exc())
+        g.logger.error ('Error during login: {}'.format(str(e)))
+        g.logger.debug(traceback.format_exc(), level=2)
         exit(0) # Let's continue with zmdetect
 
     url = '{}/events/{}.json'.format(g.config['api_portal'], args['eventid'])
@@ -805,7 +805,7 @@ if args.get('notes') and pred:
         ev = myapi._make_request(url=url,  type='get')
     except Exception as e:
         g.logger.error ('Error during event notes retrieval: {}'.format(str(e)))
-        print(traceback.format_exc())
+        g.logger.debug(traceback.format_exc(), level=2)
         exit(0) # Let's continue with zmdetect
 
     new_notes = pred
@@ -818,7 +818,7 @@ if args.get('notes') and pred:
         except IndexError:
             old_m = ''
         new_notes = pred + 'Motion:'+ old_m
-        g.logger.debug ('Replacing old note:{} with new note:{}'.format(old_notes, new_notes))
+        g.logger.debug ('Replacing old note:{} with new note:{}'.format(old_notes, new_notes), level=1)
         
 
     payload = {}
@@ -826,8 +826,8 @@ if args.get('notes') and pred:
     try:
         ev = myapi._make_request(url=url, payload=payload, type='put')
     except Exception as e:
-        print ('Error during notes update: {}'.format(str(e)))
-        print(traceback.format_exc())
+        g.logger.error ('Error during notes update: {}'.format(str(e)))
+        g.logger.debug(traceback.format_exc(), level=2)
         exit(0) # Let's continue with zmdetect
     
         

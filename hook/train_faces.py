@@ -2,10 +2,10 @@
 #!/usr/bin/python3
 import argparse
 import ssl
-import zmes_hook_helpers.log as log
-import zmes_hook_helpers.common_params as g
-import zmes_hook_helpers.utils as utils
-import zmes_hook_helpers.face_train as train
+import zm_ml.log as log
+import zm_ml.common_params as g
+import zm_ml.utils as utils
+import zm_ml.face_train as train
 
 
 if __name__ == "__main__":
