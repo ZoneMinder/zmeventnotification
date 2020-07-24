@@ -177,6 +177,10 @@ my $mqtt_server;
 my $mqtt_topic;
 my $mqtt_username;
 my $mqtt_password;
+my $mqtt_tls_ca;
+my $mqtt_tls_cert;
+my $mqtt_tls_key;
+my $mqtt_tls_insecure;
 my $mqtt_tick_interval;
 my $mqtt_retain;
 my $mqtt_last_tick_time = time();
@@ -460,6 +464,10 @@ sub loadEsConfigSettings {
     config_get_val( $config, 'mqtt', 'topic', DEFAULT_MQTT_TOPIC );
   $mqtt_username = config_get_val( $config, 'mqtt', 'username' );
   $mqtt_password = config_get_val( $config, 'mqtt', 'password' );
+  $mqtt_tls_ca = config_get_val( $config, 'mqtt', 'tls_ca' );
+  $mqtt_tls_cert = config_get_val( $config, 'mqtt', 'tls_cert' );
+  $mqtt_tls_key = config_get_val( $config, 'mqtt', 'tls_key' );
+  $mqtt_tls_insecure = config_get_val( $config, 'mqtt', 'tls_insecure' );
   $mqtt_tick_interval =
     config_get_val( $config, 'mqtt', 'tick_interval',
     DEFAULT_MQTT_TICK_INTERVAL );
@@ -639,6 +647,10 @@ MQTT Username ........................ ${\(value_or_undefined($mqtt_username))}
 MQTT Password ........................ ${\(present_or_not($mqtt_password))}
 MQTT Retain .......................... ${\(yes_or_no($mqtt_retain))}
 MQTT Tick Interval ................... ${\(value_or_undefined($mqtt_tick_interval))}
+MQTT TLS CA ........................ ${\(value_or_undefined($mqtt_tls_ca))}
+MQTT TLS Cert ........................ ${\(value_or_undefined($mqtt_tls_cert))}
+MQTT TLS Key ........................ ${\(value_or_undefined($mqtt_tls_key))}
+MQTT TLS Insecure ........................ ${\(yes_or_no($mqtt_tls_insecure))}
 
 SSL enabled .......................... ${\(yes_or_no($ssl_enabled))}
 SSL cert file ........................ ${\(value_or_undefined($ssl_cert_file))}
@@ -709,6 +721,10 @@ if ($use_api_push) {
 if ($use_mqtt) {
   if ( !try_use('Net::MQTT::Simple') ) {
     Fatal('Net::MQTT::Simple  missing');
+    exit(-1);
+  }
+  if (defined $mqtt_tls_ca && !try_use('Net::MQTT::Simple::SSL') ) {
+    Fatal('Net::MQTT::Simple:SSL  missing');
     exit(-1);
   }
   printInfo('MQTT Enabled');
@@ -2475,22 +2491,42 @@ sub loadPredefinedConnections {
 sub initMQTT {
   my $mqtt_connection;
 
-  printInfo('Initializing MQTT connection...');
-
 # Note this does not actually connect to the MQTT server. That happens later during publish
   if ( defined $mqtt_username && defined $mqtt_password ) {
-    if ( $mqtt_connection = Net::MQTT::Simple->new($mqtt_server) ) {
-
+    if ( defined $mqtt_tls_ca ) {
+      printInfo('Initializing MQTT with auth over TLS connection...');
+      use IO::Socket::SSL qw(SSL_VERIFY_NONE);
+      my $sockopts = {SSL_ca_file => $mqtt_tls_ca};
+      if ( defined $mqtt_tls_cert && defined $mqtt_tls_key ) {
+        $sockopts->{SSL_cert_file} = $mqtt_tls_cert;
+        $sockopts->{SSL_key_file} = $mqtt_tls_key;
+      } else {
+        printDebug('MQTT over TLS will be one way TLS as tls_cert and tls_key are not provided.',1);
+      }
+      if (defined $mqtt_tls_insecure && $mqtt_tls_insecure eq 1) {
+        $sockopts->{SSL_verify_mode} = SSL_VERIFY_NONE;
+      }
+      $mqtt_connection = Net::MQTT::Simple::SSL->new($mqtt_server, $sockopts);
+    } else {
+      printInfo('Initializing MQTT with auth connection...');
+      $mqtt_connection = Net::MQTT::Simple->new($mqtt_server);
+    }
+    if ( $mqtt_connection ) {
       # Setting up allow insecure connections
       $ENV{MQTT_SIMPLE_ALLOW_INSECURE_LOGIN} = 'true';
 
       $mqtt_connection->login( $mqtt_username, $mqtt_password );
       printDebug('Intialized MQTT with auth',1);
+    } else {
+      printError('Failed to Intialized MQTT with auth');
     }
   }
   else {
+      printInfo('Initializing MQTT without auth connection...');
     if ( $mqtt_connection = Net::MQTT::Simple->new($mqtt_server) ) {
       printDebug('Intialized MQTT without auth',1);
+    } else {
+      printError('Failed to Intialized MQTT without auth');
     }
   }
 
