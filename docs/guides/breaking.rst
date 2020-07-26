@@ -1,6 +1,31 @@
 Breaking Changes
 ----------------
 
+Version 5.16.0 onwards
+~~~~~~~~~~~~~~~~~~~~~~~~~
+- This is going to be a big bad breaking change release, but continues the path
+  to unification between various components I've developed.
+- All the ml code has now moved to pyzm and both local hook and mlapi use pyzm. This means
+  when I update ml code, both systems get it right always
+- This version also supports Google Coral Edge TPU
+- Several ``objectconfig.ini`` attributes have been replaced and some removed towards
+  this unification goal:
+
+  - ``models`` is now ``detection_sequence``
+  - ``yolo`` is no longer used. Instead ``object`` is used. ``object`` could be multiple
+    object detection techniques, yolo or otherwise.
+  - ``[ml]`` is now ``[remote]``
+  - ``[object]`` is a new section, which contains two new attributes:
+
+    - ``object_framework`` which can be ``opencv`` or   ``coral_edgetpu``
+    - ``object_processor`` which can be ``cpu``, ``gpu`` or ``tpu``
+
+  - ``yolo_min_confidence``  is now ``object_min_confidence``
+  - ``config``, ``weights``, ``labels`` are now ``object_config``, ``object_weights`` and ``object_labels`` respectively.
+  - None of the ``tiny_`` attributes exist anymore. Simply switch weights, labels and config files to switch between full and tiny
+  - ``yolo_type`` doesn't exist anymore (as ``tiny_`` attributes are removed, so it doesn't make sense)
+
+
 Version 5.15.7 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 - The ``<>/models/tinyyolo`` directory is now ``<>/models/tinyyolov3``.

@@ -2,10 +2,10 @@
 #!/usr/bin/python3
 import argparse
 import ssl
-import zmes_hook_helpers.log as log
+import pyzm.ZMLog as log
 import zmes_hook_helpers.common_params as g
 import zmes_hook_helpers.utils as utils
-import zmes_hook_helpers.face_train as train
+import pyzm.ml.face_train as train
 
 
 if __name__ == "__main__":
@@ -16,9 +16,9 @@ if __name__ == "__main__":
     args, u = ap.parse_known_args()
     args = vars(args)
 
-    log.init(process_name='zm_face_train', dump_console=True)
+    log.init(name='zm_face_train', dump_console=True)
+    g.logger = log
     utils.process_config(args, g.ctx)
    
- 
-    train.train()
+    train.FaceTrain(options=g.config).train()
    

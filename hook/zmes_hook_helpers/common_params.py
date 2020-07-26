@@ -74,7 +74,7 @@ config_vals = {
             'default': '5%',
             'type': 'string'
         },
-        'max_object_size':{
+        'max_detection_size':{
             'section': 'general',
             'default': '',
             'type': 'string'
@@ -125,9 +125,9 @@ config_vals = {
             'default': 'yes',
             'type': 'string'
         },
-        'models':{
+        'detection_sequence':{
             'section': 'general',
-            'default': 'yolo',
+            'default': 'object',
             'type': 'str_split'
         },
         'detection_mode': {
@@ -182,80 +182,59 @@ config_vals = {
         # General ML
      
 
-         'use_opencv_dnn_cuda':{
-            'section':'ml',
-            'default':'no',
-            'type':'string'
-
-        },
-
         'ml_gateway': {
-            'section': 'ml',
+            'section': 'remote',
             'default': None,
             'type': 'string'
         },
 
         'ml_fallback_local': {
-            'section': 'ml',
+            'section': 'remote',
             'default': 'no',
             'type': 'string'
         },
        
         'ml_user': {
-            'section': 'ml',
+            'section': 'remote',
             'default': None,
             'type': 'string'
         },
         'ml_password': {
-            'section': 'ml',
+            'section': 'remote',
             'default': None,
             'type': 'string'
         },
        
-
-        # YOLO
-
-        
-
-        'yolo_type':{
-            'section':'yolo',
-            'default':'full',
-            'type':'string'
-
+       
+       'object_framework':{
+            'section': 'object',
+            'default': 'opencv',
+            'type': 'string'
         },
-        'config':{
-            'section': 'yolo',
+        'object_processor':{
+            'section': 'object',
+            'default': 'cpu',
+            'type': 'string'
+        },
+        'object_config':{
+            'section': 'object',
             'default': '/var/lib/zmeventnotification/models/yolov3/yolov3.cfg',
             'type': 'string'
         },
-        'weights':{
-            'section': 'yolo',
+        'object_weights':{
+            'section': 'object',
             'default': '/var/lib/zmeventnotification/models/yolov3/yolov3.weights',
             'type': 'string'
         },
-        'labels':{
-            'section': 'yolo',
+        'object_labels':{
+            'section': 'object',
             'default': '/var/lib/zmeventnotification/models/yolov3/yolov3_classes.txt',
             'type': 'string'
         },
-        'tiny_config':{
-            'section': 'yolo',
-            'default': '/var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.cfg',
-            'type': 'string'
-        },
-        'tiny_weights':{
-            'section': 'yolo',
-            'default': '/var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.weights',
-            'type': 'string'
-        },
-        'tiny_labels':{
-            'section': 'yolo',
-            'default': '/var/lib/zmeventnotification/models/tinyyolo/yolov3-tiny.txt',
-            'type': 'string'
-        },
+       
 
-        'yolo_min_confidence': {
-            'section': 'yolo',
+        'object_min_confidence': {
+            'section': 'object',
             'default': '0.4',
             'type': 'float'
         },
@@ -284,6 +263,16 @@ config_vals = {
         },
 
        # Face
+        'face_detection_framework':{
+            'section': 'face',
+            'default': 'dlib',
+            'type': 'string'
+        },
+        'face_recognition_framework':{
+            'section': 'face',
+            'default': 'dlib',
+            'type': 'string'
+        },
         'face_num_jitters':{
             'section': 'face',
             'default': '0',

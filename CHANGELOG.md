@@ -310,7 +310,7 @@
 - Can't exec: Bad file descriptor [\#143](https://github.com/pliablepixels/zmeventnotification/issues/143)
 - Improve the match\_past\_detections feature [\#140](https://github.com/pliablepixels/zmeventnotification/issues/140)
 - switch to Net::MQTT:Simple for authenticated connections as well.  [\#134](https://github.com/pliablepixels/zmeventnotification/issues/134)
-- running detect\_wrapper.sh gives ImportError: No module named zmes\_hook\_helpers.log [\#133](https://github.com/pliablepixels/zmeventnotification/issues/133)
+- running detect\_wrapper.sh gives ImportError: No module named zmes\_hook\_zmes_hook_helpers.log [\#133](https://github.com/pliablepixels/zmeventnotification/issues/133)
 - fid=alarm doesn't work sometimes - question  [\#131](https://github.com/pliablepixels/zmeventnotification/issues/131)
 - running detection in a container [\#128](https://github.com/pliablepixels/zmeventnotification/issues/128)
 - MQTT doesn't work with RabbitMQ [\#125](https://github.com/pliablepixels/zmeventnotification/issues/125)

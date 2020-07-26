@@ -58,7 +58,27 @@ Option 1: Automatic install
 
 ::
 
-    sudo -H ./install.sh # and follow the prompts
+   sudo -H ./install.sh # and follow the prompts
+
+**Note**: If you are planning on using Google EdgeTPU support,
+you'll have to invoke the script using:
+
+::
+
+   sudo -H INSTALL_CORAL_EDGETPU=yes ./install.sh # and follow the prompts
+
+EdgeTPU models are not downloaded automatically as they need special hardware.
+
+For EdgeTPU, the expectation is  that you have followed all the instructions 
+at `the coral site <https://coral.ai/docs/accelerator/get-started/>`__ first. 
+
+If you don't, things will break. Further, you also need to make sure your 
+web user has access to the coral device.
+
+On my ubuntu system, I needed to do:
+
+::
+   sudo usermod -a -G plugdev www-data
 
 
 .. _install_specific_models:
@@ -69,9 +89,10 @@ So for example:
 
 ::
 
-  sudo INSTALL_CSPN=no INSTALL_TINYYOLO=no ./install.sh
+  sudo INSTALL_YOLOV3=no INSTALL_YOLOV4=yes ./install.sh
 
-Will only install the ``YOLOv3 (full)`` model but will skip the ``CSPN (Cross Stage Partial Networks)`` model and the "Tiny YOLO" models.
+Will only install the ``YOLOv4 (full)`` model but will skip the ``YOLOV3`` 
+model.
 
 
 .. _opencv_install:
@@ -207,6 +228,9 @@ See :ref:`this FAQ entry <local_remote_ml>`.
 Which models should I use?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
+- Starting 5.16, Google Coral Edge TPU is supported. See install instructions above.
+
 -  Starting 5.15.6, you have the option of using YoloV3 or YoloV4. V3 is the original one
    while V4 is an optimized version by Alexey. See `here <https://github.com/AlexeyAB/darknet>`__.
    V4 is faster, and is supposed to be more accurate but YMMV. Note that you need a version GREATER than 4.3
@@ -253,28 +277,35 @@ Troubleshooting
 Types of detection
 ~~~~~~~~~~~~~~~~~~
 
-As of today, the following detection types are supported - these are all attributes you can put into the ``model`` attribute. You can put multiple and comma separate them as well.
+As of today, the following detection types are supported - these are all attributes you can put into the ``detection_sequence`` attribute. You can put multiple and comma separate them as well.
 
-* ``yolo`` - An object detector. Detects 80 types of objects.
+* ``object`` - For object detection. The exact object detection algorithm will
+   be a function of what you specify in the ``[object]`` attribute. For example,
+   if you want YoloV4 as the object detection algorithm, your ``object_config``,
+   ``object_weights`` and ``object_labels`` will point to the YoloV4 cfg/weights/object_labels
+   files respectively, ``object_framework`` will be ``opencv`` and ``object_processor`` will
+   be ``cpu`` or ``gpu`` depending on whether you have CUDA or not.
 
-  * Yolo supports two modes, a ``tiny`` mode that takes less resources and is faster. And a regular mode, that is more accurate but resource hungry. These models are controlled by the ``weights`` and ``config`` files you use with yolo. 
-* ``hog`` - A very innacurate, but very fast person detector. Use this *only* if you are not able to run yolo, even with the "tiny" weights.
-* ``face`` - face detection and recognition
-* ``alpr`` - license plate recognition. Needs to be paired with yolo (i.e. ``yolo,alpr``)
+   * If you use Yolo, note that it supports two modes, a "tiny" mode that takes less resources 
+     and is faster. And a regular mode, that is more accurate but resource hungry.  These models are controlled 
+     by the ``weights`` and ``config`` files you use with yolo. 
+
+* ``face`` - face detection and recognition (uses ``dlib``)
+* ``alpr`` - license plate recognition. Needs to be paired with object (i.e. ``object,alpr``)
 
 You can switch detection type by using
-``model=<detection_type1>,<detection_type2>,....`` in your
+``detection_sequence=<detection_type1>,<detection_type2>,....`` in your
 ``objectconfig.ini``
 
 Example:
 
-``model=yolo,hog,face`` will run full Yolo, then HOG, then face
-recognition.
+``detection_sequence=object,face,alpr`` will run full Yolo, then face 
+recognition and finally alpr
 
-Note that you can change ``model`` on a per monitor basis too. Read the
+Note that you can change ``detecton_sequence`` on a per monitor basis too. Read the
 comments in ``objectconfig.ini``
 
-If you select yolo, you can add a ``model_type=tiny`` to use tiny YOLO
+If you select yolo, you can switch weights  to use tiny YOLO
 instead of full yolo weights. Again, please readd the comments in
 ``objectconfig.ini``
 
@@ -315,7 +346,7 @@ This is an example config that uses OpenALPR:
 
 ::
 
-  models = yolo,alpr
+  detection_sequence = object,alpr
 
   [alpr]
   alpr_service=open_alpr
@@ -333,7 +364,7 @@ This is an example config that uses OpenALPR command line:
 
 ::
 
-  models = yolo,alpr
+  detection_Sequence = object,alpr
 
   [alpr]
   alpr_service=open_alpr_cmdline

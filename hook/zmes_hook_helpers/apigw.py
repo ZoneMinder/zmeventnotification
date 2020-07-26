@@ -1,14 +1,12 @@
 import zmes_hook_helpers.common_params as g
-import zmes_hook_helpers.log as log
+import pyzm.ZMLog as log
 import sys
 
 
-class YoloRemote:
+class ObjectRemote:
     def __init__(self):
-        if g.config['yolo_type'] == 'tiny':
-            class_file_abs_path = g.config['tiny_labels']
-        else:
-            class_file_abs_path = g.config['labels']
+        
+        class_file_abs_path = g.config['object_labels']
         f = open(class_file_abs_path, 'r')
         self.classes = [line.strip() for line in f.readlines()]
 
