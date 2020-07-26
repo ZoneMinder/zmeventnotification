@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # Main detection script that loads different detection models
-# look at zm_ml for different detectors
+# look at pyzm.ml for different detectors
 
 from __future__ import division
 import sys
@@ -23,10 +23,10 @@ import traceback
 
 # Modules that load cv2 will go later 
 # so we can log misses
-import zm_ml.log as log
-import zm_ml.utils as utils
-import zm_ml.common_params as g
-from zm_ml.__init__ import __version__
+import zmes_hook_helpers.log as log
+import zmes_hook_helpers.utils as utils
+import zmes_hook_helpers.common_params as g
+from pyzm.ml.__init__ import __version__
 
 auth_header = None
 # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
@@ -189,8 +189,8 @@ if args.get('version'):
 
 # load modules that depend on cv2
 try:
-    import zm_ml.image_manip as img
-    import zm_ml.alpr as alpr
+    import zmes_hook_helpers.image_manip as img
+    import pyzm.ml.alpr as alpr
 except Exception as e:
     g.logger.error (f'{e}')
     exit(1)
@@ -210,11 +210,11 @@ if not os.path.exists(g.config['base_data_path'] + '/misc/'):
 
 if not g.config['ml_gateway']:
     g.logger.info('Importing local classes for Object/Face')
-    import zm_ml.object as object_detection
-    import zm_ml.hog as hog
+    import pyzm.ml.object as object_detection
+    import pyzm.ml.hog as hog
 else:
     g.logger.info('Importing remote shim classes for Object/Face')
-    from zm_ml.apigw import ObjectRemote, FaceRemote
+    from zmes_hook_helpers.apigw import ObjectRemote, FaceRemote
 
 # now download image(s)
 
@@ -302,24 +302,24 @@ for model in g.config['detection_sequence']:
 
     if model == 'object':
         if g.config['ml_gateway']:
-            m = ObjectRemote().get_model()
+            m = ObjectRemote()
         else:
-            m = object_detection.Object().get_model()
+            m = object_detection.Object(options=g.config)
     elif model == 'hog':
-        m = hog.Hog()
+        m = hog.Hog(options=g.config)
     elif model == 'face':
         if g.config['ml_gateway']:
             m = FaceRemote()
         else:
             try:
-                import zm_ml.face as face
+                import pyzm.ml.face as face
             except ImportError:
                 g.logger.error(
                     'Error importing face recognition. Make sure you did sudo -H pip3 install face_recognition'
                 )
                 raise
              
-            m = face.Face(upsample_times=g.config['face_upsample_times'],
+            m = face.Face(options=g.config, upsample_times=g.config['face_upsample_times'],
                           num_jitters=g.config['face_num_jitters'],
                           model=g.config['face_model'])
     elif model == 'alpr':
@@ -385,14 +385,15 @@ for model in g.config['detection_sequence']:
                     g.logger.info('Falling back to local execution...')
                     remote_failed = True
                     if model == 'object':
-                        import zm_ml.object as object_detection
-                        m = object_detection.Object()
+                        import pyzm.ml.object as object_detection
+                        m = object_detection.Object(options=g.config)
                     elif model == 'hog':
-                        import zm_ml.hog as hog
-                        m = hog.Hog()
+                        import pyzm.ml.hog as hog
+                        m = hog.Hog(options=g.config)
                     elif model == 'face':
-                        import zm_ml.face as face
+                        import pyzm.ml.face as face
                         m = face.Face(
+                            options=g.config,
                             upsample_times=g.config['face_upsample_times'],
                             num_jitters=g.config['face_num_jitters'],
                             model=g.config['face_model'])
@@ -455,18 +456,20 @@ for model in g.config['detection_sequence']:
                     'Invoking ALPR as detected object is a vehicle or, we are trying hard to look for plates...'
                 )
                 if g.config['alpr_service'] == 'plate_recognizer':
-                    options = {
+                    alpr_options = {
                         'regions': g.config['platerec_regions'],
                         'stats': g.config['platerec_stats'],
                         'min_dscore': g.config['platerec_min_dscore'],
                         'min_score': g.config['platerec_min_score'],
+                        'alpr_api_type': g.config['alpr_api_type'],
                     }
                     alpr_obj = alpr.PlateRecognizer(
                         url=g.config['alpr_url'],
                         apikey=g.config['alpr_key'],
-                        options=options)
+                        options=g.config,
+                        alpr_options=alpr_options)
                 elif g.config['alpr_service'] == 'open_alpr':
-                    options = {
+                    alpr_options = {
                         'min_confidence': g.config['openalpr_min_confidence'],
                         'country': g.config['openalpr_country'],
                         'state': g.config['openalpr_state'],
@@ -475,13 +478,14 @@ for model in g.config['detection_sequence']:
                     }
                     alpr_obj = alpr.OpenAlpr(url=g.config['alpr_url'],
                                              apikey=g.config['alpr_key'],
-                                             options=options)
+                                             alpr_options = alpr_options,
+                                             options=g.config)
                 elif g.config['alpr_service'] == 'open_alpr_cmdline':
-                    options = {
+                    alpr_options = {
                         'min_confidence': g.config['openalpr_cmdline_min_confidence'],
                     }
                     alpr_obj = alpr.OpenAlprCmdLine(cmd=g.config['openalpr_cmdline_binary'],
-                                             options=options)
+                                             alpr_options=alpr_options, options=g.config)
                 else:
                     raise ValueError('ALPR service "{}" not known'.format(
                         g.config['alpr_service']))

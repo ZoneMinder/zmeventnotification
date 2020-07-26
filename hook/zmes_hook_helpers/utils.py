@@ -16,7 +16,7 @@ import urllib.parse
 import traceback
 
 from configparser import ConfigParser
-import zm_ml.common_params as g
+import zmes_hook_helpers.common_params as g
 
 from future import standard_library
 standard_library.install_aliases()

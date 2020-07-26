@@ -8,14 +8,14 @@ import codecs
 from setuptools import setup
 
 #Package meta-data
-NAME = 'zmes_hooks'
-DESCRIPTION = 'ZoneMinder EventServer hooks'
+NAME = 'zmes_hook_helpers'
+DESCRIPTION = 'ZoneMinder EventServer hook helper functions'
 URL = 'https://github.com/pliablepixels/zmeventserver/'
 AUTHOR_EMAIL = 'pliablepixels@gmail.com'
 AUTHOR = 'Pliable Pixels'
 LICENSE = 'GPL'
 INSTALL_REQUIRES = [
-    'numpy', 'requests', 'Shapely', 'imutils', 'pyzm>=0.1.16', 'scikit-learn', 'future', 'imageio','imageio-ffmpeg','pygifsicle'
+    'numpy', 'requests', 'Shapely', 'imutils', 'pyzm>=0.1.17', 'scikit-learn', 'future', 'imageio','imageio-ffmpeg','pygifsicle', 'Pillow'
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -39,7 +39,7 @@ def find_version(*file_paths):
 
 
 setup(name=NAME,
-      version=find_version('zm_ml', '__init__.py'),
+      version=find_version('zmes_hook_helpers', '__init__.py'),
       description=DESCRIPTION,
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
@@ -49,9 +49,9 @@ setup(name=NAME,
       license=LICENSE,
       install_requires=INSTALL_REQUIRES,
       py_modules=[
-          'zm_ml.common_params', 'zm_ml.log',
-          'zm_ml.yolo', 'zm_ml.hog',
-          'zm_ml.face', 'zm_ml.face_train',
-          'zm_ml.alpr', 'zm_ml.image_manip',
-          'zm_ml.apigw', 'zm_ml.utils'
+          'zmes_hook_helpers.common_params', 
+          'zmes_hook_helpers.log',
+          'zmes_hook_helpers.image_manip',
+          'zmes_hook_helpers.apigw', 
+          'zmes_hook_helpers.utils'
       ])

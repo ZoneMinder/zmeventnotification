@@ -1,9 +1,9 @@
-import zm_ml.common_params as g
-import zm_ml.log as log
+import pyzm.ml.common_params as g
+import pyzm.ml.log as log
 import sys
 
 
-class YoloRemote:
+class ObjectRemote:
     def __init__(self):
         
         class_file_abs_path = g.config['labels']

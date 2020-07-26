@@ -27,6 +27,8 @@ INSTALL_TINYYOLOV3=${INSTALL_TINYYOLOV3:-yes}
 INSTALL_YOLOV4=${INSTALL_YOLOV4:-yes}
 INSTALL_TINYYOLOV4=${INSTALL_TINYYOLOV4:-yes}
 
+INSTALL_CORAL_EDGETPU=${INSTALL_CORAL_EDGETPU:-no}
+
 
 TARGET_CONFIG='/etc/zm'
 TARGET_DATA='/var/lib/zmeventnotification'
@@ -148,7 +150,7 @@ verify_config() {
         echo "TinyYolo V3: ${INSTALL_TINYYOLOV3}"
         echo "Yolo V4: ${INSTALL_YOLOV4}"
         echo "Tiny Yolo V4": ${INSTALL_TINYYOLOV4}
-       
+        echo "Google Coral Edge TPU": ${INSTALL_CORAL_EDGETPU}
 
     fi
     echo
@@ -183,11 +185,39 @@ install_hook() {
     mkdir -p "${TARGET_DATA}/models/tinyyolov3" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/tinyyolov4" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/yolov4" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/models/coral_edgetpu" 2>/dev/null
     mkdir -p "${TARGET_DATA}/misc" 2>/dev/null
     echo "everything that does not fit anywhere else :-)" > "${TARGET_DATA}/misc/README.txt" 2>/dev/null
     
     if [ "${DOWNLOAD_MODELS}" == "yes" ]
     then
+
+        if [ "${INSTALL_CORAL_EDGETPU}" == "yes" ]
+        then
+            # Coral files
+            echo
+            echo "Installing edgetpu python libs, if needed..."
+            #${PY_SUDO} apt-get install libedgetpu1-std -qq
+            ${PY_SUDO} apt-get install python3-edgetpu -qq
+            
+
+            echo 'Checking for Google Coral Edge TPU data files...'
+            targets=( 'coco_indexed.names' 'ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite')
+            sources=('https://dl.google.com/coral/canned_models/coco_labels.txt'
+                     'https://github.com/google-coral/edgetpu/raw/master/test_data/ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite'
+                    )
+
+            for ((i=0;i<${#targets[@]};++i))
+            do
+                if [ ! -f "${TARGET_DATA}/models/coral_edgetpu/${targets[i]}" ]
+                then
+                    ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/coral_edgetpu/${targets[i]}"
+                else
+                    echo "${targets[i]} exists, no need to download"
+
+                fi
+            done
+        fi
 
         if [ "${INSTALL_YOLOV3}" == "yes" ]
         then
@@ -319,8 +349,10 @@ install_hook() {
     echo
     
 
-    echo "Removing old version of zmes-hooks, if any"
-    ${PY_SUDO} ${PIP} uninstall -y zmes-hooks  >/dev/null 2>&1
+    echo "Removing old version of zmes_hook_helpers, if any"
+    ${PY_SUDO} ${PIP} uninstall -y zmes-hooks   >/dev/null 2>&1
+    ${PY_SUDO} ${PIP} uninstall -y zmes_hook_helpers   >/dev/null 2>&1
+ 
     ${PY_SUDO} ${PIP} install hook/ && print_opencv_message || print_error "python hooks setup failed"
 
     echo "Installing package deps..."
@@ -554,6 +586,23 @@ fi
 chown -R ${WEB_OWNER}:${WEB_GROUP} "${TARGET_DATA}"
 
 
+if [ "${INSTALL_CORAL_EDGETPU}" == "yes" ]
+then
+    cat << EOF
+    -------------------------- EdgeTPU note ---------------------------- 
+
+    Note that while edgetpu support has been added, the expectation is 
+    that you have followed all the instructions at:
+    https://coral.ai/docs/accelerator/get-started/ first. 
+
+    If you don't, things will break. Further, you also need to make sure 
+    your web user (${WEB_OWNER}) has access to the coral device.
+    On my ubuntu system, I needed to do:
+        sudo usermod -a -G plugdev www-data
+    --------------------------------------------------------------------
+EOF
+fi
 
 echo
 echo "*** Please remember to start the Event Server after this update ***" 
+

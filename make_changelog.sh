@@ -1,13 +1,6 @@
 #!/bin/bash
 if [ -z "$1" ]; then
-    echo "Inferring version name from hooks/zm_ml/__init__.py"
-    if [[ `cat hook/zm_ml/__init__.py` =~ ^__version__\ =\ \"(.*)\" ]];
-    then
-            TAGVER=${BASH_REMATCH[1]}
-    else
-            echo "Bad version parsing"
-            exit
-    fi
+    TAGVER=`./zmeventnotification.pl --version`
 else
         TAGVER=$1
 fi

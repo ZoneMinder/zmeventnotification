@@ -1,5 +1,5 @@
 from configparser import ConfigParser
-import zm_ml.common_params as g
+import zmes_hook_helpers.common_params as g
 from shapely.geometry import Polygon
 import cv2
 import numpy as np
