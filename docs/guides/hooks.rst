@@ -58,7 +58,27 @@ Option 1: Automatic install
 
 ::
 
-    sudo -H ./install.sh # and follow the prompts
+   sudo -H ./install.sh # and follow the prompts
+
+**Note**: If you are planning on using Google EdgeTPU support,
+you'll have to invoke the script using:
+
+::
+
+   sudo -H INSTALL_CORAL_EDGETPU=yes ./install.sh # and follow the prompts
+
+EdgeTPU models are not downloaded automatically as they need special hardware.
+
+For EdgeTPU, the expectation is  that you have followed all the instructions 
+at `the coral site <https://coral.ai/docs/accelerator/get-started/>`__ first. 
+
+If you don't, things will break. Further, you also need to make sure your 
+web user has access to the coral device.
+
+On my ubuntu system, I needed to do:
+
+::
+   sudo usermod -a -G plugdev www-data
 
 
 .. _install_specific_models:
@@ -208,6 +228,9 @@ See :ref:`this FAQ entry <local_remote_ml>`.
 Which models should I use?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
+- Starting 5.16, Google Coral Edge TPU is supported. See install instructions above.
+
 -  Starting 5.15.6, you have the option of using YoloV3 or YoloV4. V3 is the original one
    while V4 is an optimized version by Alexey. See `here <https://github.com/AlexeyAB/darknet>`__.
    V4 is faster, and is supposed to be more accurate but YMMV. Note that you need a version GREATER than 4.3
@@ -267,8 +290,6 @@ As of today, the following detection types are supported - these are all attribu
      and is faster. And a regular mode, that is more accurate but resource hungry.  These models are controlled 
      by the ``weights`` and ``config`` files you use with yolo. 
 
-* ``hog`` - A very innacurate, but very fast person detector. Use this *only* if you are not able to run yolo, 
-  even with the "tiny" weights.
 * ``face`` - face detection and recognition (uses ``dlib``)
 * ``alpr`` - license plate recognition. Needs to be paired with object (i.e. ``object,alpr``)
 
@@ -278,8 +299,8 @@ You can switch detection type by using
 
 Example:
 
-``detection_sequence=object,hog,face`` will run full Yolo, then HOG, then face
-recognition.
+``detection_sequence=object,face,alpr`` will run full Yolo, then face 
+recognition and finally alpr
 
 Note that you can change ``detecton_sequence`` on a per monitor basis too. Read the
 comments in ``objectconfig.ini``
@@ -325,7 +346,7 @@ This is an example config that uses OpenALPR:
 
 ::
 
-  models = yolo,alpr
+  detection_sequence = object,alpr
 
   [alpr]
   alpr_service=open_alpr
@@ -343,7 +364,7 @@ This is an example config that uses OpenALPR command line:
 
 ::
 
-  models = yolo,alpr
+  detection_Sequence = object,alpr
 
   [alpr]
   alpr_service=open_alpr_cmdline
