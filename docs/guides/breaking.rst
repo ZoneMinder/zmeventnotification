@@ -21,7 +21,7 @@ Version 5.16.0 onwards
     - ``object_processor`` which can be ``cpu``, ``gpu`` or ``tpu``
 
   - ``yolo_min_confidence``  is now ``object_min_confidence``
-  - ``config``,``weights``, ``labels`` are now ``object_config``, ``object_weights`` and ``object_labels`` respectively.
+  - ``config``, ``weights``, ``labels`` are now ``object_config``, ``object_weights`` and ``object_labels`` respectively.
   - None of the ``tiny_`` attributes exist anymore. Simply switch weights, labels and config files to switch between full and tiny
   - ``yolo_type`` doesn't exist anymore (as ``tiny_`` attributes are removed, so it doesn't make sense)
 
