@@ -1,12 +1,12 @@
-import pyzm.ml.common_params as g
-import pyzm.ml.log as log
+import zmes_hook_helpers.common_params as g
+import pyzm.ZMLog as log
 import sys
 
 
 class ObjectRemote:
     def __init__(self):
         
-        class_file_abs_path = g.config['labels']
+        class_file_abs_path = g.config['object_labels']
         f = open(class_file_abs_path, 'r')
         self.classes = [line.strip() for line in f.readlines()]
 

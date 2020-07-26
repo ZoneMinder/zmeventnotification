@@ -30,14 +30,14 @@ def createAnimation(frametype, eid,fname, types):
     target_fps = 2
     buffer_seconds = 5 #seconds
     while True and rtries:
-        g.logger.debug (f"animation: Try:{g.config['animation_max_tries']-rtries+1} Getting {disp_api_url}")
+        g.logger.Debug (1,f"animation: Try:{g.config['animation_max_tries']-rtries+1} Getting {disp_api_url}")
         r = None
         try:
             resp = requests.get(api_url)
             resp.raise_for_status()
             r = resp.json()
         except requests.exceptions.RequestException as e:
-            g.logger.error(f'{e}')
+            g.logger.Error(f'{e}')
             continue
 
         r_event = r['event']['Event']
@@ -51,9 +51,9 @@ def createAnimation(frametype, eid,fname, types):
         else:
             fid = int(frameid)
 
-        #g.logger.debug (f'animation: Response {r}')
+        #g.logger.Debug (1,f'animation: Response {r}')
         if r_frame is None or not r_frame_len:
-            g.logger.debug (f'No frames found yet via API, deferring check for {sleep_secs} seconds...')
+            g.logger.Debug (1,f'No frames found yet via API, deferring check for {sleep_secs} seconds...')
             rtries = rtries - 1
             time.sleep(sleep_secs)
             continue
@@ -63,62 +63,62 @@ def createAnimation(frametype, eid,fname, types):
         fps=round(totframes/total_time)
 
         if not r_frame_len >= fid+fps*buffer_seconds:
-            g.logger.debug (f'I\'ve got {r_frame_len} frames, but that\'s not enough as anchor frame is type:{frametype}:{fid}, deferring check for {sleep_secs} seconds...')
+            g.logger.Debug (1,f'I\'ve got {r_frame_len} frames, but that\'s not enough as anchor frame is type:{frametype}:{fid}, deferring check for {sleep_secs} seconds...')
             rtries = rtries - 1
             time.sleep(sleep_secs)
             continue
 
-        g.logger.debug ('animation: Got {} frames'.format(r_frame_len))
+        g.logger.Debug (1,'animation: Got {} frames'.format(r_frame_len))
         break
         # fid is the anchor frame
     if not rtries:
-        g.logger.error ('animation: Bailing, failed too many times')
+        g.logger.Error ('animation: Bailing, failed too many times')
         return
   
 
   
-    g.logger.debug ('animation: event fps={}'.format(fps))
+    g.logger.Debug (1,'animation: event fps={}'.format(fps))
     start_frame = int(max(fid - (buffer_seconds*fps),1))
     end_frame = int(min(totframes, fid + (buffer_seconds*fps)))
     skip =round(fps/target_fps)
 
-    g.logger.debug (f'animation: anchor={frametype} start={start_frame} end={end_frame} skip={skip}')
-    g.logger.debug('animation: Grabbing frames...')
+    g.logger.Debug (1,f'animation: anchor={frametype} start={start_frame} end={end_frame} skip={skip}')
+    g.logger.Debug(1,'animation: Grabbing frames...')
     images = []
     od_images = []
 
     # use frametype  (alarm/snapshot) to get od anchor, because fid can be wrong when translating from videos
     od_url= '{}/index.php?view=image&eid={}&fid={}&username={}&password={}&width={}'.format(g.config['portal'],eid,frametype,g.config['user'],urllib.parse.quote(g.config['password'], safe=''),g.config['animation_width'])
-    g.logger.debug (f'Grabbing anchor frame: {frametype}...')
+    g.logger.Debug (1,f'Grabbing anchor frame: {frametype}...')
     try:
         od_frame = imageio.imread(od_url)
         # 1 second @ 2fps
         od_images.append(od_frame)
         od_images.append(od_frame)
     except Exception as e:
-        g.logger.error (f'Error downloading anchor  frame: Error:{e}')
+        g.logger.Error (f'Error downloading anchor  frame: Error:{e}')
 
     for i in range(start_frame, end_frame+1, skip):
         p_url=url+'&fid={}'.format(i)
-        g.logger.debug (f'animation: Grabbing Frame:{i}',level=2)
+        g.logger.Debug (2,f'animation: Grabbing Frame:{i}')
         try:
             images.append(imageio.imread(p_url))
         except Exception as e:
-            g.logger.error (f'Error downloading frame {i}: Error:{e}')
+            g.logger.Error (f'Error downloading frame {i}: Error:{e}')
 
-    g.logger.debug (f'animation: Saving {fname}...')
+    g.logger.Debug (1,f'animation: Saving {fname}...')
     try:
         if 'mp4' in types.lower():
-            g.logger.debug ('Creating MP4...')
+            g.logger.Debug (1,'Creating MP4...')
             mp4_final = od_images.copy()
             mp4_final.extend(images)
             imageio.mimwrite(fname+'.mp4', mp4_final, format='mp4', fps=target_fps)
             size = os.stat(fname+'.mp4').st_size
-            g.logger.debug (f'animation: saved to {fname}.mp4, size {size} bytes, frames: {len(images)}')
+            g.logger.Debug (1,f'animation: saved to {fname}.mp4, size {size} bytes, frames: {len(images)}')
 
         if 'gif' in types.lower():
             from pygifsicle import optimize
-            g.logger.debug ('Creating GIF...')
+            g.logger.Debug (1,'Creating GIF...')
 
             # Let's slice the right amount from images
             # GIF uses a +- 2 second buffer
@@ -129,22 +129,22 @@ def createAnimation(frametype, eid,fname, types):
             s2 = round((end_frame - gif_end_frame)/skip)
             if s1 >=0 and  s2 >=0:
                 gif_images = images[0+s1:-s2]
-                g.logger.debug (f'For GIF, slicing {s1} to -{s2} from a total of {len(images)}')
-                g.logger.debug ('animation:Saving...')
+                g.logger.Debug (1,f'For GIF, slicing {s1} to -{s2} from a total of {len(images)}')
+                g.logger.Debug (1,'animation:Saving...')
                 gif_final = od_images.copy()
                 gif_final.extend(gif_images)
                 imageio.mimwrite(fname+'.gif', gif_final, format='gif', fps=target_fps)
-                g.logger.debug ('animation:Optimizing...')
+                g.logger.Debug (1,'animation:Optimizing...')
                 optimize(source=fname+'.gif', colors=256)
                 size = os.stat(fname+'.gif').st_size
-                g.logger.debug (f'animation: saved to {fname}.gif, size {size} bytes, frames:{len(gif_images)}')
+                g.logger.Debug (1,f'animation: saved to {fname}.gif, size {size} bytes, frames:{len(gif_images)}')
             else:
-                g.logger.debug (f'Bailing in GIF creation, range is weird start:{s1}:end offset {-s2}')
+                g.logger.Debug (1,f'Bailing in GIF creation, range is weird start:{s1}:end offset {-s2}')
 
         
         
     except Exception as e:
-        g.logger.error('animation: Traceback:{}'.format(traceback.format_exc()))
+        g.logger.Error('animation: Traceback:{}'.format(traceback.format_exc()))
 
 # once all bounding boxes are detected, we check to see if any of them
 # intersect the polygons, if specified
@@ -157,30 +157,30 @@ def processPastDetection(bbox, label, conf, mid):
         FileNotFoundError = IOError
 
     if not mid:
-        g.logger.debug(
+        g.logger.Debug(1,
             'Monitor ID not specified, cannot match past detections')
         return bbox, label, conf
     mon_file = g.config['image_path'] + '/monitor-' + mid + '-data.pkl'
-    g.logger.debug('trying to load ' + mon_file,level=2)
+    g.logger.Debug(2,'trying to load ' + mon_file)
     try:
         fh = open(mon_file, "rb")
         saved_bs = pickle.load(fh)
         saved_ls = pickle.load(fh)
         saved_cs = pickle.load(fh)
     except FileNotFoundError:
-        g.logger.debug('No history data file found for monitor {}'.format(mid), level=1)
+        g.logger.Debug(1,'No history data file found for monitor {}'.format(mid))
         return bbox, label, conf
     except EOFError:
-        g.logger.debug('Empty file found for monitor {}'.format(mid), level=1)
-        g.logger.debug ('Going to remove {}'.format(mon_file), level=1)
+        g.logger.Debug(1,'Empty file found for monitor {}'.format(mid))
+        g.logger.Debug (1,'Going to remove {}'.format(mon_file))
         try:
             os.remove(mon_file)
         except Exception as e:
-            g.logger.error (f'Could not delete: {e}')
+            g.logger.Error (f'Could not delete: {e}')
             pass
     except Exception as e:
-        g.logger.error(f'Error in processPastDetection: {e}')
-        #g.logger.error('Traceback:{}'.format(traceback.format_exc()))
+        g.logger.Error(f'Error in processPastDetection: {e}')
+        #g.logger.Error('Traceback:{}'.format(traceback.format_exc()))
         return bbox, label, conf
 
     # load past detection
@@ -192,18 +192,18 @@ def processPastDetection(bbox, label, conf, mid):
         use_percent = True if m.group(2) is None or m.group(
             2) == '%' else False
     else:
-        g.logger.error('past_det_max_diff_area misformatted: {}'.format(
+        g.logger.Error('past_det_max_diff_area misformatted: {}'.format(
             g.config['past_det_max_diff_area']))
         return bbox, label, conf
 
     # it's very easy to forget to add 'px' when using pixels
     if use_percent and (max_diff_area < 0 or max_diff_area > 100):
-        g.logger.error(
+        g.logger.Error(
             'past_det_max_diff_area must be in the range 0-100 when using percentages: {}'
             .format(g.config['past_det_max_diff_area']))
         return bbox, label, conf
 
-    #g.logger.debug ('loaded past: bbox={}, labels={}'.format(saved_bs, saved_ls));
+    #g.logger.Debug (1,'loaded past: bbox={}, labels={}'.format(saved_bs, saved_ls));
 
     new_label = []
     new_bbox = []
@@ -217,8 +217,8 @@ def processPastDetection(bbox, label, conf, mid):
 
         b.insert(1, (b[1][0], b[0][1]))
         b.insert(3, (b[0][0], b[2][1]))
-        #g.logger.debug ("Past detection: {}@{}".format(saved_ls[idx],b))
-        #g.logger.debug ('BOBK={}'.format(b))
+        #g.logger.Debug (1,"Past detection: {}@{}".format(saved_ls[idx],b))
+        #g.logger.Debug (1,'BOBK={}'.format(b))
         obj = Polygon(b)
         foundMatch = False
         for saved_idx, saved_b in enumerate(saved_bs):
@@ -242,7 +242,7 @@ def processPastDetection(bbox, label, conf, mid):
                         max_diff_pixels = saved_obj.area * max_diff_area / 100
 
                 if diff_area <= max_diff_pixels:
-                    g.logger.debug(
+                    g.logger.Debug(
                         'past detection {}@{} approximately matches {}@{} removing'
                         .format(saved_ls[saved_idx], saved_b, label[idx], b))
                     foundMatch = True
@@ -260,7 +260,7 @@ def processFilters(bbox, label, conf, match):
     # labels are set of corresponding object names
     # conf are set of confidence scores (for hog and face this is set to 1)
     # match contains the list of labels that will be allowed based on detect_pattern
-    #g.logger.debug ("PROCESS INTERSECTION {} AND {}".format(bbox,label))
+    #g.logger.Debug (1,"PROCESS INTERSECTION {} AND {}".format(bbox,label))
     new_label = []
     new_bbox = []
     new_conf = []
@@ -277,11 +277,11 @@ def processFilters(bbox, label, conf, match):
         old_b = b
         it = iter(b)
         b = list(zip(it, it))
-        #g.logger.debug ("BB={}".format(b))
-        #g.logger.debug ("BEFORE INSERT: {}".format(b))
+        #g.logger.Debug (1,"BB={}".format(b))
+        #g.logger.Debug (1,"BEFORE INSERT: {}".format(b))
         b.insert(1, (b[1][0], b[0][1]))
         b.insert(3, (b[0][0], b[2][1]))
-        g.logger.debug("intersection: polygon in process={}".format(b),level=2)
+        g.logger.Debug(2,"intersection: polygon in process={}".format(b))
         obj = Polygon(b)
 
        
@@ -290,16 +290,16 @@ def processFilters(bbox, label, conf, match):
             poly = Polygon(p['value'])
             if obj.intersects(poly):
                 if label[idx] in match:
-                    g.logger.debug('{} intersects object:{}[{}]'.format(
-                        p['name'], label[idx], b),level=2)
+                    g.logger.Debug(2,'{} intersects object:{}[{}]'.format(
+                        p['name'], label[idx], b))
                     new_label.append(label[idx])
                     new_bbox.append(old_b)
                     new_conf.append(conf[idx])
                 else:
-                    g.logger.info(
+                    g.logger.Info(
                         'discarding "{}" as it does not match your filters'.
                         format(label[idx]))
-                    g.logger.debug(
+                    g.logger.Debug(1,
                         '{} intersects object:{}[{}] but does NOT match your detect_pattern filter of {}'
                         .format(p['name'], label[idx], b,
                                 g.config['detect_pattern']))
@@ -307,7 +307,7 @@ def processFilters(bbox, label, conf, match):
                 break
         # out of poly loop
         if not doesIntersect:
-            g.logger.info(
+            g.logger.Info(
                 'object:{} at {} does not fall into any polygons, removing...'.
                 format(label[idx], obj))
     #out of object loop
@@ -325,12 +325,12 @@ def getValidPlateDetections(bbox, label, conf):
     new_label = []
     new_bbox = []
     new_conf = []
-    g.logger.debug('Checking vehicle plates for validity')
+    g.logger.Debug(1,'Checking vehicle plates for validity')
 
     try:
         r = re.compile(g.config['alpr_pattern'])
     except re.error:
-        g.logger.error('invalid pattern {}, using .*'.format(
+        g.logger.Error('invalid pattern {}, using .*'.format(
             g.config['alpr_pattern']))
         r = re.compile('.*')
 
@@ -338,7 +338,7 @@ def getValidPlateDetections(bbox, label, conf):
 
     for idx, b in enumerate(bbox):
         if not label[idx] in match:
-            g.logger.debug(
+            g.logger.Debug(1,
                 'discarding plate:{} as it does not match alpr filter pattern:{}'
                 .format(label[idx], g.config['alpr_pattern']))
             continue
@@ -346,14 +346,14 @@ def getValidPlateDetections(bbox, label, conf):
         old_b = b
         it = iter(b)
         b = list(zip(it, it))
-        #g.logger.debug ("BB={}".format(b))
+        #g.logger.Debug (1,"BB={}".format(b))
         b.insert(1, (b[1][0], b[0][1]))
         b.insert(3, (b[0][0], b[2][1]))
-        #g.logger.debug ("valid plate: polygon in process={}".format(b))
+        #g.logger.Debug (1,"valid plate: polygon in process={}".format(b))
         obj = Polygon(b)
         doesIntersect = False
         for p in g.polygons:
-            # g.logger.debug ("valid plate: mask in process={}".format(p['value']))
+            # g.logger.Debug (1,"valid plate: mask in process={}".format(p['value']))
             poly = Polygon(p['value'])
             # Lets make sure the license plate doesn't cover the full polygon area
             # if it did, its very likey a bogus reading
@@ -369,11 +369,11 @@ def getValidPlateDetections(bbox, label, conf):
                     doesIntersect = True
                 else:
                     res = res + 'but also contains polygon, assuming it to be INVALID'
-                    g.logger.debug(res, level=2)
+                    g.logger.Debug(2,res)
                 if doesIntersect: break
         # out of poly loop
         if not doesIntersect:
-            g.logger.debug(
+            g.logger.Debug(1,
                 'plate:{} at {} does not fall into any polygons, removing...'.
                 format(label[idx], obj))
     #out of object loop
@@ -391,7 +391,7 @@ def draw_bbox(img,
               color=None,
               write_conf=True):
 
-    # g.logger.debug ("DRAW BBOX={} LAB={}".format(bbox,labels))
+    # g.logger.Debug (1,"DRAW BBOX={} LAB={}".format(bbox,labels))
     slate_colors = [(39, 174, 96), (142, 68, 173), (0, 129, 254),
                     (254, 60, 113), (243, 134, 48), (91, 177, 47)]
     # if no color is specified, use my own slate
@@ -412,13 +412,13 @@ def draw_bbox(img,
 
     arr_len = len(bgr_slate_colors)
     for i, label in enumerate(labels):
-        #=g.logger.debug ('drawing box for: {}'.format(label))
+        #=g.logger.Debug (1,'drawing box for: {}'.format(label))
         color = bgr_slate_colors[i % arr_len]
         if write_conf and confidence:
             label += ' ' + str(format(confidence[i] * 100, '.2f')) + '%'
         # draw bounding box around object
 
-        #g.logger.debug ("DRAWING RECT={},{} {},{}".format(bbox[i][0], bbox[i][1],bbox[i][2], bbox[i][3]))
+        #g.logger.Debug (1,"DRAWING RECT={},{} {},{}".format(bbox[i][0], bbox[i][1],bbox[i][2], bbox[i][3]))
         cv2.rectangle(img, (bbox[i][0], bbox[i][1]), (bbox[i][2], bbox[i][3]),
                       color, 2)
 

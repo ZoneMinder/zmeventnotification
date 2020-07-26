@@ -263,6 +263,16 @@ config_vals = {
         },
 
        # Face
+        'face_detection_framework':{
+            'section': 'face',
+            'default': 'dlib',
+            'type': 'string'
+        },
+        'face_recognition_framework':{
+            'section': 'face',
+            'default': 'dlib',
+            'type': 'string'
+        },
         'face_num_jitters':{
             'section': 'face',
             'default': '0',

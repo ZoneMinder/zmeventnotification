@@ -43,16 +43,7 @@ class wrapperLogger():
     def setLevel(self, level):
         pass
     
-    # wrappers to work with pyzm
-    # Guess I forgot capitalization
-    def Debug (self,level, msg ):
-        self.debug(msg, level)
-    def Info (self, msg):
-        self.info (msg)
-    def Error (self, msg):
-        self.error (msg)
-    def Fatal (self, msg):
-        self.fatal(msg)
+  
 
 def init(process_name=None, override={}, dump_console=False):
     g.logger = wrapperLogger(name=process_name, override=override, dump_console=dump_console)
