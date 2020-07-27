@@ -24,7 +24,14 @@ Version 5.16.0 onwards
   - ``config``, ``weights``, ``labels`` are now ``object_config``, ``object_weights`` and ``object_labels`` respectively.
   - None of the ``tiny_`` attributes exist anymore. Simply switch weights, labels and config files to switch between full and tiny
   - ``yolo_type`` doesn't exist anymore (as ``tiny_`` attributes are removed, so it doesn't make sense)
+  - ``alpr_pattern`` is now ``alpr_detection_pattern``
+  - ``detect_pattern`` no longer exists. You now have a per detection type pattern, which allows
+    you to specify patterns based on the detection type:
 
+    - ``object_detection_pattern`` - for all objects
+    - ``alpr_detection_pattern`` - for for license plates
+    - ``face_detection_pattern`` - for all faces detected
+    
 
 Version 5.15.7 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

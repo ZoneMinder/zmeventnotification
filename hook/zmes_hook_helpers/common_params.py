@@ -59,11 +59,7 @@ config_vals = {
             'default': '/var/lib/zmeventnotification/images',
             'type': 'string'
         },
-        'detect_pattern':{
-            'section': 'general',
-            'default': '.*',
-            'type': 'string'
-        },
+        
         'match_past_detections':{
             'section': 'general',
             'default': 'no',
@@ -205,6 +201,11 @@ config_vals = {
             'type': 'string'
         },
        
+       'object_detection_pattern':{
+            'section': 'object',
+            'default': '.*',
+            'type': 'string'
+        },
        
        'object_framework':{
             'section': 'object',
@@ -263,6 +264,11 @@ config_vals = {
         },
 
        # Face
+       'face_detection_pattern':{
+            'section': 'face',
+            'default': '.*',
+            'type': 'string'
+        },
         'face_detection_framework':{
             'section': 'face',
             'default': 'dlib',
@@ -336,6 +342,11 @@ config_vals = {
             'default': 'plate_recognizer',
             'type': 'string',
         },
+        'alpr_detection_pattern':{
+            'section': 'alpr',
+            'default': '.*',
+            'type': 'string'
+        },
         'alpr_url': {
             'section': 'alpr',
             'default': None,
@@ -350,12 +361,6 @@ config_vals = {
             'section': 'alpr',
             'type': 'string',
             'default': 'yes',
-        },
-
-         'alpr_pattern':{
-            'section': 'general',
-            'default': '.*',
-            'type': 'string'
         },
         'alpr_api_type':{
             'section': 'alpr',

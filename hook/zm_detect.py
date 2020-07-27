@@ -342,11 +342,12 @@ for model in g.config['detection_sequence']:
     #g.logger.Debug(1,'|--> model:{} init took: {}s'.format(model, (datetime.datetime.now() - t_start).total_seconds()))
 
     # read the detection pattern we need to apply as a filter
+    pat = model + '_detection_pattern'
     try:
-        r = re.compile(g.config['detect_pattern'])
+        r = re.compile(g.config[pat])
     except re.error:
-        g.logger.Error('invalid pattern {}, using .*'.format(
-            g.config['detect_pattern']))
+        g.logger.Error('invalid pattern {} in {}, using .*'.format(
+            pat,g.config[pat]))
         r = re.compile('.*')
 
     t_start = datetime.datetime.now()
@@ -415,7 +416,7 @@ for model in g.config['detection_sequence']:
         # to the allowed list or they will be thrown away during the intersection
         # check
         if model == 'face':
-            g.logger.Debug(1,'Appending known faces to filter list')
+           
             match = match + [g.config['unknown_face_name']]  # unknown face
 
             if g.config['ml_gateway'] and not remote_failed:
@@ -443,10 +444,11 @@ for model in g.config['detection_sequence']:
                         wdata = {'names': data['names']}
                         json.dump(wdata, json_file)
 
+            '''
             for cls in m.get_classes():
                 if not cls in match:
                     match = match + [cls]
-
+            '''
         # now filter these with polygon areas
         #g.logger.Debug (1,"INTERIM BOX = {} {}".format(b,l))
         b, l, c = img.processFilters(b, l, c, match)
@@ -461,7 +463,7 @@ for model in g.config['detection_sequence']:
                 if g.config['ml_gateway']:
                     alpr_obj = AlprRemote()
                 else:
-                    alpr_obj = alpr.Alpr(options=g.config)
+                    alpr_obj = alpr.Alpr(logger=g.logger,options=g.config)
                     
 
                 if g.config['ml_gateway'] and not remote_failed:
@@ -472,21 +474,7 @@ for model in g.config['detection_sequence']:
                         if g.config['ml_fallback_local'] == 'yes':
                             g.logger.Info('Falling back to local execution...')
                             remote_failed = True
-                            if g.config['alpr_service'] == 'plate_recognizer':
-                                alpr_obj = alpr.PlateRecognizer(
-                                    url=g.config['alpr_url'],
-                                    apikey=g.config['alpr_key'],
-                                    options=g.config)
-                            elif g.config['alpr_service'] == 'open_alpr':
-                                alpr_obj = alpr.OpenAlpr(url=g.config['alpr_url'],
-                                                        apikey=g.config['alpr_key'],
-                                                        options=g.config)
-                            elif g.config['alpr_service'] == 'open_alpr_cmdline':
-                                alpr_obj = alpr.OpenAlprCmdLine(cmd=g.config['openalpr_cmdline_binary'],
-                                                        options=g.config)
-                            else:
-                                raise ValueError('ALPR service "{}" not known'.format(
-                                    g.config['alpr_service']))
+                            alpr_obj = alpr.Alpr(logger=g.logger,options=g.config)
                             alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)        
                         else:
                             raise

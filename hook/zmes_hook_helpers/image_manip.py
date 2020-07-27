@@ -300,9 +300,8 @@ def processFilters(bbox, label, conf, match):
                         'discarding "{}" as it does not match your filters'.
                         format(label[idx]))
                     g.logger.Debug(1,
-                        '{} intersects object:{}[{}] but does NOT match your detect_pattern filter of {}'
-                        .format(p['name'], label[idx], b,
-                                g.config['detect_pattern']))
+                        '{} intersects object:{}[{}] but does NOT match your detect pattern filter'
+                        .format(p['name'], label[idx], b))
                 doesIntersect = True
                 break
         # out of poly loop
@@ -328,10 +327,10 @@ def getValidPlateDetections(bbox, label, conf):
     g.logger.Debug(1,'Checking vehicle plates for validity')
 
     try:
-        r = re.compile(g.config['alpr_pattern'])
+        r = re.compile(g.config['alpr_detection_pattern'])
     except re.error:
         g.logger.Error('invalid pattern {}, using .*'.format(
-            g.config['alpr_pattern']))
+            g.config['alpr_detection_pattern']))
         r = re.compile('.*')
 
     match = list(filter(r.match, label))
@@ -340,7 +339,7 @@ def getValidPlateDetections(bbox, label, conf):
         if not label[idx] in match:
             g.logger.Debug(1,
                 'discarding plate:{} as it does not match alpr filter pattern:{}'
-                .format(label[idx], g.config['alpr_pattern']))
+                .format(label[idx], g.config['alpr_detection_pattern']))
             continue
 
         old_b = b
