@@ -40,12 +40,9 @@ def remote_detect(image, model=None):
     api_url = g.config['ml_gateway']
     g.logger.Info('Detecting using remote API Gateway {}'.format(api_url))
     login_url = api_url + '/login'
-    object_url = api_url + '/detect/object'
+    object_url = api_url + '/detect/object?type='+model
     access_token = None
     global auth_header
-
-    if model == 'face':
-        object_url += '?type=face'
 
     data_file = g.config['base_data_path'] + '/zm_login.json'
     if os.path.exists(data_file):
@@ -90,6 +87,10 @@ def remote_detect(image, model=None):
             json_file.close()
 
     auth_header = {'Authorization': 'Bearer ' + access_token}
+
+    if type(image) == str:
+        g.logger.Debug(2, f'Reading {image} to buffer')
+        image = cv2.imread(image)
     ret, jpeg = cv2.imencode('.jpg', image)
     files = {'file': ('image.jpg', jpeg.tobytes())}
 
@@ -215,7 +216,7 @@ if not g.config['ml_gateway']:
     import pyzm.ml.hog as hog
 else:
     g.logger.Info('Importing remote shim classes for Object/Face')
-    from zmes_hook_helpers.apigw import ObjectRemote, FaceRemote
+    from zmes_hook_helpers.apigw import ObjectRemote, FaceRemote, AlprRemote
 
 # now download image(s)
 
@@ -457,24 +458,41 @@ for model in g.config['detection_sequence']:
                 g.logger.Debug(1,
                     'Invoking ALPR as detected object is a vehicle or, we are trying hard to look for plates...'
                 )
-                if g.config['alpr_service'] == 'plate_recognizer':
-                
-                    alpr_obj = alpr.PlateRecognizer(
-                        url=g.config['alpr_url'],
-                        apikey=g.config['alpr_key'],
-                        options=g.config)
-                elif g.config['alpr_service'] == 'open_alpr':
-                    alpr_obj = alpr.OpenAlpr(url=g.config['alpr_url'],
-                                             apikey=g.config['alpr_key'],
-                                             options=g.config)
-                elif g.config['alpr_service'] == 'open_alpr_cmdline':
-                    alpr_obj = alpr.OpenAlprCmdLine(cmd=g.config['openalpr_cmdline_binary'],
-                                             alpr_options=alpr_options, options=g.config)
+                if g.config['ml_gateway']:
+                    alpr_obj = AlprRemote()
                 else:
-                    raise ValueError('ALPR service "{}" not known'.format(
-                        g.config['alpr_service']))
-                # don't pass resized image - may be too small
-                alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)
+                    alpr_obj = alpr.Alpr(options=g.config)
+                    
+
+                if g.config['ml_gateway'] and not remote_failed:
+                    try:
+                        alpr_b, alpr_l, alpr_c = remote_detect(filename, 'alpr')
+                    except Exception as e:
+                        g.logger.Error('Error executing remote API: {}'.format(e))
+                        if g.config['ml_fallback_local'] == 'yes':
+                            g.logger.Info('Falling back to local execution...')
+                            remote_failed = True
+                            if g.config['alpr_service'] == 'plate_recognizer':
+                                alpr_obj = alpr.PlateRecognizer(
+                                    url=g.config['alpr_url'],
+                                    apikey=g.config['alpr_key'],
+                                    options=g.config)
+                            elif g.config['alpr_service'] == 'open_alpr':
+                                alpr_obj = alpr.OpenAlpr(url=g.config['alpr_url'],
+                                                        apikey=g.config['alpr_key'],
+                                                        options=g.config)
+                            elif g.config['alpr_service'] == 'open_alpr_cmdline':
+                                alpr_obj = alpr.OpenAlprCmdLine(cmd=g.config['openalpr_cmdline_binary'],
+                                                        options=g.config)
+                            else:
+                                raise ValueError('ALPR service "{}" not known'.format(
+                                    g.config['alpr_service']))
+                            alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)        
+                        else:
+                            raise
+
+                else: # not ml_gateway
+                    alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)
                 alpr_b, alpr_l, alpr_c = img.getValidPlateDetections(
                     alpr_b, alpr_l, alpr_c)
                 if len(alpr_l):

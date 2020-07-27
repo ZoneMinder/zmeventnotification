@@ -26,3 +26,14 @@ class FaceRemote:
 
     def get_classes(self):
         return self.classes
+
+
+class AlprRemote:
+    def __init__(self):
+        self.classes = []
+
+    def set_classes(self, classes):
+        self.classes = classes
+
+    def get_classes(self):
+        return self.classes
