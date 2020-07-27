@@ -458,34 +458,16 @@ for model in g.config['detection_sequence']:
                     'Invoking ALPR as detected object is a vehicle or, we are trying hard to look for plates...'
                 )
                 if g.config['alpr_service'] == 'plate_recognizer':
-                    alpr_options = {
-                        'regions': g.config['platerec_regions'],
-                        'stats': g.config['platerec_stats'],
-                        'min_dscore': g.config['platerec_min_dscore'],
-                        'min_score': g.config['platerec_min_score'],
-                        'alpr_api_type': g.config['alpr_api_type'],
-                    }
+                
                     alpr_obj = alpr.PlateRecognizer(
                         url=g.config['alpr_url'],
                         apikey=g.config['alpr_key'],
-                        options=g.config,
-                        alpr_options=alpr_options)
+                        options=g.config)
                 elif g.config['alpr_service'] == 'open_alpr':
-                    alpr_options = {
-                        'min_confidence': g.config['openalpr_min_confidence'],
-                        'country': g.config['openalpr_country'],
-                        'state': g.config['openalpr_state'],
-                        'recognize_vehicle':
-                        g.config['openalpr_recognize_vehicle']
-                    }
                     alpr_obj = alpr.OpenAlpr(url=g.config['alpr_url'],
                                              apikey=g.config['alpr_key'],
-                                             alpr_options = alpr_options,
                                              options=g.config)
                 elif g.config['alpr_service'] == 'open_alpr_cmdline':
-                    alpr_options = {
-                        'min_confidence': g.config['openalpr_cmdline_min_confidence'],
-                    }
                     alpr_obj = alpr.OpenAlprCmdLine(cmd=g.config['openalpr_cmdline_binary'],
                                              alpr_options=alpr_options, options=g.config)
                 else:
