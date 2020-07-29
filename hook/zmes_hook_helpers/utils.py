@@ -96,13 +96,19 @@ def import_zm_zones(mid, reason):
     # Now lets look at reason to see if we need to 
     # honor ZM motion zones
 
+    # There are two types of strings
+    # ' zone1,zone2' (for mocord)
+    # 'Motion zone1,zone2' (for modect)
     reason_zones = []
-    if match_reason and reason and 'Motion:' in reason:
-        rz = reason.split('Motion:')
-        if len(rz) > 1:
+    if match_reason and reason:
+        if reason[0]==' ': # mocord cause
+            rz = reason[1:]
+        elif 'Motion ' in reason:
+            rz = reason.split('Motion ')
             rz = rz[1]
-            reason_zones = [x.strip() for x in rz.split(',')]
-            g.logger.Debug(1,'Found motion zones provided in alarm cause: {}'.format(reason_zones))
+
+        reason_zones = [x.strip() for x in rz.split(',')]
+        g.logger.Debug(1,'Found motion zones provided in alarm cause: {}'.format(reason_zones))
 
 
     for item in j['zones']:
