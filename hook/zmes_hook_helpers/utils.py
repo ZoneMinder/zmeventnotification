@@ -340,8 +340,12 @@ def process_config(args, ctx):
                     else:
                         # This means its a polygon for the monitor
                         if not g.config['only_triggered_zm_zones'] == 'yes':
-                            g.polygons.append({'name': k, 'value': str2tuple(v)})
-                            g.logger.Debug(2,'adding polygon: {} [{}]'.format(k, v))
+                            try:
+                                g.polygons.append({'name': k, 'value': str2tuple(v)})
+                                g.logger.Debug(2,'adding polygon: {} [{}]'.format(k, v))
+                            except Exception as e:
+                                g.logger.Error('{}={} is either an invalid attribute or a malformed polygon. Error was {}. Ignoring.'.format(k,v,e))
+                           
                         else:
                             g.logger.Debug (2,'ignoring polygon: {} as only_triggered_zm_zones is true'.format(k))
             # now import zones if needed
