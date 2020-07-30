@@ -114,7 +114,7 @@ def import_zm_zones(mid, reason):
     for item in j['zones']:
         if  match_reason:
             if not findWholeWord(item['Zone']['Name'])(reason):
-                g.logger.Debug(1,'dropping {} as zones in alarm cause is {}'.format(item['Zone']['Name'], reason_zones))
+                g.logger.Debug(1,'dropping {} as zones in alarm cause is {}'.format(item['Zone']['Name'], reason))
                 continue
         g.logger.Debug(2,'importing zoneminder polygon: {} [{}]'.format(item['Zone']['Name'], item['Zone']['Coords']))
         g.polygons.append({
