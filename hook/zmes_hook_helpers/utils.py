@@ -67,6 +67,7 @@ def import_zm_zones(mid, reason):
     match_reason = False
     if reason:    
         match_reason = True if g.config['only_triggered_zm_zones']=='yes' and not findWholeWord('All')(reason) else False
+    g.logger.Debug(2,'import_zm_zones: match_reason={} and reason={}'.format(match_reason, reason))
 
     url = g.config['portal'] + '/api/zones/forMonitor/' + mid + '.json'
     g.logger.Debug(2,'Getting ZM zones using {}?username=xxx&password=yyy&user=xxx&pass=yyy'.format(url))
