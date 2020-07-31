@@ -11,8 +11,6 @@ __pycache__/
 *.so
 *~
 .vscode/
-.idea
-zmeventnotification.iml
 
 # due to using tox and pytest
 .tox
