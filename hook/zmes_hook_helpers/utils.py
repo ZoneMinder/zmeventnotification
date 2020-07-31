@@ -65,8 +65,8 @@ def findWholeWord(w):
 def import_zm_zones(mid, reason):
 
     match_reason = False
-    if reason:    
-        match_reason = True if g.config['only_triggered_zm_zones']=='yes' and not findWholeWord('All')(reason) else False
+    if reason:
+        match_reason = True if g.config['only_triggered_zm_zones']=='yes' else False
     g.logger.Debug(2,'import_zm_zones: match_reason={} and reason={}'.format(match_reason, reason))
 
     url = g.config['portal'] + '/api/zones/forMonitor/' + mid + '.json'
@@ -104,10 +104,10 @@ def import_zm_zones(mid, reason):
     c = input_file.read()
     j = json.loads(c)
 
-    # Now lets look at reason to see if we need to 
+    # Now lets look at reason to see if we need to
     # honor ZM motion zones
-    
-    
+
+
     #reason_zones = [x.strip() for x in rz.split(',')]
     #g.logger.Debug(1,'Found motion zones provided in alarm cause: {}'.format(reason_zones))
 
@@ -122,7 +122,7 @@ def import_zm_zones(mid, reason):
             'value': str2tuple(item['Zone']['Coords'])
         })
 
-           
+
 
 # downloaded ZM image files for future analysis
 def download_files(args):
@@ -131,7 +131,7 @@ def download_files(args):
             g.config['wait']))
         time.sleep(g.config['wait'])
 
-    
+
     if g.config['portal'].lower().startswith('https://'):
         main_handler = urllib.request.HTTPSHandler(context=g.ctx)
     else:
@@ -229,7 +229,7 @@ def get_pyzm_config(args):
     config_file.read(args.get('config'))
     if config_file.has_option('general', 'pyzm_overrides'):
         pyzm_overrides = config_file.get('general', 'pyzm_overrides')
-        g.config['pyzm_overrides'] =  ast.literal_eval(pyzm_overrides) if pyzm_overrides else {}     
+        g.config['pyzm_overrides'] =  ast.literal_eval(pyzm_overrides) if pyzm_overrides else {}
 
 
 def process_config(args, ctx):
@@ -345,7 +345,7 @@ def process_config(args, ctx):
                                 g.logger.Debug(2,'adding polygon: {} [{}]'.format(k, v))
                             except Exception as e:
                                 g.logger.Error('{}={} is either an invalid attribute or a malformed polygon. Error was {}. Ignoring.'.format(k,v,e))
-                           
+
                         else:
                             g.logger.Debug (2,'ignoring polygon: {} as only_triggered_zm_zones is true'.format(k))
             # now import zones if needed
@@ -386,11 +386,11 @@ def process_config(args, ctx):
         g.config['wait'] = 0
         g.config['write_image_to_zm'] = 'no'
         g.polygons = []
-       
-        
+
+
     if  args.get('output_path'):
         g.logger.Debug (1,'Output path modified to {}'.format(args.get('output_path')))
         g.config['image_path'] = args.get('output_path')
         g.config['write_debug_image'] = 'yes'
-    
-   
+
+
