@@ -604,5 +604,9 @@ EOF
 fi
 
 echo
+echo "Creating a migrated objectconfig if required"
+./hook/config_upgrade.py -c "${TARGET_CONFIG}/objectconfig.ini" 
+
+echo
 echo "*** Please remember to start the Event Server after this update ***" 
 

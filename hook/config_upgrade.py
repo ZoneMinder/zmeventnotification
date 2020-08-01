@@ -29,6 +29,9 @@ def create_attributes(orig_string, new_additions):
     return new_string
 
 
+# add new version migrations as functions
+# def f_<fromver>_to_<tover>(str):
+
 def f_unknown_to_1_0(str_conf):
     replacements = {
     'models':'detection_sequence',
@@ -138,7 +141,7 @@ if i >=0:
         str_conf = u['migrate'](str_conf)
      
     
-    out_file = args.get('output') if args.get('output')  else os.path.basename(args.get('config') + '.new')
+    out_file = args.get('output') if args.get('output')  else 'migrated-'+os.path.basename(args.get('config'))
     f = open ( out_file,'w')
     f.write(str_conf)
     f.close()
