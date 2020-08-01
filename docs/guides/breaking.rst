@@ -4,8 +4,8 @@ Breaking Changes
 Version 5.16.0 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 - To help with this 'big bad breaking change', I've provided an upgrade script.
-  Run it by invoking ``hook/config_upgrade.py -c /etc/zm/objectconfig.ini`` and
-  inspect results before overwriting your old config.
+  Run it by invoking ``hook/config_upgrade.py -c /etc/zm/objectconfig.ini`` **after**
+  you run `install.sh` and inspect results before overwriting your old config.
  
 - This is going to be a big bad breaking change release, but continues the path
   to unification between various components I've developed.

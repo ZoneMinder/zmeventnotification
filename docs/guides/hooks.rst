@@ -78,6 +78,7 @@ web user has access to the coral device.
 On my ubuntu system, I needed to do:
 
 ::
+
    sudo usermod -a -G plugdev www-data
 
 **Very important**: You need to reboot after this, otherwise, you may notice that the TPU
