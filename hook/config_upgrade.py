@@ -106,6 +106,8 @@ upgrade_path = [
 
 ap = argparse.ArgumentParser(description='objectconfig.ini upgrade script')
 ap.add_argument('-c', '--config', help='objectconfig file with path', required=True)
+ap.add_argument('-o', '--output', help='output file to write to')
+
 
 args, u = ap.parse_known_args()
 args = vars(args)
@@ -135,7 +137,8 @@ if i >=0:
         print ('Migrating from {} to {}'.format(u['from_version'],u['to_version']))
         str_conf = u['migrate'](str_conf)
      
-    out_file = os.path.basename(args.get('config') + '.new')
+    
+    out_file = args.get('output') if args.get('output')  else os.path.basename(args.get('config') + '.new')
     f = open ( out_file,'w')
     f.write(str_conf)
     f.close()
@@ -149,7 +152,7 @@ if i >=0:
 
     ''')
 
-    print ('Migrated config written to {}'.format(out_file))
+    print ('Migrated config written to: {}'.format(out_file))
 else:
     print ('Nothing to migrate')
     exit(0)
