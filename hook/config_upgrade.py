@@ -135,6 +135,16 @@ if i >=0:
     f = open ( out_file,'w')
     f.write(str_conf)
     f.close()
+    print ('''
+
+    ----------------------| NOTE |-------------------------
+    The migration is best effort. May contain errors.
+    Please review the modified file.
+    Items commented out with #REMOVE can be deleted.
+    Items marked with #NEW are new options to customize.
+
+    ''')
+
     print ('Migrated config written to {}'.format(out_file))
 else:
     print ('Nothing to migrate')
