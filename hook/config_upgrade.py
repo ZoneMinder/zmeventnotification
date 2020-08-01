@@ -5,6 +5,10 @@ import sys
 import argparse
 import os
 
+'''
+wej qaStaHvIS wa' ghu'maj. wa'maHlu'chugh, vaj pagh. 
+chotlhej'a' qaDanganpu'. chenmoH tlhInganpu'.
+'''
 
 
 def replace_attributes(orig_string, replacements): 
