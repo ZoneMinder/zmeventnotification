@@ -146,11 +146,12 @@ verify_config() {
     if [[ ${DOWNLOAD_MODELS} == 'yes' ]]
     then
         echo "Models that will be checked/installed:"
-        echo "Yolo V3: ${INSTALL_YOLOV3}"
-        echo "TinyYolo V3: ${INSTALL_TINYYOLOV3}"
-        echo "Yolo V4: ${INSTALL_YOLOV4}"
-        echo "Tiny Yolo V4": ${INSTALL_TINYYOLOV4}
-        echo "Google Coral Edge TPU": ${INSTALL_CORAL_EDGETPU}
+        echo "(Note, if you have already downloaded a model, it will not be deleted)"
+        echo "Yolo V3 (INSTALL_YOLOV3): ${INSTALL_YOLOV3}"
+        echo "TinyYolo V3 (INSTALL_TINYYOLOV3): ${INSTALL_TINYYOLOV3}"
+        echo "Yolo V4 (INSTALL_YOLOV4): ${INSTALL_YOLOV4}"
+        echo "Tiny Yolo V4 (INSTALL_TINYYOLOV4)": ${INSTALL_TINYYOLOV4}
+        echo "Google Coral Edge TPU (INSTALL_CORAL_EDGETPU)": ${INSTALL_CORAL_EDGETPU}
 
     fi
     echo
@@ -610,3 +611,6 @@ echo "Creating a migrated objectconfig if required"
 echo
 echo "*** Please remember to start the Event Server after this update ***" 
 
+echo
+print_warning "THIS IS A BREAKING CHANGE RELEASE. THINGS WILL NOT WORK TILL YOU FOLLOW https://zmeventnotification.readthedocs.io/en/latest/guides/breaking.html#version-5-16-0-onwards"
+echo
