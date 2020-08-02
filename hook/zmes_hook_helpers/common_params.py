@@ -13,6 +13,42 @@ config_vals = {
             'default': None,
             'type': 'string',
         },
+
+        'cpu_max_processes':{
+            'section': 'general',
+            'default': '1',
+            'type': 'int',
+        },
+        'gpu_max_processes':{
+            'section': 'general',
+            'default': '1',
+            'type': 'int',
+        },
+        'tpu_max_processes':{
+            'section': 'general',
+            'default': '1',
+            'type': 'int',
+        },
+
+        'cpu_max_lock_wait':{
+            'section': 'general',
+            'default': '120',
+            'type': 'int',
+        },
+
+        'gpu_max_lock_wait':{
+            'section': 'general',
+            'default': '120',
+            'type': 'int',
+        },
+        'tpu_max_lock_wait':{
+            'section': 'general',
+            'default': '120',
+            'type': 'int',
+        },
+
+
+        
         'secrets':{
             'section': 'general',
             'default': None,

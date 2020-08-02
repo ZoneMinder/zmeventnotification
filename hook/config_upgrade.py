@@ -53,9 +53,24 @@ def f_unknown_to_1_0(str_conf):
     new_additions={
 '\n[general]\n':
 '''
-\n[general]\n
+[general]
 # Please don't change this. It is used by the config upgrade script
-version=1.0\n
+version=1.0
+
+# NEW: You can now limit the # of detection process
+# per target processor. If not specified, default is 1
+# Other detection processes will wait to acquire lock
+
+cpu_max_processes=3
+tpu_max_processes=1
+gpu_max_processes=1
+
+# NEW: Time to wait in seconds per processor to be free, before
+# erroring out. Default is 120 (2 mins)
+cpu_max_lock_wait=120
+tpu_max_lock_wait=120
+gpu_max_lock_wait=120
+
 ''',
 '\n[alpr]\n': 
 '''
