@@ -401,11 +401,13 @@ def draw_bbox(img,
     polycolor = g.config['poly_color']
     # first draw the polygons, if any
     newh, neww = img.shape[:2]
-    for ps in g.polygons:
-        cv2.polylines(img, [np.asarray(ps['value'])],
-                      True,
-                      polycolor,
-                      thickness=g.config['poly_thickness'])
+
+    if g.config['poly_thickness']:
+        for ps in g.polygons:
+            cv2.polylines(img, [np.asarray(ps['value'])],
+                        True,
+                        polycolor,
+                        thickness=g.config['poly_thickness'])
 
     # now draw object boundaries
 
