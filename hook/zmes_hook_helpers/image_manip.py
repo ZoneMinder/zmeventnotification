@@ -405,7 +405,7 @@ def draw_bbox(img,
         cv2.polylines(img, [np.asarray(ps['value'])],
                       True,
                       polycolor,
-                      thickness=2)
+                      thickness=g.config['poly_thickness'])
 
     # now draw object boundaries
 

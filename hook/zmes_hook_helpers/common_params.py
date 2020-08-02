@@ -187,6 +187,11 @@ config_vals = {
             'default': '(127,140,141)',
             'type': 'eval'
         },
+        'poly_thickness':{
+            'section': 'general',
+            'default': '2',
+            'type': 'int'
+        },
 
         # animation for push
 
