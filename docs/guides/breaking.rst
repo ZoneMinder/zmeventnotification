@@ -36,7 +36,13 @@ Version 5.16.0 onwards
     - ``object_detection_pattern`` - for all objects
     - ``alpr_detection_pattern`` - for for license plates
     - ``face_detection_pattern`` - for all faces detected
+    - ``[general]`` has various new attributes that allow you to limit concurrent processing:
 
+      - ``cpu_max_processes`` specific how many simultaneous instances of model execution will be allowed at one time.
+        When more than this number is reached, processes will wait till in-flight processes complete. ``cpu_max_lock_wait`` 
+        specifies how long each process will wait (default 2 mins) before throwing an error.
+      - ``tpu_max_processes`` and ``tpu_max_lock_wait`` same as above but for TPU
+      - ``gpu_max_processes`` and ``gpu_max_lock_wait`` same as above but for GPU
 
 Version 5.15.7 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
