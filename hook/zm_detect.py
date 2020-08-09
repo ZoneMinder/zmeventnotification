@@ -344,6 +344,7 @@ for model in g.config['detection_sequence']:
     # read the detection pattern we need to apply as a filter
     pat = model + '_detection_pattern'
     try:
+        g.logger.Debug(2, 'using g.config[\'{}\']={}'.format(pat, g.config[pat]))
         r = re.compile(g.config[pat])
     except re.error:
         g.logger.Error('invalid pattern {} in {}, using .*'.format(
