@@ -48,8 +48,9 @@ if ( !try_use('JSON') ) {
   }
 }
 
+
 # debugging only.
-#use Data::Dumper;
+use Data::Dumper;
 
 # ==========================================================================
 #
@@ -64,7 +65,7 @@ if ( !try_use('JSON') ) {
 #
 # ==========================================================================
 
-my $app_version = '5.16.0';
+my $app_version = '6.0.0';
 
 # ==========================================================================
 #
@@ -96,6 +97,7 @@ use constant {
 
   DEFAULT_BASE_DATA_PATH                    => '/var/lib/zmeventnotification',
   DEFAULT_SSL_ENABLE                        => 'yes',
+
   DEFAULT_CUSTOMIZE_VERBOSE                 => 'no',
   DEFAULT_CUSTOMIZE_EVENT_CHECK_INTERVAL    => 5,
   DEFAULT_CUSTOMIZE_ES_DEBUG_LEVEL          => 2,
@@ -233,6 +235,9 @@ my $hook_skip_monitors;
 my %hook_skip_monitors;
 my $hook_pass_image_path;
 
+my $es_rules_file;
+my %es_rules;
+
 my $picture_url;
 my $include_picture;
 my $picture_portal_username;
@@ -272,6 +277,13 @@ if ( !try_use('File::Basename') )   { Fatal('File::Basename missing'); }
 if ( !try_use('File::Spec') )       { Fatal('File::Spec missing'); }
 if ( !try_use('URI::Escape') )      { Fatal('URI::Escape missing'); }
 if ( !try_use('Storable') )         { Fatal('Storable missing'); }
+
+my $is_timepeice=1;
+if (!try_use('Time::Piece')) {
+  Error('Time::Piece module missing. Dates will not work in es rules json');
+  $is_timepeice = 0;
+}
+#
 
 #if (!try_use ("threads")) {Fatal ("threads library/support  missing");}
 
@@ -445,6 +457,8 @@ sub loadEsConfigSettings {
   $skip_monitors = config_get_val( $config, 'general', 'skip_monitors' );
   %skip_monitors = map { $_ => !undef } split( ',', $skip_monitors );
 
+  
+
   # If an option set a value, leave it.  If there's a value in the config, use
   # it.  Otherwise, use a default value if it's available.
 
@@ -528,6 +542,27 @@ sub loadEsConfigSettings {
 
   $use_hooks =
     config_get_val( $config, 'customize', 'use_hooks', DEFAULT_USE_HOOKS );
+
+  $es_rules_file = config_get_val( $config, 'customize', 'es_rules');
+  if ($es_rules_file) {
+    my $hr;
+    my $fh;
+    printDebug ("Loading es rules json: $es_rules_file");
+    if (open ($fh, "<", $es_rules_file )) {
+      my $data = do { local $/=undef; <$fh> };
+      eval {$hr = decode_json($data);};
+      if ($@) {
+        printError("Failed decoding es rules: $@");
+      } else {
+        %es_rules = %$hr;
+        #print Dumper(\%es_rules);
+      }
+      close($fh);
+    } else {
+      printError( "Could not open $es_rules_file: $!");
+    }
+
+  } # if es_rules
 
   $event_start_hook = config_get_val( $config, 'hook', 'event_start_hook' );
   $event_start_hook_notify_userscript = config_get_val( $config, 'hook', 'event_start_hook_notify_userscript' );
@@ -662,6 +697,7 @@ Read alarm cause ..................... ${\(yes_or_no($read_alarm_cause))}
 Tag alarm event id ................... ${\(yes_or_no($tag_alarm_event_id))}
 Use custom notification sound ........ ${\(yes_or_no($use_custom_notification_sound))}
 Send event end notification............${\(yes_or_no($send_event_end_notification))}
+Monitor rules JSON file................${\(value_or_undefined($es_rules_file))}
 
 Use Hooks............................. ${\(yes_or_no($use_hooks))}
 Hook Script on Event Start ........... ${\(value_or_undefined($event_start_hook))}
@@ -2924,9 +2960,82 @@ sub isAllowedChannel {
 
 }
 
+# compares against rule file
+# return:
+# 1 = allow
+# 0 = don't allow
+#processRules
+sub rulesCheck {
+
+  if (!$is_timepeice) {
+    printError ('Not checking rules as Time::Piece is not installed');
+    return 0;
+  }
+  my $alarm = shift;
+  my $id   = $alarm->{MonitorId};
+  my $name = $alarm->{Name};
+
+  if (!exists($es_rules{notifications}->{monitors}) || !exists($es_rules{notifications}->{monitors}->{$id})) {
+    printDebug ("No rules found for $name ($id)");
+    return 1;
+  }
+
+  my $entry_ref = $es_rules{notifications}->{monitors}->{$id}->{rules};
+ #my %entry = %$e;
+ 
+  my $rulecnt = 1;
+  foreach my $rule_ref (@{$entry_ref}) {
+    
+    printDebug ("-- Processing rule: $rulecnt --");
+    $rulecnt++;
+    #print Dumper(@{$rule_ref});
+    if ($rule_ref->{action} eq 'mute') {
+      if ( !exists($rule_ref->{parsed_from})) {
+        my $from = $rule_ref->{from};
+        my $to = $rule_ref->{to};
+        my $format = exists($rule_ref->{time_format})?$rule_ref->{time_format}:"%I:%M %p";
+        my $dow = $rule_ref->{daysofweek};
+
+        printDebug ("Parsing rule $from/$to using format:$format",2);
+        my $d_from = Time::Piece->strptime($from, $format);
+        my $d_to = Time::Piece->strptime($to, $format);
+        
+        $rule_ref->{parsed_from} = $d_from;
+        $rule_ref->{parsed_to} = $d_to;
+      } 
+      # Parsed entries exist use those
+      my $format = exists($rule_ref->{time_format})?$rule_ref->{time_format}:"%I:%M %p";
+      my $t = Time::Piece->new->strftime($format);
+      $t = Time::Piece->strptime($t, $format);
+
+      printDebug ("rules: seeing if now:".$t->strftime($format)." is between:"
+                  .$rule_ref->{parsed_from}->strftime($format)." and ".$rule_ref->{parsed_to}->strftime($format));
+      if  (($t >= $rule_ref->{parsed_from}) &&
+          ($t <= $rule_ref->{parsed_to})) {
+            printDebug ('mute rule activated:'.$rule_ref->{from}. ' - '.$rule_ref->{to});
+            return 0;
+      }
+      if (exists($rule_ref->{dow}) && 
+          index($rule_ref->{dow}, $t->wdayname)== -1 ) {
+            printDebug ('rule:'.$t->wdayname.' does not match '. $rule_ref->{dow});
+            return 1;
+      }
+      
+          
+    } # mute
+
+  } #foreach
+  
+  printDebug ("Found rule for $name ($id) but no conflicts. Allowing.");
+  return 1;
+}
+
 # Compares connection rules (monList/interval). Returns 1 if event should be send to this connection,
 # 0 if not.
 sub shouldSendEventToConn {
+
+  # The sequence of policy is
+  # control interface overrides rules overrides tokens.txt
   my $alarm  = shift;
   my $ac     = shift;
   my $retVal = 0;
@@ -2958,6 +3067,11 @@ sub shouldSendEventToConn {
 
     }
 
+  }
+
+  if (!rulesCheck($alarm)) {
+    printDebug ('Rules Check disallowed further processing for this alarm');
+    return 0;
   }
 
   my $id     = getConnectionIdentity($ac);
@@ -3369,6 +3483,10 @@ sub processNewAlarmsInFork {
         printInfo(
           'Not sending event end alarm, as we did not send a start alarm for this, or start hook processing failed'
         );
+      } elsif (!rulesCheck($alarm)) {
+        printDebug ('Not processing end notifications as rules checks failed for start notification');
+    
+
       }
       else {
 

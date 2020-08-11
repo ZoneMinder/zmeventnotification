@@ -1,8 +1,19 @@
 Breaking Changes
 ----------------
 
-Version 5.16.0 onwards
+Version 6.0.0 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~~~
+- The ES has a new attribute in ``[customize]`` called ``es_rules``. A sample file
+  gets automatically installed when you run the install script in ``/var/lib/zmeventnotification``
+- Its use is optional. It is a JSON file with various rules for the ES that are not
+  configuration related. Over the next few releases, this fill will replace the cryptic context of ``tokens.txt``
+  As of now, it can be used to specify custom times for notification. This list will grow
+  over time.
+- A new perl dependency (optional) has been added to :doc:`guides/install` if you need flexible datetime
+  parsing for ES rules.
+  
+
+  **On the Object Detection part:**
 
 - This is going to be a big bad breaking change release, but continues the path
   to unification between various components I've developed.

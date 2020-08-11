@@ -12,6 +12,7 @@ To clone the latest stable release:
 ::
 
   git clone https://github.com/pliablepixels/zmeventnotification.git
+  cd zmeventnotification
   # repeat these two steps each time you want to update to the latest stable
   git fetch --tags
   git checkout $(git describe --tags $(git rev-list --tags --max-count=1))
@@ -53,10 +54,11 @@ to get into the CPAN shell and install it from the shell as a 2 step
 process. You'd do that using ``sudo perl -MCPAN -e shell`` and then
 whilst inside the shell, ``install Module::Name``)
 
--  Crypt::MySQL (if you have updated to ZM 1.34, this is no longer needed)
--  Net::WebSocket::Server
--  Config::IniFiles (you may already have this installed)
--  Crypt::Eksblowfish::Bcrypt (if you have updated to ZM 1.34, you will already have this)
+-  ``Crypt::MySQL`` (if you have updated to ZM 1.34, this is no longer needed)
+-  ``Net::WebSocket::Server``
+-  ``Config::IniFiles`` (you may already have this installed)
+-  ``Crypt::Eksblowfish::Bcrypt`` (if you have updated to ZM 1.34, you will already have this)
+- ``Time::Piece`` for parsing ES rules
 
 Installing these dependencies is as simple as:
 
@@ -65,7 +67,7 @@ Installing these dependencies is as simple as:
     sudo perl -MCPAN -e "install Crypt::MySQL"
     sudo perl -MCPAN -e "install Config::IniFiles"
     sudo perl -MCPAN -e "install Crypt::Eksblowfish::Bcrypt"
-
+   
 If after installing them you still see errors about these libraries
 missing, please launch a CPAN shell - see General Note above.
 
@@ -119,7 +121,7 @@ If you want to enable MQTT:
     perl -MCPAN -e "install Net::MQTT::Simple"
 
 
-Some notes on MQTT:
+If you are setting up MQTT:
 
  - A minimum version of MQTT 3.1.1 is required
  - If your ``MQTT:Simple`` library was installed a while ago, you may need to update it. A new ``login`` method was added
@@ -151,7 +153,7 @@ using SSL for ZoneMinder, simply point this script to the certificates.
 If you are not already using SSL for ZoneMinder and don't have
 certificates, generating them is as easy as:
 
-(replace /etc/zm/apache2/ssl/ with the directory you want the
+(replace ``/etc/zm/apache2/ssl/`` with the directory you want the
 certificate and key files to be stored in)
 
 ::

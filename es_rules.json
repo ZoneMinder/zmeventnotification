@@ -1,0 +1,36 @@
+{
+    "notifications": {
+        "monitors":{
+            "999": {
+                "rules": [{
+                    "time_format":"%I:%M %p",
+                    "from":"9:30 pm",
+                    "to":"6 am",
+                    "daysofweek": "Mon,Tue,Wed",
+                    "action": "mute"
+                    },
+                    {
+                        "time_format": "%I:%M %p",
+                        "from": "3 am",
+                        "to": "6 am",
+                        "action": "mute"
+
+                    }
+                ]
+            },
+            "998": {
+                "rules": [{
+                    "time_format":"%I:%M %p",
+                    "from":"5 pm",
+                    "to":"7 am",
+                    "daysofweek": "All",
+                    "action":"mute"
+
+                }]
+            }
+       
+        }
+    }
+    
+
+}
