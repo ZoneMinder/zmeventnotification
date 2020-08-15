@@ -3,6 +3,7 @@
         "monitors":{
             "999": {
                 "rules": [{
+                    "comment": "Be careful with dates, no leading spaces, etc",
                     "time_format":"%I:%M %p",
                     "from":"9:30 pm",
                     "to":"6 am",
@@ -23,7 +24,6 @@
                     "time_format":"%I:%M %p",
                     "from":"5 pm",
                     "to":"7 am",
-                    "daysofweek": "All",
                     "action":"mute"
 
                 }]

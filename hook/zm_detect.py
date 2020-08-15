@@ -94,10 +94,11 @@ def remote_detect(image, model=None):
     ret, jpeg = cv2.imencode('.jpg', image)
     files = {'file': ('image.jpg', jpeg.tobytes())}
 
-    params = {
-        'delete': True,
-    }
+    
+    params = {'delete': True}
+  
     #print (object_url)
+    g.logger.Debug(2,f'Invoking mlapi with url:{url}, params={params}, files={files}')
     r = requests.post(url=object_url,
                       headers=auth_header,
                       params=params,

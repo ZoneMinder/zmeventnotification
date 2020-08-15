@@ -2983,11 +2983,11 @@ sub rulesCheck {
   my $entry_ref = $es_rules{notifications}->{monitors}->{$id}->{rules};
  #my %entry = %$e;
  
-  my $rulecnt = 1;
+  my $rulecnt = 0;
   foreach my $rule_ref (@{$entry_ref}) {
-    
-    printDebug ("-- Processing rule: $rulecnt --");
     $rulecnt++;
+    printDebug ("-- Processing rule: $rulecnt --");
+    
     #print Dumper(@{$rule_ref});
     if ($rule_ref->{action} eq 'mute') {
       if ( !exists($rule_ref->{parsed_from})) {
@@ -3023,7 +3023,7 @@ sub rulesCheck {
       
           
     } # mute
-
+    printDebug ("rules: No conflict in rule: $rulecnt, proceeding to next, if any...");
   } #foreach
   
   printDebug ("Found rule for $name ($id) but no conflicts. Allowing.");
