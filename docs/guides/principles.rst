@@ -55,9 +55,11 @@ So at this stage, we have a new event and we need to decide if the ES will send 
 .. sidebar:: Summary of rules:
 
   * if hooks are used, needs to return 0 as exit status
-  * channel must be in the notify_on_xxx attributes
-  * if FCM, monitor must be in tokens.txt for that device
-  * if FCM, delay must be > delay specified in tokens.txt
+  * Then, if you use dynamic controls (``use_escontrol_interface=yes``), those commands will be checked
+  * Then, if you have a rule file (ES 6.0+), rules will have to allow it
+  * Then, channel must be in the notify_on_xxx attributes
+  * Then, if FCM, monitor must be in tokens.txt for that device
+  * Then, if FCM, delay must be > delay specified in tokens.txt
 
 3.2.1: Wait what is a channel?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -117,6 +119,63 @@ The contents above show I have 2 devices configured, one is an iOS device and th
     It is important to note here that if zmNinja is not able to connect to the ES at least for the first time, you will never receive notifications. Check your ``tokens.txt`` file to make sure you have entries. If you don't that means zmNinja can't reach your ES.
 
 You will also note that ``tokens.txt`` does not contain any other entries besides android and iOS. zmNinja desktop does not feature here, for example. That is because ``tokens.txt`` only exists to store FCM registrations. zmNinja desktop only receives notifications when it is running and via websockets, so that connection is established when the desktop app runs. FCM tokens on the other hand need to be remembered, because zmNinja may not be running in your phone and the ES still nees to send out notifications to all tokens (devices) that might have previously registered.
+
+
+3.2.4: Wait, what on earth is a "Rules file"?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Starting ES 6.0, I've added a ``es_rules.json`` that gets installed in ``/var/lib/zmeventnotification``.
+It is a json file, that over time will expand in functionality. As of today, it only supports
+the "mute" action. You can specify "mute" time ranges where the ES will not send out notifications.
+
+Basically, I dislike the format of ``tokens.txt``. It was done a long time ago and is cryptic. I should have made
+it easier to understand and edit. _Eventually_, I'll migrate everything to this JSON file except for token IDs.
+
+Here is an example of the rules file:
+
+::
+
+  {
+    "notifications": {
+        "monitors":{
+            "999": {
+                "rules": [{
+                    "comment": "Be careful with dates, no leading spaces, etc",
+                    "time_format":"%I:%M %p",
+                    "from":"9:30 pm",
+                    "to":"1 am",
+                    "daysofweek": "Mon,Tue,Wed",
+                    "action": "mute"
+                    },
+                    {
+                        "time_format": "%I:%M %p",
+                        "from": "3 am",
+                        "to": "6 am",
+                        "action": "mute"
+
+                    }
+                ]
+            },
+            "998": {
+                "rules": [{
+                    "time_format":"%I:%M %p",
+                    "from":"5 pm",
+                    "to":"7 am",
+                    "action":"mute"
+
+                }]
+            }
+       
+        }
+    }
+    
+
+}
+
+It says for Monitor ID 999, don't send notifications between 
+9:30pm to 1am on Mon,Tue,Wed and 3am - 6am for all days of the week.
+For Monitor 998, don't send notifications from 5pm to 7am for all days of the week.
+Note that you need to install ``Time::Pice`` in Perl.
+
 
 4: Deciding what to do when a new event ends
 -----------------------------------------------------

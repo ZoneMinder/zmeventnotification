@@ -6,7 +6,7 @@
                     "comment": "Be careful with dates, no leading spaces, etc",
                     "time_format":"%I:%M %p",
                     "from":"9:30 pm",
-                    "to":"6 am",
+                    "to":"1 am",
                     "daysofweek": "Mon,Tue,Wed",
                     "action": "mute"
                     },
