@@ -6,7 +6,7 @@ import zmes_hook_helpers.common_params as g
 import zmes_hook_helpers.utils as utils
 
 if __name__ == "__main__":
-    log.init(process_name='zm_train_faces', dump_console=True)
+    log.init(name='zm_train_faces', dump_console=True)
 # needs to be after log init
 
 import pyzm.ml.face_train as train
