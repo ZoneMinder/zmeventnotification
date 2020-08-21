@@ -662,18 +662,24 @@ else:
         g.logger.Debug(1,
             'Saving detections for monitor {} for future match'.format(
                 args.get('monitorid')))
-        mon_file = g.config['image_path'] + '/monitor-' + args.get(
+        try:
+            mon_file = g.config['image_path'] + '/monitor-' + args.get(
             'monitorid') + '-data.pkl'
-        f = open(mon_file, "wb")
-        pickle.dump(bbox, f)
-        pickle.dump(label, f)
-        pickle.dump(conf, f)
+            f = open(mon_file, "wb")
+            pickle.dump(bbox, f)
+            pickle.dump(label, f)
+            pickle.dump(conf, f)
+            f.close()
+        except Exception as e:
+            g.logger.Error(f'Error writing to {mon_file}, past detections not recorded:{e}')
+
         bbox = bbox_t
         label = label_t
         conf = conf_t
-        f.close()
+        
 
     # now we draw boxes
+    g.logger.Debug (2, "Drawing boxes around objects")
     out = img.draw_bbox(image, bbox, label, classes, conf, None,
                         g.config['show_percent'] == 'yes')
     image = out
