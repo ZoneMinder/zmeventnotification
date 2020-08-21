@@ -98,7 +98,7 @@ def remote_detect(image, model=None):
     params = {'delete': True}
   
     #print (object_url)
-    g.logger.Debug(2,f'Invoking mlapi with url:{url}, params={params}, files={files}')
+    g.logger.Debug(2,f'Invoking mlapi with url:{object_url}, params={params}, files={files}')
     r = requests.post(url=object_url,
                       headers=auth_header,
                       params=params,
