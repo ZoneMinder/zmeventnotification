@@ -91,6 +91,12 @@ def remote_detect(image, model=None):
     if type(image) == str:
         g.logger.Debug(2, f'Reading {image} to buffer')
         image = cv2.imread(image)
+        if g.config['resize'] and g.config['resize'] != 'no':
+            g.logger.Debug (2,'Resizing image before sending')
+            img_new = imutils.resize(image,
+                                     width=min(int(g.config['resize']),
+                                               image.shape[1]))
+            image = img_new
     ret, jpeg = cv2.imencode('.jpg', image)
     files = {'file': ('image.jpg', jpeg.tobytes())}
 
@@ -98,7 +104,7 @@ def remote_detect(image, model=None):
     params = {'delete': True}
   
     #print (object_url)
-    g.logger.Debug(2,f'Invoking mlapi with url:{object_url}, params={params}, files={files}')
+    g.logger.Debug(2,f'Invoking mlapi with url:{object_url}')
     r = requests.post(url=object_url,
                       headers=auth_header,
                       params=params,
@@ -381,10 +387,11 @@ for model in g.config['detection_sequence']:
         g.logger.Debug(1,'Using model: {} with {}'.format(model, filename))
 
         image = image1 if filename == filename1 else image2
+        original_image = image.copy()
 
         if g.config['ml_gateway'] and not remote_failed:
             try:
-                b, l, c = remote_detect(image, model)
+                b, l, c = remote_detect(original_image, model)
             except Exception as e:
                 g.logger.Error('Error executing remote API: {}'.format(e))
                 if g.config['ml_fallback_local'] == 'yes':
@@ -403,12 +410,12 @@ for model in g.config['detection_sequence']:
                             upsample_times=g.config['face_upsample_times'],
                             num_jitters=g.config['face_num_jitters'],
                             model=g.config['face_model'])
-                    b, l, c = m.detect(image)
+                    b, l, c = m.detect(original_image)
                 else:
                     raise
 
         else:
-            b, l, c = m.detect(image)
+            b, l, c = m.detect(original_image)
 
         #g.logger.Debug(1,'|--> model:{} detection took: {}s'.format(model,(datetime.datetime.now() - t_start).total_seconds()))
         t_start = datetime.datetime.now()
@@ -470,19 +477,19 @@ for model in g.config['detection_sequence']:
 
                 if g.config['ml_gateway'] and not remote_failed:
                     try:
-                        alpr_b, alpr_l, alpr_c = remote_detect(filename, 'alpr')
+                        alpr_b, alpr_l, alpr_c = remote_detect(original_image, 'alpr')
                     except Exception as e:
                         g.logger.Error('Error executing remote API: {}'.format(e))
                         if g.config['ml_fallback_local'] == 'yes':
                             g.logger.Info('Falling back to local execution...')
                             remote_failed = True
                             alpr_obj = alpr.Alpr(logger=g.logger,options=g.config)
-                            alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)        
+                            alpr_b, alpr_l, alpr_c = alpr_obj.detect(original_image)        
                         else:
                             raise
 
                 else: # not ml_gateway
-                    alpr_b, alpr_l, alpr_c = alpr_obj.detect(filename)
+                    alpr_b, alpr_l, alpr_c = alpr_obj.detect(original_image)
                 alpr_b, alpr_l, alpr_c = img.getValidPlateDetections(
                     alpr_b, alpr_l, alpr_c)
                 if len(alpr_l):
