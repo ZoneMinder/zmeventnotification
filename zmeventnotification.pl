@@ -1761,10 +1761,19 @@ sub sendOverFCM {
       badge => $badge,
     },
     data => {
+      notification_foreground => "true",
       myMessageId => $notId,
       mid         => $mid,
       eid         => $eid,
-      summaryText => $eid
+      summaryText => $eid,
+      apns => {
+        payload => {
+          aps => {
+            sound=> "default",
+            content_available=>1
+          }
+        }
+      }
     }
   };
 
@@ -2173,14 +2182,16 @@ sub processIncomingMessage {
 # but won't know when the client has read them, so the client call tell the server
 # using this message
     if ( $json_string->{data}->{type} eq 'badge' ) {
+       printDebug('badge command received',2);
       foreach (@active_connections) {
-        if ( ( exists $_->{conn} )
+        if ( (( exists $_->{conn} )
           && ( $_->{conn}->ip() eq $conn->ip() )
-          && ( $_->{conn}->port() eq $conn->port() ) )
+          && ( $_->{conn}->port() eq $conn->port() )) || ($_->{token} eq $json_string->{token}) )
         {
 
           #print "Badge match, setting to 0\n";
           $_->{badge} = $json_string->{data}->{badge};
+           printDebug('badge match reset to '.$_->{badge},2);
         }
       }
       return;
@@ -2827,7 +2838,8 @@ sub sendEvent {
   my $id   = $alarm->{MonitorId};
   my $name = $alarm->{Name};
 
-  if ( !$send_event_end_notification && $event_type eq 'event_end' ) {
+  #printInfo ("sendEvent called with $send_event_end_notification and $event_type");
+  if ( (!$send_event_end_notification) && ($event_type eq 'event_end') ) {
     printInfo(
       'Not sending event end notification as send_event_end_notification is no'
     );
