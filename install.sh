@@ -17,6 +17,7 @@
 
 PYTHON=python3
 PIP=pip3
+INSTALLER=$(which apt-get || which yum)
 
 # Models to install
 # If you don't want them, pass them as variables to install.sh
@@ -81,6 +82,31 @@ print_success() {
     echo -e "${COLOR}Success:${NOCOLOR}$1"
 }
 
+get_distro() {
+    local DISTRO=`(lsb_release -ds || cat /etc/*release || uname -om ) 2>/dev/null | head -n1`
+    local DISTRO_NORM='ubuntu'
+    if echo "${DISTRO}" | grep -iqF 'ubuntu'; then
+        DISTRO_NORM='ubuntu'
+    elif echo "${DISTRO}" | grep -iqF 'centos'; then
+        DISTRO_NORM='centos'
+    fi
+    echo ${DISTRO_NORM}
+}
+
+get_installer() {
+    local DISTRO=$(get_distro)
+    local installer='apt-get'
+    case $DISTRO in
+        ubuntu)
+            installer='apt-get'
+            ;;
+        centos)
+            installer='yum'
+            ;;
+    esac
+    echo ${installer}        
+}
+
 # generic confirm function that returns 0 for yes and 1 for no
 confirm() {
     display_str=$1
@@ -126,8 +152,8 @@ verify_config() {
     echo ----------- Configured Values ----------------------------
     echo "Your webserver user seems to be ${WEB_OWNER}"
     echo "Your webserver group seems to be ${WEB_GROUP}"
-    echo "wget is at ${WGET}"
-    echo
+    echo "wget is ${WGET}"
+    echo "installer software is ${INSTALLER}"
 
     echo "Install Event Server: ${INSTALL_ES}"
     echo "Install Event Server config: ${INSTALL_ES_CONFIG}"
@@ -199,7 +225,7 @@ install_hook() {
             echo
             echo "Installing edgetpu python libs, if needed..."
             #${PY_SUDO} apt-get install libedgetpu1-std -qq
-            ${PY_SUDO} apt-get install python3-edgetpu -qq
+            ${PY_SUDO} ${INSTALLER} install python3-edgetpu -qq
             
 
             echo 'Checking for Google Coral Edge TPU data files...'
@@ -358,7 +384,7 @@ install_hook() {
 
     echo "Installing package deps..."
     echo "Installing gifsicle, if needed..."
-    ${PY_SUDO} apt-get install gifsicle -qq
+    ${PY_SUDO} ${INSTALLER} install gifsicle -qq
 
 }
 
@@ -540,6 +566,8 @@ check_args() {
 ###################################################
 # script main
 ###################################################
+
+
 
 cmd_args=("$@") # because we need a function to access them
 check_args
