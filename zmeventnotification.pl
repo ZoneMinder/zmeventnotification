@@ -1777,9 +1777,18 @@ sub sendOverFCM {
     }
   };
 
+  # https://firebase.google.com/docs/cloud-messaging/http-server-ref#notification-payload-support
+
   my $android_message = {
     to       => $obj->{token},
-    priority => 'high',
+    notification => {
+      title => $title,
+      android_channel_id => "zmninja",
+      icon        => 'ic_stat_notification',
+      body  => $body,
+      sound => "default",
+      badge => $badge,
+    },
     data     => {
       title       => $title,
       message     => $body,
@@ -1789,7 +1798,8 @@ sub sendOverFCM {
       mid         => $mid,
       eid         => $eid,
       badge       => $obj->{badge},
-      priority    => 1
+      priority    => 1,
+      channel => 'zmninja'
     }
   };
 
@@ -1799,11 +1809,11 @@ sub sendOverFCM {
     #$ios_message->{content_available} = \1;
     $ios_message->{data}->{image_url_jpg} = $pic;
 
+    $android_message->{notification}->{image}     = $pic;
     $android_message->{data}->{style}       = 'picture';
     $android_message->{data}->{picture}     = $pic;
     $android_message->{data}->{summaryText} = 'alarmed image';
 
-    #printDebug ("Alarm image for android will be: $pic");
   }
 
   if ( $obj->{platform} eq 'ios' ) {
