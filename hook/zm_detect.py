@@ -35,6 +35,8 @@ auth_header = None
 
 def remote_detect(image, model=None):
     import requests
+    import cv2
+    
     bbox = []
     label = []
     conf = []
