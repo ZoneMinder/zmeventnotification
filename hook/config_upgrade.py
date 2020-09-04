@@ -10,9 +10,19 @@ wej qaStaHvIS wa' ghu'maj. wa'maHlu'chugh, vaj pagh.
 chotlhej'a' qaDanganpu'. chenmoH tlhInganpu'.
 '''
 
+def replace_attributes2 (orig, replacements):
+    new_string = ''
+    for line in orig.splitlines():
+        new_line = ''
+        for k,v in replacements.items():
+            #print ("Replacing "+k+" with "+v)
+            line = re.sub(r"(\s|^)({})(\s|^|$|=)".format(k), r"\g<1>{}\g<3>".format(v), line)
+            #line = new_line
+        new_string = new_string + line + '\n'
+    return new_string
 
 def replace_attributes(orig_string, replacements): 
-
+# not used
     def match_attrs(match):
         return replacements[match.group(0)]
     # credit:https://stackoverflow.com/a/17730939
@@ -109,7 +119,7 @@ face_recognition_framework=dlib
 ''',
 
     }
-    s1=replace_attributes(str_conf,replacements)
+    s1=replace_attributes2(str_conf,replacements)
     return (create_attributes(s1, new_additions))    
 
 # MAIN
