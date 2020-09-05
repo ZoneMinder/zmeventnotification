@@ -13,7 +13,7 @@ import urllib.parse
 # Generic image related algorithms
 
 
-def createAnimation(frametype, eid,fname, types):
+def createAnimation(frametype, eid, fname, types):
     import imageio
 
     url = '{}/index.php?view=image&width={}&eid={}&username={}&password={}'.format(g.config['portal'],g.config['animation_width'],eid,g.config['user'],urllib.parse.quote(g.config['password'], safe=''))
@@ -29,6 +29,10 @@ def createAnimation(frametype, eid,fname, types):
 
     target_fps = 2
     buffer_seconds = 5 #seconds
+    fast_gif = False
+    if g.config['fast_gif'] == 'yes':
+        fast_gif = True
+
     while True and rtries:
         g.logger.Debug (1,f"animation: Try:{g.config['animation_max_tries']-rtries+1} Getting {disp_api_url}")
         r = None
@@ -80,7 +84,7 @@ def createAnimation(frametype, eid,fname, types):
     g.logger.Debug (1,'animation: event fps={}'.format(fps))
     start_frame = int(max(fid - (buffer_seconds*fps),1))
     end_frame = int(min(totframes, fid + (buffer_seconds*fps)))
-    skip =round(fps/target_fps)
+    skip = round(fps/target_fps)
 
     g.logger.Debug (1,f'animation: anchor={frametype} start={start_frame} end={end_frame} skip={skip}')
     g.logger.Debug(1,'animation: Grabbing frames...')
@@ -123,16 +127,22 @@ def createAnimation(frametype, eid,fname, types):
             # Let's slice the right amount from images
             # GIF uses a +- 2 second buffer
             gif_buffer_seconds=2
+            if fast_gif:
+                gif_buffer_seconds = gif_buffer_seconds * 1.5
+                target_fps = target_fps * 2
             gif_start_frame = int(max(fid - (gif_buffer_seconds*fps),1))
             gif_end_frame = int(min(totframes, fid + (gif_buffer_seconds*fps)))
             s1 = round((gif_start_frame - start_frame)/skip)
             s2 = round((end_frame - gif_end_frame)/skip)
-            if s1 >=0 and  s2 >=0:
-                gif_images = images[0+s1:-s2]
+            if s1 >=0 and s2 >=0:
+                gif_images = None
+                if fast_gif and 'gif' in types.lower():
+                    gif_images = images[0+s1:-s2:2]
+                else:
+                    gif_images = images[0+s1:-s2]
                 g.logger.Debug (1,f'For GIF, slicing {s1} to -{s2} from a total of {len(images)}')
                 g.logger.Debug (1,'animation:Saving...')
-                gif_final = od_images.copy()
-                gif_final.extend(gif_images)
+                gif_final = gif_images.copy()
                 imageio.mimwrite(fname+'.gif', gif_final, format='gif', fps=target_fps)
                 g.logger.Debug (1,'animation:Optimizing...')
                 optimize(source=fname+'.gif', colors=256)
