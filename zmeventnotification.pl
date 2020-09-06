@@ -41,6 +41,16 @@ use Time::HiRes qw/gettimeofday/;
 use Symbol qw(qualify_to_ref);
 use IO::Select;
 
+logInit();
+logSetSignal();
+$SIG{HUP} = \&logrot;
+#$SIG{CHLD} = \&REAPER;
+$SIG{CHLD} = "IGNORE";
+
+#$SIG{CHLD} = 'DEFAULT';
+
+my $dbh = zmDbConnect();
+
 if ( !try_use('JSON') ) {
   if ( !try_use('JSON::XS') ) {
     Fatal('JSON or JSON::XS  missing');
@@ -848,17 +858,7 @@ sub REAPER {
   $SIG{CHLD} = \&REAPER;    # install *after* calling waitpid
 }
 
-logInit();
-logSetSignal();
 
-$SIG{HUP} = \&logrot;
-
-#$SIG{CHLD} = \&REAPER;
-$SIG{CHLD} = "IGNORE";
-
-#$SIG{CHLD} = 'DEFAULT';
-
-my $dbh = zmDbConnect();
 my %monitors=();
 my %active_events       = ();
 my $monitor_reload_time = 0;
