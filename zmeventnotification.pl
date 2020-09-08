@@ -38,6 +38,7 @@ use strict;
 use bytes;
 use POSIX ':sys_wait_h';
 use Time::HiRes qw/gettimeofday/;
+use Time::Seconds;
 use Symbol qw(qualify_to_ref);
 use IO::Select;
 
@@ -3005,7 +3006,7 @@ sub isAllowedInRules {
   my $eid = $alarm->{eid};
 
   if (!exists($es_rules{notifications}->{monitors}) || !exists($es_rules{notifications}->{monitors}->{$id})) {
-    printDebug ("No rules found for $name ($id)");
+    printDebug ("No rules found for $name ($id)",1);
     return ALLOWED;
   }
 
@@ -3015,7 +3016,7 @@ sub isAllowedInRules {
   my $rulecnt = 0;
   foreach my $rule_ref (@{$entry_ref}) {
     $rulecnt++;
-    printDebug ("rules: (eid: $eid) -- Processing rule: $rulecnt --");
+    printDebug ("rules: (eid: $eid) -- Processing rule: $rulecnt --",1);
     
     #print Dumper(@{$rule_ref});
     if ($rule_ref->{action} eq 'mute') {
@@ -3025,10 +3026,15 @@ sub isAllowedInRules {
         my $format = exists($rule_ref->{time_format})?$rule_ref->{time_format}:"%I:%M %p";
         my $dow = $rule_ref->{daysofweek};
 
-        printDebug ("rules: (eid: $eid) Parsing rule $from/$to using format:$format",2);
+        printDebug ("rules: parsing rule $from/$to using format:$format",2);
         my $d_from = Time::Piece->strptime($from, $format);
         my $d_to = Time::Piece->strptime($to, $format);
-        
+        if ($d_to < $d_from) {
+          printDebug ("rules: to is less than from, so we are wrapping dates",2);
+          $d_to += ONE_DAY;
+        }
+        printDebug ("rules: parsed time from: $d_from and to:$d_to",2);
+
         $rule_ref->{parsed_from} = $d_from;
         $rule_ref->{parsed_to} = $d_to;
       } 
@@ -3038,35 +3044,35 @@ sub isAllowedInRules {
       $t = Time::Piece->strptime($t, $format);
 
       printDebug ("rules:(eid: $eid)  seeing if now:".$t->strftime($format)." is between:"
-                  .$rule_ref->{parsed_from}->strftime($format)." and ".$rule_ref->{parsed_to}->strftime($format));
+                  .$rule_ref->{parsed_from}->strftime($format)." and ".$rule_ref->{parsed_to}->strftime($format),2);
       if  (($t < $rule_ref->{parsed_from}) ||
           ($t > $rule_ref->{parsed_to})) {
-            printDebug ("rules: Skipping this rule as times don't match..");
+            printDebug ("rules: Skipping this rule as times don't match..",1);
            next;
       }
       if (exists($rule_ref->{daysofweek}) && 
           index($rule_ref->{daysofweek}, $t->wdayname)== -1 ) {
-            printDebug ('rules: (eid: $eid) Skipping this rule as:'.$t->wdayname.' does not match '. $rule_ref->{daysofweek});
+            printDebug ('rules: (eid: $eid) Skipping this rule as:'.$t->wdayname.' does not match '. $rule_ref->{daysofweek},1);
             next;
       }
 
       if (exists($rule_ref->{cause_has})) {
         my $re = qr/$rule_ref->{cause_has}/;
         if ($cause != /$re/i) {
-          printDebug('rules: (eid: $eid) Skipping this rule as '.$rule_ref->{cause_has}. " does not pattern match ".$cause);
+          printDebug('rules: (eid: $eid) Skipping this rule as '.$rule_ref->{cause_has}. " does not pattern match ".$cause,1);
           next;
         }
 
       }
       # coming here means this rule was matched and all conditions met
-      printDebug ('rules: (eid: $eid) mute rule matched, not allowing');
+      printDebug ('rules: (eid: $eid) mute rule matched, not allowing',1);
       return NOTALLOWED;
           
     } # mute
-    printDebug ("rules: (eid: $eid) No conflict in rule: $rulecnt, proceeding to next, if any...");
+    printDebug ("rules: (eid: $eid) No conflict in rule: $rulecnt, proceeding to next, if any...",1);
   } #foreach
   
-  printDebug ("rules: (eid: $eid) Found rule for $name ($id) but no conflicts. Allowing.");
+  printDebug ("rules: (eid: $eid) Found rule for $name ($id) but no conflicts. Allowing.",1);
   return ALLOWED;
 }
 
