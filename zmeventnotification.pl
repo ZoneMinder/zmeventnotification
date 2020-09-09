@@ -3003,7 +3003,7 @@ sub isAllowedInRules {
   my $id   = $alarm->{MonitorId};
   my $name = $alarm->{Name};
   my $cause = $alarm->{Cause};
-  my $eid = $alarm->{eid};
+  my $eid = $alarm->{EventId};
 
   if (!exists($es_rules{notifications}->{monitors}) || !exists($es_rules{notifications}->{monitors}->{$id})) {
     printDebug ("No rules found for $name ($id)",1);
@@ -3052,20 +3052,20 @@ sub isAllowedInRules {
       }
       if (exists($rule_ref->{daysofweek}) && 
           index($rule_ref->{daysofweek}, $t->wdayname)== -1 ) {
-            printDebug ('rules: (eid: $eid) Skipping this rule as:'.$t->wdayname.' does not match '. $rule_ref->{daysofweek},1);
+            printDebug ("rules: (eid: $eid) Skipping this rule as:".$t->wdayname.' does not match '. $rule_ref->{daysofweek},1);
             next;
       }
 
       if (exists($rule_ref->{cause_has})) {
         my $re = qr/$rule_ref->{cause_has}/;
         if ($cause != /$re/i) {
-          printDebug('rules: (eid: $eid) Skipping this rule as '.$rule_ref->{cause_has}. " does not pattern match ".$cause,1);
+          printDebug("rules: (eid: $eid) Skipping this rule as ".$rule_ref->{cause_has}. " does not pattern match ".$cause,1);
           next;
         }
 
       }
       # coming here means this rule was matched and all conditions met
-      printDebug ('rules: (eid: $eid) mute rule matched, not allowing',1);
+      printDebug ("rules: (eid: $eid) mute rule matched, not allowing",1);
       return NOTALLOWED;
           
     } # mute
