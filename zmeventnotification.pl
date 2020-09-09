@@ -3344,72 +3344,72 @@ sub processNewAlarmsInFork {
         printDebug ('rules: Not processing start notifications as rules checks failed');
        
       }  else {
-      # temp wrapper object for now to keep to old interface
-      # will eventually replace
-      my $cause          = $alarm->{Start}->{Cause};
-      my $detectJson     = $alarm->{Start}->{DetectionJson} || [];
-      my $temp_alarm_obj = {
-        Name          => $mname,
-        MonitorId     => $mid,
-        EventId       => $eid,
-        Cause         => $cause,
-        DetectionJson => $detectJson
+        # temp wrapper object for now to keep to old interface
+        # will eventually replace
+        my $cause          = $alarm->{Start}->{Cause};
+        my $detectJson     = $alarm->{Start}->{DetectionJson} || [];
+        my $temp_alarm_obj = {
+          Name          => $mname,
+          MonitorId     => $mid,
+          EventId       => $eid,
+          Cause         => $cause,
+          DetectionJson => $detectJson
 
-      };
+        };
 
-      if ( $use_api_push && $api_push_script ) {
-        if ( isAllowedChannel( 'event_start', 'api', $hookResult )
-          || !$event_start_hook
-          || !$use_hooks )
-        {
-          printInfo('Sending push over API as it is allowed for event_start');
+        if ( $use_api_push && $api_push_script ) {
+          if ( isAllowedChannel( 'event_start', 'api', $hookResult )
+            || !$event_start_hook
+            || !$use_hooks )
+          {
+            printInfo('Sending push over API as it is allowed for event_start');
 
-          my $api_cmd =
-              $api_push_script . ' '
-            . $eid . ' '
-            . $mid . ' ' . ' "'
-            . $temp_alarm_obj->{Name} . '" ' . ' "'
-            . $temp_alarm_obj->{Cause} . '" '
-            . " event_start";
+            my $api_cmd =
+                $api_push_script . ' '
+              . $eid . ' '
+              . $mid . ' ' . ' "'
+              . $temp_alarm_obj->{Name} . '" ' . ' "'
+              . $temp_alarm_obj->{Cause} . '" '
+              . " event_start";
 
-          if ($hook_pass_image_path) {
-            my $event = new ZoneMinder::Event($eid);
-            $api_cmd = $api_cmd . ' "' . $event->Path() . '"';
-            printDebug( 'Adding event path:'
-                . $event->Path()
-                . ' to api_cmd for image location' ,2);
+            if ($hook_pass_image_path) {
+              my $event = new ZoneMinder::Event($eid);
+              $api_cmd = $api_cmd . ' "' . $event->Path() . '"';
+              printDebug( 'Adding event path:'
+                  . $event->Path()
+                  . ' to api_cmd for image location' ,2);
+
+            }
+
+            printInfo("Executing API script command for event_start $api_cmd");
+            if ( $api_cmd =~ /^(.*)$/ ) {
+              $api_cmd = $1;
+            }
+            my $api_res = `$api_cmd`;
+            printInfo("Returned from $api_cmd");
+            chomp($api_res);
+            my $api_retcode = $? >> 8;
+            printDebug("API push script returned : $api_retcode",1);
 
           }
-
-          printInfo("Executing API script command for event_start $api_cmd");
-          if ( $api_cmd =~ /^(.*)$/ ) {
-            $api_cmd = $1;
+          else {
+            printInfo(
+              'Not sending push over API as it is not allowed for event_start');
           }
-          my $api_res = `$api_cmd`;
-          printInfo("Returned from $api_cmd");
-          chomp($api_res);
-          my $api_retcode = $? >> 8;
-          printDebug("API push script returned : $api_retcode",1);
 
         }
-        else {
-          printInfo(
-            'Not sending push over API as it is not allowed for event_start');
-        }
+        printDebug('Matching alarm to connection rules...',1);
+        my ($serv) = @_;
+        foreach (@active_connections) {
 
-      }
-      printDebug('Matching alarm to connection rules...',1);
-      my ($serv) = @_;
-      foreach (@active_connections) {
+          if ( shouldSendEventToConn( $temp_alarm_obj, $_ ) ) {
+            printDebug(
+              'shouldSendEventToConn returned true, so calling sendEvent',1);
+            sendEvent( $temp_alarm_obj, $_, 'event_start', $hookResult );
 
-        if ( shouldSendEventToConn( $temp_alarm_obj, $_ ) ) {
-          printDebug(
-            'shouldSendEventToConn returned true, so calling sendEvent',1);
-          sendEvent( $temp_alarm_obj, $_, 'event_start', $hookResult );
-
-        }
-      }    # foreach active_connections
-    } # isAllowed Alarm rules
+          }
+        }    # foreach active_connections
+      } # isAllowed Alarm rules
       $alarm->{Start}->{State} = 'done';
     }
 
