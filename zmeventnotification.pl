@@ -3340,6 +3340,10 @@ sub processNewAlarmsInFork {
     }
     elsif ( $alarm->{Start}->{State} eq 'ready' ) {
 
+      if (!isAllowedInRules($alarm)) {
+        printDebug ('rules: Not processing start notifications as rules checks failed');
+       
+      }  else {
       # temp wrapper object for now to keep to old interface
       # will eventually replace
       my $cause          = $alarm->{Start}->{Cause};
@@ -3405,6 +3409,7 @@ sub processNewAlarmsInFork {
 
         }
       }    # foreach active_connections
+    } # isAllowed Alarm rules
       $alarm->{Start}->{State} = 'done';
     }
 
@@ -3530,7 +3535,7 @@ sub processNewAlarmsInFork {
           'Not sending event end alarm, as we did not send a start alarm for this, or start hook processing failed'
         );
       } elsif (!isAllowedInRules($alarm)) {
-        printDebug ('Not processing end notifications as rules checks failed for start notification');
+        printDebug ('rules: Not processing end notifications as rules checks failed for start notification');
     
 
       }
