@@ -139,18 +139,21 @@ Here is an example of the rules file:
         "monitors":{
             "999": {
                 "rules": [{
-                    "comment": "Be careful with dates, no leading spaces, etc",
-                    "time_format":"%I:%M %p",
-                    "from":"9:30 pm",
-                    "to":"1 am",
-                    "daysofweek": "Mon,Tue,Wed",
-                    "action": "mute"
+                        "comment": "Be careful with dates, no leading spaces, etc",
+                        "time_format":"%I:%M %p",
+                        "from":"9:30 pm",
+                        "to":"1 am",
+                        "daysofweek": "Mon,Tue,Wed",
+                        "cause_has":"^(?!.*(person)).*$",
+                        "action": "mute"
                     },
                     {
                         "time_format": "%I:%M %p",
                         "from": "3 am",
                         "to": "6 am",
-                        "action": "mute"
+                        "action": "mute",
+                        "cause_has": "truck"
+
 
                     }
                 ]
@@ -172,7 +175,10 @@ Here is an example of the rules file:
 }
 
 It says for Monitor ID 999, don't send notifications between 
-9:30pm to 1am on Mon,Tue,Wed and 3am - 6am for all days of the week.
+9:30pm to 1am on Mon,Tue,Wed for any alarms that don't have "person" in it's cause
+assuming you are using object detection. It also says from  3am - 6am for all days of the week, 
+don't send alarms if the alarm cause has "truck" in it.
+
 For Monitor 998, don't send notifications from 5pm to 7am for all days of the week.
 Note that you need to install ``Time::Pice`` in Perl.
 

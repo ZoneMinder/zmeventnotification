@@ -3,10 +3,11 @@
         "monitors":{
             "999": {
                 "rules": [{
-                    "comment": "Be careful with dates, no leading spaces, etc",
+                    "comment1": "Be careful with dates, no leading spaces, etc",
                     "time_format":"%I:%M %p",
                     "from":"9:30 pm",
-                    "to":"1 am",
+                    "to":"1 am", 
+                    "cause_has": "person", 
                     "daysofweek": "Mon,Tue,Wed",
                     "action": "mute"
                     },
@@ -14,7 +15,9 @@
                         "time_format": "%I:%M %p",
                         "from": "3 am",
                         "to": "6 am",
-                        "action": "mute"
+                        "action": "mute",
+                        "comment1": "the pattern below is a negative match",
+                        "cause_has": "^(?!.*(plant|cat|dog)).*$"
 
                     }
                 ]
