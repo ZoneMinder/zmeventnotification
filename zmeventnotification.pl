@@ -3004,6 +3004,7 @@ sub isAllowedInRules {
   my $name = $alarm->{Name};
   my $cause = $alarm->{Cause};
   my $eid = $alarm->{EventId};
+  my $now = Time::Piece->new;
 
   if (!exists($es_rules{notifications}->{monitors}) || !exists($es_rules{notifications}->{monitors}->{$id})) {
     printDebug ("No rules found for $name ($id)",1);
@@ -3053,7 +3054,7 @@ sub isAllowedInRules {
 
       printDebug ("rules:(eid: $eid)  seeing if now:".$t->wdayname." matches:".$rule_ref->{daysofweek},2);
       if (exists($rule_ref->{daysofweek}) && 
-          index($rule_ref->{daysofweek}, $t->wdayname)== -1 ) {
+          index($rule_ref->{daysofweek}, $now->wdayname)== -1 ) {
             printDebug ("rules: (eid: $eid) Skipping this rule as:".$t->wdayname.' does not match '. $rule_ref->{daysofweek},1);
             next;
       }
