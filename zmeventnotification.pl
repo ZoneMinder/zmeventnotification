@@ -3052,9 +3052,9 @@ sub isAllowedInRules {
            next;
       }
 
-      printDebug ("rules:(eid: $eid)  seeing if now:".$now->wdayname." matches:".$rule_ref->{daysofweek},2);
-      if (exists($rule_ref->{daysofweek}) && 
-          index($rule_ref->{daysofweek}, $now->wdayname)== -1 ) {
+      printDebug ("rules:(eid: $eid)  seeing if now:".$now->wdayname." is part of:".$rule_ref->{daysofweek},2);
+      if ((exists($rule_ref->{daysofweek})) && 
+          (index($rule_ref->{daysofweek}, $now->wdayname)== -1) ) {
             printDebug ("rules: (eid: $eid) Skipping this rule as:".$t->wdayname.' does not match '. $rule_ref->{daysofweek},1);
             next;
       }
