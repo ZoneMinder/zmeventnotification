@@ -3032,6 +3032,8 @@ sub isAllowedInRules {
   my $eid = $alarm->{EventId};
   my $now = Time::Piece->new;
 
+  printDebug ("Checking rules for alarm caused by eid:$eid, monitor:$id, at: $now with cause:$cause",2);
+
   if (!exists($es_rules{notifications}->{monitors}) || !exists($es_rules{notifications}->{monitors}->{$id})) {
     printDebug ("No rules found for $name ($id)",1);
     return ALLOWED;
