@@ -3032,7 +3032,7 @@ sub isAllowedInRules {
   my $eid = $alarm->{EventId};
   my $now = Time::Piece->new;
 
-  printDebug ("Checking rules for alarm caused by eid:$eid, monitor:$id, at: $now with cause:$cause",2);
+  printDebug ("rules: Checking rules for alarm caused by eid:$eid, monitor:$id, at: $now with cause:$cause",2);
 
   if (!exists($es_rules{notifications}->{monitors}) || !exists($es_rules{notifications}->{monitors}->{$id})) {
     printDebug ("No rules found for $name ($id)",1);
@@ -3089,7 +3089,7 @@ sub isAllowedInRules {
       printDebug ("rules:(eid: $eid)  seeing if cause_has:".$rule_ref->{cause_has}." is part of $cause:",2);
       if (exists($rule_ref->{cause_has})) {
         my $re = qr/$rule_ref->{cause_has}/;
-        if ($cause != /$re/i) {
+        if (lc($cause) !~ /$re/i) {
           printDebug("rules: (eid: $eid) Skipping this rule as ".$rule_ref->{cause_has}. " does not pattern match ".$cause,1);
           next;
         }
