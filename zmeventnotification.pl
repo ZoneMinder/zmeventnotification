@@ -1780,6 +1780,32 @@ sub sendOverFCM {
 
   # https://firebase.google.com/docs/cloud-messaging/http-server-ref#notification-payload-support
 
+  my $message_v2 = {
+    to => $obj->{token},
+    title => $title,
+    body => $body,
+    sound => 'default',
+    badge => $badge,
+
+    android=> {
+      icon=>'ic_stat_notification',
+      priority=>1,
+      channel=>'zmninja'
+
+    },
+    ios=>{  
+      content_available=>1
+    },
+    data=>{
+      mid         => $mid,
+      eid         => $eid,
+
+    }
+
+  };
+
+
+
   my $android_message = {
     to       => $obj->{token},
     notification => {
@@ -3058,7 +3084,7 @@ sub isAllowedInRules {
             printDebug ("rules: (eid: $eid) Skipping this rule as:".$t->wdayname.' does not match '. $rule_ref->{daysofweek},1);
             next;
       }
-
+      printDebug ("rules:(eid: $eid)  seeing if cause_has:".$rule_ref->{cause_has}." is part of $cause:",2);
       if (exists($rule_ref->{cause_has})) {
         my $re = qr/$rule_ref->{cause_has}/;
         if ($cause != /$re/i) {
