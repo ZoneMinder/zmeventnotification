@@ -3028,7 +3028,7 @@ sub isAllowedInRules {
   my $alarm = shift;
   my $id   = $alarm->{MonitorId};
   my $name = $alarm->{Name};
-  my $cause = $alarm->{Cause};
+  my $cause = $alarm->{End}->{Cause} || $alarm->{End}->{Cause} || $alarm->{Cause};
   my $eid = $alarm->{EventId};
   my $now = Time::Piece->new;
 
