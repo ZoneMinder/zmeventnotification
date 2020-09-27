@@ -1780,6 +1780,32 @@ sub sendOverFCM {
 
   # https://firebase.google.com/docs/cloud-messaging/http-server-ref#notification-payload-support
 
+  my $message_v2 = {
+    to => $obj->{token},
+    title => $title,
+    body => $body,
+    sound => 'default',
+    badge => $badge,
+
+    android=> {
+      icon=>'ic_stat_notification',
+      priority=>1,
+      channel=>'zmninja'
+
+    },
+    ios=>{  
+      content_available=>1
+    },
+    data=>{
+      mid         => $mid,
+      eid         => $eid,
+
+    }
+
+  };
+
+
+
   my $android_message = {
     to       => $obj->{token},
     notification => {
@@ -3002,9 +3028,11 @@ sub isAllowedInRules {
   my $alarm = shift;
   my $id   = $alarm->{MonitorId};
   my $name = $alarm->{Name};
-  my $cause = $alarm->{Cause};
+  my $cause = $alarm->{End}->{Cause} || $alarm->{End}->{Cause} || $alarm->{Cause};
   my $eid = $alarm->{EventId};
   my $now = Time::Piece->new;
+
+  printDebug ("rules: Checking rules for alarm caused by eid:$eid, monitor:$id, at: $now with cause:$cause",2);
 
   if (!exists($es_rules{notifications}->{monitors}) || !exists($es_rules{notifications}->{monitors}->{$id})) {
     printDebug ("No rules found for $name ($id)",1);
@@ -3058,10 +3086,10 @@ sub isAllowedInRules {
             printDebug ("rules: (eid: $eid) Skipping this rule as:".$t->wdayname.' does not match '. $rule_ref->{daysofweek},1);
             next;
       }
-
+      printDebug ("rules:(eid: $eid)  seeing if cause_has:".$rule_ref->{cause_has}." is part of $cause:",2);
       if (exists($rule_ref->{cause_has})) {
         my $re = qr/$rule_ref->{cause_has}/;
-        if ($cause != /$re/i) {
+        if (lc($cause) !~ /$re/i) {
           printDebug("rules: (eid: $eid) Skipping this rule as ".$rule_ref->{cause_has}. " does not pattern match ".$cause,1);
           next;
         }
