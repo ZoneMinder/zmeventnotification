@@ -2982,7 +2982,7 @@ sub isInList {
   my $monlist = shift;
   my $mid     = shift;
 
-  return 1 if ($monlist eq "");
+  return 1 if ($monlist eq "" || !$monlist);
 
   my @mids = split( ',', $monlist );
   my $found = 0;
