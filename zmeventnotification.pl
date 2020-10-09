@@ -2271,6 +2271,7 @@ sub checkConnection {
     grep { $_->{state} != PENDING_DELETE } @active_connections;
 
   my $ac = scalar @active_connections;
+  #print (" $ac ACTIVE CONNECTIONS=================================\n");
   my $fcm_conn =
     scalar grep { $_->{state} == VALID_CONNECTION && $_->{type} == FCM }
     @active_connections;
@@ -2413,13 +2414,35 @@ sub processIncomingMessage {
         }
         return;
       }
+
+    
+      my $token_matched = 0;
       foreach (@active_connections) {
 
         # this token already exists so we just update records
         if ( $_->{token} eq $json_string->{data}->{token} ) {
-            printDebug('token matched, updating entry in active connections',2);
+          # if the token doesn't belong to the same connection
+          # then we have two connections owning the same token
+          # so we need to delete the old one. This can happen when you load
+          # the token from the persistent file and there is no connection
+          # and then the client is loaded
+          if (
+            ( !exists $_->{conn} )
+            || ( $_->{conn}->ip() ne $conn->ip()
+              || $_->{conn}->port() ne $conn->port() )
+            )
+          {
+            printDebug('JOB: token matched but connection did not',2);
+            printDebug( 'JOB: Duplicate token found: marking ...'
+                . substr( $_->{token}, -10 )
+                . ' to be deleted',1 );
+
+            $_->{state} = PENDING_DELETE;
+
+          } else {
+
+            printDebug('JOB: token matched, updating entry in active connections',2);
             $_->{type}     = FCM;
-            $_->{token}    = $json_string->{data}->{token};
             $_->{platform} = $json_string->{data}->{platform};
             if ( exists( $json_string->{data}->{monlist} )
               && ( $json_string->{data}->{monlist} ne '' ) )
@@ -2440,7 +2463,7 @@ sub processIncomingMessage {
               $_->{intlist} = '-1';
             }
             $_->{pushstate} = $json_string->{data}->{state};
-            printDebug( 'Storing token ...'
+            printDebug( 'JOB: Storing token ...'
                 . substr( $_->{token}, -10 )
                 . ',monlist:'
                 . $_->{monlist}
@@ -2455,18 +2478,22 @@ sub processIncomingMessage {
             );
             $_->{monlist} = $emonlist;
             $_->{intlist} = $eintlist;
+            
+          }
+
+            
       
         }    # end of token matches
              # The connection matches but the token does not
          # this can happen if this is the first token registration after push notification registration
          # response is received
-        if ( ( exists $_->{conn} )
+        elsif ( ( exists $_->{conn} )
           && ( $_->{conn}->ip() eq $conn->ip() )
           && ( $_->{conn}->port() eq $conn->port() )
           && ( $_->{token} ne $json_string->{data}->{token} ) )
         {
           printDebug(
-            'connection matched but token did not. first registration?',2);
+            'JOB: connection matched but token did not. first registration?',2);
           $_->{type}     = FCM;
           $_->{token}    = $json_string->{data}->{token};
           $_->{platform} = $json_string->{data}->{platform};
@@ -2489,7 +2516,7 @@ sub processIncomingMessage {
             $_->{intlist} = '-1';
           }
           $_->{pushstate} = $json_string->{data}->{state};
-          printDebug( 'Storing token ...'
+          printDebug( 'JOB: Storing token ...'
               . substr( $_->{token}, -10 )
               . ',monlist:'
               . $_->{monlist}
@@ -2826,6 +2853,7 @@ sub initFCMTokens {
     %tokens_data = %$hr;
   }
 
+  @active_connections = ();
   foreach my $key (keys %{$tokens_data{tokens}}) {
     my $token = $key;
     my $monlist = $tokens_data{tokens}->{$key}->{monlist};
@@ -4052,6 +4080,7 @@ sub initSocketServer {
           my $connect_time = time();
           push @active_connections,
             {
+            token        => '',
             type         => WEB,
             conn         => $conn,
             id           => $id,
