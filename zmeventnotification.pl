@@ -97,6 +97,7 @@ use constant {
   DEFAULT_AUTH_ENABLE        => 'yes',
   DEFAULT_AUTH_TIMEOUT       => 20,
   DEFAULT_FCM_ENABLE         => 'yes',
+  DEFAULT_USE_FCMV1          => 'yes',
   DEFAULT_MQTT_ENABLE        => 'no',
   DEFAULT_MQTT_SERVER        => '127.0.0.1',
   DEFAULT_MQTT_TOPIC         => 'zoneminder',
@@ -199,7 +200,8 @@ my $mqtt_retain;
 my $mqtt_last_tick_time = time();
 
 my $use_fcm;
-my $fcm_api_key;
+my $use_fcmv1;
+
 
 my $use_api_push;
 my $api_push_script;
@@ -266,9 +268,6 @@ my $prefix = "PARENT:";
 
 my %escontrol_interface_settings = ( notifications => {} );
 
-#default key. Please don't change this
-use constant NINJA_API_KEY =>
-  'AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h';
 
 my $dummyEventTest = 0
   ; # if on, will generate dummy events. Not in config for a reason. Only dev testing
@@ -291,7 +290,7 @@ if ( !try_use('Storable') )         { Fatal('Storable missing'); }
 
 my $is_timepeice=1;
 if (!try_use('Time::Piece')) {
-  Error('Time::Piece module missing. Dates will not work in es rules json');
+  Error('rules: Time::Piece module missing. Dates will not work in es rules json');
   $is_timepeice = 0;
 }
 #
@@ -500,7 +499,7 @@ sub loadEsConfigSettings {
     config_get_val( $config, 'mqtt', 'retain', DEFAULT_MQTT_RETAIN );
 
   $use_fcm = config_get_val( $config, 'fcm', 'enable', DEFAULT_FCM_ENABLE );
-  $fcm_api_key = config_get_val( $config, 'fcm', 'api_key', NINJA_API_KEY );
+  $use_fcmv1 = config_get_val( $config, 'fcm', 'use_fcmv1', DEFAULT_USE_FCMV1 );
   $fcm_date_format =
     config_get_val( $config, 'fcm', 'date_format', DEFAULT_FCM_DATE_FORMAT );
 
@@ -558,19 +557,19 @@ sub loadEsConfigSettings {
   if ($es_rules_file) {
     my $hr;
     my $fh;
-    printDebug ("Loading es rules json: $es_rules_file");
+    printDebug ("rules: Loading es rules json: $es_rules_file");
     if (open ($fh, "<", $es_rules_file )) {
       my $data = do { local $/=undef; <$fh> };
       eval {$hr = decode_json($data);};
       if ($@) {
-        printError("Failed decoding es rules: $@");
+        printError("rules: Failed decoding es rules: $@");
       } else {
         %es_rules = %$hr;
         #print Dumper(\%es_rules);
       }
       close($fh);
     } else {
-      printError( "Could not open $es_rules_file: $!");
+      printError( "rules: Could not open $es_rules_file: $!");
     }
 
   } # if es_rules
@@ -682,8 +681,8 @@ Use API Push.......................... ${\(yes_or_no($use_api_push))}
 API Push Script....................... ${\(value_or_undefined($api_push_script))}
 
 Use FCM .............................. ${\(yes_or_no($use_fcm))}
+Use FCM V1 APIs....................... ${\(yes_or_no($use_fcmv1))}
 FCM Date Format....................... ${\(value_or_undefined($fcm_date_format))}
-FCM API key .......................... ${\(present_or_not($fcm_api_key))}
 Token file ........................... ${\(value_or_undefined($token_file))}
 
 Use MQTT ............................. ${\(yes_or_no($use_mqtt))}
@@ -754,6 +753,7 @@ if ($use_fcm) {
   }
   else {
     printInfo('Push enabled via FCM');
+    printDebug ("fcmv1: --> FCM V1 APIs: $use_fcmv1");
   }
 
 }
@@ -1566,40 +1566,29 @@ sub deleteFCMToken {
   my $dtoken = shift;
   printDebug( 'DeleteToken called with ...' . substr( $dtoken, -10 ),2 );
   return if ( !-f $token_file );
-
   open( my $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
-  chomp( my @lines = <$fh> );
+  my %tokens_data;
+  my $hr;
+  my $data = do { local $/=undef; <$fh> };
   close($fh);
-  my @uniquetokens = uniq(@lines);
-
-  open( $fh, '>', $token_file ) or Fatal("Error opening $token_file: $!");
-
-  foreach (@uniquetokens) {
-    my ( $token, $monlist, $intlist, $platform, $pushstate ) =
-      rsplit( qr/:/, $_, 5 );    #split (":",$_);
-    next if ( $_ eq '' || $token eq $dtoken );
-    print $fh "$_\n";
-
-    #print "delete: $row\n";
-    my $tod = gettimeofday;
-    push @active_connections,
-      {
-      type         => FCM,
-      id           => $tod,
-      token        => $token,
-      state        => INVALID_CONNECTION,
-      time         => time(),
-      badge        => 0,
-      monlist      => $monlist,
-      intlist      => $intlist,
-      last_sent    => {},
-      platform     => $platform,
-      pushstate    => $pushstate,
-      extra_fields => ''
-      };
-
+  eval {$hr = decode_json($data);};
+  if ($@) {
+    printError("Could not delete token from file: $!");
+    return;
+  } else {
+    # remove token from FCM JSON file
+    %tokens_data = %$hr;
+    delete $tokens_data{tokens}->{$dtoken} if exists ($tokens_data{tokens}->{$dtoken});
+    open (my $fh, '>', $token_file) or printError ("Error writing tokens file: $!");
+    my $json = encode_json (\%tokens_data);
+    print $fh $json;
+    close ($fh);
   }
-  close($fh);
+  # now remove from active connection list
+  foreach (@active_connections) {
+    next if ( $_ eq '' || $_->{token} ne $dtoken );
+    $_->{state} => INVALID_CONNECTION;
+  }
 }
 
 # Sends a push notification to the mqtt Broker
@@ -1677,9 +1666,203 @@ sub sendOverWebSocket {
 
 }
 
+sub sendOverFCM {
+  if ($use_fcmv1) {
+    sendOverFCMV1(shift,shift,shift,shift);
+
+  } else {
+    sendOverFCMLegacy(shift,shift,shift,shift);
+  }
+}
+
+sub sendOverFCMV1 {
+
+  use constant NINJA_FCMV1_TOKEN => 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJnZW5lcmF0b3IiOiJwbGlhYmxlIHBpeGVscyIsImlhdCI6MTYwMTIwOTUyNSwiY2xpZW50Ijoiem1uaW5qYSJ9.mYgsZ84i3aUkYNv8j8iDsZVVOUIJmOWmiZSYf15O0zc';
+  use constant NINJA_FCMV1_URL => 'https://us-central1-ninja-1105.cloudfunctions.net/send_push';
+
+  my $alarm      = shift;
+  my $obj        = shift;
+  my $event_type = shift;
+  my $resCode    = shift;
+  my $key = NINJA_FCMV1_TOKEN;
+  my $uri = NINJA_FCMV1_URL;
+
+  my $mid   = $alarm->{MonitorId};
+  my $eid   = $alarm->{EventId};
+  my $mname = $alarm->{Name};
+
+  my $pic = $picture_url =~ s/EVENTID/$eid/gr;
+  if ( $resCode == 1 ) {
+    printDebug(
+      'fcmv1: FCM called when hook failed, so making sure we do not use objdetect in url',2
+    );
+    $pic = $pic =~ s/objdetect(_...)?/snapshot/gr;
+  }
+
+  if ( !$event_start_hook || !$use_hooks ) {
+    printDebug(
+      'fcmv1: FCM called when there is no start hook/or hooks are disabled, so making sure we do not use objdetect in url',2
+    );
+    $pic = $pic =~ s/objdetect(_...)/snapshot/gr;
+  }
+
+  $pic = $pic . '&username=' . $picture_portal_username
+    if ($picture_portal_username);
+  $pic = $pic . '&password=' . uri_escape($picture_portal_password)
+    if ($picture_portal_password);
+
+  #printInfo ("Using URL: $pic with password=$picture_portal_password");
+
+  # if we used best match we will use the right image in notification
+  if ( substr( $alarm->{Cause}, 0, 3 ) eq '[a]' ) {
+    my $npic = $pic =~ s/BESTMATCH/alarm/gr;
+    $pic = $npic;
+    my $dpic = $pic;
+    $dpic =~ s/pass(word)?=(.*?)($|&)/pass$1=xxx$3/g;
+
+    printDebug("fcmv1: Alarm frame matched, changing picture url to:$dpic ",2);
+    $alarm->{Cause} = substr( $alarm->{Cause}, 4 )
+      if ( !$keep_frame_match_type );
+
+  }
+  elsif ( substr( $alarm->{Cause}, 0, 3 ) eq '[s]' ) {
+    my $npic = $pic =~ s/BESTMATCH/snapshot/gr;
+    $pic = $npic;
+    printDebug("fcmv1: Snapshot frame matched, changing picture url to:$pic ",2);
+    $alarm->{Cause} = substr( $alarm->{Cause}, 4 )
+      if ( !$keep_frame_match_type );
+  }
+  elsif ( substr( $alarm->{Cause}, 0, 3 ) eq '[x]' ) {
+    $alarm->{Cause} = substr( $alarm->{Cause}, 4 )
+      if ( !$keep_frame_match_type );
+  }
+
+  my $now = strftime( $fcm_date_format, localtime );
+  my $body = $alarm->{Cause};
+  $body = $body . ' ended' if ( $event_type eq 'event_end' );
+  $body = $body . ' at ' . $now;
+
+  my $badge = $obj->{badge} + 1;
+
+  print WRITER 'badge--TYPE--' . $obj->{id} . '--SPLIT--' . $badge . '\n';
+  my $json;
+
+  my $title = $mname . ' Alarm';
+  $title = $title . ' (' . $eid . ')' if ($tag_alarm_event_id);
+  $title = 'Ended:' . $title          if ( $event_type eq 'event_end' );
+
+
+  # https://firebase.google.com/docs/cloud-messaging/http-server-ref#notification-payload-support
+
+  my $message_v2 = {
+    token => $obj->{token},
+    title => $title,
+    body => $body,
+    sound => 'default',
+    badge => int($badge),
+    data=>{
+      mid         => $mid,
+      eid         => $eid,
+      notification_foreground => "true"
+    }
+
+  };
+
+  if ( $obj->{platform} eq 'android' ) {
+   $message_v2->{android} = {
+      icon=>'ic_stat_notification',
+      priority=>'high',
+      channel=>'zmninja'
+    }
+  }
+  if ( $obj->{platform} eq 'ios' ) {
+    $message_v2->{ios} = {
+      #thread_id=>'zmninja_alarm',
+      #aps_alert_custom_data=>{
+      #  
+      #},
+      #aps_custom_data=>{
+      #  
+      #},
+      headers=>{
+        apns_priority=>'10'
+      }
+    }
+     
+  }
+
+
+  if ( $picture_url && $include_picture ) {
+   # $ios_message->{mutable_content} = \1;
+
+    #$ios_message->{content_available} = \1;
+    #$message_v2->{image_url_jpg} = $pic;
+    $message_v2->{image_url} = $pic;
+  }
+  $json  = encode_json($message_v2);
+  my $djson = $json;
+  $djson =~ s/pass(word)?=(.*?)($|&|})/pass$1=xxx$3/g;
+
+  printDebug( "fcmv1: Final JSON using FCMV1 being sent is: $djson to token: ..."
+      . substr( $obj->{token}, -6 ),2 );
+  my $req = HTTP::Request->new( 'POST', $uri );
+  $req->header(
+    'Content-Type'  => 'application/json',
+    'Authorization' => $key
+  );
+
+  $req->content($json);
+  my $lwp = LWP::UserAgent->new(%ssl_push_opts);
+  my $res = $lwp->request($req);
+  my $msg;
+  my $json_string;
+
+  if ( $res->is_success ) {
+    $msg = $res->decoded_content;
+    printDebug( 'fcmv1: FCM push message returned a 200 with body ' . $res->content ,1);
+    eval { $json_string = decode_json($msg); };
+    if ($@) {
+
+      Error("fcmv1: Failed decoding sendFCM Response: $@");
+      return;
+    }
+    if ( $json_string->{failure} eq 1 ) {
+      my $reason = $json_string->{results}[0]->{Error};
+      Error( 'fcmv1: Error sending FCM for token:' . $obj->{token} );
+      Error( 'fcmv1: Error value =' . $reason );
+      if (index($reason, 'not a valid FCM') != -1) {
+        printDebug('fcmv1: Removing this token as FCM doesn\'t recognize it',1);
+        deleteFCMToken( $obj->{token} );      } 
+     
+
+    }
+  }
+  else {
+    printError( 'fcmv1: FCM push message Error:' . $res->status_line );
+  }
+
+  # send supplementary event data over websocket, same SSL state issue
+  # so use a parent pipe
+  if ( $obj->{state} == VALID_CONNECTION && exists $obj->{conn} ) {
+    my $sup_str = encode_json(
+      { event         => 'alarm',
+        type          => '',
+        status        => 'Success',
+        supplementary => 'true',
+        events        => [$alarm]
+      }
+    );
+    print WRITER 'message--TYPE--' . $obj->{id} . '--SPLIT--' . $sup_str . "\n";
+
+  }
+
+}
 # Sends a push notification to FCM
 # called in a forked process
-sub sendOverFCM {
+sub sendOverFCMLegacy {
+
+  use constant NINJA_API_KEY =>
+  'AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h';
 
   my $alarm      = shift;
   my $obj        = shift;
@@ -1695,14 +1878,14 @@ sub sendOverFCM {
     printDebug(
       'FCM called when hook failed, so making sure we do not use objdetect in url',2
     );
-    $pic = $pic =~ s/objdetect/snapshot/gr;
+    $pic = $pic =~ s/objdetect(_...)/snapshot/gr;
   }
 
   if ( !$event_start_hook || !$use_hooks ) {
     printDebug(
       'FCM called when there is no start hook/or hooks are disabled, so making sure we do not use objdetect in url',2
     );
-    $pic = $pic =~ s/objdetect/snapshot/gr;
+    $pic = $pic =~ s/objdetect(_...)/snapshot/gr;
   }
 
   $pic = $pic . '&username=' . $picture_portal_username
@@ -1748,7 +1931,7 @@ sub sendOverFCM {
   my $json;
 
   # use zmNinja FCM key if the user did not override
-  my $key   = 'key=' . $fcm_api_key;
+  my $key   = 'key=' . NINJA_API_KEY;
   my $title = $mname . ' Alarm';
   $title = $title . ' (' . $eid . ')' if ($tag_alarm_event_id);
   $title = 'Ended:' . $title          if ( $event_type eq 'event_end' );
@@ -1778,32 +1961,7 @@ sub sendOverFCM {
     }
   };
 
-  # https://firebase.google.com/docs/cloud-messaging/http-server-ref#notification-payload-support
-
-  my $message_v2 = {
-    to => $obj->{token},
-    title => $title,
-    body => $body,
-    sound => 'default',
-    badge => $badge,
-
-    android=> {
-      icon=>'ic_stat_notification',
-      priority=>1,
-      channel=>'zmninja'
-
-    },
-    ios=>{  
-      content_available=>1
-    },
-    data=>{
-      mid         => $mid,
-      eid         => $eid,
-
-    }
-
-  };
-
+  
 
 
   my $android_message = {
@@ -1843,16 +2001,18 @@ sub sendOverFCM {
 
   }
 
+ 
   if ( $obj->{platform} eq 'ios' ) {
     $json = encode_json($ios_message);
   }
 
-  # if I do both, notification icon in Android gets messed up
+# if I do both, notification icon in Android gets messed up
   else {    # android
     $json  = encode_json($android_message);
     $notId = ( $notId + 1 ) % 100000;
 
   }
+
 
   my $djson = $json;
   $djson =~ s/pass(word)?=(.*?)($|&)/pass$1=xxx$3/g;
@@ -2257,29 +2417,7 @@ sub processIncomingMessage {
 
         # this token already exists so we just update records
         if ( $_->{token} eq $json_string->{data}->{token} ) {
-
-          # if the token doesn't belong to the same connection
-          # then we have two connections owning the same token
-          # so we need to delete the old one. This can happen when you load
-          # the token from the persistent file and there is no connection
-          # and then the client is loaded
-          if (
-            ( !exists $_->{conn} )
-            || ( $_->{conn}->ip() ne $conn->ip()
-              || $_->{conn}->port() ne $conn->port() )
-            )
-          {
-            printDebug('token matched but connection did not',2);
-            printDebug( 'Duplicate token found: marking ...'
-                . substr( $_->{token}, -10 )
-                . ' to be deleted',1 );
-
-            $_->{state} = PENDING_DELETE;
-
-          }
-          else    # token matches and connection matches, so it may be an update
-          {
-            printDebug('token and connection matched',2);
+            printDebug('token matched, updating entry in active connections',2);
             $_->{type}     = FCM;
             $_->{token}    = $json_string->{data}->{token};
             $_->{platform} = $json_string->{data}->{platform};
@@ -2317,7 +2455,7 @@ sub processIncomingMessage {
             );
             $_->{monlist} = $emonlist;
             $_->{intlist} = $eintlist;
-          }    # token and conn. matches
+      
         }    # end of token matches
              # The connection matches but the token does not
          # this can happen if this is the first token registration after push notification registration
@@ -2467,7 +2605,7 @@ sub processIncomingMessage {
   elsif ( $json_string->{event} eq 'auth' ) {
     my $uname = $json_string->{data}->{user};
     my $pwd   = $json_string->{data}->{password};
-
+    my $appversion = $json_string->{data}->{appversion};
     my $category = 'normal';
     $category = $json_string->{category}
       if ( exists( $json_string->{category} ) );
@@ -2519,7 +2657,7 @@ sub processIncomingMessage {
 
           # all good, connection auth was valid
           $_->{category} = $category;
-
+          $_->{appversion} = $appversion;
           $_->{state}   = VALID_CONNECTION;
           $_->{monlist} = $monlist;
           $_->{intlist} = $intlist;
@@ -2629,30 +2767,73 @@ sub initMQTT {
     };
 }
 
+sub migrateTokens {
+  my %tokens;
+  $tokens{tokens}={};
+  open( my $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
+  chomp( my @lines = <$fh> );
+  close($fh);
+  my @uniquetokens = uniq(@lines);
+  #open( $fh, '>', $token_file ) or Fatal("Error opening $token_file: $!");
+  
+  foreach (@uniquetokens) {
+    next if ( $_ eq '' );
+    my ( $token, $monlist, $intlist, $platform, $pushstate ) =
+      rsplit( qr/:/, $_, 5 );  
+    $tokens{tokens}->{$token}= {
+      monlist => $monlist,
+      intlist => $intlist,
+      platform => $platform,
+      pushstate => $pushstate
+    }
+  }
+  my $json = encode_json (\%tokens);
+
+  open (my $fh, '>', $token_file) or Fatal ("Error creating new migrated file: $!");
+  print $fh $json;
+  close ($fh);
+}
+
 # loads FCM tokens from file
 sub initFCMTokens {
   printDebug('Initializing FCM tokens...',1);
   if ( !-f $token_file ) {
     open( my $foh, '>', $token_file ) or Fatal("Error opening $token_file: $!");
     printDebug( 'Creating ' . $token_file,1 );
-    print $foh '';
+    print $foh '{"tokens":{}}';
     close($foh);
   }
 
   open( my $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
-  chomp( my @lines = <$fh> );
-  close($fh);
-  my @uniquetokens = uniq(@lines);
+  my %tokens_data;
+  my $hr;
+  my $data = do { local $/=undef; <$fh> };
+  eval {$hr = decode_json($data);};
+  if ($@) {
+    printInfo("tokens is not JSON, migrating format...");
+    close($fh);
+    migrateTokens();
+    open( my $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
+    my $data = do { local $/=undef; <$fh> };
+    eval {$hr = decode_json($data);};
+    if ($@) {
+      Fatal ("Migration to JSON file failed: $!");
+    } else {
+      %tokens_data = %$hr;
+    }
 
-  open( $fh, '>', $token_file ) or Fatal("Error opening $token_file: $!");
+  } else {
+    %tokens_data = %$hr;
+  }
 
-  # This makes sure we rewrite the file with
-  # unique tokens
-  foreach (@uniquetokens) {
-    next if ( $_ eq '' );
-    print $fh "$_\n";
-    my ( $token, $monlist, $intlist, $platform, $pushstate ) =
-      rsplit( qr/:/, $_, 5 );    # split (":",$_);
+  foreach my $key (keys %{$tokens_data{tokens}}) {
+    my $token = $key;
+    my $monlist = $tokens_data{tokens}->{$key}->{monlist};
+    my $intlist = $tokens_data{tokens}->{$key}->{intlist};
+    my $platform = $tokens_data{tokens}->{$key}->{platform};
+    my $pushstate = $tokens_data{tokens}->{$key}->{pushstate};
+    my $appversion = $tokens_data{tokens}->{$key}->{appversion};
+
     my $tod = gettimeofday;
     push @active_connections,
       {
@@ -2667,11 +2848,17 @@ sub initFCMTokens {
       last_sent    => {},
       platform     => $platform,
       extra_fields => '',
-      pushstate    => $pushstate
+      pushstate    => $pushstate,
+      appversion   => $appversion
       };
 
   }
+
+  #print Dumper(@active_connections);
+  
+
   close($fh);
+  #exit(1);
 }
 
 # When a client sends a token id,
@@ -2685,15 +2872,16 @@ sub initFCMTokens {
 sub saveFCMTokens {
   return if ( !$use_fcm );
   my $stoken = shift;
-  if ( $stoken eq '' ) {
-    printDebug('Not saving, no token. Desktop?',2);
-    return;
-  }
   my $smonlist   = shift;
   my $sintlist   = shift;
   my $splatform  = shift;
   my $spushstate = shift;
-  if ( ( $spushstate eq '' ) && ( $stoken ne '' ) ) {
+
+  if ( $stoken eq '' ) {
+    printDebug('Not saving, no token. Desktop?',2);
+    return;
+  }
+  if ( $spushstate eq '' ) {
     $spushstate = 'enabled';
     printDebug(
       'Overriding token state, setting to enabled as I got a null with a valid token',1
@@ -2703,54 +2891,29 @@ sub saveFCMTokens {
   printDebug(
     "SaveTokens called with:monlist=$smonlist, intlist=$sintlist, platform=$splatform, push=$spushstate",2
   );
-
-  return if ( $stoken eq '' );
   open( my $fh, '<', $token_file )
     || Fatal( 'Cannot open for read ' . $token_file );
-  chomp( my @lines = <$fh> );
-  close($fh);
-  my @uniquetokens = uniq(@lines);
-  my $found        = 0;
-  open( my $fh, '>', $token_file )
-    || Fatal( 'Cannot open for write ' . $token_file );
 
-  foreach (@uniquetokens) {
-    next if ( $_ eq '' );
-    my ( $token, $monlist, $intlist, $platform, $pushstate ) =
-      rsplit( qr/:/, $_, 5 );    #split (":",$_);
-    if ( $token eq $stoken )     # update token in file with new information
-    {
-      printDebug("token matched, previously stored monlist is: $monlist",1);
-      $smonlist   = $monlist   if ( $smonlist eq '-1' );
-      $sintlist   = $intlist   if ( $sintlist eq '-1' );
-      $spushstate = $pushstate if ( $spushstate eq '' );
-      printDebug( 'updating ...'
-          . substr( $token, -10 )
-          . " with push:$pushstate & monlist:$monlist" ,2);
-      print $fh "$stoken:$smonlist:$sintlist:$splatform:$spushstate\n";
-      $found = 1;
-    }
-    else                         # write token as is
-    {
-      if ( $pushstate eq '' ) {
-        $pushstate = 'enabled';
-        printDebug('nochange, but pushstate was EMPTY. WHY?',2);
-      }
-      printDebug("no change - saving token with $pushstate",2);
-      print $fh "$token:$monlist:$intlist:$platform:$pushstate\n";
-    }
+  my %tokens_data;
+  my $hr;
+  my $data = do { local $/=undef; <$fh> };
+  close($fh);
+  eval {$hr = decode_json($data);};
+  if ($@) {
+    printError("Could not parse token file: $!");
+    return;
+  } else {
+    %tokens_data = %$hr;
+    $tokens_data{tokens}->{$stoken}->{monlist} = $smonlist if ($smonlist ne '-1');
+    $tokens_data{tokens}->{$stoken}->{intlist} = $sintlist if ($sintlist ne '-1');
+    $tokens_data{tokens}->{$stoken}->{platform} = $splatform;
+    $tokens_data{tokens}->{$stoken}->{pushstate} = $spushstate;
+    open (my $fh, '>', $token_file) or printError ("Error writing tokens file: $!");
+    my $json = encode_json (\%tokens_data);
+    print $fh $json;
+    close ($fh);
 
   }
-
-  $smonlist = '' if ( $smonlist eq '-1' );
-  $sintlist = '' if ( $sintlist eq '-1' );
-
-  if ( !$found ) {
-    printDebug("token not found, creating new record with monlist=$smonlist",1);
-    print $fh "$stoken:$smonlist:$sintlist:$splatform:$spushstate\n";
-  }
-  close($fh);
-
   return ( $smonlist, $sintlist );
 
 }
@@ -3016,27 +3179,30 @@ sub isAllowedChannel {
 #processRules
 sub isAllowedInRules {
 
-  use constant {
-    NOTALLOWED=>0,
-    ALLOWED=>1
-  };
+  my $RULE_MATCHED_RESULT=1;
+  my $RULE_NOT_MATCHED_RESULT=0;
+  my $RULE_ERROR_RESULT=1;
+  my $MISSING_RULE_RESULT=1;
+
+  my $object_on_matched={}; # interesting things depending on action
+  my $object_on_not_matched={}; # interesting things depending on action
 
   if (!$is_timepeice) {
-    printError ('Not checking rules as Time::Piece is not installed');
-    return ALLOWED;
+    printError ('rules: Not checking rules as Time::Piece is not installed');
+    return ($RULE_ERROR_RESULT, {});
   }
   my $alarm = shift;
   my $id   = $alarm->{MonitorId};
   my $name = $alarm->{Name};
-  my $cause = $alarm->{End}->{Cause} || $alarm->{End}->{Cause} || $alarm->{Cause};
+  my $cause = $alarm->{End}->{Cause} || $alarm->{Start}->{Cause} || $alarm->{Cause};
   my $eid = $alarm->{EventId};
   my $now = Time::Piece->new;
 
   printDebug ("rules: Checking rules for alarm caused by eid:$eid, monitor:$id, at: $now with cause:$cause",2);
 
   if (!exists($es_rules{notifications}->{monitors}) || !exists($es_rules{notifications}->{monitors}->{$id})) {
-    printDebug ("No rules found for $name ($id)",1);
-    return ALLOWED;
+    printDebug ("rules: No rules found for Monitor, allowing:$id",1);
+    return ($MISSING_RULE_RESULT, {});
   }
 
   my $entry_ref = $es_rules{notifications}->{monitors}->{$id}->{rules};
@@ -3047,64 +3213,82 @@ sub isAllowedInRules {
     $rulecnt++;
     printDebug ("rules: (eid: $eid) -- Processing rule: $rulecnt --",1);
     
-    #print Dumper(@{$rule_ref});
+
     if ($rule_ref->{action} eq 'mute') {
-      if ( !exists($rule_ref->{parsed_from})) {
-        my $from = $rule_ref->{from};
-        my $to = $rule_ref->{to};
-        my $format = exists($rule_ref->{time_format})?$rule_ref->{time_format}:"%I:%M %p";
-        my $dow = $rule_ref->{daysofweek};
+      $RULE_MATCHED_RESULT=0;
+      $RULE_NOT_MATCHED_RESULT=1;
+      $object_on_matched={};
+      $object_on_not_matched={};
 
-        printDebug ("rules: parsing rule $from/$to using format:$format",2);
-        my $d_from = Time::Piece->strptime($from, $format);
-        my $d_to = Time::Piece->strptime($to, $format);
-        if ($d_to < $d_from) {
-          printDebug ("rules: to is less than from, so we are wrapping dates",2);
-          $d_to += ONE_DAY;
-        }
-        printDebug ("rules: parsed time from: $d_from and to:$d_to",2);
+    } elsif ($rule_ref->{action} eq 'critical_notify') {
+      $RULE_MATCHED_RESULT=1;
+      $RULE_NOT_MATCHED_RESULT=1;
+      $object_on_matched={notification_type=>'critical'};
+      $object_on_not_matched={};
+    } else {
+      printError ("rules: unknown action:".$rule_ref->{action});
+      return ($RULE_ERROR_RESULT, {});
+    }
 
-        $rule_ref->{parsed_from} = $d_from;
-        $rule_ref->{parsed_to} = $d_to;
-      } 
-      # Parsed entries exist use those
+
+    #print Dumper(@{$rule_ref});
+
+    if ( !exists($rule_ref->{parsed_from})) {
+      my $from = $rule_ref->{from};
+      my $to = $rule_ref->{to};
       my $format = exists($rule_ref->{time_format})?$rule_ref->{time_format}:"%I:%M %p";
-      my $t = Time::Piece->new->strftime($format);
-      $t = Time::Piece->strptime($t, $format);
+      my $dow = $rule_ref->{daysofweek};
 
-      printDebug ("rules:(eid: $eid)  seeing if now:".$t->strftime($format)." is between:"
-                  .$rule_ref->{parsed_from}->strftime($format)." and ".$rule_ref->{parsed_to}->strftime($format),2);
-      if  (($t < $rule_ref->{parsed_from}) ||
-          ($t > $rule_ref->{parsed_to})) {
-            printDebug ("rules: Skipping this rule as times don't match..",1);
-           next;
+      printDebug ("rules: parsing rule $from/$to using format:$format",2);
+      my $d_from = Time::Piece->strptime($from, $format);
+      my $d_to = Time::Piece->strptime($to, $format);
+      if ($d_to < $d_from) {
+        printDebug ("rules: to is less than from, so we are wrapping dates",2);
+        $d_from -= ONE_DAY;
       }
+      printDebug ("rules: parsed time from: $d_from and to:$d_to",2);
 
-      printDebug ("rules:(eid: $eid)  seeing if now:".$now->wdayname." is part of:".$rule_ref->{daysofweek},2);
-      if ((exists($rule_ref->{daysofweek})) && 
-          (index($rule_ref->{daysofweek}, $now->wdayname)== -1) ) {
-            printDebug ("rules: (eid: $eid) Skipping this rule as:".$t->wdayname.' does not match '. $rule_ref->{daysofweek},1);
-            next;
-      }
-      printDebug ("rules:(eid: $eid)  seeing if cause_has:".$rule_ref->{cause_has}." is part of $cause:",2);
-      if (exists($rule_ref->{cause_has})) {
-        my $re = qr/$rule_ref->{cause_has}/;
-        if (lc($cause) !~ /$re/i) {
-          printDebug("rules: (eid: $eid) Skipping this rule as ".$rule_ref->{cause_has}. " does not pattern match ".$cause,1);
+      $rule_ref->{parsed_from} = $d_from;
+      $rule_ref->{parsed_to} = $d_to;
+    } 
+    # Parsed entries exist use those
+    my $format = exists($rule_ref->{time_format})?$rule_ref->{time_format}:"%I:%M %p";
+    my $t = Time::Piece->new->strftime($format);
+    $t = Time::Piece->strptime($t, $format);
+    
+
+    printDebug ("rules:(eid: $eid)  seeing if now:".$t." is between:"
+                .$rule_ref->{parsed_from}." and ".$rule_ref->{parsed_to},2);
+    if  (($t < $rule_ref->{parsed_from}) ||
+        ($t > $rule_ref->{parsed_to})) {
+          printDebug ("rules: Skipping this rule as times don't match..",1);
           next;
-        }
+    }
 
+    printDebug ("rules:(eid: $eid)  seeing if now:".$now->wdayname." is part of:".$rule_ref->{daysofweek},2);
+    if ((exists($rule_ref->{daysofweek})) && 
+        (index($rule_ref->{daysofweek}, $now->wdayname)== -1) ) {
+          printDebug ("rules: (eid: $eid) Skipping this rule as:".$t->wdayname.' does not match '. $rule_ref->{daysofweek},1);
+          next;
+    }
+    printDebug ("rules:(eid: $eid)  seeing if cause_has:".$rule_ref->{cause_has}." is part of $cause:",2);
+    if (exists($rule_ref->{cause_has})) {
+      my $re = qr/$rule_ref->{cause_has}/;
+      if (lc($cause) !~ /$re/i) {
+        printDebug("rules: (eid: $eid) Skipping this rule as ".$rule_ref->{cause_has}. " does not pattern match ".$cause,1);
+        next;
       }
-      # coming here means this rule was matched and all conditions met
-      printDebug ("rules: (eid: $eid) mute rule matched, not allowing",1);
-      return NOTALLOWED;
+
+    }
+    # coming here means this rule was matched and all conditions met
+    printDebug ("rules: (eid: $eid) ".$rule_ref->{action}." rule matched",1);
+    return ($RULE_MATCHED_RESULT, $object_on_matched);
           
-    } # mute
     printDebug ("rules: (eid: $eid) No conflict in rule: $rulecnt, proceeding to next, if any...",1);
   } #foreach
   
-  printDebug ("rules: (eid: $eid) Found rule for $name ($id) but no conflicts. Allowing.",1);
-  return ALLOWED;
+  printDebug ("rules: (eid: $eid) No rules matched",1);
+  return ($RULE_NOT_MATCHED_RESULT, $object_on_not_matched);
 }
 
 # Compares connection rules (monList/interval). Returns 1 if event should be send to this connection,
@@ -3146,14 +3330,14 @@ sub shouldSendEventToConn {
 
   }
 
-  if (!isAllowedInRules($alarm)) {
-    printDebug ('Rules Check disallowed further processing for this alarm');
-    return 0;
-  }
+  #if (!isAllowedInRules($alarm)) {
+  #  printDebug ('Rules Check disallowed further processing for this alarm');
+  #  return 0;
+  #}
 
   my $id     = getConnectionIdentity($ac);
   my $connId = $ac->{id};
-  printDebug("Checking alarm rules for $id",1);
+  printDebug("Checking alarm conditions for $id",1);
 
   if ( isInList( $monlist, $alarm->{MonitorId} ) ) {
     my $mint = getInterval( $intlist, $monlist, $alarm->{MonitorId} );
@@ -3371,7 +3555,8 @@ sub processNewAlarmsInFork {
     }
     elsif ( $alarm->{Start}->{State} eq 'ready' ) {
 
-      if (!isAllowedInRules($alarm)) {
+      my ($rulesAllowed, $rulesObject) = isAllowedInRules($alarm);
+      if (!$rulesAllowed) {
         printDebug ('rules: Not processing start notifications as rules checks failed');
        
       }  else {
@@ -3384,8 +3569,8 @@ sub processNewAlarmsInFork {
           MonitorId     => $mid,
           EventId       => $eid,
           Cause         => $cause,
-          DetectionJson => $detectJson
-
+          DetectionJson => $detectJson,
+          RulesObject =>  $rulesObject
         };
 
         if ( $use_api_push && $api_push_script ) {
@@ -3559,18 +3744,19 @@ sub processNewAlarmsInFork {
     }
     elsif ( $alarm->{End}->{State} eq 'ready' ) {
 
- # note that this end_notify_if_start is default yes, even if you comment it out
- # so if you disable all hooks params, you won't get end notifs
+      my ($rulesAllowed, $rulesObject) = isAllowedInRules($alarm);
+
+      # note that this end_notify_if_start is default yes, even if you comment it out
+      # so if you disable all hooks params, you won't get end notifs
       if ( $event_end_notify_if_start_success && $startHookResult != 0 ) {
         printInfo(
           'Not sending event end alarm, as we did not send a start alarm for this, or start hook processing failed'
         );
-      } elsif (!isAllowedInRules($alarm)) {
+      } elsif (!$rulesAllowed) {
         printDebug ('rules: Not processing end notifications as rules checks failed for start notification');
-    
+  
 
-      }
-      else {
+      } else {
 
         my $cause          = $alarm->{End}->{Cause};
         my $detectJson     = $alarm->{End}->{DetectionJson} || [];
@@ -3579,7 +3765,8 @@ sub processNewAlarmsInFork {
           MonitorId     => $mid,
           EventId       => $eid,
           Cause         => $cause,
-          DetectionJson => $detectJson
+          DetectionJson => $detectJson,
+          RulesObject => $rulesObject
         };
 
         if ( $use_api_push && $api_push_script ) {
