@@ -220,6 +220,11 @@ config_vals = {
             'default': '3',
             'type': 'int'
         },
+        'fast_gif':{
+            'section': 'animation',
+            'default': 'no',
+            'type': 'string'
+        },
 
         # General ML
      

@@ -731,7 +731,7 @@ def main_handler():
                 if g.config['create_animation'] == 'yes':
                     g.logger.Debug(1,'animation: Creating burst...')
                     try:
-                        img.createAnimation(frame_type, args.get('eventid'),args.get('eventpath')+'/objdetect', g.config['animation_types'])
+                        img.createAnimation(frame_type, args.get('eventid'), args.get('eventpath')+'/objdetect', g.config['animation_types'])
                     except Exception as e:
                         g.logger.Error('Error creating animation:{}'.format(e))
                         g.logger.Error('animation: Traceback:{}'.format(traceback.format_exc()))
