@@ -1,6 +1,15 @@
 Breaking Changes
 ----------------
 
+Version 6.0.1 onwards
+~~~~~~~~~~~~~~~~~~~~~~~~
+- ``zmeventnotification.ini`` new attribute in ``[fcm]`` called ``use_fcmv1`` with a default of ``yes```.
+  It is recommended you keep this on as this switches from the `legacy <https://firebase.google.com/docs/cloud-messaging/http-server-ref>`__ 
+  FCM protocol to the FCM v1 which allows for better features (which I will add over time)
+
+- ``objectconfig.ini`` has a new attribute ``fast_gif`` in ``[animation]``. If you are creating animations for push 
+  and generating GIFs, this creates a 2x speed GIF.
+
 Version 6.0.0 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 - The ES has a new attribute in ``[customize]`` called ``es_rules``. A sample file

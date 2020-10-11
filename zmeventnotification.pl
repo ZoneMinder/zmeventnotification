@@ -61,7 +61,7 @@ if ( !try_use('JSON') ) {
 }
 
 # debugging only.
-#use Data::Dumper;
+use Data::Dumper;
 
 # ==========================================================================
 #
@@ -76,7 +76,7 @@ if ( !try_use('JSON') ) {
 #
 # ==========================================================================
 
-my $app_version = '6.0.0';
+my $app_version = '6.0.1';
 
 # ==========================================================================
 #
@@ -133,7 +133,8 @@ use constant {
   DEFAULT_USE_ESCONTROL_INTERFACE            => 'no',
   DEFAULT_ESCONTROL_INTERFACE_FILE =>
     '/var/lib/zmeventnotification/misc/escontrol_interface.dat',
-  DEFAULT_FCM_DATE_FORMAT => '%I:%M %p, %d-%b'
+  DEFAULT_FCM_DATE_FORMAT => '%I:%M %p, %d-%b',
+  DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN => 8000
 };
 
 # connection state
@@ -262,6 +263,9 @@ my $base_data_path;
 my $restart_interval;
 
 my $prefix = "PARENT:";
+my $pcnt = 0;
+
+my %fcm_tokens_map;
 
 # admin interface options
 
@@ -1285,16 +1289,39 @@ sub checkNewEvents() {
   #printDebug("inside checkNewEvents()");
   if ( ( time() - $monitor_reload_time ) > $monitor_reload_interval ) {
 
+    # use this time to keep token counters updated
+    my $update_tokens = 0;
+    open( my $fh, '<', $token_file )
+    || Error( 'Cannot open to update token counts ' . $token_file );
+    my %tokens_data;
+    my $hr;
+    my $data = do { local $/ = undef; <$fh> };
+    close($fh);
+    eval { $hr = decode_json($data); };
+    if ($@) {
+      printError("Could not parse token file for token counts: $!");
+    } else {
+      %tokens_data = %$hr;
+      $update_tokens = 1;
+    }
+
     # this means we have hit the reload monitor timeframe
     my $len = scalar @active_connections;
     printDebug( 'Total event client connections: ' . $len . "\n", 1 );
     my $ndx = 1;
     foreach (@active_connections) {
-
+      if ($update_tokens) {
+        if ($_->{type} == FCM) {
+          $tokens_data{tokens}->{$_->{token}}->{invocations}=
+            defined($_->{invocations})? $_->{invocations} : {count=>0, at=>(localtime)[4]};
+            
+        }
+      }
       my $cip = '(none)';
       if ( exists $_->{conn} ) {
         $cip = $_->{conn}->ip();
       }
+
       printDebug(
         '-->checkNewEvents: Connection '
           . $ndx
@@ -1310,6 +1337,15 @@ sub checkNewEvents() {
         1
       );
       $ndx++;
+    }
+
+    if ($update_tokens) {
+      open( my $fh, '>', $token_file )
+      or printError("Error writing tokens file during count update: $!");
+      my $json = encode_json( \%tokens_data );
+      #print Dumper(\%tokens_data);
+      print $fh $json;
+      close($fh);
     }
 
     foreach my $monitor ( values(%monitors) ) {
@@ -1696,6 +1732,7 @@ sub sendOverWebSocket {
 }
 
 sub sendOverFCM {
+
   if ($use_fcmv1) {
     sendOverFCMV1( shift, shift, shift, shift );
 
@@ -1722,6 +1759,21 @@ sub sendOverFCMV1 {
   my $mid   = $alarm->{MonitorId};
   my $eid   = $alarm->{EventId};
   my $mname = $alarm->{Name};
+
+  my $curmonth = (localtime)[4];
+  if (defined ($obj->{invocations})) {
+    my $month = $obj->{invocations}->{at};
+    if ($curmonth != $month) {
+      $obj->{invocations}->{count} = 0;
+      printDebug ('Resetting counters for token'. substr( $obj->{token}, -10 )." as month changed");
+
+    }
+    if ($obj->{invocations}->{count} > DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN) {
+      printError ("You have exceeded total message count of ".DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN. " for this month, for token". substr( $obj->{token}, -10 ).", not sending FCM");
+      return;
+    }
+  }
+
 
   my $pic = $picture_url =~ s/EVENTID/$eid/gr;
   if ( $resCode == 1 ) {
@@ -1779,8 +1831,11 @@ sub sendOverFCMV1 {
   $body = $body . ' at ' . $now;
 
   my $badge = $obj->{badge} + 1;
+  my $count = defined($obj->{invocations})?$obj->{invocations}->{count}+1:0;
+  my $at = (localtime)[4];
 
-  print WRITER 'badge--TYPE--' . $obj->{id} . '--SPLIT--' . $badge . '\n';
+  print WRITER 'fcm_notification--TYPE--' . $obj->{token} . '--SPLIT--' . $badge 
+                .'--SPLIT--' . $count .'--SPLIT--' . $at . "\n";
   my $json;
 
   my $title = $mname . ' Alarm';
@@ -1806,13 +1861,11 @@ sub sendOverFCMV1 {
   if ( $obj->{platform} eq 'android' ) {
     $message_v2->{android} = {
       icon     => 'ic_stat_notification',
-      priority => 'high',
-      channel  => 'zmninja'
+      priority => 'high'
     };
   }
   if ( $obj->{platform} eq 'ios' ) {
     $message_v2->{ios} = {
-
       #thread_id=>'zmninja_alarm',
       #aps_alert_custom_data=>{
       #
@@ -1820,11 +1873,22 @@ sub sendOverFCMV1 {
       #aps_custom_data=>{
       #
       #},
-      headers => { apns_priority => '10' }
+      headers => { 
+        'apns-priority' => '10' , 
+        'apns-push-type'=>'alert',
+        #'apns-expiration'=>'0'
+        }
       }
 
   }
 
+  if (defined ($obj->{appversion}) && ($obj->{appversion} ne "unknown")) {
+    printDebug ('setting channel to zmninja',2);
+    $message_v2->{android}->{channel} = 'zmninja';
+
+  } else {
+        printDebug ('legacy client, NOT setting channel to zmninja',2);
+  }
   if ( $picture_url && $include_picture ) {
 
     # $ios_message->{mutable_content} = \1;
@@ -1855,6 +1919,7 @@ sub sendOverFCMV1 {
   my $json_string;
 
   if ( $res->is_success ) {
+    $pcnt++;
     $msg = $res->decoded_content;
     printDebug(
       'fcmv1: FCM push message returned a 200 with body ' . $res->content, 1 );
@@ -1913,6 +1978,16 @@ sub sendOverFCMLegacy {
   my $eid   = $alarm->{EventId};
   my $mname = $alarm->{Name};
 
+  my $curmonth = (localtime)[4];
+  if (defined ($obj->{invocations})) {
+    my $month = $obj->{invocations}->{at};
+    $obj->{invocations}->{count} = 0 if ($curmonth != $month);
+    if ($obj->{invocations}->{count} > DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN) {
+      printError ("You have exceeded total message count of ".DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN. " for this month, for token".$obj->{token}.", not sending FCM");
+      return;
+    }
+  }
+
   my $pic = $picture_url =~ s/EVENTID/$eid/gr;
   if ( $resCode == 1 ) {
     printDebug(
@@ -1967,9 +2042,14 @@ sub sendOverFCMLegacy {
   $body = $body . ' at ' . $now;
 
   my $badge = $obj->{badge} + 1;
+  my $count = defined($obj->{invocations})?$obj->{invocations}->{count}+1:0;
+  my $at = (localtime)[4];
 
-  print WRITER 'badge--TYPE--' . $obj->{id} . '--SPLIT--' . $badge . '\n';
-  my $uri = 'https://fcm.googleapis.com/fcm/send';
+  print WRITER 'fcm_notification--TYPE--' . $obj->{token} . '--SPLIT--' . $badge 
+                .'--SPLIT--' . $count .'--SPLIT--' . $at . "\n";
+ 
+
+   my $uri = 'https://fcm.googleapis.com/fcm/send';
   my $json;
 
   # use zmNinja FCM key if the user did not override
@@ -2022,11 +2102,18 @@ sub sendOverFCMLegacy {
       mid         => $mid,
       eid         => $eid,
       badge       => $obj->{badge},
-      priority    => 1,
-      channel     => 'zmninja'
+      priority    => 1
     }
   };
 
+  if (defined ($obj->{appversion}) && ($obj->{appversion} ne "unknown")) {
+    printDebug ('setting channel to zmninja',2);
+    $android_message->{notification}->{android_channel_id} = 'zmninja';
+    $android_message->{data}->{channel} = 'zmninja';
+
+  } else {
+        printDebug ('legacy client, NOT setting channel to zmninja',2);
+  }
   if ( $picture_url && $include_picture ) {
     $ios_message->{mutable_content} = \1;
 
@@ -2071,6 +2158,7 @@ sub sendOverFCMLegacy {
   my $json_string;
 
   if ( $res->is_success ) {
+    $pcnt++;
     $msg = $res->decoded_content;
     printDebug( 'FCM push message returned a 200 with body ' . $res->content,
       1 );
@@ -2154,13 +2242,14 @@ sub processJobs {
       }
 
       # Update badge count of active connection
-      elsif ( $job eq 'badge' ) {
-        my ( $id, $badge ) = split( '--SPLIT--', $msg );
-        printDebug( 'GOT JOB==> Update badge to:' . $badge . ' for id:' . $id,
+      elsif ( $job eq 'fcm_notification' ) {
+        my ( $token, $badge, $count, $at ) = split( '--SPLIT--', $msg );
+        printDebug( "GOT JOB==> update badge to $badge, count to $count for: $token, at: $at",
           2 );
         foreach (@active_connections) {
-          if ( $_->{id} eq $id ) {
+          if ( $_->{token} eq $token ) {
             $_->{badge} = $badge;
+            $_->{invocations} = {count=>$count, at=>$at};
           }
 
         }
@@ -2470,9 +2559,9 @@ sub processIncomingMessage {
       }
 
       my $token_matched = 0;
+      my $stored_invocations = undef;
       foreach (@active_connections) {
 
-        # this token already exists so we just update records
         if ( $_->{token} eq $json_string->{data}->{token} ) {
 
           # if the token doesn't belong to the same connection
@@ -2493,14 +2582,23 @@ sub processIncomingMessage {
                 . ' to be deleted',
               1
             );
-
+            
             $_->{state} = PENDING_DELETE;
+            # make sure loaded invocations are not erased
+            $stored_invocations = $_->{invocations};
+            #print ("REMOVE saved:". Dumper($stored_invocations));
+
 
           }
           else {
 
             printDebug(
               'JOB: token matched, updating entry in active connections', 2 );
+            #$_->{invocations} = $stored_invocations if (defined($stored_invocations));
+            
+            $_->{invocations} = $stored_invocations if (defined($stored_invocations));
+            #print ("REMOVE applied:". Dumper($_->{invocations}));
+
             $_->{type}     = FCM;
             $_->{platform} = $json_string->{data}->{platform};
             if ( exists( $json_string->{data}->{monlist} )
@@ -2535,7 +2633,7 @@ sub processIncomingMessage {
             );
             my ( $emonlist, $eintlist ) = saveFCMTokens(
               $_->{token},    $_->{monlist}, $_->{intlist},
-              $_->{platform}, $_->{pushstate}
+              $_->{platform}, $_->{pushstate}, $_->{invocations}, $_->{appversion}
             );
             $_->{monlist} = $emonlist;
             $_->{intlist} = $eintlist;
@@ -2576,6 +2674,8 @@ sub processIncomingMessage {
             $_->{intlist} = '-1';
           }
           $_->{pushstate} = $json_string->{data}->{state};
+          $_->{invocations} = defined ($stored_invocations) ? $stored_invocations:{count=>0, at=>(localtime)[4]};
+          #print ("REMOVE applied:". Dumper($_->{invocations}));
           printDebug(
             'JOB: Storing token ...'
               . substr( $_->{token}, -10 )
@@ -2587,9 +2687,10 @@ sub processIncomingMessage {
               . $_->{pushstate} . "\n",
             1
           );
+
           my ( $emonlist, $eintlist ) = saveFCMTokens(
             $_->{token},    $_->{monlist}, $_->{intlist},
-            $_->{platform}, $_->{pushstate}
+            $_->{platform}, $_->{pushstate}, $_->{invocations}, $_->{appversion}
           );
           $_->{monlist} = $emonlist;
           $_->{intlist} = $eintlist;
@@ -2658,7 +2759,7 @@ sub processIncomingMessage {
           );
           saveFCMTokens(
             $_->{token},    $_->{monlist}, $_->{intlist},
-            $_->{platform}, $_->{pushstate}
+            $_->{platform}, $_->{pushstate}, $_->{invocations}, $_->{appversion}
           );
         }
       }
@@ -2887,7 +2988,8 @@ sub migrateTokens {
       monlist   => $monlist,
       intlist   => $intlist,
       platform  => $platform,
-      pushstate => $pushstate
+      pushstate => $pushstate,
+      invocations => {count=>0, at=>(localtime)[4]}
     };
   }
   my $json = encode_json( \%tokens );
@@ -2932,6 +3034,7 @@ sub initFCMTokens {
     %tokens_data = %$hr;
   }
 
+  %fcm_tokens_map = %tokens_data;
   @active_connections = ();
   foreach my $key ( keys %{ $tokens_data{tokens} } ) {
     my $token      = $key;
@@ -2940,6 +3043,7 @@ sub initFCMTokens {
     my $platform   = $tokens_data{tokens}->{$key}->{platform};
     my $pushstate  = $tokens_data{tokens}->{$key}->{pushstate};
     my $appversion = $tokens_data{tokens}->{$key}->{appversion};
+    my $invocations = defined ($tokens_data{tokens}->{$key}->{invocations}) ? $tokens_data{tokens}->{$key}->{invocations}: {count=>0, at=>(localtime)[4]};
 
     my $tod = gettimeofday;
     push @active_connections,
@@ -2956,8 +3060,11 @@ sub initFCMTokens {
       platform     => $platform,
       extra_fields => '',
       pushstate    => $pushstate,
-      appversion   => $appversion
+      appversion   => $appversion,
+      invocations  => $invocations
       };
+
+    #print ("REMOVE init token:". Dumper(@active_connections));
 
   }
 
@@ -2983,6 +3090,13 @@ sub saveFCMTokens {
   my $sintlist   = shift;
   my $splatform  = shift;
   my $spushstate = shift;
+  my $invocations = shift;
+  my $appversion = shift || 'unknown';
+
+  if (!defined($invocations)) {
+    $invocations = { count=>0, at=>(localtime)[4]};
+
+  }
 
   if ( $stoken eq '' ) {
     printDebug( 'Not saving, no token. Desktop?', 2 );
@@ -3020,11 +3134,15 @@ sub saveFCMTokens {
       if ( $sintlist ne '-1' );
     $tokens_data{tokens}->{$stoken}->{platform}  = $splatform;
     $tokens_data{tokens}->{$stoken}->{pushstate} = $spushstate;
+    $tokens_data{tokens}->{$stoken}->{invocations} = $invocations;
+    $tokens_data{tokens}->{$stoken}->{appversion} = $appversion;
+
     open( my $fh, '>', $token_file )
       or printError("Error writing tokens file: $!");
     my $json = encode_json( \%tokens_data );
     print $fh $json;
     close($fh);
+    #print ("REMOVE init token:". Dumper(\%tokens_data));
 
   }
   return ( $smonlist, $sintlist );
@@ -3096,7 +3214,8 @@ sub isInList {
   my $monlist = shift;
   my $mid     = shift;
 
-  return 1 if ( $monlist eq "" || !$monlist || !defined($monlist) );
+  #printDebug ("REMOVE fcm: MONLIST=$monlist, MID=$mid");
+  return 1 if ( $monlist eq "-1" || $monlist eq "" || !$monlist || !defined($monlist) );
 
   my @mids = split( ',', $monlist );
   my $found = 0;
@@ -3183,6 +3302,8 @@ sub sendEvent {
     {
       printInfo("Sending $event_type notification over FCM");
       sendOverFCM( $alarm, $ac, $event_type, $resCode );
+
+
 
     }
     else {

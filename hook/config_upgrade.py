@@ -10,7 +10,7 @@ wej qaStaHvIS wa' ghu'maj. wa'maHlu'chugh, vaj pagh.
 chotlhej'a' qaDanganpu'. chenmoH tlhInganpu'.
 '''
 
-def replace_attributes2 (orig, replacements):
+def replace_attributes (orig, replacements):
     new_string = ''
     for line in orig.splitlines():
         new_line = ''
@@ -21,14 +21,6 @@ def replace_attributes2 (orig, replacements):
         new_string = new_string + line + '\n'
     return new_string
 
-def replace_attributes(orig_string, replacements): 
-# not used
-    def match_attrs(match):
-        return replacements[match.group(0)]
-    # credit:https://stackoverflow.com/a/17730939
-    new_string = (re.sub('|'.join(r'\b%s\b' % re.escape(s) for s in replacements), 
-          match_attrs, orig_string) )
-    return new_string
 
 def create_attributes(orig_string, new_additions):
     def match_attrs(match):
@@ -40,9 +32,28 @@ def create_attributes(orig_string, new_additions):
 
 
 # add new version migrations as functions
-# def f_<fromver>_to_<tover>(str):
+# def f_<fromver>_to_<tover>(str_conf,new_version):
 
-def f_unknown_to_1_0(str_conf):
+def f_1_0_to_1_1(str_conf,new_version):
+    replacements = {
+        'version=1.0': 'version='+new_version
+    }
+    new_additions = {
+'\n[animation]\n':
+'''
+#NEW: if animation_types is gif then when can generate a fast preview gif
+# every second frame is skipped and the frame rate doubled
+# to give quick preview, Default (no)
+fast_gif=no
+'''
+
+    }
+    s1=replace_attributes(str_conf,replacements)
+    return (create_attributes(s1, new_additions))    
+
+
+
+def f_unknown_to_1_0(str_conf, new_version):
     replacements = {
     'models':'detection_sequence',
     '[yolo]': '[object]',
@@ -119,7 +130,7 @@ face_recognition_framework=dlib
 ''',
 
     }
-    s1=replace_attributes2(str_conf,replacements)
+    s1=replace_attributes(str_conf,replacements)
     return (create_attributes(s1, new_additions))    
 
 # MAIN
@@ -128,6 +139,10 @@ upgrade_path = [
     {'from_version': 'unknown',
      'to_version': '1.0',
      'migrate':f_unknown_to_1_0
+    },
+    {'from_version': '1.0',
+     'to_version': '1.1',
+     'migrate':f_1_0_to_1_1
     },
    
 ]
@@ -163,7 +178,7 @@ else:
 if i >=0:
     for u in upgrade_path[i:]:
         print ('Migrating from {} to {}'.format(u['from_version'],u['to_version']))
-        str_conf = u['migrate'](str_conf)
+        str_conf = u['migrate'](str_conf, u['to_version'])
      
     
     out_file = args.get('output') if args.get('output')  else 'migrated-'+os.path.basename(args.get('config'))
