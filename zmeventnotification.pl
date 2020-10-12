@@ -1866,7 +1866,7 @@ sub sendOverFCMV1 {
   }
   if ( $obj->{platform} eq 'ios' ) {
     $message_v2->{ios} = {
-      #thread_id=>'zmninja_alarm',
+      thread_id=>'zmninja_alarm',
       #aps_alert_custom_data=>{
       #
       #},
