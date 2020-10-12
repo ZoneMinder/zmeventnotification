@@ -1,5 +1,50 @@
 # Changelog
 
+## [v6.0.1](https://github.com/pliablepixels/zmeventnotification/tree/v6.0.1) (2020-10-12)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.15.6...v6.0.1)
+
+**Implemented enhancements:**
+
+- support FCM v1 protocol [\#307](https://github.com/pliablepixels/zmeventnotification/issues/307)
+- Migrate from Legacy FCM to HTTP v1 for better features [\#306](https://github.com/pliablepixels/zmeventnotification/issues/306)
+- migrate tokens to a JSON format [\#305](https://github.com/pliablepixels/zmeventnotification/issues/305)
+- Start building out a configurable notification json rule file [\#298](https://github.com/pliablepixels/zmeventnotification/issues/298)
+- poly line thickness setting \(0=off\) [\#291](https://github.com/pliablepixels/zmeventnotification/issues/291)
+- Feature Request: Include support for Google Coral USB Accelerator [\#283](https://github.com/pliablepixels/zmeventnotification/issues/283)
+- zmes install without local models \(for remote detection\) [\#267](https://github.com/pliablepixels/zmeventnotification/issues/267)
+- Possibility to have zmeventnotification triggered on existing events \(batch processing vs realtime\) [\#265](https://github.com/pliablepixels/zmeventnotification/issues/265)
+- ES needs to support tokens [\#185](https://github.com/pliablepixels/zmeventnotification/issues/185)
+- Fast gif option [\#304](https://github.com/pliablepixels/zmeventnotification/pull/304) ([lucasnz](https://github.com/lucasnz))
+- Add support for MQTT over TLS [\#285](https://github.com/pliablepixels/zmeventnotification/pull/285) ([nmeylan](https://github.com/nmeylan))
+
+**Fixed bugs:**
+
+- Logging to syslog despite LOG\_LEVEL\_SYSLOG setting [\#303](https://github.com/pliablepixels/zmeventnotification/issues/303)
+
+**Closed issues:**
+
+- Coral Edge TPU - HandleQueuedBulkIn transfer in failed. Not found: USB transfer error 5 \[LibUsbDataInCallback\] [\#302](https://github.com/pliablepixels/zmeventnotification/issues/302)
+- Not saving unknown faces [\#299](https://github.com/pliablepixels/zmeventnotification/issues/299)
+- Problem with object:person does not fall into any polygons [\#297](https://github.com/pliablepixels/zmeventnotification/issues/297)
+- Possible to delete recordings with no detections? [\#296](https://github.com/pliablepixels/zmeventnotification/issues/296)
+- Permission error when trying to train faces [\#295](https://github.com/pliablepixels/zmeventnotification/issues/295)
+- Missed license plates due to incorrect polygon comparison [\#294](https://github.com/pliablepixels/zmeventnotification/issues/294)
+- automatic license plate number lookup ? [\#292](https://github.com/pliablepixels/zmeventnotification/issues/292)
+- Error after 5.16.0-upgrade.  [\#290](https://github.com/pliablepixels/zmeventnotification/issues/290)
+- Notification Image showing on WAN, does not resolve on LAN and thus doesn't show image [\#288](https://github.com/pliablepixels/zmeventnotification/issues/288)
+- How to improve initial detection? [\#287](https://github.com/pliablepixels/zmeventnotification/issues/287)
+- \[For Comments\] Reworking ES objectconfig to make it more intuitive to add other models in future & concurrent execution limit [\#284](https://github.com/pliablepixels/zmeventnotification/issues/284)
+- zm\_detect.py can't run - SyntaxError [\#282](https://github.com/pliablepixels/zmeventnotification/issues/282)
+- Error parsing objectconfig.ini file [\#280](https://github.com/pliablepixels/zmeventnotification/issues/280)
+
+**Merged pull requests:**
+
+- Fix call to g.logger.Debug\(\) that was causing an TypeError exception. [\#301](https://github.com/pliablepixels/zmeventnotification/pull/301) ([neillbell](https://github.com/neillbell))
+- correct object\_labels value for tinyyolo v3 / v4 [\#293](https://github.com/pliablepixels/zmeventnotification/pull/293) ([hugalafutro](https://github.com/hugalafutro))
+- fix\(import\_zm\_zones\): remove findWholeWord\('All'\) condition from match\_reason [\#289](https://github.com/pliablepixels/zmeventnotification/pull/289) ([matthewtgilbride](https://github.com/matthewtgilbride))
+- Dev [\#286](https://github.com/pliablepixels/zmeventnotification/pull/286) ([pliablepixels](https://github.com/pliablepixels))
+
 ## [v5.15.6](https://github.com/pliablepixels/zmeventnotification/tree/v5.15.6) (2020-06-30)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.15.5...v5.15.6)
@@ -260,7 +305,6 @@
 **Merged pull requests:**
 
 - Hangup debug [\#176](https://github.com/pliablepixels/zmeventnotification/pull/176) ([pliablepixels](https://github.com/pliablepixels))
-- Multiple face and clustering support [\#174](https://github.com/pliablepixels/zmeventnotification/pull/174) ([pliablepixels](https://github.com/pliablepixels))
 
 ## [v4.5.8](https://github.com/pliablepixels/zmeventnotification/tree/v4.5.8) (2019-11-06)
 
@@ -310,7 +354,7 @@
 - Can't exec: Bad file descriptor [\#143](https://github.com/pliablepixels/zmeventnotification/issues/143)
 - Improve the match\_past\_detections feature [\#140](https://github.com/pliablepixels/zmeventnotification/issues/140)
 - switch to Net::MQTT:Simple for authenticated connections as well.  [\#134](https://github.com/pliablepixels/zmeventnotification/issues/134)
-- running detect\_wrapper.sh gives ImportError: No module named zmes\_hook\_zmes_hook_helpers.log [\#133](https://github.com/pliablepixels/zmeventnotification/issues/133)
+- running detect\_wrapper.sh gives ImportError: No module named zmes\_hook\_helpers.log [\#133](https://github.com/pliablepixels/zmeventnotification/issues/133)
 - fid=alarm doesn't work sometimes - question  [\#131](https://github.com/pliablepixels/zmeventnotification/issues/131)
 - running detection in a container [\#128](https://github.com/pliablepixels/zmeventnotification/issues/128)
 - MQTT doesn't work with RabbitMQ [\#125](https://github.com/pliablepixels/zmeventnotification/issues/125)
@@ -377,6 +421,7 @@
 
 **Merged pull requests:**
 
+- Multiple face and clustering support [\#174](https://github.com/pliablepixels/zmeventnotification/pull/174) ([pliablepixels](https://github.com/pliablepixels))
 - add secret support [\#168](https://github.com/pliablepixels/zmeventnotification/pull/168) ([pliablepixels](https://github.com/pliablepixels))
 - Fix formatting of code block on Hooks guide page [\#166](https://github.com/pliablepixels/zmeventnotification/pull/166) ([davidjb](https://github.com/davidjb))
 - Fixing MQTT Insecure connection [\#146](https://github.com/pliablepixels/zmeventnotification/pull/146) ([artistan82](https://github.com/artistan82))
@@ -394,7 +439,6 @@
 - forgotten space [\#113](https://github.com/pliablepixels/zmeventnotification/pull/113) ([cmintey](https://github.com/cmintey))
 - WEB\_OWNER and WEB\_GROUP defaults from environment [\#111](https://github.com/pliablepixels/zmeventnotification/pull/111) ([irremotus](https://github.com/irremotus))
 - Rework detection flow to make model priority apply across files [\#110](https://github.com/pliablepixels/zmeventnotification/pull/110) ([pliablepixels](https://github.com/pliablepixels))
-- fix mislabeled picture\_url example in default config [\#108](https://github.com/pliablepixels/zmeventnotification/pull/108) ([joelsdc](https://github.com/joelsdc))
 - Replaced two occurrences where the incorrect equivalence operator was being used [\#106](https://github.com/pliablepixels/zmeventnotification/pull/106) ([humblking](https://github.com/humblking))
 - any config param can be overriden [\#102](https://github.com/pliablepixels/zmeventnotification/pull/102) ([pliablepixels](https://github.com/pliablepixels))
 
