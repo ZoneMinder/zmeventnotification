@@ -98,21 +98,29 @@ This file is actually created  when zmNinja sets up push notification. Here is h
 
 However, there are other things the ``tokens.txt`` file saves. Let's take a look:
 
-Here is a typical tokens.txt entry:
+Here is a typical tokens.txt entry: (This used to be a cryptic colon separated file, now migrated to JSON starting ES 6.0.1)
+
 
 ::
           
-  es<long token>tMj:1,2,5:0,120,120:ios:enabled
-  d9K<long token>jAZxhUKqh:1,2,5,6,7,8,9,10,11:0,0,0,0,0,0,0,0,0:android:disabled
+  {"tokens":{"<long token>":
+              { "platform":"ios",
+                "monlist":"1,2,5,6,7,8,9,10",
+                "pushstate":"enabled",
+                "intlist":"0,120,120,120,0,120,120,0",
+                "appversion":"1.5.001",
+                <etc>
+              }
+            }
+  }
 
 
-The contents above show I have 2 devices configured, one is an iOS device and the other is an android device. But lets look at the other fields (separated by ``:``)
-
-* column 1 = unique token, we discussed this above
-* column 2 = list of monitors that will be processed for events for this connection. For example, in the first row, this device will ONLY get notifications for monitors 1,2,5
-* column 3 = interval in seconds before the next notification is sent. If we look at the first row, it says monitor 1 events will be sent as soon as they occur, however for monitor 2 and 5, notifications will only be sent if the previous notification for that monitor was *at least* 120 seconds before (2 mins). How is this set? You actually set it via zmNinja->Settings->Event Server Settings
-* column 4: the device type (we need this to create a push notification message correctly)
-* column 5: Finally, this tells us if push is enabled or disabled for this device. There are two ways to disable - you can disable push notifications for zmNinja on your device, or you can simply uncheck "use event server" in zmNinja. This is for the latter case. If you uncheck "use event server", we need to be able to tell the ES that even though it has a token on file, it should not send notifications.
+* long token = unique token, we discussed this above
+* monlist = list of monitors that will be processed for events for this connection. For example, in the first row, this device will ONLY get notifications for monitors 1,2,5
+* intlist = interval in seconds before the next notification is sent. If we look at the first row, it says monitor 1 events will be sent as soon as they occur, however for monitor 2 and 5, notifications will only be sent if the previous notification for that monitor was *at least* 120 seconds before (2 mins). How is this set? You actually set it via zmNinja->Settings->Event Server Settings
+* platform the device type (we need this to create a push notification message correctly)
+* pushstate = Finally, this tells us if push is enabled or disabled for this device. There are two ways to disable - you can disable push notifications for zmNinja on your device, or you can simply uncheck "use event server" in zmNinja. This is for the latter case. If you uncheck "use event server", we need to be able to tell the ES that even though it has a token on file, it should not send notifications.
+* appversion = version of zmNinja (so we know if FCMv1 is supported). For any zmNinja version prior to ``1.6.000`` this is set to ``unknown``.
 
 .. important::
 
