@@ -42,6 +42,17 @@ use Time::Seconds;
 use Symbol qw(qualify_to_ref);
 use IO::Select;
 
+####################################
+my $app_version = '6.0.2';
+####################################
+
+# do this before any log init etc.
+my $first_arg = @ARGV[0];
+if ($first_arg == '--version') {
+  print ($app_version);
+  exit(0);
+}
+
 logInit();
 logSetSignal();
 $SIG{HUP} = \&logrot;
@@ -76,7 +87,7 @@ use Data::Dumper;
 #
 # ==========================================================================
 
-my $app_version = '6.0.2';
+
 
 # ==========================================================================
 #
