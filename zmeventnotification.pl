@@ -48,7 +48,7 @@ my $app_version = '6.0.2';
 
 # do this before any log init etc.
 my $first_arg = @ARGV[0];
-if ($first_arg == '--version') {
+if ($first_arg eq '--version') {
   print ($app_version);
   exit(0);
 }
