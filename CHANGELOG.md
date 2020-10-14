@@ -1,6 +1,14 @@
 # Changelog
 
-## [v6.0.1](https://github.com/pliablepixels/zmeventnotification/tree/v6.0.1) (2020-10-12)
+## [v6.0.2](https://github.com/pliablepixels/zmeventnotification/tree/v6.0.2) (2020-10-14)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.0.1...v6.0.2)
+
+**Closed issues:**
+
+- Minor maintenance fixes [\#310](https://github.com/pliablepixels/zmeventnotification/issues/310)
+
+## [v6.0.1](https://github.com/pliablepixels/zmeventnotification/tree/v6.0.1) (2020-10-14)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v5.15.6...v6.0.1)
 
@@ -40,10 +48,12 @@
 
 **Merged pull requests:**
 
+- fix a bug: Unrecoverable error:local variable 'pred' referenced befor… [\#309](https://github.com/pliablepixels/zmeventnotification/pull/309) ([lucasnz](https://github.com/lucasnz))
 - Fix call to g.logger.Debug\(\) that was causing an TypeError exception. [\#301](https://github.com/pliablepixels/zmeventnotification/pull/301) ([neillbell](https://github.com/neillbell))
 - correct object\_labels value for tinyyolo v3 / v4 [\#293](https://github.com/pliablepixels/zmeventnotification/pull/293) ([hugalafutro](https://github.com/hugalafutro))
 - fix\(import\_zm\_zones\): remove findWholeWord\('All'\) condition from match\_reason [\#289](https://github.com/pliablepixels/zmeventnotification/pull/289) ([matthewtgilbride](https://github.com/matthewtgilbride))
 - Dev [\#286](https://github.com/pliablepixels/zmeventnotification/pull/286) ([pliablepixels](https://github.com/pliablepixels))
+- Properly check the state of only\_triggered\_zm\_zones  [\#276](https://github.com/pliablepixels/zmeventnotification/pull/276) ([neillbell](https://github.com/neillbell))
 
 ## [v5.15.6](https://github.com/pliablepixels/zmeventnotification/tree/v5.15.6) (2020-06-30)
 
@@ -86,7 +96,6 @@
 
 - Update query parameters in utils.py to fix authentication failure [\#279](https://github.com/pliablepixels/zmeventnotification/pull/279) ([cornercase](https://github.com/cornercase))
 - Modify process\_config\(\) to properly check only\_triggered\_zm\_zones for… [\#278](https://github.com/pliablepixels/zmeventnotification/pull/278) ([neillbell](https://github.com/neillbell))
-- Properly check the state of only\_triggered\_zm\_zones  [\#276](https://github.com/pliablepixels/zmeventnotification/pull/276) ([neillbell](https://github.com/neillbell))
 - add a configuration option to set the topic for MQTT instead of the h… [\#272](https://github.com/pliablepixels/zmeventnotification/pull/272) ([dennyreiter](https://github.com/dennyreiter))
 - ftp\_detect\_image.py contrib script [\#261](https://github.com/pliablepixels/zmeventnotification/pull/261) ([0n3man](https://github.com/0n3man))
 - Update image\_manip.py [\#260](https://github.com/pliablepixels/zmeventnotification/pull/260) ([0n3man](https://github.com/0n3man))
@@ -305,6 +314,7 @@
 **Merged pull requests:**
 
 - Hangup debug [\#176](https://github.com/pliablepixels/zmeventnotification/pull/176) ([pliablepixels](https://github.com/pliablepixels))
+- Multiple face and clustering support [\#174](https://github.com/pliablepixels/zmeventnotification/pull/174) ([pliablepixels](https://github.com/pliablepixels))
 
 ## [v4.5.8](https://github.com/pliablepixels/zmeventnotification/tree/v4.5.8) (2019-11-06)
 
@@ -421,7 +431,6 @@
 
 **Merged pull requests:**
 
-- Multiple face and clustering support [\#174](https://github.com/pliablepixels/zmeventnotification/pull/174) ([pliablepixels](https://github.com/pliablepixels))
 - add secret support [\#168](https://github.com/pliablepixels/zmeventnotification/pull/168) ([pliablepixels](https://github.com/pliablepixels))
 - Fix formatting of code block on Hooks guide page [\#166](https://github.com/pliablepixels/zmeventnotification/pull/166) ([davidjb](https://github.com/davidjb))
 - Fixing MQTT Insecure connection [\#146](https://github.com/pliablepixels/zmeventnotification/pull/146) ([artistan82](https://github.com/artistan82))
@@ -439,6 +448,7 @@
 - forgotten space [\#113](https://github.com/pliablepixels/zmeventnotification/pull/113) ([cmintey](https://github.com/cmintey))
 - WEB\_OWNER and WEB\_GROUP defaults from environment [\#111](https://github.com/pliablepixels/zmeventnotification/pull/111) ([irremotus](https://github.com/irremotus))
 - Rework detection flow to make model priority apply across files [\#110](https://github.com/pliablepixels/zmeventnotification/pull/110) ([pliablepixels](https://github.com/pliablepixels))
+- fix mislabeled picture\_url example in default config [\#108](https://github.com/pliablepixels/zmeventnotification/pull/108) ([joelsdc](https://github.com/joelsdc))
 - Replaced two occurrences where the incorrect equivalence operator was being used [\#106](https://github.com/pliablepixels/zmeventnotification/pull/106) ([humblking](https://github.com/humblking))
 - any config param can be overriden [\#102](https://github.com/pliablepixels/zmeventnotification/pull/102) ([pliablepixels](https://github.com/pliablepixels))
 
