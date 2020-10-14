@@ -3429,8 +3429,17 @@ sub isAllowedInRules {
   my $alarm = shift;
   my $id    = $alarm->{MonitorId};
   my $name  = $alarm->{Name};
-  my $cause =
-    $alarm->{End}->{Cause} || $alarm->{Start}->{Cause} || $alarm->{Cause};
+  
+
+  my $cause =$alarm->{Start}->{Cause};
+  if (index($cause, 'detected:') == -1) {
+    if (index($alarm->{End}->{Cause}, 'detected:') != -1) {
+      $cause = $alarm->{End}->{Cause};
+    } elsif (index($alarm->{Cause}, 'detected:') != -1)  {
+          $cause = $alarm->{Cause};
+    }
+  } 
+
   my $eid = $alarm->{EventId};
   my $now = Time::Piece->new;
 
