@@ -649,6 +649,9 @@ def main_handler():
 
     #g.logger.Debug (1,'FINAL LIST={} AND {}'.format(bbox,label))
 
+    # Now create prediction string
+    pred = ''
+
     if not matched_file:
         g.logger.Info('No patterns found using any models in all files')
 
@@ -744,8 +747,6 @@ def main_handler():
                         'Could not write image to ZoneMinder as eventpath not present')
 
 
-        # Now create prediction string
-        pred = ''
         detections = []
         seen = {}
         
