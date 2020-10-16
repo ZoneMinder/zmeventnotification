@@ -468,7 +468,7 @@ sub config_get_val {
 
   }
 
-  return $final_val;
+  return trim($final_val);
 }
 
 # Loads all the ini file settings and populates variables
@@ -930,6 +930,9 @@ loadPredefinedConnections();
 initSocketServer();
 printInfo("Event Notification daemon exiting\n");
 exit();
+
+# left and right trim
+sub  trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
 
 # Try to load a perl module
 # and if it is not available
