@@ -1877,6 +1877,13 @@ sub sendOverFCMV1 {
       icon     => 'ic_stat_notification',
       priority => 'high'
     };
+
+    if (defined ($obj->{appversion}) && ($obj->{appversion} ne "unknown")) {
+    printDebug ('setting channel to zmninja',2);
+    $message_v2->{android}->{channel} = 'zmninja';
+    } else {
+          printDebug ('legacy client, NOT setting channel to zmninja',2);
+    }
   }
   if ( $obj->{platform} eq 'ios' ) {
     $message_v2->{ios} = {
@@ -1896,13 +1903,7 @@ sub sendOverFCMV1 {
 
   }
 
-  if (defined ($obj->{appversion}) && ($obj->{appversion} ne "unknown")) {
-    printDebug ('setting channel to zmninja',2);
-    $message_v2->{android}->{channel} = 'zmninja';
 
-  } else {
-        printDebug ('legacy client, NOT setting channel to zmninja',2);
-  }
   if ( $picture_url && $include_picture ) {
 
     # $ios_message->{mutable_content} = \1;
