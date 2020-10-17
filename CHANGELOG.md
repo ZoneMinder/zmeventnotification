@@ -1,5 +1,18 @@
 # Changelog
 
+## [v6.0.4](https://github.com/pliablepixels/zmeventnotification/tree/v6.0.4) (2020-10-17)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.0.2...v6.0.4)
+
+**Fixed bugs:**
+
+- FCMv1: FCM push message Error:500 Internal Server Error [\#314](https://github.com/pliablepixels/zmeventnotification/issues/314)
+- trailing spaces are not trimmed when reading from zmeventnotification.ini [\#311](https://github.com/pliablepixels/zmeventnotification/issues/311)
+
+**Closed issues:**
+
+- No longer receiving image in notification on Android [\#312](https://github.com/pliablepixels/zmeventnotification/issues/312)
+
 ## [v6.0.2](https://github.com/pliablepixels/zmeventnotification/tree/v6.0.2) (2020-10-14)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.0.1...v6.0.2)
@@ -53,7 +66,6 @@
 - correct object\_labels value for tinyyolo v3 / v4 [\#293](https://github.com/pliablepixels/zmeventnotification/pull/293) ([hugalafutro](https://github.com/hugalafutro))
 - fix\(import\_zm\_zones\): remove findWholeWord\('All'\) condition from match\_reason [\#289](https://github.com/pliablepixels/zmeventnotification/pull/289) ([matthewtgilbride](https://github.com/matthewtgilbride))
 - Dev [\#286](https://github.com/pliablepixels/zmeventnotification/pull/286) ([pliablepixels](https://github.com/pliablepixels))
-- Properly check the state of only\_triggered\_zm\_zones  [\#276](https://github.com/pliablepixels/zmeventnotification/pull/276) ([neillbell](https://github.com/neillbell))
 
 ## [v5.15.6](https://github.com/pliablepixels/zmeventnotification/tree/v5.15.6) (2020-06-30)
 
@@ -96,6 +108,7 @@
 
 - Update query parameters in utils.py to fix authentication failure [\#279](https://github.com/pliablepixels/zmeventnotification/pull/279) ([cornercase](https://github.com/cornercase))
 - Modify process\_config\(\) to properly check only\_triggered\_zm\_zones for… [\#278](https://github.com/pliablepixels/zmeventnotification/pull/278) ([neillbell](https://github.com/neillbell))
+- Properly check the state of only\_triggered\_zm\_zones  [\#276](https://github.com/pliablepixels/zmeventnotification/pull/276) ([neillbell](https://github.com/neillbell))
 - add a configuration option to set the topic for MQTT instead of the h… [\#272](https://github.com/pliablepixels/zmeventnotification/pull/272) ([dennyreiter](https://github.com/dennyreiter))
 - ftp\_detect\_image.py contrib script [\#261](https://github.com/pliablepixels/zmeventnotification/pull/261) ([0n3man](https://github.com/0n3man))
 - Update image\_manip.py [\#260](https://github.com/pliablepixels/zmeventnotification/pull/260) ([0n3man](https://github.com/0n3man))
@@ -129,6 +142,7 @@
 
 - Update zmeventnotification.pl [\#249](https://github.com/pliablepixels/zmeventnotification/pull/249) ([makers-mark](https://github.com/makers-mark))
 - add MQTT Retain flag option [\#247](https://github.com/pliablepixels/zmeventnotification/pull/247) ([darknicht66](https://github.com/darknicht66))
+- General skip monitors [\#234](https://github.com/pliablepixels/zmeventnotification/pull/234) ([connortechnology](https://github.com/connortechnology))
 
 ## [v5.11.3](https://github.com/pliablepixels/zmeventnotification/tree/v5.11.3) (2020-04-02)
 
@@ -157,8 +171,6 @@
 **Merged pull requests:**
 
 - Fix typo in version option handling [\#239](https://github.com/pliablepixels/zmeventnotification/pull/239) ([lpomfrey](https://github.com/lpomfrey))
-- General skip monitors [\#234](https://github.com/pliablepixels/zmeventnotification/pull/234) ([connortechnology](https://github.com/connortechnology))
-- small efficiency improvement [\#233](https://github.com/pliablepixels/zmeventnotification/pull/233) ([connortechnology](https://github.com/connortechnology))
 
 ## [v5.9.9](https://github.com/pliablepixels/zmeventnotification/tree/v5.9.9) (2020-03-08)
 
@@ -313,8 +325,8 @@
 
 **Merged pull requests:**
 
+- small efficiency improvement [\#233](https://github.com/pliablepixels/zmeventnotification/pull/233) ([connortechnology](https://github.com/connortechnology))
 - Hangup debug [\#176](https://github.com/pliablepixels/zmeventnotification/pull/176) ([pliablepixels](https://github.com/pliablepixels))
-- Multiple face and clustering support [\#174](https://github.com/pliablepixels/zmeventnotification/pull/174) ([pliablepixels](https://github.com/pliablepixels))
 
 ## [v4.5.8](https://github.com/pliablepixels/zmeventnotification/tree/v4.5.8) (2019-11-06)
 
@@ -431,6 +443,7 @@
 
 **Merged pull requests:**
 
+- Multiple face and clustering support [\#174](https://github.com/pliablepixels/zmeventnotification/pull/174) ([pliablepixels](https://github.com/pliablepixels))
 - add secret support [\#168](https://github.com/pliablepixels/zmeventnotification/pull/168) ([pliablepixels](https://github.com/pliablepixels))
 - Fix formatting of code block on Hooks guide page [\#166](https://github.com/pliablepixels/zmeventnotification/pull/166) ([davidjb](https://github.com/davidjb))
 - Fixing MQTT Insecure connection [\#146](https://github.com/pliablepixels/zmeventnotification/pull/146) ([artistan82](https://github.com/artistan82))
