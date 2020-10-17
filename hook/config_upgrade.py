@@ -27,6 +27,7 @@ upgrade the script till you fix the potential issues
             '''.format(v,attr))
             exit(1)        
 
+    print ('Sanity check passed!')
     return True
 
 def replace_attributes (orig, replacements):
@@ -79,6 +80,22 @@ fast_gif=no
 
 
 def f_unknown_to_1_0(str_conf, new_version):
+
+    should_not_be_there = {
+        'cpu_max_processes',
+        'tpu_max_processes',
+        'gpu_max_processes',
+        'cpu_max_lock_wait',
+        'tpu_max_lock_wait',
+        'gpu_max_lock_wait',
+        'object_framework',
+        'object_processor',
+        'face_detection_framework',
+        'face_recognition_framework'
+
+
+    }
+
     replacements = {
     'models':'detection_sequence',
     '[yolo]': '[object]',
@@ -155,8 +172,10 @@ face_recognition_framework=dlib
 ''',
 
     }
-    s1=replace_attributes(str_conf,replacements)
-    return (create_attributes(s1, new_additions))    
+
+    if sanity_check(should_not_be_there, str_conf, new_version):
+        s1=replace_attributes(str_conf,replacements)
+        return (create_attributes(s1, new_additions))    
 
 # MAIN
 
@@ -202,7 +221,8 @@ else:
 
 if i >=0:
     for u in upgrade_path[i:]:
-        print ('Migrating from {} to {}'.format(u['from_version'],u['to_version']))
+        print ('-------------------------------------------------')
+        print ('Migrating from {} to {}\n'.format(u['from_version'],u['to_version']))
         str_conf = u['migrate'](str_conf, u['to_version'])
      
     
@@ -212,11 +232,11 @@ if i >=0:
     f.close()
     print ('''
 
-    ----------------------| NOTE |-------------------------
-    The migration is best effort. May contain errors.
-    Please review the modified file.
-    Items commented out with #REMOVE can be deleted.
-    Items marked with #NEW are new options to customize.
+----------------------| NOTE |-------------------------
+The migration is best effort. May contain errors.
+Please review the modified file.
+Items commented out with #REMOVE can be deleted.
+Items marked with #NEW are new options to customize.
 
     ''')
 
