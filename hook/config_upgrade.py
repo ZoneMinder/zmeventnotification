@@ -4,11 +4,30 @@ from configparser import ConfigParser
 import sys
 import argparse
 import os
-
+import re
 '''
 wej qaStaHvIS wa' ghu'maj. wa'maHlu'chugh, vaj pagh. 
 chotlhej'a' qaDanganpu'. chenmoH tlhInganpu'.
 '''
+
+
+def sanity_check(s, c, v):
+
+    for attr in s:
+        print (f'Doing a sanity check, {attr} should not be there...')
+        #if attr in c:
+        if re.search(f'(^| |\t|\n){attr}(=| |\t)',c):
+            print  (
+            '''
+There is an error in your config. While upgrading to version:{} 
+I found a key ({}) that should not have been there. 
+This usually means when you last upgraded, your version attribute
+was not upgraded for some reason. To be safe, this script will not
+upgrade the script till you fix the potential issues
+            '''.format(v,attr))
+            exit(1)        
+
+    return True
 
 def replace_attributes (orig, replacements):
     new_string = ''
@@ -48,8 +67,14 @@ fast_gif=no
 '''
 
     }
-    s1=replace_attributes(str_conf,replacements)
-    return (create_attributes(s1, new_additions))    
+    should_not_be_there = {
+        'fast_gif'
+    }
+
+    if sanity_check(should_not_be_there, str_conf, new_version):
+        s1=replace_attributes(str_conf,replacements)
+        return (create_attributes(s1, new_additions))    
+        
 
 
 
@@ -164,7 +189,7 @@ version = 'unknown'
 if config_file.has_option('general', 'version'):
     version = config_file.get('general', 'version')
 
-print (f'Current version of objectconfig.ini is {version}')
+print (f'Current version of file is {version}')
 f=open(args.get('config'))
 str_conf = f.read()
 f.close()
