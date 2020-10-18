@@ -265,7 +265,7 @@ def processPastDetection(bbox, label, conf, mid):
     return new_bbox, new_label, new_conf
 
 
-def processFilters(bbox, label, conf, match):
+def processFilters(bbox, label, conf, match, model):
     # bbox is the set of bounding boxes
     # labels are set of corresponding object names
     # conf are set of confidence scores (for hog and face this is set to 1)
@@ -275,7 +275,7 @@ def processFilters(bbox, label, conf, match):
     new_bbox = []
     new_conf = []
 
-    
+      
 
     for idx, b in enumerate(bbox):
 
@@ -299,6 +299,10 @@ def processFilters(bbox, label, conf, match):
         for p in g.polygons:
             poly = Polygon(p['value'])
             if obj.intersects(poly):
+                if model == 'object' and p['pattern'] != g.config['object_detection_pattern']:
+                    g.logger.Debug(2, '{} polygon/zone has its own pattern of {}, using that'.format(p['name'],p['pattern']))
+                    r = re.compile(p['pattern'])
+                    match = list(filter(r.match, label))
                 if label[idx] in match:
                     g.logger.Debug(2,'{} intersects object:{}[{}]'.format(
                         p['name'], label[idx], b))

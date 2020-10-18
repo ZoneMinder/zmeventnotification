@@ -33,7 +33,7 @@ def rescale_polygons(xfactor, yfactor):
             newx = int(x * xfactor)
             newy = int(y * yfactor)
             newp.append((newx, newy))
-        newps.append({'name': p['name'], 'value': newp})
+        newps.append({'name': p['name'], 'value': newp, 'pattern': p['pattern']})
     g.logger.Debug(2,'resized polygons x={}/y={}: {}'.format(
         xfactor, yfactor, newps))
     g.polygons = newps
@@ -119,7 +119,9 @@ def import_zm_zones(mid, reason):
         g.logger.Debug(2,'importing zoneminder polygon: {} [{}]'.format(item['Zone']['Name'], item['Zone']['Coords']))
         g.polygons.append({
             'name': item['Zone']['Name'],
-            'value': str2tuple(item['Zone']['Coords'])
+            'value': str2tuple(item['Zone']['Coords']),
+            'pattern': g.config.get('object_detection_pattern')
+
         })
 
 
@@ -320,16 +322,24 @@ def process_config(args, ctx):
             g.logger.Debug(1,'strict SSL cert checking is on...')
 
         g.polygons = []
+        poly_patterns = []
 
         # Check if we have a custom overrides for this monitor
 
         if 'monitorid' in args and args.get('monitorid'):
+            
             sec = 'monitor-{}'.format(args.get('monitorid'))
             if sec in config_file:
                 # we have a specific section for this monitor
                 for item in config_file[sec].items():
                     k = item[0]
                     v = item[1]
+
+                    if k.endswith('_zone_detection_pattern'):
+                        zone_name = k.split('_zone_detection_pattern')[0]
+                        poly_patterns.append({'name': zone_name, 'pattern':v});
+                        continue
+
                     if k in g.config_vals:
                         # This means its a legit config key that needs to be overriden
                         g.logger.Debug(2,
@@ -341,8 +351,8 @@ def process_config(args, ctx):
                         # This means its a polygon for the monitor
                         if not g.config['only_triggered_zm_zones'] == 'yes':
                             try:
-                                g.polygons.append({'name': k, 'value': str2tuple(v)})
-                                g.logger.Debug(2,'adding polygon: {} [{}]'.format(k, v))
+                                g.polygons.append({'name': k, 'value': str2tuple(v),'pattern': g.config.get('object_detection_pattern')})
+                                g.logger.Debug(2,'adding polygon: {} [{}]'.format(k, v ))
                             except Exception as e:
                                 g.logger.Error('{}={} is either an invalid attribute or a malformed polygon. Error was {}. Ignoring.'.format(k,v,e))
 
@@ -354,6 +364,15 @@ def process_config(args, ctx):
                 g.config['import_zm_zones'] = 'yes'
             if g.config['import_zm_zones'] == 'yes':
                 import_zm_zones(args.get('monitorid'), args.get('reason'))
+            
+            # finally, iterate polygons and put in detection patterns
+            for poly in g.polygons:
+
+                for poly_pat in poly_patterns:
+                    if poly['name'] == poly_pat['name']:
+                        poly['pattern'] = poly_pat['pattern']
+                        g.logger.Debug(2, 'replacing match pattern for polygon:{} with: {}'.format( poly['name'],poly_pat['pattern'] ))
+
 
         else:
             g.logger.Info(
