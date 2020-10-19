@@ -1856,7 +1856,7 @@ sub sendOverFCMV1 {
   $title = $title . ' (' . $eid . ')' if ($tag_alarm_event_id);
   $title = 'Ended:' . $title          if ( $event_type eq 'event_end' );
 
-# https://firebase.google.com/docs/cloud-messaging/http-server-ref#notification-payload-support
+# https://firebase.google.com/docs/reference/admin/python/firebase_admin.messaging
 
   my $message_v2 = {
     token => $obj->{token},
