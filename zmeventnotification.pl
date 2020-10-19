@@ -2575,6 +2575,7 @@ sub processIncomingMessage {
 
       my $token_matched = 0;
       my $stored_invocations = undef;
+      my $stored_last_sent = undef;
       foreach (@active_connections) {
 
         if ( $_->{token} eq $json_string->{data}->{token} ) {
@@ -2601,6 +2602,7 @@ sub processIncomingMessage {
             $_->{state} = PENDING_DELETE;
             # make sure loaded invocations are not erased
             $stored_invocations = $_->{invocations};
+            $stored_last_sent = $_->{last_sent};
             #print ("REMOVE saved:". Dumper($stored_invocations));
 
 
@@ -2612,6 +2614,8 @@ sub processIncomingMessage {
             #$_->{invocations} = $stored_invocations if (defined($stored_invocations));
             
             $_->{invocations} = $stored_invocations if (defined($stored_invocations));
+            $_->{last_sent} = $stored_last_sent if (defined($stored_last_sent));
+
             #print ("REMOVE applied:". Dumper($_->{invocations}));
 
             $_->{type}     = FCM;
