@@ -1,11 +1,20 @@
 Breaking Changes
 ----------------
 
+Version 6.0.5 onwards
+~~~~~~~~~~~~~~~~~~~~~~
+- You can now specify object detection patterns on a per polygon/zone basis. The format is ``<polygonname>_zone_detection_pattern``
+  This works for imported ZM zones too. Please read the comments in ``objectconfig.ini``. Note that this attribute will not be automatically
+  added to a migrated ``objectconfig.ini`` file as the actual attribute name will change depending on your zone name
+- ``zmeventnotification.ini`` has a new attribute called ``replace_push_messages`` in the ``[fcm]`` section. When enabled (default is ``no``),
+  push messages will replace each other in the notification bar. This was the old Android behaviour prior to FCMv1. You can go back to this mode of
+  operation for both iOS and Android if you enable this.
+
 Version 6.0.1 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~~
 - ``zmeventnotification.ini`` new attribute in ``[fcm]`` called ``use_fcmv1`` with a default of ``yes```.
   It is recommended you keep this on as this switches from the `legacy <https://firebase.google.com/docs/cloud-messaging/http-server-ref>`__ 
-  FCM protocol to the FCM v1 which allows for better features (which I will add over time)
+  FCM protocol to the FCM v1 which allows for better features (which I will add over time).
 
 - ``objectconfig.ini`` has a new attribute ``fast_gif`` in ``[animation]``. If you are creating animations for push 
   and generating GIFs, this creates a 2x speed GIF.

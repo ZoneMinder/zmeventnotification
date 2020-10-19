@@ -109,6 +109,7 @@ use constant {
   DEFAULT_AUTH_TIMEOUT       => 20,
   DEFAULT_FCM_ENABLE         => 'yes',
   DEFAULT_USE_FCMV1          => 'yes',
+  DEFAULT_REPLACE_PUSH_MSGS  => 'no',
   DEFAULT_MQTT_ENABLE        => 'no',
   DEFAULT_MQTT_SERVER        => '127.0.0.1',
   DEFAULT_MQTT_TOPIC         => 'zoneminder',
@@ -213,6 +214,7 @@ my $mqtt_last_tick_time = time();
 
 my $use_fcm;
 my $use_fcmv1;
+my $replace_push_messages;
 
 my $use_api_push;
 my $api_push_script;
@@ -514,6 +516,9 @@ sub loadEsConfigSettings {
 
   $use_fcm = config_get_val( $config, 'fcm', 'enable', DEFAULT_FCM_ENABLE );
   $use_fcmv1 = config_get_val( $config, 'fcm', 'use_fcmv1', DEFAULT_USE_FCMV1 );
+  $replace_push_messages = config_get_val( $config, 'fcm', 'replace_push_messages', DEFAULT_REPLACE_PUSH_MSGS );
+  
+
   $fcm_date_format =
     config_get_val( $config, 'fcm', 'date_format', DEFAULT_FCM_DATE_FORMAT );
 
@@ -702,6 +707,7 @@ API Push Script....................... ${\(value_or_undefined($api_push_script))
 Use FCM .............................. ${\(yes_or_no($use_fcm))}
 Use FCM V1 APIs....................... ${\(yes_or_no($use_fcmv1))}
 FCM Date Format....................... ${\(value_or_undefined($fcm_date_format))}
+Only show latest FCMv1 message........ ${\(yes_or_no($replace_push_messages))}
 Token file ........................... ${\(value_or_undefined($token_file))}
 
 Use MQTT ............................. ${\(yes_or_no($use_mqtt))}
@@ -1878,6 +1884,7 @@ sub sendOverFCMV1 {
       priority => 'high'
     };
 
+    $message_v2->{android}->{tag} = 'zmninjapush' if ($replace_push_messages);
     if (defined ($obj->{appversion}) && ($obj->{appversion} ne "unknown")) {
     printDebug ('setting channel to zmninja',2);
     $message_v2->{android}->{channel} = 'zmninja';
@@ -1899,7 +1906,9 @@ sub sendOverFCMV1 {
         'apns-push-type'=>'alert',
         #'apns-expiration'=>'0'
         }
-      }
+      };
+      $message_v2->{ios}->{headers}->{'apns-collapse-id'} = 'zmninjapush' if ($replace_push_messages);
+
 
   }
 
