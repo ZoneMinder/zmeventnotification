@@ -1,5 +1,23 @@
 # Changelog
 
+## [v6.0.5](https://github.com/pliablepixels/zmeventnotification/tree/v6.0.5) (2020-10-20)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.0.4...v6.0.5)
+
+**Implemented enhancements:**
+
+- Allow option to replace notifications on system tray/notification bar [\#322](https://github.com/pliablepixels/zmeventnotification/issues/322)
+
+**Fixed bugs:**
+
+- 1.6.000: Getting notifications for monitors that have "report events" unchecked  [\#321](https://github.com/pliablepixels/zmeventnotification/issues/321)
+- Push notification minimum timer does not work. [\#320](https://github.com/pliablepixels/zmeventnotification/issues/320)
+- objectconfig.ini version number not updated in example config  [\#318](https://github.com/pliablepixels/zmeventnotification/issues/318)
+
+**Closed issues:**
+
+- Migrated objectdetection.ini not picking up polygons? [\#315](https://github.com/pliablepixels/zmeventnotification/issues/315)
+
 ## [v6.0.4](https://github.com/pliablepixels/zmeventnotification/tree/v6.0.4) (2020-10-17)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.0.2...v6.0.4)
@@ -142,7 +160,6 @@
 
 - Update zmeventnotification.pl [\#249](https://github.com/pliablepixels/zmeventnotification/pull/249) ([makers-mark](https://github.com/makers-mark))
 - add MQTT Retain flag option [\#247](https://github.com/pliablepixels/zmeventnotification/pull/247) ([darknicht66](https://github.com/darknicht66))
-- General skip monitors [\#234](https://github.com/pliablepixels/zmeventnotification/pull/234) ([connortechnology](https://github.com/connortechnology))
 
 ## [v5.11.3](https://github.com/pliablepixels/zmeventnotification/tree/v5.11.3) (2020-04-02)
 
@@ -171,6 +188,8 @@
 **Merged pull requests:**
 
 - Fix typo in version option handling [\#239](https://github.com/pliablepixels/zmeventnotification/pull/239) ([lpomfrey](https://github.com/lpomfrey))
+- General skip monitors [\#234](https://github.com/pliablepixels/zmeventnotification/pull/234) ([connortechnology](https://github.com/connortechnology))
+- small efficiency improvement [\#233](https://github.com/pliablepixels/zmeventnotification/pull/233) ([connortechnology](https://github.com/connortechnology))
 
 ## [v5.9.9](https://github.com/pliablepixels/zmeventnotification/tree/v5.9.9) (2020-03-08)
 
@@ -325,8 +344,8 @@
 
 **Merged pull requests:**
 
-- small efficiency improvement [\#233](https://github.com/pliablepixels/zmeventnotification/pull/233) ([connortechnology](https://github.com/connortechnology))
 - Hangup debug [\#176](https://github.com/pliablepixels/zmeventnotification/pull/176) ([pliablepixels](https://github.com/pliablepixels))
+- Multiple face and clustering support [\#174](https://github.com/pliablepixels/zmeventnotification/pull/174) ([pliablepixels](https://github.com/pliablepixels))
 
 ## [v4.5.8](https://github.com/pliablepixels/zmeventnotification/tree/v4.5.8) (2019-11-06)
 
@@ -443,7 +462,6 @@
 
 **Merged pull requests:**
 
-- Multiple face and clustering support [\#174](https://github.com/pliablepixels/zmeventnotification/pull/174) ([pliablepixels](https://github.com/pliablepixels))
 - add secret support [\#168](https://github.com/pliablepixels/zmeventnotification/pull/168) ([pliablepixels](https://github.com/pliablepixels))
 - Fix formatting of code block on Hooks guide page [\#166](https://github.com/pliablepixels/zmeventnotification/pull/166) ([davidjb](https://github.com/davidjb))
 - Fixing MQTT Insecure connection [\#146](https://github.com/pliablepixels/zmeventnotification/pull/146) ([artistan82](https://github.com/artistan82))
