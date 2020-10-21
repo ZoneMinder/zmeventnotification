@@ -22,6 +22,10 @@ You can get the version by doing:
 Describe in detail. If its a bug, please describe what is happening, what should happen and how to reproduce if its not obvious
 
 **Debug Logs** (if applicable)
+
+**Important**: Please post DEBUG logs NOT INF logs. Instructions on how to enable debug logs
+are posted <a href='https://zmeventnotification.readthedocs.io/en/latest/guides/es_faq.html#logging'>HERE</a>
+
 ```
 
 <insert debug logs here, please make sure they are within the ``` quotes so they are formatted properly>
