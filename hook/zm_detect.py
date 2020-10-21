@@ -28,10 +28,26 @@ import zmes_hook_helpers.utils as utils
 import zmes_hook_helpers.common_params as g
 from pyzm import __version__
 
+class ConsoleLogger:
+    """
+    Simple console logger for debugging, invoked by --debug flag
+    """
+    def Debug(self, _id, message):
+        print(message)
+
+    def Info(self, message):
+        print(message)
+
+    def Error(self, message):
+        print(message)
+
+    def Fatal(self, message):
+        print(message)
+        sys.exit(1)
+
 auth_header = None
 
 # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
-
 
 def remote_detect(image, model=None):
     import requests
@@ -161,6 +177,8 @@ def main_handler():
 
     ap.add_argument('-n', '--notes', help='updates notes field in ZM with detections', action='store_true')
 
+    ap.add_argument('-d', '--debug', help='log messages to stdout instead of to ZM logger', action='store_true')
+
     args, u = ap.parse_known_args()
     args = vars(args)
 
@@ -175,7 +193,9 @@ def main_handler():
     utils.get_pyzm_config(args)
 
 
-    if args.get('monitorid'):
+    if args.get('debug'):
+        log = ConsoleLogger()
+    elif args.get('monitorid'):
         log.init(name='zmesdetect_' + 'm' + args.get('monitorid'), override=g.config['pyzm_overrides'])
     else:
         log.init(name='zmesdetect',override=g.config['pyzm_overrides'])
