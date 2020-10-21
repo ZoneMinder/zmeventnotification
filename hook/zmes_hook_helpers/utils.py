@@ -116,6 +116,7 @@ def import_zm_zones(mid, reason):
             if not findWholeWord(item['Zone']['Name'])(reason):
                 g.logger.Debug(1,'dropping {} as zones in alarm cause is {}'.format(item['Zone']['Name'], reason))
                 continue
+        item['Zone']['Name'] = item['Zone']['Name'].replace(' ','_').lower()
         g.logger.Debug(2,'importing zoneminder polygon: {} [{}]'.format(item['Zone']['Name'], item['Zone']['Coords']))
         g.polygons.append({
             'name': item['Zone']['Name'],
@@ -337,6 +338,7 @@ def process_config(args, ctx):
 
                     if k.endswith('_zone_detection_pattern'):
                         zone_name = k.split('_zone_detection_pattern')[0]
+                        g.logger.Debug(2, 'found zone specific pattern:{} storing'.format(zone_name))
                         poly_patterns.append({'name': zone_name, 'pattern':v});
                         continue
 
