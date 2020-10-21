@@ -193,7 +193,7 @@ def main_handler():
     except ImportError as e:
         g.logger.Fatal (f'{e}: You might not have installed OpenCV as per install instructions. Remember, it is NOT automatically installed')
 
-    g.logger.Info('---------| hook version: {}, ES version: {} , OpenCV version: {}|------------'.format(__version__, es_version, cv2.__version__))
+    g.logger.Info('---------| pyzm version: {}, ES version: {} , OpenCV version: {}|------------'.format(__version__, es_version, cv2.__version__))
     if args.get('version'):
         print(__version__)
         exit(0)

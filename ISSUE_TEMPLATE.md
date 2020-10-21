@@ -3,18 +3,10 @@ Before you create an issue, please make sure you have read the [README](https://
 
 **Event Server version**
 
-(example only, please edit this line) 2.4
-
-**Hooks version**
-
-(If your question is about the machine learning looks)
 You can get the version by doing:
 ```
-python3 -c "import pyzm; print (pyzm.ml.__version__)"
+/usr/bin/zmeventnotification.pl --version
 ```
-
-
-
 
 **The version of ZoneMinder you are using:**
 
