@@ -1599,6 +1599,11 @@ sub validateAuth {
     $sth->finish();
 
     if ($state) {
+      if (substr($state->{Password},0,4) eq '-ZM-') {
+        printError("The password for $u has not been migrated in ZM. Please log into ZM with this username to migrate before using it with the ES. If that doesn't work, please configure a new user for the ES");
+        return 0;
+      }
+
       my $scheme = substr( $state->{Password}, 0, 1 );
       if ( $scheme eq '*' ) {    # mysql decode
         printDebug( 'Comparing using mysql hash', 2 );
