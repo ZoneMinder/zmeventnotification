@@ -33,16 +33,16 @@ class ConsoleLogger:
     Simple console logger for debugging, invoked by --debug flag
     """
     def Debug(self, _id, message):
-        print(message)
+        print(message, file=sys.stderr)
 
     def Info(self, message):
-        print(message)
+        print(message, file=sys.stderr)
 
     def Error(self, message):
-        print(message)
+        print(message, file=sys.stderr)
 
     def Fatal(self, message):
-        print(message)
+        print(message, file=sys.stderr)
         sys.exit(1)
 
 auth_header = None
@@ -194,12 +194,13 @@ def main_handler():
 
 
     if args.get('debug'):
-        log = ConsoleLogger()
+        g.logger = ConsoleLogger()
     elif args.get('monitorid'):
         log.init(name='zmesdetect_' + 'm' + args.get('monitorid'), override=g.config['pyzm_overrides'])
+        g.logger = log
     else:
         log.init(name='zmesdetect',override=g.config['pyzm_overrides'])
-    g.logger = log
+        g.logger = log
     
     es_version='(?)'
     try:
