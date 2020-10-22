@@ -1615,7 +1615,10 @@ sub validateAuth {
           return 0;
         }
         my $saved_pass = $state->{Password};
-
+	if ($saved_pass =~ /^-ZM-/) {
+		printError("Old-style password set for user '$u'. Change it through the ZM console and try again.");
+		return 0;
+	}
         # perl bcrypt libs can't handle $2b$ or $2y$
         $saved_pass =~ s/^\$2.\$/\$2a\$/;
         my $new_hash = Crypt::Eksblowfish::Bcrypt::bcrypt( $p, $saved_pass );
