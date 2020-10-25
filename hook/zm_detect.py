@@ -26,7 +26,9 @@ import traceback
 import pyzm.ZMLog as log 
 import zmes_hook_helpers.utils as utils
 import zmes_hook_helpers.common_params as g
-from pyzm import __version__
+from pyzm import __version__ as pyzm_version
+from zmes_hook_helpers import __version__ as hooks_version
+
 
 auth_header = None
 
@@ -165,6 +167,10 @@ def main_handler():
     args, u = ap.parse_known_args()
     args = vars(args)
 
+    if args.get('version'):
+        print('hooks:{} pyzm:{}'.format(hooks_version, pyzm_version))
+        exit(0)
+
     if not args.get('config'):
         print ('--config required')
         exit(1)
@@ -197,10 +203,7 @@ def main_handler():
         g.logger.Fatal (f'{e}: You might not have installed OpenCV as per install instructions. Remember, it is NOT automatically installed')
 
     g.logger.Info('---------| pyzm version: {}, ES version: {} , OpenCV version: {}|------------'.format(__version__, es_version, cv2.__version__))
-    if args.get('version'):
-        print(__version__)
-        exit(0)
-
+   
 
 
     # load modules that depend on cv2
