@@ -279,6 +279,14 @@ for an explanation of how this works
 Troubleshooting common situations
 ---------------------------------
 
+I can't connect to the ES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+There could be multiple reasons:
+
+- If you are connecting from WAN make sure you have set up port forwarding as needed
+- Try changing the ``address`` attribute in ``[network]`` section of ``zmeventnotification.ini``.
+  If you don't have your IP specified, it will use ``[::]``. Try ``0.0.0.0`` instead.
+
 I just added a new monitor and the ES is not sending notifications for it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
