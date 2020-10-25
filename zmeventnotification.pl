@@ -331,6 +331,7 @@ GetOptions(
   'version'      => \$version,
   'config=s'     => \$config_file,
   'check-config' => \$check_config,
+  'consoledebug' => \$console_logs
 );
 
 if ($version) {
@@ -537,7 +538,7 @@ sub loadEsConfigSettings {
   $ssl_cert_file = config_get_val( $config, 'ssl', 'cert' );
   $ssl_key_file  = config_get_val( $config, 'ssl', 'key' );
   $console_logs = config_get_val( $config, 'customize', 'console_logs',
-    DEFAULT_CUSTOMIZE_VERBOSE );
+    DEFAULT_CUSTOMIZE_VERBOSE ) if (!$console_logs);
   $es_debug_level = config_get_val( $config, 'customize', 'es_debug_level',
     DEFAULT_CUSTOMIZE_ES_DEBUG_LEVEL );
   $event_check_interval =
@@ -955,19 +956,21 @@ sub printDebug {
   my $str   = shift;
   my $level = shift;
   $level = $es_debug_level if not defined $level;
-  return if $es_debug_level < $level;
   my $now = strftime( '%Y-%m-%d,%H:%M:%S', localtime );
   $str = $prefix . ' ' . $str;
-  print( "CONSOLE DBG-$level:", $now, " ", $str, "\n" ) if $console_logs;
-
-  Debug($str);
+  if ($es_debug_level >= $level) {
+    print( "DBG-$level:", $now, " ", $str, "\n" ) if $console_logs;
+    Debug($str) ;
+  }
+  
+  
 }
 
 sub printInfo {
   my $str = shift;
   my $now = strftime( '%Y-%m-%d,%H:%M:%S', localtime );
   $str = $prefix . ' ' . $str;
-  print( 'CONSOLE INF:', $now, " ", $str, "\n" ) if $console_logs;
+  print( 'INF:', $now, " ", $str, "\n" ) if $console_logs;
 
   Info($str);
 }
@@ -976,7 +979,7 @@ sub printWarning {
   my $str = shift;
   my $now = strftime( '%Y-%m-%d,%H:%M:%S', localtime );
   $str = $prefix . ' ' . $str;
-  print( 'CONSOLE WAR:', $now, " ", $str, "\n" ) if $console_logs;
+  print( 'WAR:', $now, " ", $str, "\n" ) if $console_logs;
   Warning($str);
 }
 
@@ -984,7 +987,7 @@ sub printError {
   my $str = shift;
   my $now = strftime( '%Y-%m-%d,%H:%M:%S', localtime );
   $str = $prefix . ' ' . $str;
-  print( 'CONSOLE ERR:', $now, " ", $str, "\n" ) if $console_logs;
+  print( 'ERR:', $now, " ", $str, "\n" ) if $console_logs;
   Error($str);
 }
 
