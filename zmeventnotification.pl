@@ -72,7 +72,7 @@ if ( !try_use('JSON') ) {
 }
 
 # debugging only.
-use Data::Dumper;
+#use Data::Dumper;
 
 # ==========================================================================
 #
@@ -1624,7 +1624,7 @@ sub validateAuth {
         # perl bcrypt libs can't handle $2b$ or $2y$
         $saved_pass =~ s/^\$2.\$/\$2a\$/;
         my $new_hash = Crypt::Eksblowfish::Bcrypt::bcrypt( $p, $saved_pass );
-        printDebug( "Comparing using bcrypt $new_hash to $saved_pass", 2 );
+        printDebug( "Comparing using bcrypt", 2 );
         return $new_hash eq $saved_pass;
       }
     }
@@ -2569,7 +2569,10 @@ sub processIncomingMessage {
 
     # This sub type is when a device token is registered
     if ( $json_string->{data}->{type} eq 'token' ) {
-
+      if (!defined($json_string->{data}->{token}) || ($json_string->{data}->{token} eq "")) {
+        printDebug ("Ignoring token command, I got ".encode_json($json_string));
+        return;
+      }
       # a token must have a platform
       if ( !$json_string->{data}->{platform} ) {
         my $str = encode_json(
@@ -2590,6 +2593,10 @@ sub processIncomingMessage {
       my $token_matched = 0;
       my $stored_invocations = undef;
       my $stored_last_sent = undef;
+
+
+      #print Dumper(\@active_connections);
+
       foreach (@active_connections) {
 
         if ( $_->{token} eq $json_string->{data}->{token} ) {
@@ -2605,7 +2612,12 @@ sub processIncomingMessage {
               || $_->{conn}->port() ne $conn->port() )
             )
           {
-            printDebug( 'JOB: token matched but connection did not', 2 );
+            my $existing_token = substr( $_->{token}, -10 );
+            my $new_token = substr( $json_string->{data}->{token}, -10 );
+            my $existing_conn = $_->{conn} ? $_->{conn}->ip().':'.$_->{conn}->port() : 'undefined';
+            my $new_conn = $conn ? $conn->ip().':'.$conn->port() : 'undefined';
+            
+            printDebug( "JOB: new token matched existing token: ($new_token <==> $existing_token) but connection did not ($new_conn <==> $existing_conn)", 2 );
             printDebug(
               'JOB: Duplicate token found: marking ...'
                 . substr( $_->{token}, -10 )
@@ -2682,30 +2694,28 @@ sub processIncomingMessage {
           && ( $_->{conn}->port() eq $conn->port() )
           && ( $_->{token} ne $json_string->{data}->{token} ) )
         {
+          my $existing_token = substr( $_->{token}, -10 );
+          my $new_token = substr( $json_string->{data}->{token}, -10 );
+          my $existing_conn = $_->{conn} ? $_->{conn}->ip().':'.$_->{conn}->port() : 'undefined';
+          my $new_conn = $conn ? $conn->ip().':'.$conn->port() : 'undefined';
+            
           printDebug(
-            'JOB: connection matched but token did not. first registration?',
+            "JOB: connection matched ($new_conn <==> $existing_conn) but token did not ($new_token <==> $existing_token). first registration?",
             2 );
+        
           $_->{type}     = FCM;
           $_->{token}    = $json_string->{data}->{token};
           $_->{platform} = $json_string->{data}->{platform};
-          $_->{monlist}  = $json_string->{data}->{monlist};
-          $_->{intlist}  = $json_string->{data}->{intlist};
-          if ( exists( $json_string->{data}->{monlist} )
-            && ( $json_string->{data}->{monlist} ne '' ) )
-          {
-            $_->{monlist} = $json_string->{data}->{monlist};
-          }
-          else {
-            $_->{monlist} = "-1";
-          }
-          if ( exists( $json_string->{data}->{intlist} )
-            && ( $json_string->{data}->{intlist} ne '' ) )
-          {
-            $_->{intlist} = $json_string->{data}->{intlist};
-          }
-          else {
-            $_->{intlist} = '-1';
-          }
+
+
+          $_->{monlist}  = $json_string->{data}->{monlist}
+            if (($json_string->{data}->{monlist}) && ($json_string->{data}->{monlist} ne '-1'));
+            
+
+          $_->{intlist}  = $json_string->{data}->{intlist}
+                      if (($json_string->{data}->{intlist}) && ($json_string->{data}->{intlist} ne '-1'));
+
+         
           $_->{pushstate} = $json_string->{data}->{state};
           $_->{invocations} = defined ($stored_invocations) ? $stored_invocations:{count=>0, at=>(localtime)[4]};
           #print ("REMOVE applied:". Dumper($_->{invocations}));
