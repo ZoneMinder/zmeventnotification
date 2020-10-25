@@ -227,7 +227,7 @@ Optional but Recommended: Making sure everything is running (in manual mode)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Start the event server manually first using
-   ``sudo -u www-data /usr/bin/zmeventnotification.pl``
+   ``sudo -u www-data /usr/bin/zmeventnotification.pl --debug``
    (Note that if you omit ``--config`` it will look for
    ``/etc/zm/zmeventnotification.ini`` and if that doesn't exist, it
    will use default values) and make sure you check syslogs to ensure

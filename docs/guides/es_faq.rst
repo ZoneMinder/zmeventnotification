@@ -341,7 +341,7 @@ the output:
 3. Edit your ``/etc/zm/zmeventnotification.ini`` and make sure
    ``console_logs = yes`` to get console debug logs
 4. Run the server manually by doing
-   ``sudo -u www-data /usr/bin/zmeventnotification.pl`` (replace with
+   ``sudo -u www-data /usr/bin/zmeventnotification.pl --debug`` (replace with
    ``www-data`` with ``apache`` depending on your OS)
 5. You should now see logs on the commandline like so that shows the
    server is running:

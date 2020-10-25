@@ -331,7 +331,7 @@ GetOptions(
   'version'      => \$version,
   'config=s'     => \$config_file,
   'check-config' => \$check_config,
-  'consoledebug' => \$console_logs
+  'debug'        => \$console_logs
 );
 
 if ($version) {

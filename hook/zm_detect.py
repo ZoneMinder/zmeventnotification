@@ -160,6 +160,7 @@ def main_handler():
     ap.add_argument('-r', '--reason', help='reason for event (notes field in ZM)')
 
     ap.add_argument('-n', '--notes', help='updates notes field in ZM with detections', action='store_true')
+    ap.add_argument('-d', '--debug', help='enables debug on console', action='store_true')
 
     args, u = ap.parse_known_args()
     args = vars(args)
@@ -174,6 +175,8 @@ def main_handler():
 
     utils.get_pyzm_config(args)
 
+    if args.get('debug'):
+            g.config['pyzm_overrides']['dump_console'] = True
 
     if args.get('monitorid'):
         log.init(name='zmesdetect_' + 'm' + args.get('monitorid'), override=g.config['pyzm_overrides'])
