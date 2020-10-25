@@ -8,6 +8,13 @@ You can get the version by doing:
 /usr/bin/zmeventnotification.pl --version
 ```
 
+**Hooks version (if you are using Object Detection)**
+
+You can get the version by doing:
+```
+/var/lib/zmeventnotification/bin/zm_detect.py --version
+```
+
 **The version of ZoneMinder you are using:**
 
 (example only, please edit this line) 1.30.4
