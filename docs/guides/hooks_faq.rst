@@ -5,7 +5,12 @@ I get a segment fault/core dump while trying to use opencv in detection
 --------------------------------------------------------------------------
 See :ref:`opencv_seg_fault`.
 
-
+I am trying to use YoloV4 and I see errors in OpenCV
+-----------------------------------------------------
+- If you plan to use YoloV4 (full or Tiny) the minimum version requirement OpenCV 4.4.
+  So if you suddently see an error like: ``Unsupported activation: mish in function 'ReadDarknetFromCfgStream'`` 
+  popping up with YoloV4, that is a sign that you need to get a later version of OpenCV. 
+  
 Necessary Reading - Sample Config Files
 ----------------------------------------
 The sample configuration files, `zmeventnotification.ini <https://github.com/pliablepixels/zmeventnotification/blob/master/zmeventnotification.ini>`__ and `objectconfig.ini <https://github.com/pliablepixels/zmeventnotification/blob/master/hook/objectconfig.ini>`__  come with extensive commentary about each attribute and what they do. Please go through them to get a better understanding. Note that most of the configuration attributes in `zmeventnotification.ini` are not related to machine learning, except for the `[hook]` section.

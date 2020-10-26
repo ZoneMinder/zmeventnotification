@@ -103,15 +103,7 @@ Version 5.15.6 onwards
   of the config, weights and name files for each model. The short of all of this is, look under
   the ``[yolo]`` section of the sample config and replace your current yolo paths.
   Note that I assume you use ``install.sh`` to install. If not, you'll have to manually
-  rename the old model names to the new ones.
-
-- If you plan to use YoloV4 (full or Tiny) the minimum version requirement is the version *after* 4.3.0.
-  As of Jul 11,2020, that is the master branch of openCV as 4.3.0 is the latest stable version.
-  The updated version of YoloV4 that requires certain functions that were committed on Apr 30.
-  See `here <https://github.com/opencv/opencv/issues/17148>`__. So if you suddently see an error like:
-  ``Unsupported activation: mish in function 'ReadDarknetFromCfgStream'`` popping up with YoloV4, 
-  that is a sign that you need to get a later version of OpenCV. Note that TinyYoloV4 was merged after Jul 6,
-  so if you get errors with TinyYoloV4, you'll need to upgrade Open CV master.
+  rename the old model names to the new ones. (Note that YoloV4 requires OpenCV 4.4 or above)
 
 
 Version 5.15.5 onwards
