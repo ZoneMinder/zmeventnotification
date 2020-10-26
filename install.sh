@@ -640,7 +640,3 @@ echo "Creating a migrated objectconfig if required"
 
 echo
 echo "*** Please remember to start the Event Server after this update ***" 
-
-echo
-print_warning "THIS IS A BREAKING CHANGE RELEASE. THINGS WILL NOT WORK TILL YOU FOLLOW https://zmeventnotification.readthedocs.io/en/latest/guides/breaking.html#version-5-16-0-onwards"
-echo
