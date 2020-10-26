@@ -1966,7 +1966,7 @@ sub sendOverFCMV1 {
       Error( 'fcmv1: Error sending FCM for token:' . $obj->{token} );
       Error( 'fcmv1: Error value =' . $reason );
       if ( (index( $reason, 'not a valid FCM' ) != -1) ||
-           (index( $reason, 'Requested entity was not found') != -1)) {
+           (index( $reason, 'entity was not found') != -1)) {
         printDebug( 'fcmv1: Removing this token as FCM doesn\'t recognize it',
           1 );
         deleteFCMToken( $obj->{token} );
