@@ -10,6 +10,7 @@ wej qaStaHvIS wa' ghu'maj. wa'maHlu'chugh, vaj pagh.
 chotlhej'a' qaDanganpu'. chenmoH tlhInganpu'.
 '''
 
+breaking = False
 
 def sanity_check(s, c, v):
 
@@ -23,7 +24,8 @@ There is an error in your config. While upgrading to version:{}
 I found a key ({}) that should not have been there. 
 This usually means when you last upgraded, your version attribute
 was not upgraded for some reason. To be safe, this script will not
-upgrade the script till you fix the potential issues
+upgrade the script till you fix the potential issues (or manually 
+bump up version)
             '''.format(v,attr))
             exit(1)        
 
@@ -80,7 +82,8 @@ fast_gif=no
 
 
 def f_unknown_to_1_0(str_conf, new_version):
-
+    global breaking
+    breaking = True
     should_not_be_there = {
         'cpu_max_processes',
         'tpu_max_processes',
@@ -243,5 +246,9 @@ Items marked with #NEW are new options to customize.
     print ('Migrated config written to: {}'.format(out_file))
 else:
     print ('Nothing to migrate')
-    exit(0)
+
+if breaking:
+    print("\nTHIS IS A BREAKING CHANGE RELEASE. THINGS WILL NOT WORK TILL YOU FOLLOW https://zmeventnotification.readthedocs.io/en/latest/guides/breaking.html#version-5-16-0-onwards\n")
+    
+exit(0)
 #from_unknown_to_1_0()
