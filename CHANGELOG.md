@@ -1,6 +1,21 @@
 # Changelog
 
-## [v6.0.5](https://github.com/pliablepixels/zmeventnotification/tree/v6.0.5) (2020-10-20)
+## [v6.0.6](https://github.com/pliablepixels/zmeventnotification/tree/v6.0.6) (2020-10-27)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.0.5...v6.0.6)
+
+**Implemented enhancements:**
+
+- multizone, different object\_detection\_pattern [\#319](https://github.com/pliablepixels/zmeventnotification/issues/319)
+
+**Closed issues:**
+
+- objdetect\_mp4 doesnt show detected object polygons [\#332](https://github.com/pliablepixels/zmeventnotification/issues/332)
+- Getting erroneous push notifications \(still\) [\#331](https://github.com/pliablepixels/zmeventnotification/issues/331)
+- Configured image path not recognized [\#330](https://github.com/pliablepixels/zmeventnotification/issues/330)
+- fcmv1: FCM push message Error:400 Bad Request [\#329](https://github.com/pliablepixels/zmeventnotification/issues/329)
+
+## [v6.0.5](https://github.com/pliablepixels/zmeventnotification/tree/v6.0.5) (2020-10-22)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.0.4...v6.0.5)
 
@@ -16,6 +31,7 @@
 
 **Closed issues:**
 
+- More of question than issue - multi server install - event  [\#323](https://github.com/pliablepixels/zmeventnotification/issues/323)
 - Migrated objectdetection.ini not picking up polygons? [\#315](https://github.com/pliablepixels/zmeventnotification/issues/315)
 
 ## [v6.0.4](https://github.com/pliablepixels/zmeventnotification/tree/v6.0.4) (2020-10-17)
