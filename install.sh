@@ -332,7 +332,7 @@ install_hook() {
             
             echo
             echo 'Checking for YOLOV4 data files...'
-            print_warning 'Note, you need OpenCV > 4.3 for Yolov4 to work'
+            print_warning 'Note, you need OpenCV 4.4+ for Yolov4 to work'
             targets=('yolov4.cfg' 'coco.names' 'yolov4.weights')
             sources=('https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4.cfg'
                     'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
@@ -447,7 +447,7 @@ print_opencv_message() {
     
      Hooks are installed, but please make sure you have the right version
      of OpenCV installed. I recommend removing any pip packages you may
-     have installed of opencv* and compiling OpenCV 4.3.x from source. 
+     have installed of opencv* and compiling OpenCV 4.4.x+ from source. 
      See https://zmeventnotification.readthedocs.io/en/latest/guides/hooks.html#opencv-install
 
     |----------------------------------------------------------------------|
