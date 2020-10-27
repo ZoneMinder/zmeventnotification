@@ -1952,32 +1952,19 @@ sub sendOverFCMV1 {
 
   if ( $res->is_success ) {
     $pcnt++;
-    $msg = $res->decoded_content;
     printDebug(
-      'fcmv1: FCM push message returned a 200 with body ' . $res->content, 1 );
-    eval { $json_string = decode_json($msg); };
-    if ($@) {
-
-      Error("fcmv1: Failed decoding sendFCM Response: $@");
-      return;
+      'fcmv1: FCM push message returned a 200 with body ' . $res->decoded_content, 1 );
+  } else {
+    printDebug ('fcmv1: FCM push message error '.$res->decoded_content,1);
+    if ( (index( $res->decoded_content, 'not a valid FCM' ) != -1) ||
+          (index( $res->decoded_content, 'entity was not found') != -1)) {
+      printDebug( 'fcmv1: Removing this token as FCM doesn\'t recognize it',
+        1 );
+      deleteFCMToken( $obj->{token} );
     }
-    if ( $json_string->{failure} eq 1 ) {
-      my $reason = $json_string->{results}[0]->{Error};
-      Error( 'fcmv1: Error sending FCM for token:' . $obj->{token} );
-      Error( 'fcmv1: Error value =' . $reason );
-      if ( (index( $reason, 'not a valid FCM' ) != -1) ||
-           (index( $reason, 'entity was not found') != -1)) {
-        printDebug( 'fcmv1: Removing this token as FCM doesn\'t recognize it',
-          1 );
-        deleteFCMToken( $obj->{token} );
-      }
 
-    }
   }
-  else {
-    printError( 'fcmv1: FCM push message Error:' . $res->status_line );
-  }
-
+    
   # send supplementary event data over websocket, same SSL state issue
   # so use a parent pipe
   if ( $obj->{state} == VALID_CONNECTION && exists $obj->{conn} ) {
@@ -2175,7 +2162,7 @@ sub sendOverFCMLegacy {
   $djson =~ s/pass(word)?=(.*?)($|&)/pass$1=xxx$3/g;
 
   printDebug(
-    "Final JSON being sent is: $djson to token: ..."
+    "legacy: Final JSON being sent is: $djson to token: ..."
       . substr( $obj->{token}, -6 ),
     2
   );
@@ -2466,7 +2453,7 @@ sub checkConnection {
 
   printDebug(
     "After tick: TOTAL: $ac,  ES_CONTROL: $escontrol_conn, FCM+WEB: $fcm_conn, FCM: $fcm_no_conn, WEB: $web_conn, MQTT:$mqtt_conn, invalid WEB: $web_no_conn, PENDING: $pend_conn",
-    3
+    2
   );
 
 }
@@ -3339,7 +3326,9 @@ sub sendEvent {
 
   if ( $ac->{type} == FCM
     && $ac->{pushstate} ne 'disabled'
-    && $ac->{state} != PENDING_AUTH )
+    && $ac->{state} != PENDING_AUTH 
+    && $ac->{state} != PENDING_DELETE 
+    )
   {
 
     # only send if fcm is an allowed channel
