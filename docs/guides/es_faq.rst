@@ -318,6 +318,7 @@ Starting v2.0, I support images in alarms. However, there are several
 conditions to be met: 
 
 - You must use HTTPS
+- There is a 1MB limit to image size
 - You can't use self signed certs 
 - The IP/hostname needs to be publicly accessible (Apple/Google servers render the image) 
 - You need ZM 1.32.3 or above
