@@ -327,7 +327,7 @@ This is an example config that uses plate recognizer:
 
 ::
 
-  models = yolo,alpr
+  detection_sequence = object,alpr
 
   [alpr]
   alpr_service=plate_recognizer
@@ -367,7 +367,7 @@ This is an example config that uses OpenALPR command line:
 
 ::
 
-  detection_Sequence = object,alpr
+  detection_sequence = object,alpr
 
   [alpr]
   alpr_service=open_alpr_cmdline
