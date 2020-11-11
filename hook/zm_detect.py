@@ -437,11 +437,8 @@ def main_handler():
             # to the allowed list or they will be thrown away during the intersection
             # check
             if model == 'face':
-            
                 match = match + [g.config['unknown_face_name']]  # unknown face
-
                 if g.config['ml_gateway'] and not remote_failed:
-
                     data_file = g.config[
                         'base_data_path'] + '/misc/known_face_names.json'
                     if os.path.exists(data_file):
