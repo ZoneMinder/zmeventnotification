@@ -141,7 +141,9 @@ use constant {
   DEFAULT_EVENT_END_NOTIFY_ON_HOOK_FAIL      => 'none',
   DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS   => 'none',
   DEFAULT_EVENT_END_NOTIFY_IF_START_SUCCESS  => 'yes',
+  DEFAULT_SEND_EVENT_START_NOTIFICATION        => 'yes',
   DEFAULT_SEND_EVENT_END_NOTIFICATION        => 'no',
+
   DEFAULT_USE_ESCONTROL_INTERFACE            => 'no',
   DEFAULT_ESCONTROL_INTERFACE_FILE =>
     '/var/lib/zmeventnotification/misc/escontrol_interface.dat',
@@ -234,6 +236,7 @@ my $read_alarm_cause;
 my $tag_alarm_event_id;
 my $use_custom_notification_sound;
 my $send_event_end_notification;
+my $send_event_start_notification;
 
 my $use_hooks;
 my $event_start_hook;
@@ -570,6 +573,10 @@ sub loadEsConfigSettings {
     config_get_val( $config, 'customize', 'send_event_end_notification',
     DEFAULT_SEND_EVENT_END_NOTIFICATION );
 
+  $send_event_start_notification =
+    config_get_val( $config, 'customize', 'send_event_start_notification',
+    DEFAULT_SEND_EVENT_START_NOTIFICATION );
+
   $use_hooks =
     config_get_val( $config, 'customize', 'use_hooks', DEFAULT_USE_HOOKS );
 
@@ -732,6 +739,7 @@ ES Debug level.........................${\(value_or_undefined($es_debug_level))}
 Read alarm cause ..................... ${\(yes_or_no($read_alarm_cause))}
 Tag alarm event id ................... ${\(yes_or_no($tag_alarm_event_id))}
 Use custom notification sound ........ ${\(yes_or_no($use_custom_notification_sound))}
+Send event start notification..........${\(yes_or_no($send_event_start_notification))}
 Send event end notification............${\(yes_or_no($send_event_end_notification))}
 Monitor rules JSON file................${\(value_or_undefined($es_rules_file))}
 
@@ -3309,6 +3317,13 @@ sub sendEvent {
   if ( ( !$send_event_end_notification ) && ( $event_type eq 'event_end' ) ) {
     printInfo(
       'Not sending event end notification as send_event_end_notification is no'
+    );
+    return;
+  }
+
+  if ( ( !$send_event_start_notification ) && ( $event_type eq 'event_start' ) ) {
+    printInfo(
+      'Not sending event start notification as send_event_start_notification is no'
     );
     return;
   }
