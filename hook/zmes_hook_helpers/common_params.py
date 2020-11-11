@@ -330,6 +330,11 @@ config_vals = {
             'default': 'dlib',
             'type': 'string'
         },
+        'face_processor': {
+            'section' : 'face',
+            'default' : 'cpu',
+            'type'    : 'string'
+        },
         'face_num_jitters':{
             'section': 'face',
             'default': '0',
