@@ -15,7 +15,9 @@ AUTHOR_EMAIL = 'pliablepixels@gmail.com'
 AUTHOR = 'Pliable Pixels'
 LICENSE = 'GPL'
 INSTALL_REQUIRES = [
-    'numpy', 'requests', 'Shapely', 'imutils', 'pyzm>=0.1.30', 'scikit-learn', 'future', 'imageio','imageio-ffmpeg','pygifsicle', 'Pillow'
+    'numpy', 'requests', 'Shapely', 'imutils', 
+    'pyzm>=0.2.1', 'scikit-learn', 'future', 'imageio',
+    'imageio-ffmpeg','pygifsicle', 'Pillow'
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))
