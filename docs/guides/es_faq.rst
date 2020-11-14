@@ -445,7 +445,7 @@ Push notifications are delayed (Android)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In ES 6.0, I switched from the legacy FCM protocol to the newer FCM v1 protocol, 
 as per `Google's guidelines <https://firebase.google.com/docs/cloud-messaging/migrate-v1>`__.
-It seems for several android users, this change caused a situation where messages get delayed late, 
+It seems for several android users (see `issue <https://github.com/pliablepixels/zmeventnotification/issues/337>`__), this change caused a situation where messages get delayed late, 
 but *only when the phone is in low power or doze mode*.
 
 On further reading, there seems to be multiple potential reasons:
