@@ -440,6 +440,36 @@ notifications. Why? I don't know. But it sorts itself out very quickly,
 and if you think this must be the reason, I'll wager that you are
 actually in the 99.9% lot and haven't checked properly.
 
+
+Push notifications are delayed (Android)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In ES 6.0, I switched from the legacy FCM protocol to the newer FCM v1 protocol, 
+as per `Google's guidelines <https://firebase.google.com/docs/cloud-messaging/migrate-v1>`__.
+It seems for several android users, this change caused a situation where messages get delayed late, 
+but *only when the phone is in low power or doze mode*.
+
+On further reading, there seems to be multiple potential reasons:
+
+- Starting Android 6, a doze mode and battery optimization mode has been introduced which agressively tries to 
+  put the phone into low power mode. This results in the apps disconnecting from FCM servers for around 10-15 mins
+  at a stretch, which may explain why you get delayed notifications. To avoid this, remove zmNinja from any battery
+  optimization and doze mode effects. There are instructions `here <https://documentation.onesignal.com/docs/notifications-show-successful-but-are-not-being-shown>`__
+  on how to do that (scroll to the middle of the page and see the table that describes what to do depending on your phone manufacturer).
+
+- In ES 6.0, I set the android notifications priority to 'high' by default. Frankly this was the same as what
+  I did in the legacy format too. However, it looks like google _may_ `deprioritize <https://stackoverflow.com/questions/53646761/firebase-push-notification-delay-after-triggering-few-high-priority-notification>__`
+  them if we send too many high priority messages. So try setting your `fcm_android_priority` to `default` if it
+  is set to `high`
+
+- Finally, if nothing else works, set `use_fcmv1` to `no` in `zmeventnotification.ini` to go back to legacy 
+  protocol (this should really be the last resort)
+
+- (More) Finally, it is entirely possible there is some magic-foo of combination of attributes in FCMv1 which
+  is not documented that may do the right thing. If you figure it out, please let me know.
+
+- If you are wondering what this all means for iOS - it is unaffected. iOS uses a priority 10 by default (high) 
+  that delivers the notification instantly.
+
 The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
