@@ -250,7 +250,7 @@ def main_handler():
     else:
         g.logger.Debug(1,'TESTING ONLY: reading image from {}'.format(args.get('file')))
         filename1 = args.get('file')
-        filename1_bbox = g.config['image_path']+'/'+append_suffix(filename1, '-bbox')
+        filename1_bbox = g.config['image_path']+'/'+os.path.basename(append_suffix(filename1, '-bbox'))
         filename2 = None
         filename2_bbox = None
 
