@@ -251,6 +251,7 @@ config_vals = {
             'default': None,
             'type': 'string'
         },
+
        
        'object_detection_pattern':{
             'section': 'object',

@@ -260,6 +260,9 @@ def main_handler():
     start = datetime.datetime.now()
 
     obj_json = []
+
+
+
     # Read images to analyze
     image2 = None
     image1 = cv2.imread(filename1)
