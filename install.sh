@@ -223,9 +223,9 @@ install_hook() {
         then
             # Coral files
             echo
-            echo "Installing edgetpu python libs, if needed..."
+            echo "Installing pycoral libs, if needed..."
             #${PY_SUDO} apt-get install libedgetpu1-std -qq
-            ${PY_SUDO} ${INSTALLER} install python3-edgetpu -qq
+            ${PY_SUDO} ${INSTALLER} install python3-pycoral -qq
             
 
             echo 'Checking for Google Coral Edge TPU data files...'
@@ -624,7 +624,11 @@ then
 
     Note that while edgetpu support has been added, the expectation is 
     that you have followed all the instructions at:
-    https://coral.ai/docs/accelerator/get-started/ first. 
+    https://coral.ai/docs/accelerator/get-started/ first. Specifically,
+    you need to make sure you have:
+    1. Installed the right libedgetpu library (max or std)
+    2. Installed the right tensorflow-lite library 
+    3. Installed pycoral APIs as per https://coral.ai/software/#pycoral-api
 
     If you don't, things will break. Further, you also need to make sure 
     your web user (${WEB_OWNER}) has access to the coral device.
