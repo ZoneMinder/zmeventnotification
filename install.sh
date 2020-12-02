@@ -222,10 +222,10 @@ install_hook() {
         if [ "${INSTALL_CORAL_EDGETPU}" == "yes" ]
         then
             # Coral files
-            echo
-            echo "Installing pycoral libs, if needed..."
+            #echo
+            #echo "Installing pycoral libs, if needed..."
             #${PY_SUDO} apt-get install libedgetpu1-std -qq
-            ${PY_SUDO} ${INSTALLER} install python3-pycoral -qq
+            #${PY_SUDO} ${INSTALLER} install python3-pycoral -qq
             
 
             echo 'Checking for Google Coral Edge TPU data files...'
