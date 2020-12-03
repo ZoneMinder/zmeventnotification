@@ -67,10 +67,16 @@ you'll have to invoke the script using:
 
    sudo -H INSTALL_CORAL_EDGETPU=yes ./install.sh # and follow the prompts
 
-EdgeTPU models are not downloaded automatically as they need special hardware.
+EdgeTPU models/underlying libraries are not downloaded automatically.
 
 For EdgeTPU, the expectation is  that you have followed all the instructions 
 at `the coral site <https://coral.ai/docs/accelerator/get-started/>`__ first. 
+Specifically, you need to make sure you have:
+
+   1. Installed the right libedgetpu library (max or std)
+   2. Installed the right tensorflow-lite library 
+   3. Installed pycoral APIs as per `the instructions <https://coral.ai/software/#pycoral-api>`__.
+
 
 If you don't, things will break. Further, you also need to make sure your 
 web user has access to the coral device.

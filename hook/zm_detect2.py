@@ -347,6 +347,31 @@ def main_handler():
         }
     '''
 
+    # let's remove past detections first, if enabled 
+    if g.config['match_past_detections'] == 'yes' and args.get('monitorid'):
+        # point detections to post processed data set
+        g.logger.Info('Removing matches to past detections')
+        bbox_t, label_t, conf_t = img.processPastDetection(
+            matched_data['boxes'], matched_data['labels'], matched_data['confidences'], args.get('monitorid'))
+        # save current objects for future comparisons
+        g.logger.Debug(1,
+            'Saving detections for monitor {} for future match'.format(
+                args.get('monitorid')))
+        try:
+            mon_file = g.config['image_path'] + '/monitor-' + args.get(
+            'monitorid') + '-data.pkl'
+            f = open(mon_file, "wb")
+            pickle.dump(matched_data['boxes'], f)
+            pickle.dump(matched_data['labels'], f)
+            pickle.dump(matched_data['confidences'], f)
+            f.close()
+        except Exception as e:
+            g.logger.Error(f'Error writing to {mon_file}, past detections not recorded:{e}')
+
+        matched_data['boxes'] = bbox_t
+        matched_data['labels'] = label_t
+        matched_data['confidences'] = conf_t
+
     obj_json = {
         'labels': matched_data['labels'],
         'boxes': matched_data['boxes'],
@@ -387,13 +412,31 @@ def main_handler():
         print(pred + '--SPLIT--' + jos)
 
         # end of matched_file
-    
-        if g.config['write_debug_image'] == 'yes':
-            debug_image = pyzmutils.draw_bbox(matched_data['image'],matched_data['boxes'], matched_data['labels'],
-                                            matched_data['confidences'],g.polygons)
-            filename_debug = g.config['image_path']+'/'+os.path.basename(append_suffix(stream, '-{}-debug'.format(matched_data['frame_id'])))
-            g.logger.Debug (1,'Writing bound boxes to debug image: {}'.format(filename_debug))
-            cv2.imwrite(filename_debug,debug_image)
+
+        if g.config['write_image_to_zm'] == 'yes' or g.config['write_debug_image'] == 'yes':
+            debug_image = pyzmutils.draw_bbox(image=matched_data['image'],boxes=matched_data['boxes'], 
+                                              labels=matched_data['labels'], confidences=matched_data['confidences'],
+                                              polygons=g.polygons, poly_thickness = g.config['poly_thickness'])
+
+            if g.config['write_debug_image'] == 'yes':
+                filename_debug = g.config['image_path']+'/'+os.path.basename(append_suffix(stream, '-{}-debug'.format(matched_data['frame_id'])))
+                g.logger.Debug (1,'Writing bound boxes to debug image: {}'.format(filename_debug))
+                cv2.imwrite(filename_debug,debug_image)
+            if g.config['write_image_to_zm'] == 'yes' and args.get('eventpath'):
+                g.logger.Debug(1,'Writing detected image to {}/objdetect.jpg'.format(
+                    args.get('eventpath')))
+                cv2.imwrite(args.get('eventpath') + '/objdetect.jpg', debug_image)
+                jf = args.get('eventpath')+ '/objects.json'
+                g.logger.Debug(1,'Writing JSON output to {}'.format(jf))
+                try:
+                    with open(jf, 'w') as jo:
+                        json.dump(obj_json, jo)
+                        jo.close()
+                except Exception as e:
+                    g.logger.Error(f'Error creating {jf}:{e}')
+                    
+
+
 
     if args.get('notes') and pred:
         url = '{}/events/{}.json'.format(g.config['api_portal'], args['eventid'])
