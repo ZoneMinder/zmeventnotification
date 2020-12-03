@@ -388,12 +388,12 @@ def main_handler():
 
         # end of matched_file
     
-    if g.config['write_debug_image'] == 'yes':
-        debug_image = pyzmutils.draw_bbox(matched_data['image'],matched_data['boxes'], matched_data['labels'],
-                                        matched_data['confidences'],g.polygons)
-        filename_debug = g.config['image_path']+'/'+os.path.basename(append_suffix(stream, '-{}-debug'.format(matched_data['frame_id'])))
-        g.logger.Debug (1,'Writing bound boxes to debug image: {}'.format(filename_debug))
-        cv2.imwrite(filename_debug,debug_image)
+        if g.config['write_debug_image'] == 'yes':
+            debug_image = pyzmutils.draw_bbox(matched_data['image'],matched_data['boxes'], matched_data['labels'],
+                                            matched_data['confidences'],g.polygons)
+            filename_debug = g.config['image_path']+'/'+os.path.basename(append_suffix(stream, '-{}-debug'.format(matched_data['frame_id'])))
+            g.logger.Debug (1,'Writing bound boxes to debug image: {}'.format(filename_debug))
+            cv2.imwrite(filename_debug,debug_image)
 
     if args.get('notes') and pred:
         url = '{}/events/{}.json'.format(g.config['api_portal'], args['eventid'])
