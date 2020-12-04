@@ -13,7 +13,7 @@ import urllib.parse
 # Generic image related algorithms
 
 
-def createAnimation(frametype, eid, fname, types):
+def createAnimation(stream, frametype, eid, fname, types):
     import imageio
 
     url = '{}/index.php?view=image&width={}&eid={}&username={}&password={}'.format(g.config['portal'],g.config['animation_width'],eid,g.config['user'],urllib.parse.quote(g.config['password'], safe=''))

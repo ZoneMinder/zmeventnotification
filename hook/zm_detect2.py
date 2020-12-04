@@ -406,12 +406,9 @@ def main_handler():
         pred = pred.rstrip(',')
         pred = prefix + 'detected:' + pred
         g.logger.Info('Prediction string:{}'.format(pred))
-    # g.logger.Error (f"Returning THIS IS {obj_json}")
         jos = json.dumps(obj_json)
         g.logger.Debug(1,'Prediction string JSON:{}'.format(jos))
         print(pred + '--SPLIT--' + jos)
-
-        # end of matched_file
 
         if g.config['write_image_to_zm'] == 'yes' or g.config['write_debug_image'] == 'yes':
             debug_image = pyzmutils.draw_bbox(image=matched_data['image'],boxes=matched_data['boxes'], 
@@ -435,40 +432,46 @@ def main_handler():
                 except Exception as e:
                     g.logger.Error(f'Error creating {jf}:{e}')
                     
-
-
-
-    if args.get('notes') and pred:
-        url = '{}/events/{}.json'.format(g.config['api_portal'], args['eventid'])
-        try:
-            ev = zmapi._make_request(url=url,  type='get')
-        except Exception as e:
-            g.logger.Error ('Error during event notes retrieval: {}'.format(str(e)))
-            g.logger.Debug(2,traceback.format_exc())
-            exit(0) # Let's continue with zmdetect
-
-        new_notes = pred
-        if ev.get('event',{}).get('Event',{}).get('Notes'): 
-            old_notes = ev['event']['Event']['Notes']
-            old_notes_split = old_notes.split('Motion:')
-            old_d = old_notes_split[0] # old detection
+        if args.get('notes'):
+            url = '{}/events/{}.json'.format(g.config['api_portal'], args['eventid'])
             try:
-                old_m = old_notes_split[1] 
-            except IndexError:
-                old_m = ''
-            new_notes = pred + 'Motion:'+ old_m
-            g.logger.Debug (1,'Replacing old note:{} with new note:{}'.format(old_notes, new_notes))
-            
+                ev = zmapi._make_request(url=url,  type='get')
+            except Exception as e:
+                g.logger.Error ('Error during event notes retrieval: {}'.format(str(e)))
+                g.logger.Debug(2,traceback.format_exc())
+                exit(0) # Let's continue with zmdetect
 
-        payload = {}
-        payload['Event[Notes]'] = new_notes
-        try:
-            ev = zmapi._make_request(url=url, payload=payload, type='put')
-        except Exception as e:
-            g.logger.Error ('Error during notes update: {}'.format(str(e)))
-            g.logger.Debug(2,traceback.format_exc())
-            exit(0) # Let's continue with zmdetect
-        
+            new_notes = pred
+            if ev.get('event',{}).get('Event',{}).get('Notes'): 
+                old_notes = ev['event']['Event']['Notes']
+                old_notes_split = old_notes.split('Motion:')
+                old_d = old_notes_split[0] # old detection
+                try:
+                    old_m = old_notes_split[1] 
+                except IndexError:
+                    old_m = ''
+                new_notes = pred + 'Motion:'+ old_m
+                g.logger.Debug (1,'Replacing old note:{} with new note:{}'.format(old_notes, new_notes))
+                
+
+            payload = {}
+            payload['Event[Notes]'] = new_notes
+            try:
+                ev = zmapi._make_request(url=url, payload=payload, type='put')
+            except Exception as e:
+                g.logger.Error ('Error during notes update: {}'.format(str(e)))
+                g.logger.Debug(2,traceback.format_exc())
+
+        print ('HERE {}'.format(g.config['create_animation']))
+        if g.config['create_animation'] == 'yes':
+            g.logger.Debug(1,'animation: Creating burst...')
+            try:
+                img.createAnimation(self.stream, matched_data['frame_id'], args.get('eventid'), args.get('eventpath')+'/objdetect', g.config['animation_types'])
+            except Exception as e:
+                g.logger.Error('Error creating animation:{}'.format(e))
+                g.logger.Error('animation: Traceback:{}'.format(traceback.format_exc()))
+            
+            
 
 if __name__ == '__main__':
     try:
