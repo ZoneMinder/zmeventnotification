@@ -271,9 +271,11 @@ def main_handler():
         'object': {
             'general':{
                 'same_model_sequence_strategy': 'first' # 'first' 'most', 'most_unique'
+
             },
             'sequence': [{
                 #First run on TPU
+                'max_detection_size': g.config['max_detection_size'],
                 'object_weights':'/var/lib/zmeventnotification/models/coral_edgetpu/ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite',
                 'object_labels': '/var/lib/zmeventnotification/models/coral_edgetpu/coco_indexed.names',
                 'object_min_confidence': 0.3,
@@ -281,6 +283,7 @@ def main_handler():
             },
             {
                 # YoloV4 on GPU if TPU fails (because sequence strategy is 'first')
+                'max_detection_size': g.config['max_detection_size'],
                 'object_config':'/var/lib/zmeventnotification/models/yolov4/yolov4.cfg',
                 'object_weights':'/var/lib/zmeventnotification/models/yolov4/yolov4.weights',
                 'object_labels': '/var/lib/zmeventnotification/models/yolov4/coco.names',
@@ -462,7 +465,6 @@ def main_handler():
                 g.logger.Error ('Error during notes update: {}'.format(str(e)))
                 g.logger.Debug(2,traceback.format_exc())
 
-        print ('HERE {}'.format(g.config['create_animation']))
         if g.config['create_animation'] == 'yes':
             g.logger.Debug(1,'animation: Creating burst...')
             try:
