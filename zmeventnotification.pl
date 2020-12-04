@@ -1328,19 +1328,22 @@ sub checkNewEvents() {
 
     # use this time to keep token counters updated
     my $update_tokens = 0;
-    open( my $fh, '<', $token_file )
-    || Error( 'Cannot open to update token counts ' . $token_file );
     my %tokens_data;
-    my $hr;
-    my $data = do { local $/ = undef; <$fh> };
-    close($fh);
-    eval { $hr = decode_json($data); };
-    if ($@) {
-      printError("Could not parse token file for token counts: $!");
-    } else {
-      %tokens_data = %$hr;
-      $update_tokens = 1;
+    if ($use_fcm) {
+      open( my $fh, '<', $token_file )
+      || Error( 'Cannot open to update token counts ' . $token_file );
+      my $hr;
+      my $data = do { local $/ = undef; <$fh> };
+      close($fh);
+      eval { $hr = decode_json($data); };
+      if ($@) {
+        printError("Could not parse token file for token counts: $!");
+      } else {
+        %tokens_data = %$hr;
+        $update_tokens = 1;
+      }
     }
+    
 
     # this means we have hit the reload monitor timeframe
     my $len = scalar @active_connections;
@@ -1376,7 +1379,7 @@ sub checkNewEvents() {
       $ndx++;
     }
 
-    if ($update_tokens) {
+    if ($update_tokens && $use_fcm) {
       open( my $fh, '>', $token_file )
       or printError("Error writing tokens file during count update: $!");
       my $json = encode_json( \%tokens_data );
