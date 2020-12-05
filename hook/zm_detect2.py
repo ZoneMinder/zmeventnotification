@@ -187,7 +187,7 @@ def main_handler():
     if args.get('debug'):
         g.config['pyzm_overrides']['dump_console'] = True
         g.config['pyzm_overrides']['log_debug'] = True
-        g.config['pyzm_overrides']['log_level_debug'] = 4
+        g.config['pyzm_overrides']['log_level_debug'] = 5
         g.config['pyzm_overrides']['log_debug_target'] = None
 
     if args.get('monitorid'):
