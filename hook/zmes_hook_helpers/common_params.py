@@ -226,7 +226,7 @@ config_vals = {
             'type': 'string'
         },
 
-        # General ML
+        # remote ML
      
 
         'ml_gateway': {
@@ -250,6 +250,16 @@ config_vals = {
             'section': 'remote',
             'default': None,
             'type': 'string'
+        },
+
+        # sequence ML
+        'ml_flow': {
+            'section': 'ml',
+            'type': 'eval'
+        },
+        'stream_flow': {
+            'section': 'ml',
+            'type': 'eval'
         },
 
        

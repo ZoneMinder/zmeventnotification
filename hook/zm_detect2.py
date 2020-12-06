@@ -261,10 +261,10 @@ def main_handler():
 
     zmapi = zmapi.ZMApi(options=api_options)
     stream = args.get('eventid') or args.get('file')
-
+  
     ml_options = {
         'general': {
-            'model_sequence': 'object,face,alpr',
+            'model_sequence': ','.join(str(e) for e in g.config['detection_sequence'])
             #'model_sequence': 'object,face',        
         },
     
@@ -275,14 +275,18 @@ def main_handler():
             },
             'sequence': [{
                 #First run on TPU
+                'tpu_max_processes': g.config['tpu_max_processes'],
+                'tpu_max_lock_wait': g.config['tpu_max_lock_wait'],
                 'max_detection_size': g.config['max_detection_size'],
-                'object_weights':'/var/lib/zmeventnotification/models/coral_edgetpu/ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite',
-                'object_labels': '/var/lib/zmeventnotification/models/coral_edgetpu/coco_indexed.names',
-                'object_min_confidence': 0.3,
+                'object_weights':g.config['object_weights'],
+                'object_labels': g.config['object_labels'],
+                'object_min_confidence': g.config['object_min_confidence'],
                 'object_framework':'coral_edgetpu'
             },
             {
                 # YoloV4 on GPU if TPU fails (because sequence strategy is 'first')
+                'gpu_max_processes': g.config['gpu_max_processes'],
+                'gpu_max_lock_wait': g.config['gpu_max_lock_wait'],
                 'max_detection_size': g.config['max_detection_size'],
                 'object_config':'/var/lib/zmeventnotification/models/yolov4/yolov4.cfg',
                 'object_weights':'/var/lib/zmeventnotification/models/yolov4/yolov4.weights',
@@ -294,9 +298,12 @@ def main_handler():
         },
         'face': {
             'general':{
-                'same_model_sequence_strategy': 'first'
+                'same_model_sequence_strategy': 'first',
+                'pre_existing_labels':['person'],
             },
             'sequence': [{
+                'gpu_max_processes': g.config['gpu_max_processes'],
+                'gpu_max_lock_wait': g.config['gpu_max_lock_wait'],
                 'face_detection_framework': 'dlib',
                 'known_images_path': '/var/lib/zmeventnotification/known_faces',
                 'face_model': 'cnn',
@@ -324,11 +331,22 @@ def main_handler():
         }
     } # ml_options
 
+  
+    if g.config['detection_mode'] == 'all':
+        g.logger.Debug(3, 'Changing detection_mode from all to most_models to adapt to new features')
+        g.config['detection_mode'] = 'most_models'
+
+    frame_set = None
+    if g.config['frame_id'] == 'bestmatch':
+            if g.config['bestmatch_order'] == 's,a':
+                frame_set = 'snapshot,alarm'
+            else:
+                frame_set = 'alarm,snapshot'
     stream_options = {
             'api': zmapi,
             'download': False,
-            'frame_set': 'alarm,snapshot',
-            'strategy': 'most_models',
+            'frame_set': frame_set,
+            'strategy': g.config['detection_mode'],
             'polygons': g.polygons,
             'resize': int(g.config['resize']) if g.config['resize'] != 'no' else None
 
