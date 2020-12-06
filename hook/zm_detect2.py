@@ -261,96 +261,44 @@ def main_handler():
 
     zmapi = zmapi.ZMApi(options=api_options)
     stream = args.get('eventid') or args.get('file')
-  
-    ml_options = {
-        'general': {
-            'model_sequence': ','.join(str(e) for e in g.config['detection_sequence'])
-            #'model_sequence': 'object,face',        
-        },
+    ml_options = {}
+    stream_options={}
+
+    if g.config['ml_flow']:
+        g.logger.Debug(2,'importing ml_flow from config')
+        ml_options = g.config['ml_flow']
+    else:
+        g.logger.Debug(2,'mapping legacy ml parameters from config')
+        ml_options = utils.convert_legacy_ml_to_sequence()
     
-        'object': {
-            'general':{
-                'same_model_sequence_strategy': 'first' # 'first' 'most', 'most_unique'
+    if g.config['stream_flow']:
+        g.logger.Debug(2,'importing stream_flow from config')
+        stream_options = g.config['stream_flow']
+        stream_options['api'] = zmapi
+        if not stream_options['polygons']:
+            stream_options['polygons'] = g.polygons 
+    else:
+        g.logger.Debug(2,'mapping legacy stream data from config')
+        frame_set = None
+        if g.config['frame_id'] == 'bestmatch':
+                if g.config['bestmatch_order'] == 's,a':
+                    frame_set = 'snapshot,alarm'
+                else:
+                    frame_set = 'alarm,snapshot'
+        stream_options = {
+                'api': zmapi,
+                'download': False,
+                'frame_set': frame_set,
+                'strategy': g.config['detection_mode'],
+                'polygons': g.polygons,
+                'resize': int(g.config['resize']) if g.config['resize'] != 'no' else None
 
-            },
-            'sequence': [{
-                #First run on TPU
-                'tpu_max_processes': g.config['tpu_max_processes'],
-                'tpu_max_lock_wait': g.config['tpu_max_lock_wait'],
-                'max_detection_size': g.config['max_detection_size'],
-                'object_weights':g.config['object_weights'],
-                'object_labels': g.config['object_labels'],
-                'object_min_confidence': g.config['object_min_confidence'],
-                'object_framework':'coral_edgetpu'
-            },
-            {
-                # YoloV4 on GPU if TPU fails (because sequence strategy is 'first')
-                'gpu_max_processes': g.config['gpu_max_processes'],
-                'gpu_max_lock_wait': g.config['gpu_max_lock_wait'],
-                'max_detection_size': g.config['max_detection_size'],
-                'object_config':'/var/lib/zmeventnotification/models/yolov4/yolov4.cfg',
-                'object_weights':'/var/lib/zmeventnotification/models/yolov4/yolov4.weights',
-                'object_labels': '/var/lib/zmeventnotification/models/yolov4/coco.names',
-                'object_min_confidence': 0.3,
-                'object_framework':'opencv',
-                'object_processor': 'gpu'
-            }]
-        },
-        'face': {
-            'general':{
-                'same_model_sequence_strategy': 'first',
-                'pre_existing_labels':['person'],
-            },
-            'sequence': [{
-                'gpu_max_processes': g.config['gpu_max_processes'],
-                'gpu_max_lock_wait': g.config['gpu_max_lock_wait'],
-                'face_detection_framework': 'dlib',
-                'known_images_path': '/var/lib/zmeventnotification/known_faces',
-                'face_model': 'cnn',
-                'face_train_model': 'cnn',
-                'face_recog_dist_threshold': 0.6,
-                'face_num_jitters': 1,
-                'face_upsample_times':1
-            }]
-        },
-
-        'alpr': {
-            'general':{
-                'same_model_sequence_strategy': 'first',
-                'pre_existing_labels':['car', 'motorbike', 'bus', 'truck', 'boat'],
-
-            },
-            'sequence': [{
-                'alpr_api_type': 'cloud',
-                'alpr_service': 'plate_recognizer',
-                'alpr_key': g.config['alpr_key'],
-                'platrec_stats': 'no',
-                'platerec_min_dscore': 0.1,
-                'platerec_min_score': 0.2,
-            }]
         }
-    } # ml_options
+     
 
-  
-    if g.config['detection_mode'] == 'all':
-        g.logger.Debug(3, 'Changing detection_mode from all to most_models to adapt to new features')
-        g.config['detection_mode'] = 'most_models'
+   
 
-    frame_set = None
-    if g.config['frame_id'] == 'bestmatch':
-            if g.config['bestmatch_order'] == 's,a':
-                frame_set = 'snapshot,alarm'
-            else:
-                frame_set = 'alarm,snapshot'
-    stream_options = {
-            'api': zmapi,
-            'download': False,
-            'frame_set': frame_set,
-            'strategy': g.config['detection_mode'],
-            'polygons': g.polygons,
-            'resize': int(g.config['resize']) if g.config['resize'] != 'no' else None
-
-    }
+    
 
     m = DetectSequence(options=ml_options, logger=g.logger)
     matched_data,all_data = m.detect_stream(stream=stream, options=stream_options)

@@ -25,6 +25,103 @@ from urllib.error import HTTPError
 #resize polygons based on analysis scale
 
 
+def convert_legacy_ml_to_sequence():
+    ml_options={}
+    for ds in g.config['detection_sequence']:
+        if ds == 'object':
+            ml_options['object'] = {
+                'general':{
+                    'pattern': g.config['object_detection_pattern'],
+                    'same_model_sequence_strategy': 'first' # 'first' 'most', 'most_unique'
+
+                },
+                'sequence': [{
+                    'tpu_max_processes': g.config['tpu_max_processes'],
+                    'tpu_max_lock_wait': g.config['tpu_max_lock_wait'],
+                    'gpu_max_processes': g.config['gpu_max_processes'],
+                    'gpu_max_lock_wait': g.config['gpu_max_lock_wait'],
+                    'cpu_max_processes': g.config['cpu_max_processes'],
+                    'cpu_max_lock_wait': g.config['cpu_max_lock_wait'],
+                    'max_detection_size': g.config['max_detection_size'],
+                    'object_config':g.config['object_config'],
+                    'object_weights':g.config['object_weights'],
+                    'object_labels': g.config['object_labels'],
+                    'object_min_confidence': g.config['object_min_confidence'],
+                    'object_framework':g.config['object_framework'],
+                    'object_processor': g.config['object_processor'],
+                }]
+            }
+        elif ds == 'face':
+            ml_options['face'] = {
+                'general':{
+                    'pattern': g.config['face_detection_pattern'],
+                    'same_model_sequence_strategy': 'first',
+                #    'pre_existing_labels':['person'],
+                },
+                'sequence': [{
+                    'tpu_max_processes': g.config['tpu_max_processes'],
+                    'tpu_max_lock_wait': g.config['tpu_max_lock_wait'],
+                    'gpu_max_processes': g.config['gpu_max_processes'],
+                    'gpu_max_lock_wait': g.config['gpu_max_lock_wait'],
+                    'cpu_max_processes': g.config['cpu_max_processes'],
+                    'cpu_max_lock_wait': g.config['cpu_max_lock_wait'],
+                    'face_detection_framework': g.config['face_detection_framework'],
+                    'face_recognition_framework': g.config['face_recognition_framework'],
+                    'face_processor': g.config['face_processor'],
+                    'known_images_path': g.config['known_images_path'],
+                    'face_model': g.config['face_model'],
+                    'face_train_model':g.config['face_train_model'],
+                    'unknown_images_path': g.config['unknown_images_path'],
+                    'unknown_face_name': g.config['unknown_face_name'],
+                    'save_unknown_faces': g.config['save_unknown_faces'],
+                    'save_unknown_faces_leeway_pixels': g.config['save_unknown_faces_leeway_pixels'],
+                    'face_recog_dist_threshold': g.config['face_recog_dist_threshold'],
+                    'face_num_jitters': g.config['face_num_jitters'],
+                    'face_upsample_times':g.config['face_upsample_times']
+                }]
+
+            }
+        elif ds == 'alpr':
+            ml_options['alpr'] = {
+                'general':{
+                    'pattern': g.config['alpr_detection_pattern'],
+                    'same_model_sequence_strategy': 'first',
+                #    'pre_existing_labels':['person'],
+                },
+                'sequence': [{
+                    'tpu_max_processes': g.config['tpu_max_processes'],
+                    'tpu_max_lock_wait': g.config['tpu_max_lock_wait'],
+                    'gpu_max_processes': g.config['gpu_max_processes'],
+                    'gpu_max_lock_wait': g.config['gpu_max_lock_wait'],
+                    'cpu_max_processes': g.config['cpu_max_processes'],
+                    'cpu_max_lock_wait': g.config['cpu_max_lock_wait'],
+                    'alpr_service': g.config['alpr_service'],
+                    'alpr_url': g.config['alpr_url'],
+                    'alpr_key': g.config['alpr_key'],
+                    'alpr_api_type': g.config['alpr_api_type'],
+                    'platerec_stats': g.config['platerec_stats'],
+                    'platerec_regions': g.config['platerec_regions'],
+                    'platerec_min_dscore': g.config['platerec_min_dscore'],
+                    'platerec_min_score': g.config['platerec_min_score'],
+                    'openalpr_recognize_vehicle': g.config['openalpr_recognize_vehicle'],
+                    'openalpr_country': g.config['openalpr_country'],
+                    'openalpr_state': g.config['openalpr_state'],
+                    'openalpr_min_confidence': g.config['openalpr_min_confidence'],
+                    'openalpr_cmdline_binary': g.config['openalpr_cmdline_binary'],
+                    'openalpr_cmdline_params': g.config['openalpr_cmdline_params'],
+                    'openalpr_cmdline_min_confidence': g.config['openalpr_cmdline_min_confidence'],
+                }]
+
+            }
+    ml_options['general'] =   {
+            'model_sequence': ','.join(str(e) for e in g.config['detection_sequence'])
+            #'model_sequence': 'object,face',        
+    }
+    if g.config['detection_mode'] == 'all':
+        g.logger.Debug(3, 'Changing detection_mode from all to most_models to adapt to new features')
+        g.config['detection_mode'] = 'most_models'
+    return ml_options
+
 def rescale_polygons(xfactor, yfactor):
     newps = []
     for p in g.polygons:
@@ -121,7 +218,7 @@ def import_zm_zones(mid, reason):
         g.polygons.append({
             'name': item['Zone']['Name'],
             'value': str2tuple(item['Zone']['Coords']),
-            'pattern': g.config.get('object_detection_pattern')
+            'pattern': None
 
         })
 
@@ -262,9 +359,9 @@ def process_config(args, ctx):
     def _set_config_val(k, v):
         # internal function to parse all keys
         if config_file.has_section(v['section']):
-            val = config_file[v['section']].get(k, v['default'])
+            val = config_file[v['section']].get(k, v.get('default'))
         else:
-            val = v['default']
+            val = v.get('default')
             g.logger.Debug(1,
                 'Section [{}] missing in config file, using key:{} default: {}'
                 .format(v['section'], k, val))
@@ -353,7 +450,7 @@ def process_config(args, ctx):
                         # This means its a polygon for the monitor
                         if not g.config['only_triggered_zm_zones'] == 'yes':
                             try:
-                                g.polygons.append({'name': k, 'value': str2tuple(v),'pattern': g.config.get('object_detection_pattern')})
+                                g.polygons.append({'name': k, 'value': str2tuple(v),'pattern': None})
                                 g.logger.Debug(2,'adding polygon: {} [{}]'.format(k, v ))
                             except Exception as e:
                                 g.logger.Error('{}={} is either an invalid attribute or a malformed polygon. Error was {}. Ignoring.'.format(k,v,e))

@@ -288,7 +288,7 @@ def main_handler():
         g.polygons.append({
             'name': 'full_image',
             'value': [(0, 0), (oldw, 0), (oldw, oldh), (0, oldh)],
-            'pattern': g.config.get('object_detection_pattern')
+            'pattern':None
 
         })
         g.logger.Debug(1,

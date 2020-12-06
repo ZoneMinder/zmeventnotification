@@ -299,7 +299,7 @@ def processFilters(bbox, label, conf, match, model):
         for p in g.polygons:
             poly = Polygon(p['value'])
             if obj.intersects(poly):
-                if model == 'object' and p['pattern'] != g.config['object_detection_pattern']:
+                if model == 'object' and p['pattern'] and p['pattern'] != g.config['object_detection_pattern']:
                     g.logger.Debug(2, '{} polygon/zone has its own pattern of {}, using that'.format(p['name'],p['pattern']))
                     r = re.compile(p['pattern'])
                     match = list(filter(r.match, label))
