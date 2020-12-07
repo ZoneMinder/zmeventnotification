@@ -25,10 +25,13 @@ from urllib.error import HTTPError
 #resize polygons based on analysis scale
 
 
-def convert_legacy_ml_to_sequence():
+
+
+def convert_config_to_ml_sequence():
     ml_options={}
     for ds in g.config['detection_sequence']:
         if ds == 'object':
+        
             ml_options['object'] = {
                 'general':{
                     'pattern': g.config['object_detection_pattern'],

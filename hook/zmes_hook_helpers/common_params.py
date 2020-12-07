@@ -252,16 +252,7 @@ config_vals = {
             'type': 'string'
         },
 
-        # sequence ML
-        'ml_flow': {
-            'section': 'ml',
-            'type': 'eval'
-        },
-        'stream_flow': {
-            'section': 'ml',
-            'type': 'eval'
-        },
-
+     
        
        'object_detection_pattern':{
             'section': 'object',

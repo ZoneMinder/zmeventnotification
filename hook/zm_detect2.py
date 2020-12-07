@@ -264,36 +264,25 @@ def main_handler():
     ml_options = {}
     stream_options={}
 
-    if g.config['ml_flow']:
-        g.logger.Debug(2,'importing ml_flow from config')
-        ml_options = g.config['ml_flow']
-    else:
-        g.logger.Debug(2,'mapping legacy ml parameters from config')
-        ml_options = utils.convert_legacy_ml_to_sequence()
+  
+    ml_options = utils.convert_config_to_ml_sequence()
     
-    if g.config['stream_flow']:
-        g.logger.Debug(2,'importing stream_flow from config')
-        stream_options = g.config['stream_flow']
-        stream_options['api'] = zmapi
-        if not stream_options['polygons']:
-            stream_options['polygons'] = g.polygons 
-    else:
-        g.logger.Debug(2,'mapping legacy stream data from config')
-        frame_set = None
-        if g.config['frame_id'] == 'bestmatch':
-                if g.config['bestmatch_order'] == 's,a':
-                    frame_set = 'snapshot,alarm'
-                else:
-                    frame_set = 'alarm,snapshot'
-        stream_options = {
-                'api': zmapi,
-                'download': False,
-                'frame_set': frame_set,
-                'strategy': g.config['detection_mode'],
-                'polygons': g.polygons,
-                'resize': int(g.config['resize']) if g.config['resize'] != 'no' else None
+    g.logger.Debug(2,'mapping legacy stream data from config')
+    frame_set = None
+    if g.config['frame_id'] == 'bestmatch':
+        if g.config['bestmatch_order'] == 's,a':
+            frame_set = 'snapshot,alarm'
+        else:
+            frame_set = 'alarm,snapshot'
+    stream_options = {
+            'api': zmapi,
+            'download': False,
+            'frame_set': frame_set,
+            'strategy': g.config['detection_mode'],
+            'polygons': g.polygons,
+            'resize': int(g.config['resize']) if g.config['resize'] != 'no' else None
 
-        }
+    }
      
 
    
