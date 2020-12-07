@@ -131,7 +131,7 @@ You will also note that ``tokens.txt`` does not contain any other entries beside
 
 3.2.4: Wait, what on earth is a "Rules file"?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Starting ES 6.0, I've added a ``es_rules.json`` that gets installed in ``/var/lib/zmeventnotification``.
+Starting ES 6.0, I've added a ``es_rules.json`` that gets installed in ``/etc/zm/``.
 It is a json file, that over time will expand in functionality. As of today, it only supports
 the "mute" action. You can specify "mute" time ranges where the ES will not send out notifications.
 
