@@ -346,6 +346,7 @@ def process_config(args, ctx):
         if t == 'int':
             return int(val)
         elif t == 'eval' or t == 'dict':
+            print (val)
             return ast.literal_eval(val) if val else None
         elif t == 'str_split':
             return str_split(val) if val else None
@@ -361,6 +362,7 @@ def process_config(args, ctx):
 
     def _set_config_val(k, v):
         # internal function to parse all keys
+        #print (f'inside set_config_val with {k}={v}')
         if config_file.has_section(v['section']):
             val = config_file[v['section']].get(k, v.get('default'))
         else:
@@ -376,7 +378,7 @@ def process_config(args, ctx):
                     'Secret token found, but no secret file specified')
             if secrets_file.has_option('secrets', val[1:]):
                 vn = secrets_file.get('secrets', val[1:])
-                #g.logger.Debug (1,'Replacing {} with {}'.format(val,vn))
+            #g.logger.Debug (1,'Replacing {} with {}'.format(val,vn))
                 val = vn
             else:
                 raise ValueError(
@@ -409,11 +411,12 @@ def process_config(args, ctx):
             g.logger.Debug(1,'No secrets file configured')
         # now read config values
 
+        # iterate through all keys in common_params. This will ignore 
+        # any unknown keys in objectconfig.ini
         for k, v in g.config_vals.items():
-            #g.logger.Debug (1,'processing {} {}'.format(k,v))
+            # we've already read secrets before we got here
             if k == 'secrets':
                 continue
-
             _set_config_val(k, v)
         if g.config['allow_self_signed'] == 'yes':
             ctx.check_hostname = False
@@ -426,9 +429,7 @@ def process_config(args, ctx):
         poly_patterns = []
 
         # Check if we have a custom overrides for this monitor
-
         if 'monitorid' in args and args.get('monitorid'):
-            
             sec = 'monitor-{}'.format(args.get('monitorid'))
             if sec in config_file:
                 # we have a specific section for this monitor
@@ -451,15 +452,18 @@ def process_config(args, ctx):
                                                     g.config_vals[k]['type'])
                     else:
                         # This means its a polygon for the monitor
-                        if not g.config['only_triggered_zm_zones'] == 'yes':
-                            try:
-                                g.polygons.append({'name': k, 'value': str2tuple(v),'pattern': None})
-                                g.logger.Debug(2,'adding polygon: {} [{}]'.format(k, v ))
-                            except Exception as e:
-                                g.logger.Error('{}={} is either an invalid attribute or a malformed polygon. Error was {}. Ignoring.'.format(k,v,e))
-
+                        if k.startswith(('object_','face_', 'alpr_')):
+                            g.logger.Debug(2,'assuming {} is an ML sequence, adding to config'.format(k))
                         else:
-                            g.logger.Debug (2,'ignoring polygon: {} as only_triggered_zm_zones is true'.format(k))
+                            if not g.config['only_triggered_zm_zones'] == 'yes':
+                                try:
+                                    g.polygons.append({'name': k, 'value': str2tuple(v),'pattern': None})
+                                    g.logger.Debug(2,'adding polygon: {} [{}]'.format(k, v ))
+                                except Exception as e:
+                                    g.logger.Debug(3,'{}={} is not a polygon definition. Error was {}. Ignoring.'.format(k,v,e))
+
+                            else:
+                                g.logger.Debug (2,'ignoring polygon: {} as only_triggered_zm_zones is true'.format(k))
             # now import zones if needed
             # this should be done irrespective of a monitor section
             if g.config['only_triggered_zm_zones'] == 'yes':
@@ -469,7 +473,6 @@ def process_config(args, ctx):
             
             # finally, iterate polygons and put in detection patterns
             for poly in g.polygons:
-
                 for poly_pat in poly_patterns:
                     if poly['name'] == poly_pat['name']:
                         poly['pattern'] = poly_pat['pattern']
@@ -514,4 +517,4 @@ def process_config(args, ctx):
         g.config['image_path'] = args.get('output_path')
         g.config['write_debug_image'] = 'yes'
 
-
+  

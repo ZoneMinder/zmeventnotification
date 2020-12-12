@@ -265,15 +265,38 @@ def main_handler():
     stream_options={}
 
   
-    ml_options = utils.convert_config_to_ml_sequence()
+    if g.config['ml_sequence']:
+        g.logger.Debug(2,'using ml_sequence')
+        ml_options = g.config['ml_sequence']
+    else:
+        g.logger.Debug(2,'mapping legacy ml data from config')
+        ml_options = utils.convert_config_to_ml_sequence()
     
-    g.logger.Debug(2,'mapping legacy stream data from config')
-    frame_set = None
-    if g.config['frame_id'] == 'bestmatch':
-        if g.config['bestmatch_order'] == 's,a':
-            frame_set = 'snapshot,alarm'
-        else:
-            frame_set = 'alarm,snapshot'
+
+    if g.config['stream_sequence']: # new sequence
+        g.logger.Debug(2,'using stream_sequence')
+        stream_options = g.config['stream_sequence']
+    else: # legacy
+        g.logger.Debug(2,'mapping legacy stream data from config')
+        if g.config['detection_mode'] == 'all':
+            g.config['detection_mode'] = 'most_models'
+        frame_set = g.config['frame_id']
+        if g.config['frame_id'] == 'bestmatch':
+            if g.config['bestmatch_order'] == 's,a':
+                frame_set = 'snapshot,alarm'
+            else:
+                frame_set = 'alarm,snapshot'
+       
+        stream_options['strategy'] = g.config['detection_mode'] 
+        stream_options['frame_set'] = frame_set       
+
+    # These are stream options that need to be set outside of supplied configs         
+    stream_options['api'] = zmapi
+    
+    stream_options['polygons'] = g.polygons
+    stream_options['resize'] =int(g.config['resize']) if g.config['resize'] != 'no' else None
+
+    '''
     stream_options = {
             'api': zmapi,
             'download': False,
@@ -283,7 +306,7 @@ def main_handler():
             'resize': int(g.config['resize']) if g.config['resize'] != 'no' else None
 
     }
-     
+    '''
 
    
 

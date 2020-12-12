@@ -252,6 +252,17 @@ config_vals = {
             'type': 'string'
         },
 
+        'ml_sequence': {
+            'section': 'ml',
+            'default': None,
+            'type': 'eval'
+        },
+        'stream_sequence': {
+            'section': 'ml',
+            'default': None,
+            'type': 'eval'
+        },
+     
      
        
        'object_detection_pattern':{
