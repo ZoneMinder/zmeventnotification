@@ -473,6 +473,9 @@ On further reading, there seems to be multiple potential reasons:
 The server runs fine when manually executed, but fails when run in daemon mode (started by zmdc.pl)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+(This only covers daemon mode of the ES server. If you are facing issues related to hooks running
+in daemon model, please see :doc:`hooks_faq`)
+
 -  Make sure the file where you store tokens
    (``/var/lib/zmeventnotification/push/tokens.txt or whatever you have used``)
    is not RW Root only. It needs to be RW ``www-data`` for Ubuntu/Debian

@@ -27,7 +27,7 @@ Version 6.0.0 onwards
   configuration related. Over the next few releases, this fill will replace the cryptic context of ``tokens.txt``
   As of now, it can be used to specify custom times for notification. This list will grow
   over time.
-- A new perl dependency (optional) has been added to :doc:`guides/install` if you need flexible datetime
+- A new perl dependency (optional) has been added to :doc:`install` if you need flexible datetime
   parsing for ES rules.
   
 
@@ -120,11 +120,11 @@ Version 5.15.5 onwards
 Version 5.14.4 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~
 - Added ability for users to PR contrib modules
-  See :doc:`guides/contrib_guidelines`
+  See :doc:`contrib_guidelines`
 - ``zmeventnotification.ini`` adds two new attributes that makes it simpler for users
   to keep object detection plugin hooks intact *and also* trigger their own scripts 
   for housekeeping. See the ini script for documentation on ``event_start_hook_notify_userscript``
-and ``event_end_hook_notify_userscript``
+  and ``event_end_hook_notify_userscript``
 
 
 Version 5.13.3 onwards
@@ -132,14 +132,14 @@ Version 5.13.3 onwards
 - New attribute ``es_debug_level`` in ``zmeventnotification.ini`` that controls debug level verbosity. Default is ``2``
 - New CSPNet support with ResNeXt (requires OpenCV 4.3 or above)
   - Note that this requires a **manual model download** as the model is in a google drive link and all automated download scripts are hacks that stop working after a while.
-- You can now choose which models to download as part of ``./install.sh``. See :ref:`install_specific_models`
+- You can now choose which models to download as part of ``./install.sh``. See :ref:`install-specific-models`
 
 
 Version  5.11 onwards
 ~~~~~~~~~~~~~~~~~~~~~~
 
 - If you are using platerecognition.com local SDK for ALPR, their SDK and cloud versions have slightly different API formats. There is a new attribute called ``alpr_api_type`` in ``objectconfig.ini`` that should be set to ``local`` to handle this. 
-- ``skip_monitors`` in ``zmeventnotification.ini`` is now called ``hook_skip_monitors`` to correctly reflect this only means hooks will be skipped for these monitors. A new attribute ``skip_monitors`` has been added that controls which monitors the ES will skip completely (That is, no analysis /otifications at all for these monitors)
+- ``skip_monitors`` in ``zmeventnotification.ini`` is now called ``hook_skip_monitors`` to correctly reflect this only means hooks will be skipped for these monitors. A new attribute ``skip_monitors`` has been added that controls which monitors the ES will skip completely (That is, no analysis/notifications at all for these monitors)
 - Added support for live animations as part of push messages. This requires an upgraded zmNinja app (``1.3.0.91`` or above) as well as ZoneMinder master (1.35) as of Mar 17 2020. Without these two updates, live notifications will not work. Specifically:
   - This introduces a new section in ``objectconfig.ini`` called ``[animation]``. Please read the config for more details.
   - You are also going to have to re-run ``install.sh`` to install new dependencies

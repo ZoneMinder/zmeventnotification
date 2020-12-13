@@ -90,7 +90,8 @@ On my ubuntu system, I needed to do:
 **Very important**: You need to reboot after this, otherwise, you may notice that the TPU
 code crashes when you run the ES in daemon mode (may work fine in manual mode)
 
-.. _install_specific_models:
+
+.. _install-specific-models:
 
 Starting version 5.13.3, you can *optionally* choose to only install specific models by passing them as variables to the install script. The variables are labelled as ``INSTALL_<model>`` with possible values of ``yes`` (default) or ``no``. ``<model>`` is the specific model.
 

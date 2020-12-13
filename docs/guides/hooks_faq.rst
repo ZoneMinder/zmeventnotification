@@ -1,6 +1,32 @@
 Machine Learning Hooks FAQ
 ===========================
 
+My hooks run just fine in manual mode, but don't in daemon mode 
+-----------------------------------------------------------------
+The errors are almost always related to the fact that when run in daemon mode, python cannot find certain 
+libraries (example ``cv2``). This usually happens if you don't install these libraries globally (i.e. for all users).
+
+To zero-in on what is going on:
+
+   - Make sure you have set up logging as per :ref:`es-hooks-logging`. This should 
+     ensure these sort of errors are caught in the logs. 
+   - Try and run the script manually the way the daemon calls it. You will see the invocation in ``zmeventnotification.log``. Example:
+
+      ::
+
+         FORK:DoorBell (2), eid:175153 Invoking hook on event start:'/var/lib/zmeventnotification/bin/zm_event_start.sh' 175153 2 "DoorBell" " front" "/var/cache/zoneminder/events/2/2020-12-13/175153"]
+
+     So invoke manually like so:
+
+      ::
+         
+         sudo -u www-data '/var/lib/zmeventnotification/bin/zm_event_start.sh' 175153 2 "DoorBell" " front" "/var/cache/zoneminder/events/2/2020-12-13/175153"
+
+     The `-u www-data` is important (replace with whatever your webserver user name is)
+
+One user reported that they never saw logs. I get the feeling its because logs were not setup correctly, but there are some other insights 
+worth looking into. See `here <https://forums.zoneminder.com/viewtopic.php?f=33&p=119084&sid=8438a0ec567b9b7206bcd2372e22c615#p119084>`__
+
 I get a segment fault/core dump while trying to use opencv in detection
 --------------------------------------------------------------------------
 See :ref:`opencv_seg_fault`.
