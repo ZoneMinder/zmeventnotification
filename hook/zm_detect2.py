@@ -20,7 +20,7 @@ import time
 import requests
 import subprocess
 import traceback
-
+import ast 
 # Modules that load cv2 will go later 
 # so we can log misses
 import pyzm.ZMLog as log 
@@ -36,13 +36,14 @@ auth_header = None
 # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
 
 
-def remote_detect(image, model=None):
+def remote_detect(stream=None, options=None):
     import requests
     import cv2
     
     bbox = []
     label = []
     conf = []
+    model = 'object'
     api_url = g.config['ml_gateway']
     g.logger.Info('Detecting using remote API Gateway {}'.format(api_url))
     login_url = api_url + '/login'
@@ -74,7 +75,9 @@ def remote_detect(image, model=None):
         r = requests.post(url=login_url,
                           data=json.dumps({
                               'username': g.config['ml_user'],
-                              'password': g.config['ml_password']
+                              'password': g.config['ml_password'],
+                             
+
                           }),
                           headers={'content-type': 'application/json'})
         data = r.json()
@@ -93,39 +96,22 @@ def remote_detect(image, model=None):
             json_file.close()
 
     auth_header = {'Authorization': 'Bearer ' + access_token}
-
-    if type(image) == str:
-        g.logger.Debug(2, f'Reading {image} to buffer')
-        image = cv2.imread(image)
-        if g.config['resize'] and g.config['resize'] != 'no':
-            g.logger.Debug (2,'Resizing image before sending')
-            img_new = imutils.resize(image,
-                                     width=min(int(g.config['resize']),
-                                               image.shape[1]))
-            image = img_new
-    ret, jpeg = cv2.imencode('.jpg', image)
-    files = {'file': ('image.jpg', jpeg.tobytes())}
-
     
-    params = {'delete': True}
-  
+    params = {'delete': True, 'response_format': 'new'}
+    files = {}
     #print (object_url)
-    g.logger.Debug(2,f'Invoking mlapi with url:{object_url}')
+    g.logger.Debug(2,f'Invoking mlapi with url:{object_url} and json: {stream}, {options}')
     r = requests.post(url=object_url,
                       headers=auth_header,
                       params=params,
-                      files=files)
+                      files=files,
+                      json = {
+                       'stream': stream,
+                        'stream_options':options   
+                      }
+                    )
     data = r.json()
-
-    for d in data:
-
-        label.append(d.get('label'))
-        conf.append(float(d.get('confidence').strip('%')) / 100)
-        box = d.get('box')
-        bbox.append(d.get('box'))
-
-        #print (bbox, label, conf)
-    return bbox, label, conf
+    return data['matched_data'], data['all_matches']
 
 
 def append_suffix(filename, token):
@@ -263,11 +249,15 @@ def main_handler():
     stream = args.get('eventid') or args.get('file')
     ml_options = {}
     stream_options={}
-
-  
+    secrets = None 
+    
     if g.config['ml_sequence']:
         g.logger.Debug(2,'using ml_sequence')
         ml_options = g.config['ml_sequence']
+        secrets = pyzmutils.read_config(g.config['secrets'])
+        ml_options = pyzmutils.template_fill(input_str=ml_options, config=None, secrets=secrets._sections.get('secrets'))
+        ml_options = ast.literal_eval(ml_options)
+        #print (ml_options)
     else:
         g.logger.Debug(2,'mapping legacy ml data from config')
         ml_options = utils.convert_config_to_ml_sequence()
@@ -276,6 +266,7 @@ def main_handler():
     if g.config['stream_sequence']: # new sequence
         g.logger.Debug(2,'using stream_sequence')
         stream_options = g.config['stream_sequence']
+        stream_options = ast.literal_eval(stream_options)
     else: # legacy
         g.logger.Debug(2,'mapping legacy stream data from config')
         if g.config['detection_mode'] == 'all':
@@ -309,11 +300,17 @@ def main_handler():
     '''
 
    
-
+    m = None
+    if g.config['ml_gateway']:
+        stream_options['api'] = None
+        matched_data,all_data = remote_detect(stream=stream, options=stream_options)
+    
+    else:
+        m = DetectSequence(options=ml_options, logger=g.logger)
+        matched_data,all_data = m.detect_stream(stream=stream, options=stream_options)
     
 
-    m = DetectSequence(options=ml_options, logger=g.logger)
-    matched_data,all_data = m.detect_stream(stream=stream, options=stream_options)
+
     #print(f'ALL FRAMES: {all_data}\n\n')
     #print (f"SELECTED FRAME {matched_data['frame_id']}, size {matched_data['image_dimensions']} with LABELS {matched_data['labels']} {matched_data['boxes']} {matched_data['confidences']}")
     
@@ -391,7 +388,7 @@ def main_handler():
         g.logger.Debug(1,'Prediction string JSON:{}'.format(jos))
         print(pred + '--SPLIT--' + jos)
 
-        if g.config['write_image_to_zm'] == 'yes' or g.config['write_debug_image'] == 'yes':
+        if matched_data['image'] and (g.config['write_image_to_zm'] == 'yes' or g.config['write_debug_image'] == 'yes'):
             debug_image = pyzmutils.draw_bbox(image=matched_data['image'],boxes=matched_data['boxes'], 
                                               labels=matched_data['labels'], confidences=matched_data['confidences'],
                                               polygons=g.polygons, poly_thickness = g.config['poly_thickness'])

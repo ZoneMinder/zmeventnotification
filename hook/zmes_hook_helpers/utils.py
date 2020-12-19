@@ -401,6 +401,7 @@ def process_config(args, ctx):
             secrets_filename = config_file.get('general', 'secrets')
             g.logger.Debug(1,'secret filename: {}'.format(secrets_filename))
             has_secrets = True
+            g.config['secrets'] = secrets_filename
             secrets_file = ConfigParser(interpolation=None)
             try:
                 with open(secrets_filename) as f:
@@ -490,7 +491,6 @@ def process_config(args, ctx):
         exit(0)
 
     # Now lets make sure we take care of parameter substitutions {{}}
-
     p = r'{{(\w+?)}}'
     for gk, gv in g.config.items():
         if not isinstance(gv, str):
@@ -502,8 +502,8 @@ def process_config(args, ctx):
 
                 g.config[gk] = g.config[gk].replace('{{' + sub_var + '}}',
                                                     g.config[sub_var])
-                g.logger.Debug(2,'key [{}] is \'{}\' after substitution'.format(
-                    gk, g.config[gk]))
+                #g.logger.Debug(2,'key [{}] is \'{}\' after substitution'.format(
+                #    gk, g.config[gk]))
 
     # Now munge config if testing args provide
     if args.get('file'):

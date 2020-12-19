@@ -255,12 +255,12 @@ config_vals = {
         'ml_sequence': {
             'section': 'ml',
             'default': None,
-            'type': 'eval'
+            'type': 'string'
         },
         'stream_sequence': {
             'section': 'ml',
             'default': None,
-            'type': 'eval'
+            'type': 'string'
         },
      
      
