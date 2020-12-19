@@ -301,10 +301,22 @@ def main_handler():
 
    
     m = None
+    matched_data = None
+    all_data = None
     if g.config['ml_gateway']:
         stream_options['api'] = None
-        matched_data,all_data = remote_detect(stream=stream, options=stream_options)
+        try:
+            matched_data,all_data = remote_detect(stream=stream, options=stream_options)
+        except Exception as e:
+            g.logger.Error ("Error with remote mlapi:{}".format(e))
+            if g.config['ml_fallback_local'] == 'yes':
+                g.logger.Debug (1, "Falling back to local detection")
+                stream_options['api'] = zmapi
+
+                m = DetectSequence(options=ml_options, logger=g.logger)
+                matched_data,all_data = m.detect_stream(stream=stream, options=stream_options)
     
+
     else:
         m = DetectSequence(options=ml_options, logger=g.logger)
         matched_data,all_data = m.detect_stream(stream=stream, options=stream_options)
@@ -388,7 +400,7 @@ def main_handler():
         g.logger.Debug(1,'Prediction string JSON:{}'.format(jos))
         print(pred + '--SPLIT--' + jos)
 
-        if matched_data['image'] and (g.config['write_image_to_zm'] == 'yes' or g.config['write_debug_image'] == 'yes'):
+        if (matched_data['image'] is not None) and (g.config['write_image_to_zm'] == 'yes' or g.config['write_debug_image'] == 'yes'):
             debug_image = pyzmutils.draw_bbox(image=matched_data['image'],boxes=matched_data['boxes'], 
                                               labels=matched_data['labels'], confidences=matched_data['confidences'],
                                               polygons=g.polygons, poly_thickness = g.config['poly_thickness'])
