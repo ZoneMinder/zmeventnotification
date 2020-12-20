@@ -346,7 +346,6 @@ def process_config(args, ctx):
         if t == 'int':
             return int(val)
         elif t == 'eval' or t == 'dict':
-            print (val)
             return ast.literal_eval(val) if val else None
         elif t == 'str_split':
             return str_split(val) if val else None
