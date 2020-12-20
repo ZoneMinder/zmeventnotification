@@ -233,7 +233,6 @@ def main_handler():
     if not g.config['ml_gateway']:
         g.logger.Info('Importing local classes for Object/Face')
         import pyzm.ml.object as object_detection
-        import pyzm.ml.hog as hog
     else:
         g.logger.Info('Importing remote shim classes for Object/Face')
         from zmes_hook_helpers.apigw import ObjectRemote, FaceRemote, AlprRemote
@@ -333,8 +332,7 @@ def main_handler():
             else:
             # print ("G LOGGER {}".format(g.logger))
                 m = object_detection.Object(logger=g.logger, options=g.config)
-        elif model == 'hog':
-            m = hog.Hog(options=g.config)
+       
         elif model == 'face':
             if g.config['ml_gateway']:
                 m = FaceRemote()
@@ -418,9 +416,7 @@ def main_handler():
                         if model == 'object':
                             import pyzm.ml.object as object_detection
                             m = object_detection.Object(logger=g.logger,options=g.config)
-                        elif model == 'hog':
-                            import pyzm.ml.hog as hog
-                            m = hog.Hog(options=g.config)
+                       
                         elif model == 'face':
                             import pyzm.ml.face as face
                             m = face.Face(

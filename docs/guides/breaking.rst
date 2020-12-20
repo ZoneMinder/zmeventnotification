@@ -1,6 +1,19 @@
 Breaking Changes
 ----------------
 
+Version 6.0.6 onwards 
+~~~~~~~~~~~~~~~~~~~~~~
+- The ``hog`` model has been removed. Note this refers to the ``hog`` person detection
+  model, not the hog detection of a face. That still exists. With Yolo, TinyYolo, coral
+  there was no need to support this very low performance model anymore.
+
+- You can now string togther multiple models in arbitrary fashion to suit your needs
+(example, you can start with TPU at a high confidence level, fallback to YOLO if failed)
+See XXXXXX 
+
+- You can now also specify arbitrary frames for analysis. See XXXXXXXX
+
+
 Version 6.0.5 onwards
 ~~~~~~~~~~~~~~~~~~~~~~
 - You can now specify object detection patterns on a per polygon/zone basis. The format is ``<polygonname>_zone_detection_pattern``

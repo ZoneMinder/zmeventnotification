@@ -17,7 +17,6 @@ Event NotificationServer Documentation
         guides/es_faq
         guides/hooks_faq
         guides/developers
-        guides/plugins
         guides/contrib_guidelines
          
  
@@ -43,8 +42,6 @@ Event NotificationServer Documentation
         If you want to use the Event Notification Server to make your own app/client
 :doc:`guides/contrib_guidelines`
         If you want to contribute hook scripts to the ES
-:doc:`guides/plugins`
-        If you want to add your own algoritm to the machine learning hooks (Needs to be expanded)
 `zmNinja Documentation <https://zmninja.readthedocs.io/en/latest/index.html>`__
         Documentation for zmNinja
 

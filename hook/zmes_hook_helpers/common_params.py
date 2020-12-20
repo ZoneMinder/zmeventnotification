@@ -304,29 +304,6 @@ config_vals = {
             'type': 'float'
         },
         
-        # HOG
-        'stride':{
-            'section': 'hog',
-            'default': '(4,4)',
-            'type': 'eval'
-        },
-        'padding':{
-            'section': 'hog',
-            'default': '(8,8)',
-            'type': 'eval'
-        },
-        'scale':{
-            'key': 'scale',
-            'section': 'hog',
-            'default': '1.05',
-            'type': 'string'
-        },
-        'mean_shift':{
-            'section': 'hog',
-            'default': '-1',
-            'type': 'string'
-        },
-
        # Face
        'face_detection_pattern':{
             'section': 'face',

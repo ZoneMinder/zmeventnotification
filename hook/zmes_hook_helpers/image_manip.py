@@ -268,7 +268,7 @@ def processPastDetection(bbox, label, conf, mid):
 def processFilters(bbox, label, conf, match, model):
     # bbox is the set of bounding boxes
     # labels are set of corresponding object names
-    # conf are set of confidence scores (for hog and face this is set to 1)
+    # conf are set of confidence scores (for face this is set to 1)
     # match contains the list of labels that will be allowed based on detect_pattern
     #g.logger.Debug (1,"PROCESS INTERSECTION {} AND {}".format(bbox,label))
     new_label = []
