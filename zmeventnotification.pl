@@ -3265,7 +3265,6 @@ sub isInList {
   my $monlist = shift;
   my $mid     = shift;
 
-  #printDebug ("REMOVE fcm: MONLIST=$monlist, MID=$mid");
   return 1 if ( $monlist eq "-1" || $monlist eq "" || !$monlist || !defined($monlist) );
 
   my @mids = split( ',', $monlist );
