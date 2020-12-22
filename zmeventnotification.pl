@@ -2654,24 +2654,18 @@ sub processIncomingMessage {
 
             $_->{type}     = FCM;
             $_->{platform} = $json_string->{data}->{platform};
-            if ( exists( $json_string->{data}->{monlist} )
-              && ( $json_string->{data}->{monlist} ne '' ) )
+            if ( isValidMonIntList( $json_string->{data}->{monlist} ))
             {
               $_->{monlist} =
                 $json_string->{data}->{monlist};
             }
-            else {
-              $_->{monlist} = '-1';
-            }
-            if ( exists( $json_string->{data}->{intlist} )
-              && ( $json_string->{data}->{intlist} ne '' ) )
+           
+            if ( isValidMonIntList( $json_string->{data}->{intlist} ))
             {
               $_->{intlist} =
                 $json_string->{data}->{intlist};
             }
-            else {
-              $_->{intlist} = '-1';
-            }
+          
             $_->{pushstate} = $json_string->{data}->{state};
             printDebug(
               'JOB: Storing token ...'
@@ -2717,11 +2711,11 @@ sub processIncomingMessage {
 
 
           $_->{monlist}  = $json_string->{data}->{monlist}
-            if (($json_string->{data}->{monlist}) && ($json_string->{data}->{monlist} ne '-1'));
+            if (isValidMonIntList($json_string->{data}->{monlist}) );
             
 
           $_->{intlist}  = $json_string->{data}->{intlist}
-                      if (($json_string->{data}->{intlist}) && ($json_string->{data}->{intlist} ne '-1'));
+                      if (isValidMonIntList($json_string->{data}->{intlist})) ;
 
          
           $_->{pushstate} = $json_string->{data}->{state};
@@ -3258,13 +3252,20 @@ sub getInterval {
 
 }
 
+
+sub isValidMonIntList {
+  my $m = shift;
+  printDebug("REMOVE isValid: validating $m",2);
+
+  return defined($m) && ($m ne "-1") && ($m ne "");
+}
 # Checks if the monitor for which
 # an alarm occurred is part of the monitor list
 # for that connection
 sub isInList {
   my $monlist = shift;
   my $mid     = shift;
-
+  printDebug("REMOVE: looking for $mid inside $monlist",2);
   return 1 if ( $monlist eq "-1" || $monlist eq "" || !$monlist || !defined($monlist) );
 
   my @mids = split( ',', $monlist );
