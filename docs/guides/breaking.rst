@@ -7,11 +7,15 @@ Version 6.0.6 onwards
   model, not the hog detection of a face. That still exists. With Yolo, TinyYolo, coral
   there was no need to support this very low performance model anymore.
 
-- You can now string togther multiple models in arbitrary fashion to suit your needs
-(example, you can start with TPU at a high confidence level, fallback to YOLO if failed)
-See XXXXXX 
+- You can now string togther multiple models in arbitrary fashion to suit your needs. 
+  There is a new entry in ``objectconfig.ini`` called ``ml_sequence`` that you can use to 
+  create your own sequence. Note that if ``ml_sequence`` is present, it will override any/all
+  parameters in the ``[object]``, ``[face]`` and ``[alpr]`` sections.
+  See `here <https://pyzm.readthedocs.io/en/latest/source/pyzm.html#detectsequence>`__ for details (look at options attribute).
 
-- You can now also specify arbitrary frames for analysis. See XXXXXXXX
+
+- You can now also specify arbitrary frames for analysis. See See `here <https://pyzm.readthedocs.io/en/latest/source/pyzm.html#pyzm.ml.detect_sequence.DetectSequence.detect_stream>`__ for details (look at options attribute).
+
 
 
 Version 6.0.5 onwards
