@@ -457,13 +457,16 @@ def main_handler():
                 g.logger.Debug(2,traceback.format_exc())
 
         if g.config['create_animation'] == 'yes':
-            g.logger.Debug(1,'animation: Creating burst...')
-            try:
-                img.createAnimation(matched_data['frame_id'], args.get('eventid'), args.get('eventpath')+'/objdetect', g.config['animation_types'])
-            except Exception as e:
-                g.logger.Error('Error creating animation:{}'.format(e))
-                g.logger.Error('animation: Traceback:{}'.format(traceback.format_exc()))
-            
+            if not args.get('eventid'):
+                g.logger.Error ('Cannot create animation as you did not pass an event ID')
+            else:
+                g.logger.Debug(1,'animation: Creating burst...')
+                try:
+                    img.createAnimation(matched_data['frame_id'], args.get('eventid'), args.get('eventpath')+'/objdetect', g.config['animation_types'])
+                except Exception as e:
+                    g.logger.Error('Error creating animation:{}'.format(e))
+                    g.logger.Error('animation: Traceback:{}'.format(traceback.format_exc()))
+                
             
 
 if __name__ == '__main__':
