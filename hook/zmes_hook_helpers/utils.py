@@ -212,6 +212,10 @@ def import_zm_zones(mid, reason):
     #g.logger.Debug(1,'Found motion zones provided in alarm cause: {}'.format(reason_zones))
 
     for item in j['zones']:
+        #print ('********* ITEM TYPE {}'.format(item['Zone']['Type']))
+        if item['Zone']['Type'] == 'Inactive':
+            g.logger.Debug(2, 'Skipping {} as it is inactive'.format(item['Zone']['Name']))
+            continue
         if  match_reason:
             if not findWholeWord(item['Zone']['Name'])(reason):
                 g.logger.Debug(1,'dropping {} as zones in alarm cause is {}'.format(item['Zone']['Name'], reason))
