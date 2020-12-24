@@ -99,9 +99,21 @@ ml_sequence= {
                     },
                     {
                             # YoloV4 on GPU if TPU fails (because sequence strategy is 'first')
+                            # Note that if GPU fails, it will automatically use CPU (I hope)
                             'object_config':'{{base_data_path}}/models/yolov4/yolov4.cfg',
                             'object_weights':'{{base_data_path}}/models/yolov4/yolov4.weights',
                             'object_labels': '{{base_data_path}}/models/yolov4/coco.names',
+                            'object_min_confidence': 0.3,
+                            'object_framework':'opencv',
+                            'object_processor': 'gpu'
+                    },
+                    {
+                            # YoloV3 on GPU if V4 fails (because sequence strategy is 'first')
+                            # Note that if GPU fails, it will automatically use CPU (I hope)
+
+                            'object_config':'{{base_data_path}}/models/yolov3/yolov3.cfg',
+                            'object_weights':'{{base_data_path}}/models/yolov3/yolov3.weights',
+                            'object_labels': '{{base_data_path}}/models/yolov3/coco.names',
                             'object_min_confidence': 0.3,
                             'object_framework':'opencv',
                             'object_processor': 'gpu'
