@@ -251,7 +251,7 @@ def main_handler():
     stream_options={}
     secrets = None 
     
-    if g.config['ml_sequence']:
+    if g.config['ml_sequence'] and g.config['use_sequence'] == 'yes':
         g.logger.Debug(2,'using ml_sequence')
         ml_options = g.config['ml_sequence']
         secrets = pyzmutils.read_config(g.config['secrets'])
@@ -263,7 +263,7 @@ def main_handler():
         ml_options = utils.convert_config_to_ml_sequence()
     
 
-    if g.config['stream_sequence']: # new sequence
+    if g.config['stream_sequence'] and g.config['use_sequence'] == 'yes': # new sequence
         g.logger.Debug(2,'using stream_sequence')
         stream_options = g.config['stream_sequence']
         stream_options = ast.literal_eval(stream_options)

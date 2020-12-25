@@ -69,88 +69,91 @@ def f_1_1_to_1_2(str_conf,new_version):
 '\n[object]\n':
 '''
 [ml]
+
+# NEW: If enabled (default = no), we will use ml_sequence and stream_sequence 
+# and ignore everything in [object] [face] and [alpr]
+#
+# use_sequence = yes
+
 # NEW: You can use this structure to create a chain of detection algorithms
 # See https://pyzm.readthedocs.io/en/latest/source/pyzm.html#detectsequence for options (look at options field)
-# very important - please make sure that the curly braces need to be indented to be inside ml_sequence
+
+# VERY IMPORTANT - The curly braces need to be indented to be inside ml_sequence
 # tag, or parsing will fail
-# NOTE: If ml_sequence specified, the following pre-existing attributes in objectconfig.ini will be ignored
-# as you are now able to specify them inside the sequence on a per model basis:
-#   - *_max_processes, *_max_lock_wait
-#   - detection_sequence, detection_mode, 
-#   - ALL attributes under [object], [face], [alpr] will now move to this structure and can be tweaked
-#   - on a per model basis 
+# NOTE: If you specify this attribute, all settings in [object], [face] and [alpr] will be ignored
+
 ml_sequence= {
-            'general': {
-                    'model_sequence': 'object,face,alpr',
-                    'strategy': 'most_models',
+        'general': {
+                'model_sequence': 'object,face,alpr',
+                'strategy': 'most_models',
 
-            },
-            'object': {
-                    'general':{
-                            'pattern':'(person)',
-                            'same_model_sequence_strategy': 'first' # also 'most', 'most_unique's
-                    },
-                    'sequence': [{
-                            #First run on TPU with higher confidence
-                            'object_weights':'{{base_data_path}}/models/coral_edgetpu/ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite',
-                            'object_labels': '{{base_data_path}}/models/coral_edgetpu/coco_indexed.names',
-                            'object_min_confidence': 0.6,
-                            'object_framework':'coral_edgetpu'
-                    },
-                    {
-                            # YoloV4 on GPU if TPU fails (because sequence strategy is 'first')
-                            # Note that if GPU fails, it will automatically use CPU (I hope)
-                            'object_config':'{{base_data_path}}/models/yolov4/yolov4.cfg',
-                            'object_weights':'{{base_data_path}}/models/yolov4/yolov4.weights',
-                            'object_labels': '{{base_data_path}}/models/yolov4/coco.names',
-                            'object_min_confidence': 0.3,
-                            'object_framework':'opencv',
-                            'object_processor': 'gpu'
-                    },
-                    {
-                            # YoloV3 on GPU if V4 fails (because sequence strategy is 'first')
-                            # Note that if GPU fails, it will automatically use CPU (I hope)
+        },
+        'object': {
+                'general':{
+                        'pattern':'(person)',
+                        'same_model_sequence_strategy': 'first' # also 'most', 'most_unique's
+                },
+                'sequence': [{
+                        #First run on TPU with higher confidence
+                        'object_weights':'{{base_data_path}}/models/coral_edgetpu/ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite',
+                        'object_labels': '{{base_data_path}}/models/coral_edgetpu/coco_indexed.names',
+                        'object_min_confidence': 0.6,
+                        'object_framework':'coral_edgetpu'
+                },
+                {
+                        # YoloV4 on GPU if TPU fails (because sequence strategy is 'first')
+                        # Note that if GPU fails, it will automatically use CPU (I hope)
+                        'object_config':'{{base_data_path}}/models/yolov4/yolov4.cfg',
+                        'object_weights':'{{base_data_path}}/models/yolov4/yolov4.weights',
+                        'object_labels': '{{base_data_path}}/models/yolov4/coco.names',
+                        'object_min_confidence': 0.3,
+                        'object_framework':'opencv',
+                        'object_processor': 'gpu'
+                },
+                {
+                        # YoloV3 on GPU if V4 fails (because sequence strategy is 'first')
+                        # Note that if GPU fails, it will automatically use CPU (I hope)
 
-                            'object_config':'{{base_data_path}}/models/yolov3/yolov3.cfg',
-                            'object_weights':'{{base_data_path}}/models/yolov3/yolov3.weights',
-                            'object_labels': '{{base_data_path}}/models/yolov3/coco.names',
-                            'object_min_confidence': 0.3,
-                            'object_framework':'opencv',
-                            'object_processor': 'gpu'
-                    }]
-            },
-            'face': {
-                    'general':{
-                            'pattern': '.*',
-                            'same_model_sequence_strategy': 'first'
-                    },
-                    'sequence': [{
-                            'face_detection_framework': 'dlib',
-                            'known_images_path': '{{base_data_path}}/known_faces',
-                            'face_model': 'cnn',
-                            'face_train_model': 'cnn',
-                            'face_recog_dist_threshold': 0.6,
-                            'face_num_jitters': 1,
-                            'face_upsample_times':1
-                    }]
-            },
+                        'object_config':'{{base_data_path}}/models/yolov3/yolov3.cfg',
+                        'object_weights':'{{base_data_path}}/models/yolov3/yolov3.weights',
+                        'object_labels': '{{base_data_path}}/models/yolov3/coco.names',
+                        'object_min_confidence': 0.3,
+                        'object_framework':'opencv',
+                        'object_processor': 'gpu'
+                }]
+        },
+        'face': {
+                'general':{
+                        'pattern': '.*',
+                        'same_model_sequence_strategy': 'first'
+                },
+                'sequence': [{
+                        'face_detection_framework': 'dlib',
+                        'known_images_path': '{{base_data_path}}/known_faces',
+                        'face_model': 'cnn',
+                        'face_train_model': 'cnn',
+                        'face_recog_dist_threshold': 0.6,
+                        'face_num_jitters': 1,
+                        'face_upsample_times':1
+                }]
+        },
 
-            'alpr': {
-                    'general':{
-                            'same_model_sequence_strategy': 'first',
-                            'pre_existing_labels':['car', 'motorbike', 'bus', 'truck', 'boat'],
+        'alpr': {
+                'general':{
+                        'same_model_sequence_strategy': 'first',
+                        'pre_existing_labels':['car', 'motorbike', 'bus', 'truck', 'boat'],
 
-                    },
-                    'sequence': [{
-                            'alpr_api_type': 'cloud',
-                            'alpr_service': 'plate_recognizer',
-                            'alpr_key': '!PLATEREC_ALPR_KEY',
-                            'platrec_stats': 'no',
-                            'platerec_min_dscore': 0.1,
-                            'platerec_min_score': 0.2,
-                    }]
-            }
+                },
+                'sequence': [{
+                        'alpr_api_type': 'cloud',
+                        'alpr_service': 'plate_recognizer',
+                        'alpr_key': '!PLATEREC_ALPR_KEY',
+                        'platrec_stats': 'no',
+                        'platerec_min_dscore': 0.1,
+                        'platerec_min_score': 0.2,
+                }]
         }
+    }
 
 # NEW: This new structure can be used to select arbitrary frames for analysis 
 # See https://pyzm.readthedocs.io/en/latest/source/pyzm.html#pyzm.ml.detect_sequence.DetectSequence.detect_stream
@@ -160,7 +163,7 @@ ml_sequence= {
 #   - frame_id (replaced by frame_set inside stream_sequence),
 #   - resize 
 #   - delete_after_analyze 
-#   - 
+#   
 stream_sequence = {
         'detection_mode': 'most_models',
         'frame_set': 'snapshot,alarm',

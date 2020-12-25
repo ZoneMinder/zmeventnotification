@@ -252,6 +252,11 @@ config_vals = {
             'type': 'string'
         },
 
+        'use_sequence': {
+            'section': 'ml',
+            'default': 'no',
+            'type': 'string'
+        },
         'ml_sequence': {
             'section': 'ml',
             'default': None,

@@ -13,9 +13,9 @@ Version 6.0.6 onwards
   parameters in the ``[object]``, ``[face]`` and ``[alpr]`` sections.
   See `here <https://pyzm.readthedocs.io/en/latest/source/pyzm.html#detectsequence>`__ for details (look at options attribute).
 
-
 - You can now also specify arbitrary frames for analysis. See See `here <https://pyzm.readthedocs.io/en/latest/source/pyzm.html#pyzm.ml.detect_sequence.DetectSequence.detect_stream>`__ for details (look at options attribute).
 
+- To enable the new `*_sequence` attributes mentioned above, make ``use_sequence=yes`` in ``objectconfig.ini``
 
 
 Version 6.0.5 onwards
