@@ -36,7 +36,7 @@ auth_header = None
 # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
 
 
-def remote_detect(stream=None, options=None):
+def remote_detect(stream=None, options=None, api=None):
     import requests
     import cv2
     
@@ -111,6 +111,20 @@ def remote_detect(stream=None, options=None):
                       }
                     )
     data = r.json()
+    matched_data = data['matched_data']
+    if g.config['write_image_to_zm'] == 'yes'  and matched_data:
+        url =g.config['portal'] + '/index.php?view=image&eid=' + stream + '&fid='+matched_data['frame_id']
+        g.logger.Debug(2,'Grabbing image from {} as we need to write objdetect.jpg'.format(url))
+        try:
+            response = api._make_request(url=url,  type='get')
+            img = np.asarray(bytearray(response.content), dtype='uint8')
+            img = cv2.imdecode (img, cv2.IMREAD_COLOR)
+            if options.get('resize') and options.get('resize') != 'no':
+                img = imutils.resize(img,width=options.get('resize'))
+            matched_data['image'] = img
+        except Exception as e:
+            g.logger.Error ('Error during image grab: {}'.format(str(e)))
+            g.logger.Debug(2,traceback.format_exc())
     return data['matched_data'], data['all_matches']
 
 
@@ -306,7 +320,7 @@ def main_handler():
     if g.config['ml_gateway']:
         stream_options['api'] = None
         try:
-            matched_data,all_data = remote_detect(stream=stream, options=stream_options)
+            matched_data,all_data = remote_detect(stream=stream, options=stream_options, api=zmapi)
         except Exception as e:
             g.logger.Error ("Error with remote mlapi:{}".format(e))
             if g.config['ml_fallback_local'] == 'yes':
