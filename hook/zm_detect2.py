@@ -323,6 +323,8 @@ def main_handler():
             matched_data,all_data = remote_detect(stream=stream, options=stream_options, api=zmapi)
         except Exception as e:
             g.logger.Error ("Error with remote mlapi:{}".format(e))
+            g.logger.Debug(2,traceback.format_exc())
+
             if g.config['ml_fallback_local'] == 'yes':
                 g.logger.Debug (1, "Falling back to local detection")
                 stream_options['api'] = zmapi
