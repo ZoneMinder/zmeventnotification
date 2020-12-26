@@ -53,7 +53,7 @@ def createAnimation(frametype, eid, fname, types):
         elif frametype == 'snapshot':
             fid = int(r_event.get('MaxScoreFrameId'))
         else:
-            fid = int(frameid)
+            fid = int(frametype)
 
         #g.logger.Debug (1,f'animation: Response {r}')
         if r_frame is None or not r_frame_len:
