@@ -112,7 +112,7 @@ def remote_detect(stream=None, options=None, api=None):
                     )
     data = r.json()
     matched_data = data['matched_data']
-    if g.config['write_image_to_zm'] == 'yes'  and matched_data:
+    if g.config['write_image_to_zm'] == 'yes'  and matched_data['frame_id']:
         url = '{}/index.php?view=image&eid={}&fid={}'.format(g.config['portal'], stream,matched_data['frame_id'] )
         g.logger.Debug(2,'Grabbing image from {} as we need to write objdetect.jpg'.format(url))
         try:
