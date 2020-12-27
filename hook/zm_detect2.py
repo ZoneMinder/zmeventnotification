@@ -122,6 +122,15 @@ def remote_detect(stream=None, options=None, api=None):
             if options.get('resize') and options.get('resize') != 'no':
                 img = imutils.resize(img,width=options.get('resize'))
             matched_data['image'] = img
+
+            # we also need to recompute polygons scale as it was remotely done
+            oldw = matched_data['image_dimensions']['original'][0]
+            oldh = matched_data['image_dimensions']['original'][1]
+            neww = matched_data['image_dimensions']['resized'][0] 
+            newh = matched_data['image_dimensions']['resized'][1]
+            g.logger.Debug (2, 'Rescaling polygons for remote_detect {}x{} => {}x{}'.format(oldw,oldh, neww, newh))
+            utils.rescale_polygons(neww / oldw, newh / oldh)
+
         except Exception as e:
             g.logger.Error ('Error during image grab: {}'.format(str(e)))
             g.logger.Debug(2,traceback.format_exc())
@@ -291,6 +300,8 @@ def main_handler():
                 frame_set = 'snapshot,alarm'
             else:
                 frame_set = 'alarm,snapshot'
+        stream_options['resize'] =int(g.config['resize']) if g.config['resize'] != 'no' else None
+
        
         stream_options['strategy'] = g.config['detection_mode'] 
         stream_options['frame_set'] = frame_set       
@@ -299,7 +310,6 @@ def main_handler():
     stream_options['api'] = zmapi
     
     stream_options['polygons'] = g.polygons
-    stream_options['resize'] =int(g.config['resize']) if g.config['resize'] != 'no' else None
 
     '''
     stream_options = {
@@ -341,7 +351,7 @@ def main_handler():
 
     #print(f'ALL FRAMES: {all_data}\n\n')
     #print (f"SELECTED FRAME {matched_data['frame_id']}, size {matched_data['image_dimensions']} with LABELS {matched_data['labels']} {matched_data['boxes']} {matched_data['confidences']}")
-    
+    #print (matched_data)
     '''
      matched_data = {
             'boxes': matched_b,
