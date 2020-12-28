@@ -415,24 +415,37 @@ def process_config(args, ctx):
             g.logger.Debug(1,'No secrets file configured')
         # now read config values
 
-        # iterate through all keys in common_params. This will ignore 
-        # any unknown keys in objectconfig.ini
-        for k, v in g.config_vals.items():
-            # we've already read secrets before we got here
-            if k == 'secrets':
+        for k,v in g.config_vals.items():
+            g.config[k] = v.get('default', None)
+
+        for sec in config_file.sections():
+            if sec.startswith('monitor-'):
+                #g.logger.Debug(4, 'Skipping {} for now'.format(sec))
                 continue
-            _set_config_val(k, v)
+            if sec == 'secrets':
+                continue
+            for (k, v) in config_file.items(sec):
+                if g.config_vals.get(k):
+                    _set_config_val(k,g.config_vals[k] )
+                else:
+                    g.logger.Debug(4, 'storing unknown attribute {}={}'.format(k,v))
+                    g.config[k] = v 
+                    #_set_config_val(k,{'section': sec, 'default': None, 'type': 'string'} )
+
         if g.config['allow_self_signed'] == 'yes':
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
             g.logger.Debug(1,'allowing self-signed certs to work...')
         else:
-            g.logger.Debug(1,'strict SSL cert checking is on...')
+            g.logger.Debug(1,'strict SSL cert checking is on...')           
+
 
         g.polygons = []
         poly_patterns = []
 
+
         # Check if we have a custom overrides for this monitor
+        g.logger.Debug(4,'Now checking for monitor overrides')
         if 'monitorid' in args and args.get('monitorid'):
             sec = 'monitor-{}'.format(args.get('monitorid'))
             if sec in config_file:
@@ -440,6 +453,7 @@ def process_config(args, ctx):
                 for item in config_file[sec].items():
                     k = item[0]
                     v = item[1]
+                    g.config[k] = v
 
                     if k.endswith('_zone_detection_pattern'):
                         zone_name = k.split('_zone_detection_pattern')[0]
@@ -449,7 +463,7 @@ def process_config(args, ctx):
 
                     if k in g.config_vals:
                         # This means its a legit config key that needs to be overriden
-                        g.logger.Debug(2,
+                        g.logger.Debug(4,
                             '[{}] overrides key:{} with value:{}'.format(
                                 sec, k, v))
                         g.config[k] = _correct_type(v,
@@ -494,19 +508,26 @@ def process_config(args, ctx):
         exit(0)
 
     # Now lets make sure we take care of parameter substitutions {{}}
+    g.logger.Debug (4,'Finally, doing parameter substitution')
     p = r'{{(\w+?)}}'
     for gk, gv in g.config.items():
-        if not isinstance(gv, str):
-            continue
-
-        sub_vars = re.findall(p, gv)
-        for sub_var in sub_vars:
-            if g.config[sub_var]:
-
-                g.config[gk] = g.config[gk].replace('{{' + sub_var + '}}',
-                                                    g.config[sub_var])
-                #g.logger.Debug(2,'key [{}] is \'{}\' after substitution'.format(
-                #    gk, g.config[gk]))
+        #input ('Continue')
+        #print(f"PROCESSING {gk} {gv}")
+        gv = '{}'.format(gv)
+        #if not isinstance(gv, str):
+        #    continue
+        while True:
+            matches = re.findall(p,gv)
+            replaced = False
+            for match_key in matches:
+                if g.config[match_key]:
+                    replaced = True
+                    new_val = g.config[gk].replace('{{' + match_key + '}}',str(g.config[match_key]))
+                    #print ('replacing {} with {}'.format(g.config[gk], new_val))
+                    g.config[gk] = new_val
+                    gv = new_val
+            if not replaced:
+                break
 
     # Now munge config if testing args provide
     if args.get('file'):
