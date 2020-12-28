@@ -249,7 +249,6 @@ def main_handler():
     else:
         g.logger.Info('Importing remote shim classes for Object/Face')
         from zmes_hook_helpers.apigw import ObjectRemote, FaceRemote, AlprRemote
-
     # now download image(s)
 
 
@@ -257,9 +256,7 @@ def main_handler():
 
     obj_json = []
 
-    from pyzm.ml.detect_sequence import DetectSequence
     import pyzm.api as zmapi
-
     api_options  = {
     'apiurl': g.config['api_portal'],
     'portalurl': g.config['portal'],
@@ -333,7 +330,7 @@ def main_handler():
         g.logger.Info('Sleeping for {} seconds before inferencing'.format(
             g.config['wait']))
         time.sleep(g.config['wait'])
-        
+
     if g.config['ml_gateway']:
         stream_options['api'] = None
         try:
@@ -345,12 +342,13 @@ def main_handler():
             if g.config['ml_fallback_local'] == 'yes':
                 g.logger.Debug (1, "Falling back to local detection")
                 stream_options['api'] = zmapi
-
+                from pyzm.ml.detect_sequence import DetectSequence
                 m = DetectSequence(options=ml_options, logger=g.logger)
                 matched_data,all_data = m.detect_stream(stream=stream, options=stream_options)
     
 
     else:
+        from pyzm.ml.detect_sequence import DetectSequence
         m = DetectSequence(options=ml_options, logger=g.logger)
         matched_data,all_data = m.detect_stream(stream=stream, options=stream_options)
     
