@@ -233,7 +233,7 @@ def import_zm_zones(mid, reason):
 
 # downloaded ZM image files for future analysis
 def download_files(args):
-    if g.config['wait'] > 0:
+    if int(g.config['wait']) > 0:
         g.logger.Info('Sleeping for {} seconds before downloading'.format(
             g.config['wait']))
         time.sleep(g.config['wait'])
@@ -430,7 +430,7 @@ def process_config(args, ctx):
                 if g.config_vals.get(k):
                     _set_config_val(k,g.config_vals[k] )
                 else:
-                    g.logger.Debug(4, 'storing unknown attribute {}={}'.format(k,v))
+                    #g.logger.Debug(4, 'storing unknown attribute {}={}'.format(k,v))
                     g.config[k] = v 
                     #_set_config_val(k,{'section': sec, 'default': None, 'type': 'string'} )
 
