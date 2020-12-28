@@ -269,6 +269,7 @@ def main_handler():
     #'disable_ssl_cert_check': True
     }
 
+    g.logger.Info('Connecting with ZM APIs')
     zmapi = zmapi.ZMApi(options=api_options)
     stream = args.get('eventid') or args.get('file')
     ml_options = {}
