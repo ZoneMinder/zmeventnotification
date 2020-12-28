@@ -328,6 +328,12 @@ def main_handler():
     m = None
     matched_data = None
     all_data = None
+
+    if int(g.config['wait']) > 0:
+        g.logger.Info('Sleeping for {} seconds before inferencing'.format(
+            g.config['wait']))
+        time.sleep(g.config['wait'])
+        
     if g.config['ml_gateway']:
         stream_options['api'] = None
         try:
