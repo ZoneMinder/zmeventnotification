@@ -415,9 +415,11 @@ def process_config(args, ctx):
             g.logger.Debug(1,'No secrets file configured')
         # now read config values
 
+        # first, fill in config with default values
         for k,v in g.config_vals.items():
             g.config[k] = v.get('default', None)
 
+        # now iterate the file
         for sec in config_file.sections():
             if sec.startswith('monitor-'):
                 #g.logger.Debug(4, 'Skipping {} for now'.format(sec))
@@ -520,7 +522,7 @@ def process_config(args, ctx):
             matches = re.findall(p,gv)
             replaced = False
             for match_key in matches:
-                if g.config[match_key]:
+                if match_key in g.config:
                     replaced = True
                     new_val = g.config[gk].replace('{{' + match_key + '}}',str(g.config[match_key]))
                     #print ('replacing {} with {}'.format(g.config[gk], new_val))

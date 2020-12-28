@@ -33,10 +33,11 @@ from zmes_hook_helpers import __version__ as hooks_version
 
 auth_header = None
 
-# This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
 
 
 def remote_detect(stream=None, options=None, api=None):
+    # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
+
     import requests
     import cv2
     
@@ -280,7 +281,6 @@ def main_handler():
         secrets = pyzmutils.read_config(g.config['secrets'])
         ml_options = pyzmutils.template_fill(input_str=ml_options, config=None, secrets=secrets._sections.get('secrets'))
         ml_options = ast.literal_eval(ml_options)
-        #print (ml_options)
     else:
         g.logger.Debug(2,'mapping legacy ml data from config')
         ml_options = utils.convert_config_to_ml_sequence()
