@@ -16,7 +16,7 @@ AUTHOR = 'Pliable Pixels'
 LICENSE = 'GPL'
 INSTALL_REQUIRES = [
     'numpy', 'requests', 'Shapely', 'imutils', 
-    'pyzm==0.3.8', 'scikit-learn', 'future', 'imageio',
+    'pyzm==0.3.9', 'scikit-learn', 'future', 'imageio',
     'imageio-ffmpeg','pygifsicle', 'Pillow'
 ]
 

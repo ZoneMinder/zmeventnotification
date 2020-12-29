@@ -333,6 +333,7 @@ def main_handler():
 
     if g.config['ml_gateway']:
         stream_options['api'] = None
+        stream_options['monitorid'] = args.get('monitorid')
         try:
             matched_data,all_data = remote_detect(stream=stream, options=stream_options, api=zmapi)
         except Exception as e:
