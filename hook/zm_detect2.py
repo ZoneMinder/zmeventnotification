@@ -101,14 +101,29 @@ def remote_detect(stream=None, options=None, api=None):
     params = {'delete': True, 'response_format': 'new'}
     files = {}
     #print (object_url)
-    g.logger.Debug(2,f'Invoking mlapi with url:{object_url} and json: {stream}, {options}')
+
+    
+    ml_overrides = {
+        'model_sequence':g.config['ml_sequence'].get('general',{}).get('model_sequence'),
+        'object': {
+            'pattern': g.config['ml_sequence'].get('object',{}).get('general',{}).get('pattern')
+        },
+         'face': {
+            'pattern': g.config['ml_sequence'].get('face',{}).get('general',{}).get('pattern')
+        },
+         'alpr': {
+            'pattern': g.config['ml_sequence'].get('alpr',{}).get('general',{}).get('pattern')
+        },
+    }
+    g.logger.Debug(2,f'Invoking mlapi with url:{object_url} and json: stream={stream}, stream_options={options} ml_overrides={ml_overrides}')
     r = requests.post(url=object_url,
                       headers=auth_header,
                       params=params,
                       files=files,
                       json = {
-                       'stream': stream,
-                        'stream_options':options   
+                        'stream': stream,
+                        'stream_options':options,
+                        'ml_overrides':ml_overrides
                       }
                     )
     data = r.json()
@@ -279,6 +294,7 @@ def main_handler():
         secrets = pyzmutils.read_config(g.config['secrets'])
         ml_options = pyzmutils.template_fill(input_str=ml_options, config=None, secrets=secrets._sections.get('secrets'))
         ml_options = ast.literal_eval(ml_options)
+        g.config['ml_sequence'] = ml_options
     else:
         g.logger.Debug(2,'mapping legacy ml data from config')
         ml_options = utils.convert_config_to_ml_sequence()
@@ -288,6 +304,7 @@ def main_handler():
         g.logger.Debug(2,'using stream_sequence')
         stream_options = g.config['stream_sequence']
         stream_options = ast.literal_eval(stream_options)
+        g.config['stream_sequence'] = stream_options
     else: # legacy
         g.logger.Debug(2,'mapping legacy stream data from config')
         if g.config['detection_mode'] == 'all':
@@ -326,7 +343,7 @@ def main_handler():
     matched_data = None
     all_data = None
 
-    if int(g.config['wait']) > 0:
+    if not args['file'] and int(g.config['wait']) > 0:
         g.logger.Info('Sleeping for {} seconds before inferencing'.format(
             g.config['wait']))
         time.sleep(g.config['wait'])
