@@ -116,6 +116,8 @@ def remote_detect(stream=None, options=None, api=None):
         },
     }
     g.logger.Debug(2,f'Invoking mlapi with url:{object_url} and json: stream={stream}, stream_options={options} ml_overrides={ml_overrides}')
+    start = datetime.datetime.now()
+
     r = requests.post(url=object_url,
                       headers=auth_header,
                       params=params,
@@ -126,6 +128,8 @@ def remote_detect(stream=None, options=None, api=None):
                         'ml_overrides':ml_overrides
                       }
                     )
+    diff_time = (datetime.datetime.now() - start)
+    g.logger.Debug(1,'remote detection inferencing took: {}'.format(diff_time))
     data = r.json()
     matched_data = data['matched_data']
     if g.config['write_image_to_zm'] == 'yes'  and matched_data['frame_id']:
@@ -351,8 +355,11 @@ def main_handler():
     if g.config['ml_gateway']:
         stream_options['api'] = None
         stream_options['monitorid'] = args.get('monitorid')
+        start = datetime.datetime.now()
         try:
             matched_data,all_data = remote_detect(stream=stream, options=stream_options, api=zmapi)
+            diff_time = (datetime.datetime.now() - start)
+            g.logger.Debug(1,'Total remote detection detection took: {}'.format(diff_time))
         except Exception as e:
             g.logger.Error ("Error with remote mlapi:{}".format(e))
             g.logger.Debug(2,traceback.format_exc())
