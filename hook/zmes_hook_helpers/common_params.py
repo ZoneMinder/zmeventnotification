@@ -252,6 +252,11 @@ config_vals = {
             'type': 'string'
         },
 
+        'disable_locks': {
+            'section': 'ml',
+            'default': 'no',
+            'type': 'string'
+        },
         'use_sequence': {
             'section': 'ml',
             'default': 'no',

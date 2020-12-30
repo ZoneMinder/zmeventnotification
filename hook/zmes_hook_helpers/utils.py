@@ -35,6 +35,7 @@ def convert_config_to_ml_sequence():
             ml_options['object'] = {
                 'general':{
                     'pattern': g.config['object_detection_pattern'],
+                    'disable_locks': g.config['disable_locks'],
                     'same_model_sequence_strategy': 'first' # 'first' 'most', 'most_unique'
 
                 },
