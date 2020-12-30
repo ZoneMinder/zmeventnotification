@@ -15,7 +15,12 @@ Version 6.0.6 onwards
 
 - You can now also specify arbitrary frames for analysis. See See `here <https://pyzm.readthedocs.io/en/latest/source/pyzm.html#pyzm.ml.detect_sequence.DetectSequence.detect_stream>`__ for details (look at options attribute).
 
-- To enable the new `*_sequence` attributes mentioned above, make ``use_sequence=yes`` in ``objectconfig.ini``
+- To enable the new ``*_sequence`` attributes mentioned above, make ``use_sequence=yes`` in ``objectconfig.ini``
+
+- A new attribute, ``disable_locks``. When set to ``yes``, it will result in locks not being grabbed
+  before inferencing. The entire idea of grabbing locks is so that you have control on how many
+  simultaneous processes use your CPU/GPU/TPU resources, so I'd recommend you don't enable it. 
+  Set it to ``yes`` only if you are facing lock issues (such as timeouts)
 
 
 Version 6.0.5 onwards

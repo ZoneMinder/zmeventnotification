@@ -57,6 +57,9 @@ def create_attributes(orig_string, new_additions):
 # def f_<fromver>_to_<tover>(str_conf,new_version):
 
 def f_1_1_to_1_2(str_conf,new_version):
+
+    print ('*** Only basic changes have been made. Please study the sample objectconfig.ini file to see all the other parameters ***')
+
     should_not_be_there = {
         'ml_sequence',
         'stream_sequence'
