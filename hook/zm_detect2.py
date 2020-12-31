@@ -98,7 +98,7 @@ def remote_detect(stream=None, options=None, api=None):
 
     auth_header = {'Authorization': 'Bearer ' + access_token}
     
-    params = {'delete': True, 'response_format': 'new'}
+    params = {'delete': True, 'response_format': 'zm_detect'}
     files = {}
     #print (object_url)
 
