@@ -291,40 +291,114 @@ Troubleshooting
       image? If not, you'll have to fix/update ZM. Please don't ask me
       how. Please post in the ZM forums
 
-Types of detection
-~~~~~~~~~~~~~~~~~~
+.. _detection_sequence:
 
-As of today, the following detection types are supported - these are all attributes you can put into the ``detection_sequence`` attribute. You can put multiple and comma separate them as well.
+Understanding detection configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* ``object`` - For object detection. The exact object detection algorithm will
-   be a function of what you specify in the ``[object]`` attribute. For example,
-   if you want YoloV4 as the object detection algorithm, your ``object_config``,
-   ``object_weights`` and ``object_labels`` will point to the YoloV4 cfg/weights/object_labels
-   files respectively, ``object_framework`` will be ``opencv`` and ``object_processor`` will
-   be ``cpu`` or ``gpu`` depending on whether you have CUDA or not.
+Starting v6.1.0, you can chain arbitrary detection types (object, face, alpr)
+and multiple models within them. In older versions, you were only allowed one model type 
+per detection type. Obviously, this has required structural changes to ``objectconfig.ini`` 
 
-   * If you use Yolo, note that it supports two modes, a "tiny" mode that takes less resources 
-     and is faster. And a regular mode, that is more accurate but resource hungry.  These models are controlled 
-     by the ``weights`` and ``config`` files you use with yolo. 
+This section will describe the key constructs around two important structures:
 
-* ``face`` - face detection and recognition (uses ``dlib``)
-* ``alpr`` - license plate recognition. Needs to be paired with object (i.e. ``object,alpr``)
+- ml_sequence (specifies sequence of ML detection steps)
+- stream_sequence (specifies frame detection preferences)
 
-You can switch detection type by using
-``detection_sequence=<detection_type1>,<detection_type2>,....`` in your
-``objectconfig.ini``
 
-Example:
 
-``detection_sequence=object,face,alpr`` will run full Yolo, then face 
-recognition and finally alpr
+Understanding ml_sequence
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+The ``ml_sequence`` structure lies in the ``[ml]`` section of ``objectconfig.ini``.
+At a high level, this is how it is structured (not all attributes have been described):
 
-Note that you can change ``detecton_sequence`` on a per monitor basis too. Read the
-comments in ``objectconfig.ini``
+::
 
-If you select yolo, you can switch weights  to use tiny YOLO
-instead of full yolo weights. Again, please readd the comments in
-``objectconfig.ini``
+   ml_sequence = {
+      'general': {
+         'model_sequence':'<comma separated detection_type>'
+      },
+      '<detection_type>': {
+         'general': {
+            'pattern': '<pattern>',
+            'same_model_sequence_strategy':'<strategy>'
+         },
+         'sequence:[{
+            <series of configurations>
+         },
+         {
+            <series of configurations>
+         }]
+      }
+   }
+
+**Explanation:**
+
+- The ``general`` section at the top level specify characterstics that apply to all elements inside 
+  the structure. 
+
+   - ``model_sequence`` dictates the detection types (comma separated). Example ``object,face,alpr`` will
+     first run object detection, then face, then alpr
+
+- Now for each detection type in ``model_sequence``, you can specify the type of models you want to leading
+  along with other related paramters.
+
+**A proper example:***
+
+Take a look at `this article <https://medium.com/zmninja/multi-frame-and-multi-model-analysis-533fa1d2799a>`__ for a walkthrough.
+
+**All options:**
+
+``ml_sequence`` supports various other attributes. Please see `the pyzm API documentation <https://pyzm.readthedocs.io/en/latest/source/pyzm.html#pyzm.ml.detect_sequence.DetectSequence>`__
+that describes all options. The ``options`` parameter is what you are looking for.
+
+Understanding stream_sequence
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The ``stream_sequence`` structure lies in the ``[ml]`` section of ``objectconfig.ini``.
+At a high level, this is how it is structured (not all attributes have been described):
+
+::
+
+   stream_sequence = {
+        'frame_set': '<series of frame ids>',
+        'frame_strategy': 'most_models',
+        'contig_frames_before_error': 5,
+        'max_attempts': 3,
+        'sleep_between_attempts': 4,
+		  'resize':800
+
+    }
+
+**Explanation:**
+
+- ``frame_set`` defines the set of frames it should use for analysis (comma separated)
+- ``frame_strategy`` defines what it should do when a match has been found
+- ``contig_frames_before_error``: How many contiguous errors should occur before giving up on the series of frames 
+- ``max_attempts``: How many times to try each frame (before counting it as an error in the ``contig_frames_before_error`` count)
+- ``sleep_between_attempts``: When an error is encountered, how many seconds to wait for retrying 
+- ``resize``: what size to resize frames too (useful if you want to speed things up and/or are running out of memory)
+
+**All options:**
+
+``stream_sequence`` supports various other attributes. Please see `the pyzm API documentation <https://pyzm.readthedocs.io/en/latest/source/pyzm.html#pyzm.ml.detect_sequence.DetectSequence.detect_stream>`__
+that describes all options. The ``options`` parameter is what you are looking for.
+
+
+How ml_sequence and stream_sequence work together
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Like this:
+
+::
+
+   for each frame in stream sequence:
+      perform stream_sequence actions
+      for each model_sequence in ml_options:
+         perform general actions:
+            for each model_configuration in ml_options.sequence:
+               detect()
+               
+
 
 How to use license plate recognition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -335,78 +409,7 @@ Three ALPR options are provided:
 - `OpenALPR <https://www.openalpr.com>`__ . While OpenALPR's detection is not as good as Plate Recognizer, when it does detect, it provides a lot more information (like car make/model/year etc.)
 - `OpenALPR command line <http://doc.openalpr.com/compiling.html>`__. This is a basic version of OpenALPR that can be self compiled and executed locally. It is far inferior to the cloud services and does NOT use any form of deep learning. However, it is free, and if you have a camera that has a good view of plates, it will work.
 
-To enable alpr, simple add `alpr` to `models`. You will also have to add your license key to the ``[alpr]`` section of ``objdetect.ini``
-
-This is an example config that uses plate recognizer:
-
-::
-
-  detection_sequence = object,alpr
-
-  [alpr]
-  alpr_service=plate_recognizer
-  # If you want to host a local SDK https://app.platerecognizer.com/sdk/
-  #alpr_url=https://localhost:8080
-  # Plate recog replace with your api key
-  alpr_key=KEY
-  # if yes, then it will log usage statistics of the ALPR service
-  platerec_stats=no
-  # If you want to specify regions. See http://docs.platerecognizer.com/#regions-supported
-  #platerec_regions=['us','cn','kr']
-  # minimal confidence for actually detecting a plate
-  platerec_min_dscore=0.1
-  # minimal confidence for the translated text
-  platerec_min_score=0.2
-
-
-This is an example config that uses OpenALPR:
-
-::
-
-  detection_sequence = object,alpr
-
-  [alpr]
-  alpr_service=open_alpr
-  alpr_key=SECRET
-
-  # For an explanation of params, see http://doc.openalpr.com/api/?api=cloudapi
-  openalpr_recognize_vehicle=1
-  openalpr_country=us
-  openalpr_state=ca
-  # openalpr returns percents, but we convert to between 0 and 1
-  openalpr_min_confidence=0.3
-
-
-This is an example config that uses OpenALPR command line:
-
-::
-
-  detection_sequence = object,alpr
-
-  [alpr]
-  alpr_service=open_alpr_cmdline
-
-  openalpr_cmdline_binary=alpr
-
-  # Do an alpr -help to see options, plug them in here
-  # like say '-j -p ca -c US' etc.
-  # keep the -j because its JSON
-
-  # Note that alpr_pattern is honored
-  # For the rest, just stuff them in the cmd line options
-
-  openalpr_cmdline_params=-j -d
-  openalpr_cmdline_min_confidence=0.3
-
-
-**NOTE**: The command line version depends on your ``alpr`` application to be correctly set up. You should make sure that if you do an ``alpr -j someimage.jpg`` (where ``someimage.jpg`` is a picture of a car with a license plate) that this command produces a legitimate JSON output **without** any sort of errors/warnings.  If you see any form of messages before the JSON output, this integration won't work. It seems in certain cases, the openALPR package bundled with OSes have issues, so you should `compile OpenALPR on your own <http://doc.openalpr.com/compiling.html>`__.
-
-How license plate recognition will work
-''''''''''''''''''''''''''''''''''''''''
-
-- To save on  API calls, the code will only invoke remote APIs if a vehicle is detected
-- This also means you MUST specify yolo along with alpr
-- While the newly added openalpr_cmd_line option does not have an API limitation, it will still need yolo in front. I was too lazy to filter it out. Maybe later.
+To enable alpr, simple add ``alpr`` to ``model_sequence`` and configure the variables correctly in the sequence.
 
 
 How to use face recognition
@@ -489,11 +492,11 @@ known faces images
 Performance comparison 
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-CPU:  Intel Xeon 3.16GHz 4Core machine, with 32GB RAM
-GPU: GeForce 1050Ti
-TPU: Google Coral USB stick, running on USB 2.0 in 'standard' mode
-Environment: I am running using mlapi, so you will see load time only once across multiple runs 
-Image size: 800px
+* CPU:  Intel Xeon 3.16GHz 4Core machine, with 32GB RAM
+* GPU: GeForce 1050Ti
+* TPU: Google Coral USB stick, running on USB 2.0 in 'standard' mode
+* Environment: I am running using mlapi, so you will see load time only once across multiple runs 
+* Image size: 800px
 
 ::
 
