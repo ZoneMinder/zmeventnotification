@@ -526,6 +526,7 @@ Run 2:
 01/01/21 12:43:11 zm_mlapi[6027] DBG1 detect_sequence.py:527 [perf: TOTAL detection sequence (with image loads) took: 0:00:04.683837  to process 176878]
 
 Run 3:
+
 01/01/21 12:43:43 zm_mlapi[6027] DBG1 coral_edgetpu.py:134 [perf: processor:tpu Coral TPU detection took: 0:00:00.052399]
 01/01/21 12:43:43 zm_mlapi[6027] DBG1 yolo.py:168 [perf: processor:gpu Yolo detection took: 0:00:00.071308 milliseconds]
 01/01/21 12:43:43 zm_mlapi[6027] DBG2 yolo.py:202 [perf: processor:gpu Yolo NMS filtering took: 0:00:00.002627]
