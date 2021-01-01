@@ -1,7 +1,7 @@
 Breaking Changes
 ----------------
 
-Version 6.0.6 onwards 
+Version 6.1.0 onwards 
 ~~~~~~~~~~~~~~~~~~~~~~
 - You can now string togther multiple models in arbitrary fashion to suit your needs. 
   Read `this article <https://medium.com/zmninja/multi-frame-and-multi-model-analysis-533fa1d2799a>`__ for more details.
@@ -13,7 +13,7 @@ Version 6.0.6 onwards
 - The ``hog`` model has been removed. Note this refers to the ``hog`` person detection
   model, not the hog detection of a face. That still exists. With Yolo, TinyYolo, coral
   there was no need to support this very low performance model anymore.
-  
+
 - You can now also specify arbitrary frames for analysis. See See `here <https://pyzm.readthedocs.io/en/latest/source/pyzm.html#pyzm.ml.detect_sequence.DetectSequence.detect_stream>`__ for details (look at options attribute).
 
 - To enable the new ``*_sequence`` attributes mentioned above, make ``use_sequence=yes`` in ``objectconfig.ini``
