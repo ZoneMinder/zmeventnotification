@@ -493,8 +493,7 @@ CPU:  Intel Xeon 3.16GHz 4Core machine, with 32GB RAM
 GPU: GeForce 1050Ti
 TPU: Google Coral USB stick, running on USB 2.0 in 'standard' mode
 Environment: I am running using mlapi, so you will see load time only once across multiple runs 
-
-Image: 800px
+Image size: 800px
 
 pp@homeserver:/var/lib/zmeventnotification/mlapi$ tail -F /var/log/zm/zm_mlapi.log | grep "perf:"
 
