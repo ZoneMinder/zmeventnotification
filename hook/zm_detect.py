@@ -20,11 +20,12 @@ import time
 import requests
 import subprocess
 import traceback
-
+import ast 
 # Modules that load cv2 will go later 
 # so we can log misses
 import pyzm.ZMLog as log 
 import zmes_hook_helpers.utils as utils
+import pyzm.helpers.utils as pyzmutils
 import zmes_hook_helpers.common_params as g
 from pyzm import __version__ as pyzm_version
 from zmes_hook_helpers import __version__ as hooks_version
@@ -32,16 +33,18 @@ from zmes_hook_helpers import __version__ as hooks_version
 
 auth_header = None
 
-# This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
 
 
-def remote_detect(image, model=None):
+def remote_detect(stream=None, options=None, api=None):
+    # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
+
     import requests
     import cv2
     
     bbox = []
     label = []
     conf = []
+    model = 'object'
     api_url = g.config['ml_gateway']
     g.logger.Info('Detecting using remote API Gateway {}'.format(api_url))
     login_url = api_url + '/login'
@@ -73,7 +76,9 @@ def remote_detect(image, model=None):
         r = requests.post(url=login_url,
                           data=json.dumps({
                               'username': g.config['ml_user'],
-                              'password': g.config['ml_password']
+                              'password': g.config['ml_password'],
+                             
+
                           }),
                           headers={'content-type': 'application/json'})
         data = r.json()
@@ -92,43 +97,70 @@ def remote_detect(image, model=None):
             json_file.close()
 
     auth_header = {'Authorization': 'Bearer ' + access_token}
-
-    if type(image) == str:
-        g.logger.Debug(2, f'Reading {image} to buffer')
-        image = cv2.imread(image)
-        if g.config['resize'] and g.config['resize'] != 'no':
-            g.logger.Debug (2,'Resizing image before sending')
-            img_new = imutils.resize(image,
-                                     width=min(int(g.config['resize']),
-                                               image.shape[1]))
-            image = img_new
-    ret, jpeg = cv2.imencode('.jpg', image)
-    files = {'file': ('image.jpg', jpeg.tobytes())}
+    
+    params = {'delete': True, 'response_format': 'zm_detect'}
+    files = {}
+    #print (object_url)
 
     
-    params = {'delete': True}
-  
-    #print (object_url)
-    g.logger.Debug(2,f'Invoking mlapi with url:{object_url}')
+    ml_overrides = {
+        'model_sequence':g.config['ml_sequence'].get('general',{}).get('model_sequence'),
+        'object': {
+            'pattern': g.config['ml_sequence'].get('object',{}).get('general',{}).get('pattern')
+        },
+         'face': {
+            'pattern': g.config['ml_sequence'].get('face',{}).get('general',{}).get('pattern')
+        },
+         'alpr': {
+            'pattern': g.config['ml_sequence'].get('alpr',{}).get('general',{}).get('pattern')
+        },
+    }
+    g.logger.Debug(2,f'Invoking mlapi with url:{object_url} and json: stream={stream}, stream_options={options} ml_overrides={ml_overrides}')
+    start = datetime.datetime.now()
+
     r = requests.post(url=object_url,
                       headers=auth_header,
                       params=params,
-                      files=files)
+                      files=files,
+                      json = {
+                        'stream': stream,
+                        'stream_options':options,
+                        'ml_overrides':ml_overrides
+                      }
+                    )
+    diff_time = (datetime.datetime.now() - start)
+    g.logger.Debug(1,'remote detection inferencing took: {}'.format(diff_time))
     data = r.json()
+    matched_data = data['matched_data']
+    if g.config['write_image_to_zm'] == 'yes'  and matched_data['frame_id']:
+        url = '{}/index.php?view=image&eid={}&fid={}'.format(g.config['portal'], stream,matched_data['frame_id'] )
+        g.logger.Debug(2,'Grabbing image from {} as we need to write objdetect.jpg'.format(url))
+        try:
+            response = api._make_request(url=url,  type='get')
+            img = np.asarray(bytearray(response.content), dtype='uint8')
+            img = cv2.imdecode (img, cv2.IMREAD_COLOR)
+            if options.get('resize') and options.get('resize') != 'no':
+                img = imutils.resize(img,width=options.get('resize'))
+            matched_data['image'] = img
 
-    for d in data:
+            # we also need to recompute polygons scale as it was remotely done
+            oldw = matched_data['image_dimensions']['original'][0]
+            oldh = matched_data['image_dimensions']['original'][1]
+            neww = matched_data['image_dimensions']['resized'][0] 
+            newh = matched_data['image_dimensions']['resized'][1]
+            g.logger.Debug (2, 'Rescaling polygons for remote_detect {}x{} => {}x{}'.format(oldw,oldh, neww, newh))
+            utils.rescale_polygons(neww / oldw, newh / oldh)
 
-        label.append(d.get('label'))
-        conf.append(float(d.get('confidence').strip('%')) / 100)
-        box = d.get('box')
-        bbox.append(d.get('box'))
-
-        #print (bbox, label, conf)
-    return bbox, label, conf
+        except Exception as e:
+            g.logger.Error ('Error during image grab: {}'.format(str(e)))
+            g.logger.Debug(2,traceback.format_exc())
+    return data['matched_data'], data['all_matches']
 
 
 def append_suffix(filename, token):
     f, e = os.path.splitext(filename)
+    if not e:
+        e = '.jpg'
     return f + token + e
 
 
@@ -137,7 +169,7 @@ def append_suffix(filename, token):
 def main_handler():
     # set up logging to syslog
     # construct the argument parse and parse the arguments
-    
+  
     ap = argparse.ArgumentParser()
     ap.add_argument('-c', '--config', help='config file with path')
     ap.add_argument('-e', '--eventid', help='event ID to retrieve')
@@ -184,7 +216,7 @@ def main_handler():
     if args.get('debug'):
         g.config['pyzm_overrides']['dump_console'] = True
         g.config['pyzm_overrides']['log_debug'] = True
-        g.config['pyzm_overrides']['log_level_debug'] = 4
+        g.config['pyzm_overrides']['log_level_debug'] = 5
         g.config['pyzm_overrides']['log_debug_target'] = None
 
     if args.get('monitorid'):
@@ -208,11 +240,10 @@ def main_handler():
     g.logger.Info('---------| pyzm version:{}, hook version:{},  ES version:{} , OpenCV version:{}|------------'.format(pyzm_version, hooks_version, es_version, cv2.__version__))
    
 
-
+    
     # load modules that depend on cv2
     try:
         import zmes_hook_helpers.image_manip as img
-        import pyzm.ml.alpr as alpr
     except Exception as e:
         g.logger.Error (f'{e}')
         exit(1)
@@ -233,624 +264,266 @@ def main_handler():
     if not g.config['ml_gateway']:
         g.logger.Info('Importing local classes for Object/Face')
         import pyzm.ml.object as object_detection
+       
     else:
         g.logger.Info('Importing remote shim classes for Object/Face')
         from zmes_hook_helpers.apigw import ObjectRemote, FaceRemote, AlprRemote
-
     # now download image(s)
 
-    if not args.get('file'):
-        try:
-            filename1, filename2, filename1_bbox, filename2_bbox = utils.download_files(
-                args)
-        except Exception as e:
-            g.logger.Error(f'Error downloading files: {e}')
-            g.logger.Fatal('error: Traceback:{}'.format(traceback.format_exc()))
-        
-        # filename_alarm will be the first frame to analyze (typically alarm)
-        # filename_snapshot will be the second frame to analyze only if the first fails (typically snapshot)
-    else:
-        g.logger.Debug(1,'TESTING ONLY: reading image from {}'.format(args.get('file')))
-        filename1 = args.get('file')
-        filename1_bbox = g.config['image_path']+'/'+os.path.basename(append_suffix(filename1, '-bbox'))
-        filename2 = None
-        filename2_bbox = None
 
     start = datetime.datetime.now()
 
     obj_json = []
 
+    import pyzm.api as zmapi
+    api_options  = {
+    'apiurl': g.config['api_portal'],
+    'portalurl': g.config['portal'],
+    'user': g.config['user'],
+    'password': g.config['password'] ,
+    'logger': g.logger, # use none if you don't want to log to ZM,
+    #'disable_ssl_cert_check': True
+    }
 
+    g.logger.Info('Connecting with ZM APIs')
+    zmapi = zmapi.ZMApi(options=api_options)
+    stream = args.get('eventid') or args.get('file')
+    ml_options = {}
+    stream_options={}
+    secrets = None 
+    
+    if g.config['ml_sequence'] and g.config['use_sequence'] == 'yes':
+        g.logger.Debug(2,'using ml_sequence')
+        ml_options = g.config['ml_sequence']
+        secrets = pyzmutils.read_config(g.config['secrets'])
+        ml_options = pyzmutils.template_fill(input_str=ml_options, config=None, secrets=secrets._sections.get('secrets'))
+        ml_options = ast.literal_eval(ml_options)
+        g.config['ml_sequence'] = ml_options
+    else:
+        g.logger.Debug(2,'mapping legacy ml data from config')
+        ml_options = utils.convert_config_to_ml_sequence()
+    
 
-    # Read images to analyze
-    image2 = None
-    image1 = cv2.imread(filename1)
-    if image1 is None:  # can't have this None, something went wrong
-        g.logger.Error(
-            'Error reading {}. It either does not exist or is invalid'.format(
-                filename1))
-        raise ValueError(
-            'Error reading file {}. It either does not exist or is invalid'.format(
-                filename1))
-    oldh, oldw = image1.shape[:2]
-    if filename2:  # may be none
-        image2 = cv2.imread(filename2)
-        if image2 is None:
-            g.logger.Error(
-                'Error reading {}. It either does not exist or is invalid'.format(
-                    filename2))
-            raise ValueError(
-                'Error reading file {}. It either does not exist or is invalid'.
-                format(filename2))
-    # create a scaled polygon for object intersection checks
-    if not g.polygons and g.config['only_triggered_zm_zones'] == 'no':
-        g.polygons.append({
-            'name': 'full_image',
-            'value': [(0, 0), (oldw, 0), (oldw, oldh), (0, oldh)],
-            'pattern':None
-
-        })
-        g.logger.Debug(1,
-            'No polygon area specfied, so adding a full image polygon:{}'.format(
-                g.polygons))
-    if g.config['resize'] != 'no':
-        g.logger.Debug(1,'resizing to {} before analysis...'.format(
-            g.config['resize']))
-        image1 = imutils.resize(image1,
-                                width=min(int(g.config['resize']),
-                                        image1.shape[1]))
-        if image2 is not None:
-            image2 = imutils.resize(image2,
-                                    width=min(int(g.config['resize']),
-                                            image2.shape[1]))
-
-        newh, neww = image1.shape[:2]
-        utils.rescale_polygons(neww / oldw, newh / oldh)
-
-    # Apply all configured models to each file
-
-    matched_file = None
-    bbox = []
-    label = []
-    conf = []
-    classes = []
-
-    use_alpr = True if 'alpr' in g.config['detection_sequence'] else False
-    g.logger.Debug(1,'User ALPR if vehicle found: {}'.format(use_alpr))
-    # labels that could have license plates. See https://github.com/pjreddie/darknet/blob/master/data/coco.names
-
-    for model in g.config['detection_sequence']:
-        # instaniate the right model
-        # after instantiation run all files with it,
-        # so no need to do 2x instantiations
-
-        t_start = datetime.datetime.now()
-
-        if model == 'object':
-            if g.config['ml_gateway']:
-                m = ObjectRemote()
+    if g.config['stream_sequence'] and g.config['use_sequence'] == 'yes': # new sequence
+        g.logger.Debug(2,'using stream_sequence')
+        stream_options = g.config['stream_sequence']
+        stream_options = ast.literal_eval(stream_options)
+        g.config['stream_sequence'] = stream_options
+    else: # legacy
+        g.logger.Debug(2,'mapping legacy stream data from config')
+        if g.config['detection_mode'] == 'all':
+            g.config['detection_mode'] = 'most_models'
+        frame_set = g.config['frame_id']
+        if g.config['frame_id'] == 'bestmatch':
+            if g.config['bestmatch_order'] == 's,a':
+                frame_set = 'snapshot,alarm'
             else:
-            # print ("G LOGGER {}".format(g.logger))
-                m = object_detection.Object(logger=g.logger, options=g.config)
+                frame_set = 'alarm,snapshot'
+        stream_options['resize'] =int(g.config['resize']) if g.config['resize'] != 'no' else None
+
        
-        elif model == 'face':
-            if g.config['ml_gateway']:
-                m = FaceRemote()
-            else:
-                try:
-                    import pyzm.ml.face as face
-                except ImportError:
-                    g.logger.Error(
-                        'Error importing face recognition. Make sure you did sudo -H pip3 install face_recognition'
-                    )
-                    raise
-                
-                m = face.Face(logger=g.logger, options=g.config, upsample_times=g.config['face_upsample_times'],
-                            num_jitters=g.config['face_num_jitters'],
-                            model=g.config['face_model'])
-        elif model == 'alpr':
-            if g.config['alpr_use_after_detection_only'] == 'yes':
-                #g.logger.Debug (1,'Skipping ALPR as it is configured to only be used after object detection')
-                continue  # we would have handled it after object
-            else:
-                g.logger.Info(
-                    'Standalone ALPR is not supported today. Please use after object'
-                )
-                continue
+        stream_options['strategy'] = g.config['detection_mode'] 
+        stream_options['frame_set'] = frame_set       
 
-        else:
-            g.logger.Error('Invalid model {}'.format(model))
-            raise ValueError('Invalid model {}'.format(model))
+    # These are stream options that need to be set outside of supplied configs         
+    stream_options['api'] = zmapi
+    
+    stream_options['polygons'] = g.polygons
 
-        #g.logger.Debug(1,'|--> model:{} init took: {}s'.format(model, (datetime.datetime.now() - t_start).total_seconds()))
+    '''
+    stream_options = {
+            'api': zmapi,
+            'download': False,
+            'frame_set': frame_set,
+            'strategy': g.config['detection_mode'],
+            'polygons': g.polygons,
+            'resize': int(g.config['resize']) if g.config['resize'] != 'no' else None
 
-        # read the detection pattern we need to apply as a filter
-        pat = model + '_detection_pattern'
+    }
+    '''
+
+   
+    m = None
+    matched_data = None
+    all_data = None
+
+    if not args['file'] and int(g.config['wait']) > 0:
+        g.logger.Info('Sleeping for {} seconds before inferencing'.format(
+            g.config['wait']))
+        time.sleep(g.config['wait'])
+
+    if g.config['ml_gateway']:
+        stream_options['api'] = None
+        stream_options['monitorid'] = args.get('monitorid')
+        start = datetime.datetime.now()
         try:
-            g.logger.Debug(2, 'using g.config[\'{}\']={}'.format(pat, g.config[pat]))
-            r = re.compile(g.config[pat])
-        except re.error:
-            g.logger.Error('invalid pattern {} in {}, using .*'.format(
-                pat,g.config[pat]))
-            r = re.compile('.*')
+            matched_data,all_data = remote_detect(stream=stream, options=stream_options, api=zmapi)
+            diff_time = (datetime.datetime.now() - start)
+            g.logger.Debug(1,'Total remote detection detection took: {}'.format(diff_time))
+        except Exception as e:
+            g.logger.Error ("Error with remote mlapi:{}".format(e))
+            g.logger.Debug(2,traceback.format_exc())
 
-        t_start = datetime.datetime.now()
-        try_next_image = False  # take the best of both images, currently used only by alpr
-        # temporary holders, incase alpr is used but not found
-        saved_bbox = []
-        saved_labels = []
-        saved_conf = []
-        saved_classes = []
-        saved_image = None
-        saved_file = None
-        # Apply the model to all files
-        remote_failed = False
-
-        # default order is alarm, snapshot
-        frame_order = [filename2, filename1] if g.config['bestmatch_order'] == 's,a' else [filename1,filename2]
-
-        for filename in frame_order:
-            if filename is None:
-                continue
-            #filename = './car.jpg'
-            if matched_file and filename != matched_file:
-                # this will only happen if we tried model A, we found a match
-                # and then we looped to model B to find more matches (that is, detection_mode is all)
-                # in this case, we only want to match more models to the file we found a first match
-                g.logger.Debug(1,'Skipping {} as we earlier matched {}'.format(
-                    filename, matched_file))
-                continue
-            g.logger.Debug(1,'Using model: {} with {}'.format(model, filename))
-
-            image = image1 if filename == filename1 else image2
-            original_image = image.copy()
-
-            if g.config['ml_gateway'] and not remote_failed:
-                try:
-                    b, l, c = remote_detect(original_image, model)
-                except Exception as e:
-                    g.logger.Error('Error executing remote API: {}'.format(e))
-                    if g.config['ml_fallback_local'] == 'yes':
-                        g.logger.Info('Falling back to local execution...')
-                        remote_failed = True
-                        if model == 'object':
-                            import pyzm.ml.object as object_detection
-                            m = object_detection.Object(logger=g.logger,options=g.config)
-                       
-                        elif model == 'face':
-                            import pyzm.ml.face as face
-                            m = face.Face(
-                                options=g.config,
-                                upsample_times=g.config['face_upsample_times'],
-                                num_jitters=g.config['face_num_jitters'],
-                                model=g.config['face_model'])
-                        b, l, c = m.detect(original_image)
-                    else:
-                        raise
-
-            else:
-                b, l, c = m.detect(original_image)
-
-            #g.logger.Debug(1,'|--> model:{} detection took: {}s'.format(model,(datetime.datetime.now() - t_start).total_seconds()))
-            t_start = datetime.datetime.now()
-            # Now look for matched patterns in bounding boxes
-            match = list(filter(r.match, l))
-            # If you want face recognition, we need to add the list of found faces
-            # to the allowed list or they will be thrown away during the intersection
-            # check
-            if model == 'face':
-                match = match + [g.config['unknown_face_name']]  # unknown face
-                if g.config['ml_gateway'] and not remote_failed:
-                    data_file = g.config[
-                        'base_data_path'] + '/misc/known_face_names.json'
-                    if os.path.exists(data_file):
-                        g.logger.Debug(1,
-                            'Found known faces list remote gateway supports. If you have trained new faces in the remote gateway, please delete this file'
-                        )
-                        with open(data_file) as json_file:
-                            data = json.load(json_file)
-                            g.logger.Debug(2,'Read from existing names: {}'.format(
-                                data['names']))
-                            m.set_classes(data['names'])
-                    else:
-                        g.logger.Debug(1,'Fetching known names from remote gateway')
-                        api_url = g.config[
-                            'ml_gateway'] + '/detect/object?type=face_names'
-                        r = requests.post(url=api_url,
-                                        headers=auth_header,
-                                        params={})
-                        data = r.json()
-                        with open(data_file, 'w') as json_file:
-                            wdata = {'names': data['names']}
-                            json.dump(wdata, json_file)
-
-                '''
-                for cls in m.get_classes():
-                    if not cls in match:
-                        match = match + [cls]
-                '''
-            # now filter these with polygon areas
-            #g.logger.Debug (1,"INTERIM BOX = {} {}".format(b,l))
-            b, l, c = img.processFilters(b, l, c, match, model)
-            if use_alpr:
-                vehicle_labels = ['car', 'motorbike', 'bus', 'truck', 'boat']
-                if not set(l).isdisjoint(vehicle_labels) or try_next_image:
-                    # if this is true, that ,means l has vehicle labels
-                    # this happens after match, so no need to add license plates to filter
-                    g.logger.Debug(1,
-                        'Invoking ALPR as detected object is a vehicle or, we are trying hard to look for plates...'
-                    )
-                    if g.config['ml_gateway']:
-                        alpr_obj = AlprRemote()
-                    else:
-                        alpr_obj = alpr.Alpr(logger=g.logger,options=g.config)
-                        
-
-                    if g.config['ml_gateway'] and not remote_failed:
-                        try:
-                            alpr_b, alpr_l, alpr_c = remote_detect(original_image, 'alpr')
-                        except Exception as e:
-                            g.logger.Error('Error executing remote API: {}'.format(e))
-                            if g.config['ml_fallback_local'] == 'yes':
-                                g.logger.Info('Falling back to local execution...')
-                                remote_failed = True
-                                alpr_obj = alpr.Alpr(logger=g.logger,options=g.config)
-                                alpr_b, alpr_l, alpr_c = alpr_obj.detect(original_image)        
-                            else:
-                                raise
-
-                    else: # not ml_gateway
-                        alpr_b, alpr_l, alpr_c = alpr_obj.detect(original_image)
-                    alpr_b, alpr_l, alpr_c = img.getValidPlateDetections(
-                        alpr_b, alpr_l, alpr_c)
-                    if len(alpr_l):
-                        #g.logger.Debug (1,'ALPR returned: {}, {}, {}'.format(alpr_b, alpr_l, alpr_c))
-                        try_next_image = False
-                        # First get non plate objects
-                        for idx, t_l in enumerate(l):
-                            otype = 'face' if model == 'face' else 'object'
-                            obj_json.append({
-                                'type':
-                                otype,
-                                'label':
-                                t_l,
-                                'box':
-                                b[idx],
-                                'confidence':
-                                "{:.2f}%".format(c[idx] * 100)
-                            })
-                        # Now add plate objects
-                        for i, al in enumerate(alpr_l):
-                            g.logger.Debug(2,
-                                'ALPR Found {} at {} with score:{}'.format(
-                                    al, alpr_b[i], alpr_c[i]))
-                            b.append(alpr_b[i])
-                            l.append(al)
-                            c.append(alpr_c[i])
-                            obj_json.append({
-                                'type':
-                                'licenseplate',
-                                'label':
-                                al,
-                                'box':
-                                alpr_b[i],
-                                #'confidence': alpr_c[i]
-                                'confidence':
-                                "{:.2f}%".format(alpr_c[i] * 100)
-                            })
-                    elif filename == filename1 and filename2:  # no plates, but another image to try
-                        g.logger.Debug(1,
-                            'We did not find license plates in vehicles, but there is another image to try'
-                        )
-                        saved_bbox = b
-                        saved_labels = l
-                        saved_conf = c
-                        saved_classes = m.get_classes()
-                        saved_image = image.copy()
-                        saved_file = filename
-                        try_next_image = True
-                    else:  # no plates, no more to try
-                        g.logger.Info(
-                            'We did not find license plates, and there are no more images to try'
-                        )
-                        if saved_bbox:
-                            g.logger.Debug(2,'Going back to matches in first image')
-                            b = saved_bbox
-                            l = saved_labels
-                            c = saved_conf
-                            image = saved_image
-                            filename = saved_file
-                            # store non plate objects
-                            otype = 'face' if model == 'face' else 'object'
-                            for idx, t_l in enumerate(l):
-                                obj_json.append({
-                                    'type':
-                                    otype,
-                                    'label':
-                                    t_l,
-                                    'box':
-                                    b[idx],
-                                    'confidence':
-                                    "{:.2f}%".format(c[idx] * 100)
-                                })
-                        try_next_image = False
-                else:  # objects, no vehicles
-                    if filename == filename1 and filename2:
-                        g.logger.Debug(1,
-                            'There was no vehicle detected by object detection in this image')
-                        '''
-                        # For now, don't force ALPR in the next (snapshot image) 
-                        # only do it if object_detection gets a vehicle there
-                        # may change this later
-                        try_next_image = True
-                        saved_bbox = b
-                        saved_labels = l
-                        saved_conf = c
-                        saved_classes = m.get_classes()
-                        saved_image = image.copy()
-                        saved_file = filename
-                        '''
-                    else:
-                        g.logger.Debug(1,
-                            'No vehicle detected, and no more images to try')
-                        if saved_bbox:
-                            g.logger.Debug(1,'Going back to matches in first image')
-                            b = saved_bbox
-                            l = saved_labels
-                            c = saved_conf
-                            image = saved_image
-                            filename = saved_file
-                        try_next_image = False
-                        otype = 'face' if model == 'face' else 'object'
-                        for idx, t_l in enumerate(l):
-                            obj_json.append({
-                                'type':
-                                'object',
-                                'label':
-                                t_l,
-                                'box':
-                                b[idx],
-                                'confidence':
-                                "{:.2f}%".format(c[idx] * 100)
-                            })
-            else:  # usealpr
-                g.logger.Debug(2,
-                    'ALPR not in use, no need for look aheads in processing')
-                # store objects
-                otype = 'face' if model == 'face' else 'object'
-                for idx, t_l in enumerate(l):
-                    obj_json.append({
-                        'type': otype,
-                        'label': t_l,
-                        'box': b[idx],
-                        'confidence': "{:.2f}%".format(c[idx] * 100)
-                    })
-            if b:
-                # g.logger.Debug (1,'ADDING {} and {}'.format(b,l))
-                if not try_next_image:
-                    bbox.extend(b)
-                    label.extend(l)
-                    conf.extend(c)
-                    classes.append(m.get_classes())
-                    g.logger.Info('labels found: {}'.format(l))
-                    g.logger.Debug(2,
-                        'match found in {}, breaking file loop...'.format(
-                            filename))
-                    matched_file = filename
-                    break  # if we found a match, no need to process the next file
-                else:
-                    g.logger.Debug(2,
-                        'Going to try next image before we decide the best one to use'
-                    )
-            else:
-                g.logger.Debug(1,'No match found in {} using model:{}'.format(
-                    filename, model))
-            # file loop
-        # model loop
-        if matched_file and g.config['detection_mode'] == 'first':
-            g.logger.Debug(2,
-                'detection mode is set to first, breaking out of model loop...')
-            break
-
-    # all models loops, all files looped
-
-    #g.logger.Debug (1,'FINAL LIST={} AND {}'.format(bbox,label))
-
-    # Now create prediction string
-    pred = ''
-
-    if not matched_file:
-        g.logger.Info('No patterns found using any models in all files')
+            if g.config['ml_fallback_local'] == 'yes':
+                g.logger.Debug (1, "Falling back to local detection")
+                stream_options['api'] = zmapi
+                from pyzm.ml.detect_sequence import DetectSequence
+                m = DetectSequence(options=ml_options, logger=g.logger)
+                matched_data,all_data = m.detect_stream(stream=stream, options=stream_options)
+    
 
     else:
-
-        # we have matches
-        if matched_file == filename1:
-            #image = image1
-            bbox_f = filename1_bbox
-        else:
-            #image = image2
-            bbox_f = filename2_bbox
-
+        from pyzm.ml.detect_sequence import DetectSequence
+        m = DetectSequence(options=ml_options, logger=g.logger)
+        matched_data,all_data = m.detect_stream(stream=stream, options=stream_options)
     
-        # let's remove past detections first, if enabled 
-        if g.config['match_past_detections'] == 'yes' and args.get('monitorid'):
-            # point detections to post processed data set
-            g.logger.Info('Removing matches to past detections')
-            bbox_t, label_t, conf_t = img.processPastDetection(
-                bbox, label, conf, args.get('monitorid'))
-            # save current objects for future comparisons
-            g.logger.Debug(1,
-                'Saving detections for monitor {} for future match'.format(
-                    args.get('monitorid')))
-            try:
-                mon_file = g.config['image_path'] + '/monitor-' + args.get(
-                'monitorid') + '-data.pkl'
-                f = open(mon_file, "wb")
-                pickle.dump(bbox, f)
-                pickle.dump(label, f)
-                pickle.dump(conf, f)
-                f.close()
-            except Exception as e:
-                g.logger.Error(f'Error writing to {mon_file}, past detections not recorded:{e}')
 
-            bbox = bbox_t
-            label = label_t
-            conf = conf_t
-            
 
-        # now we draw boxes
-        g.logger.Debug (2, "Drawing boxes around objects")
-        out = img.draw_bbox(image, bbox, label, classes, conf, None,
-                            g.config['show_percent'] == 'yes')
-        image = out
+    #print(f'ALL FRAMES: {all_data}\n\n')
+    #print (f"SELECTED FRAME {matched_data['frame_id']}, size {matched_data['image_dimensions']} with LABELS {matched_data['labels']} {matched_data['boxes']} {matched_data['confidences']}")
+    #print (matched_data)
+    '''
+     matched_data = {
+            'boxes': matched_b,
+            'labels': matched_l,
+            'confidences': matched_c,
+            'frame_id': matched_frame_id,
+            'image_dimensions': self.media.image_dimensions(),
+            'image': matched_frame_img
+        }
+    '''
 
-        if g.config['frame_id'] == 'bestmatch':
-            if matched_file == filename1:
-                prefix = '[a] '  # we will first analyze alarm
-                frame_type = 'alarm'
+    # let's remove past detections first, if enabled 
+    if g.config['match_past_detections'] == 'yes' and args.get('monitorid'):
+        # point detections to post processed data set
+        g.logger.Info('Removing matches to past detections')
+        bbox_t, label_t, conf_t = img.processPastDetection(
+            matched_data['boxes'], matched_data['labels'], matched_data['confidences'], args.get('monitorid'))
+        # save current objects for future comparisons
+        g.logger.Debug(1,
+            'Saving detections for monitor {} for future match'.format(
+                args.get('monitorid')))
+        try:
+            mon_file = g.config['image_path'] + '/monitor-' + args.get(
+            'monitorid') + '-data.pkl'
+            f = open(mon_file, "wb")
+            pickle.dump(matched_data['boxes'], f)
+            pickle.dump(matched_data['labels'], f)
+            pickle.dump(matched_data['confidences'], f)
+            f.close()
+        except Exception as e:
+            g.logger.Error(f'Error writing to {mon_file}, past detections not recorded:{e}')
+
+        matched_data['boxes'] = bbox_t
+        matched_data['labels'] = label_t
+        matched_data['confidences'] = conf_t
+
+    obj_json = {
+        'labels': matched_data['labels'],
+        'boxes': matched_data['boxes'],
+        'frame_id': matched_data['frame_id'],
+        'confidences': matched_data['confidences'],
+        'image_dimensions': matched_data['image_dimensions']
+    }
+
+    # 'confidences': ["{:.2f}%".format(item * 100) for item in matched_data['confidences']],
+    
+    detections = []
+    seen = {}
+    pred=''
+    prefix = ''
+
+    if matched_data['frame_id'] == 'snapshot':
+        prefix = '[s] '
+    elif matched_data['frame_id'] == 'alarm':
+        prefix = '[a] '
+    else:
+        prefix = '[x] '
+        #g.logger.Debug (1,'CONFIDENCE ARRAY:{}'.format(conf))
+    for idx, l in enumerate(matched_data['labels']):
+        if l not in seen:
+            if g.config['show_percent'] == 'no':
+                pred = pred + l + ','
             else:
-                prefix = '[s] '
-                frame_type = 'snapshot'
-        else:
-            prefix = '[x] '
-            frame_type = g.config['frame_id']
+                pred = pred + l + ':{:.0%}'.format(matched_data['confidences'][idx]) + ' '
+            seen[l] = 1
 
-        if g.config['write_debug_image'] == 'yes':
-            g.logger.Debug(1,
-                'Writing out debug bounding box image to {}...'.format(bbox_f))
-            cv2.imwrite(bbox_f, image)
+    if pred != '':
+        pred = pred.rstrip(',')
+        pred = prefix + 'detected:' + pred
+        g.logger.Info('Prediction string:{}'.format(pred))
+        jos = json.dumps(obj_json)
+        g.logger.Debug(1,'Prediction string JSON:{}'.format(jos))
+        print(pred + '--SPLIT--' + jos)
 
-        # Do this after match past detections so we don't create an objdetect if images were discarded
-        if g.config['write_image_to_zm'] == 'yes':
-            if (args.get('eventpath') and len(bbox)):
+        if (matched_data['image'] is not None) and (g.config['write_image_to_zm'] == 'yes' or g.config['write_debug_image'] == 'yes'):
+            debug_image = pyzmutils.draw_bbox(image=matched_data['image'],boxes=matched_data['boxes'], 
+                                              labels=matched_data['labels'], confidences=matched_data['confidences'],
+                                              polygons=g.polygons, poly_thickness = g.config['poly_thickness'])
+
+            if g.config['write_debug_image'] == 'yes':
+                for _b in matched_data['error_boxes']:
+                    cv2.rectangle(debug_image, (_b[0], _b[1]), (_b[2], _b[3]),
+                        (0,0,255), 1)
+                filename_debug = g.config['image_path']+'/'+os.path.basename(append_suffix(stream, '-{}-debug'.format(matched_data['frame_id'])))
+                g.logger.Debug (1,'Writing bound boxes to debug image: {}'.format(filename_debug))
+                cv2.imwrite(filename_debug,debug_image)
+
+            if g.config['write_image_to_zm'] == 'yes' and args.get('eventpath'):
                 g.logger.Debug(1,'Writing detected image to {}/objdetect.jpg'.format(
                     args.get('eventpath')))
-                cv2.imwrite(args.get('eventpath') + '/objdetect.jpg', image)
+                cv2.imwrite(args.get('eventpath') + '/objdetect.jpg', debug_image)
                 jf = args.get('eventpath')+ '/objects.json'
-                final_json = {'frame': frame_type, 'detections': obj_json}
                 g.logger.Debug(1,'Writing JSON output to {}'.format(jf))
                 try:
                     with open(jf, 'w') as jo:
-                        json.dump(final_json, jo)
+                        json.dump(obj_json, jo)
                         jo.close()
                 except Exception as e:
                     g.logger.Error(f'Error creating {jf}:{e}')
                     
-                
-                if g.config['create_animation'] == 'yes':
-                    g.logger.Debug(1,'animation: Creating burst...')
-                    try:
-                        img.createAnimation(frame_type, args.get('eventid'), args.get('eventpath')+'/objdetect', g.config['animation_types'])
-                    except Exception as e:
-                        g.logger.Error('Error creating animation:{}'.format(e))
-                        g.logger.Error('animation: Traceback:{}'.format(traceback.format_exc()))
-                    
-            else:
-                if not len(bbox):
-                    g.logger.Debug(1,'Not writing image, as no objects recorded')
-                else:
-                    g.logger.Error(
-                        'Could not write image to ZoneMinder as eventpath not present')
-
-
-        detections = []
-        seen = {}
-        
-        if not obj_json:
-            # if we broke out early/first match
-            otype = 'face' if model == 'face' else 'object'
-            for idx, t_l in enumerate(label):
-                #print (idx, t_l)
-                obj_json.append({
-                    'type': otype,
-                    'label': t_l,
-                    'box': bbox[idx],
-                    'confidence': "{:.2f}%".format(conf[idx] * 100)
-                })
-
-        #g.logger.Debug (1,'CONFIDENCE ARRAY:{}'.format(conf))
-        for idx, l in enumerate(label):
-            if l not in seen:
-                if g.config['show_percent'] == 'no':
-                    pred = pred + l + ','
-                else:
-                    pred = pred + l + ':{:.0%}'.format(conf[idx]) + ' '
-                seen[l] = 1
-
-        if pred != '':
-            pred = pred.rstrip(',')
-            pred = prefix + 'detected:' + pred
-            g.logger.Info('Prediction string:{}'.format(pred))
-        # g.logger.Error (f"Returning THIS IS {obj_json}")
-            jos = json.dumps(obj_json)
-            g.logger.Debug(1,'Prediction string JSON:{}'.format(jos))
-            print(pred + '--SPLIT--' + jos)
-
-        # end of matched_file
-
-    if g.config['delete_after_analyze'] == 'yes':
-        try:
-            if filename1:
-                os.remove(filename1)
-            if filename2:
-                os.remove(filename2)
-        except Exception as e:
-            g.logger.Error (f'Could not delete file(s):{e}')
-
-    if args.get('notes') and pred:
-        # We want to update our DB notes with the detection string
-        g.logger.Debug (1,'Updating notes for EID:{}'.format(args.get('eventid')))
-        import pyzm.api as zmapi
-        api_options = {
-                'apiurl': g.config['api_portal'],
-                'portalurl': g.config['portal'],
-                'user': g.config['user'],
-                'password': g.config['password'],
-                'logger': g.logger # We connect the API to zmlog 
-                #'logger': None, # use none if you don't want to log to ZM,
-                #'disable_ssl_cert_check': True
-            }
-        try:
-            
-            myapi = zmapi.ZMApi(options=api_options)
-
-        except Exception as e:
-            g.logger.Error ('Error during login: {}'.format(str(e)))
-            g.logger.Debug(2,traceback.format_exc())
-            exit(0) # Let's continue with zmdetect
-
-        url = '{}/events/{}.json'.format(g.config['api_portal'], args['eventid'])
-        
-        try:
-            ev = myapi._make_request(url=url,  type='get')
-        except Exception as e:
-            g.logger.Error ('Error during event notes retrieval: {}'.format(str(e)))
-            g.logger.Debug(2,traceback.format_exc())
-            exit(0) # Let's continue with zmdetect
-
-        new_notes = pred
-        if ev.get('event',{}).get('Event',{}).get('Notes'): 
-            old_notes = ev['event']['Event']['Notes']
-            old_notes_split = old_notes.split('Motion:')
-            old_d = old_notes_split[0] # old detection
+        if args.get('notes'):
+            url = '{}/events/{}.json'.format(g.config['api_portal'], args['eventid'])
             try:
-                old_m = old_notes_split[1] 
-            except IndexError:
-                old_m = ''
-            new_notes = pred + 'Motion:'+ old_m
-            g.logger.Debug (1,'Replacing old note:{} with new note:{}'.format(old_notes, new_notes))
-            
+                ev = zmapi._make_request(url=url,  type='get')
+            except Exception as e:
+                g.logger.Error ('Error during event notes retrieval: {}'.format(str(e)))
+                g.logger.Debug(2,traceback.format_exc())
+                exit(0) # Let's continue with zmdetect
 
-        payload = {}
-        payload['Event[Notes]'] = new_notes
-        try:
-            ev = myapi._make_request(url=url, payload=payload, type='put')
-        except Exception as e:
-            g.logger.Error ('Error during notes update: {}'.format(str(e)))
-            g.logger.Debug(2,traceback.format_exc())
-            exit(0) # Let's continue with zmdetect
-        
+            new_notes = pred
+            if ev.get('event',{}).get('Event',{}).get('Notes'): 
+                old_notes = ev['event']['Event']['Notes']
+                old_notes_split = old_notes.split('Motion:')
+                old_d = old_notes_split[0] # old detection
+                try:
+                    old_m = old_notes_split[1] 
+                except IndexError:
+                    old_m = ''
+                new_notes = pred + 'Motion:'+ old_m
+                g.logger.Debug (1,'Replacing old note:{} with new note:{}'.format(old_notes, new_notes))
+                
+
+            payload = {}
+            payload['Event[Notes]'] = new_notes
+            try:
+                ev = zmapi._make_request(url=url, payload=payload, type='put')
+            except Exception as e:
+                g.logger.Error ('Error during notes update: {}'.format(str(e)))
+                g.logger.Debug(2,traceback.format_exc())
+
+        if g.config['create_animation'] == 'yes':
+            if not args.get('eventid'):
+                g.logger.Error ('Cannot create animation as you did not pass an event ID')
+            else:
+                g.logger.Debug(1,'animation: Creating burst...')
+                try:
+                    img.createAnimation(matched_data['frame_id'], args.get('eventid'), args.get('eventpath')+'/objdetect', g.config['animation_types'])
+                except Exception as e:
+                    g.logger.Error('Error creating animation:{}'.format(e))
+                    g.logger.Error('animation: Traceback:{}'.format(traceback.format_exc()))
+                
+            
 
 if __name__ == '__main__':
     try:
