@@ -343,7 +343,7 @@ At a high level, this is how it is structured (not all attributes have been desc
 - Now for each detection type in ``model_sequence``, you can specify the type of models you want to leading
   along with other related paramters.
 
-**A proper example:***
+**A proper example:**
 
 Take a look at `this article <https://medium.com/zmninja/multi-frame-and-multi-model-analysis-533fa1d2799a>`__ for a walkthrough.
 
@@ -378,6 +378,10 @@ At a high level, this is how it is structured (not all attributes have been desc
 - ``sleep_between_attempts``: When an error is encountered, how many seconds to wait for retrying 
 - ``resize``: what size to resize frames too (useful if you want to speed things up and/or are running out of memory)
 
+**A proper example:**
+
+Take a look at `this article <https://medium.com/zmninja/multi-frame-and-multi-model-analysis-533fa1d2799a>`__ for a walkthrough.
+
 **All options:**
 
 ``stream_sequence`` supports various other attributes. Please see `the pyzm API documentation <https://pyzm.readthedocs.io/en/latest/source/pyzm.html#pyzm.ml.detect_sequence.DetectSequence.detect_stream>`__
@@ -397,7 +401,7 @@ Like this:
          perform general actions:
             for each model_configuration in ml_options.sequence:
                detect()
-               
+
 
 
 How to use license plate recognition
