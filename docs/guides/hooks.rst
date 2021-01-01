@@ -8,8 +8,8 @@ Machine Learning Hooks
 
 .. important::
 
-        Please don't ask me basic questions like "pip3 command not found" or
-        "cv2 not found" - what do I do? Hooks require some terminal
+        Please don't ask me basic questions like "pip3 command not found - what do I do?" or
+        "cv2 not found, how can I install it?" Hooks require some terminal
         knowledge and familiarity with troubleshooting. I don't plan to
         provide support for these hooks. They are for reference only
 
