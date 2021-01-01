@@ -498,7 +498,7 @@ Performance comparison
 
 * CPU:  Intel Xeon 3.16GHz 4Core machine, with 32GB RAM
 * GPU: GeForce 1050Ti
-* TPU: Google Coral USB stick, running on USB 2.0 in 'standard' mode
+* TPU: Google Coral USB stick, running on USB 2.0 in 'standard' mode (This makes a big difference. USB 3 is much faster as is max perf mode)
 * Environment: I am running using mlapi, so you will see load time only once across multiple runs 
 * Image size: 800px
 
