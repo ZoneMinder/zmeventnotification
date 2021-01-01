@@ -67,7 +67,7 @@ def get_image(path, cause):
 # Simple function to read variables from secret file
 def read_secrets(config='/etc/zm/secrets.ini'):
     from configparser import ConfigParser
-    secrets_object = ConfigParser(interpolation=None)
+    secrets_object = ConfigParser(interpolation=None, inline_comment_prefixes='#')
     secrets_object.optionxform=str
     zmlog.Debug(1,'eid:{} Reading secrets from {}'.format(eid,config))
     with open(config) as f:

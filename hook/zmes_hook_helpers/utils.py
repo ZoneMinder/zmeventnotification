@@ -333,7 +333,7 @@ def download_files(args):
 
 def get_pyzm_config(args):
     g.config['pyzm_overrides'] = {}
-    config_file = ConfigParser(interpolation=None)
+    config_file = ConfigParser(interpolation=None, inline_comment_prefixes='#')
     config_file.read(args.get('config'))
     if config_file.has_option('general', 'pyzm_overrides'):
         pyzm_overrides = config_file.get('general', 'pyzm_overrides')
@@ -398,7 +398,7 @@ def process_config(args, ctx):
 
     # main
     try:
-        config_file = ConfigParser(interpolation=None)
+        config_file = ConfigParser(interpolation=None, inline_comment_prefixes='#')
         config_file.read(args.get('config'))
 
         if config_file.has_option('general', 'secrets'):
@@ -406,7 +406,7 @@ def process_config(args, ctx):
             g.logger.Debug(1,'secret filename: {}'.format(secrets_filename))
             has_secrets = True
             g.config['secrets'] = secrets_filename
-            secrets_file = ConfigParser(interpolation=None)
+            secrets_file = ConfigParser(interpolation=None, inline_comment_prefixes='#')
             try:
                 with open(secrets_filename) as f:
                     secrets_file.read_file(f)

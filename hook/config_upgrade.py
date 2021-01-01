@@ -325,7 +325,7 @@ args = vars(args)
 
 
 
-config_file = ConfigParser(interpolation=None)
+config_file = ConfigParser(interpolation=None, inline_comment_prefixes='#')
 config_file.read(args.get('config'))
 
 version = 'unknown'
