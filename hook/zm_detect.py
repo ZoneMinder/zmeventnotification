@@ -282,7 +282,7 @@ def main_handler():
     'user': g.config['user'],
     'password': g.config['password'] ,
     'logger': g.logger, # use none if you don't want to log to ZM,
-    #'disable_ssl_cert_check': True
+    'disable_ssl_cert_check': False if g.config['allow_self_signed']=='no' else True
     }
 
     g.logger.Info('Connecting with ZM APIs')
@@ -321,9 +321,10 @@ def main_handler():
                 frame_set = 'alarm,snapshot'
         stream_options['resize'] =int(g.config['resize']) if g.config['resize'] != 'no' else None
 
-       
         stream_options['strategy'] = g.config['detection_mode'] 
         stream_options['frame_set'] = frame_set       
+        stream_options['disable_ssl_cert_check'] =  False if g.config['allow_self_signed']=='no' else True
+
 
     # These are stream options that need to be set outside of supplied configs         
     stream_options['api'] = zmapi

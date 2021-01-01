@@ -90,6 +90,7 @@ config_vals = {
             'default': '',
             'type': 'string'
         },
+     
         'basic_password':{
             'section': 'general',
             'default': '',
