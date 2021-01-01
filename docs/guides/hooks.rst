@@ -396,11 +396,14 @@ Like this:
 ::
 
    for each frame in stream sequence:
-      perform stream_sequence actions
+      perform stream_sequence actions on each frame
       for each model_sequence in ml_options:
+      if detected, use frame_strategy (in stream_sequence) to decide if we should try other model sequences
          perform general actions:
             for each model_configuration in ml_options.sequence:
                detect()
+               if detected, use same_model_sequence_strategy to decide if we should try other model configurations
+      
 
 
 
