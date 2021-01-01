@@ -104,6 +104,13 @@ So for example:
 Will only install the ``YOLOv4 (full)`` model but will skip the ``YOLOV3`` 
 model.
 
+Another example:
+
+::
+
+   sudo -H INSTALL_CORAL_EDGETPU=yes ./install.sh --install-es --no-install-config --install-hook
+
+Will install the ES and hooks, but no configs and will add the coral libraries.
 
 .. _opencv_install:
 
@@ -479,89 +486,54 @@ known faces images
 - crop around the face - not a tight crop, but no need to add a full body. A typical "passport" photo crop, maybe with a bit more of shoulder is ideal.
 
 
-Performance comparison
-~~~~~~~~~~~~~~~~~~~~~~
+Performance comparison 
+~~~~~~~~~~~~~~~~~~~~~~~
 
 CPU:  Intel Xeon 3.16GHz 4Core machine, with 32GB RAM
 GPU: GeForce 1050Ti
+TPU: Google Coral USB stick, running on USB 2.0 in 'standard' mode
+Environment: I am running using mlapi, so you will see load time only once across multiple runs 
 
-General Observations
-^^^^^^^^^^^^^^^^^^^^^^^
-- Load time of the model is generally larger than detection time, especially felt on a GPU, where detection time is short
-- Detection speeds up greatly if you use the same loaded model for subsequent detections. If you are using local detections (i.e. you don't have ml_gateway enabled in objectconfig.ini) then you are essentially exiting the process each time an image needs to be detected and the DNN is reloaded each time. Even if you take out the model load time, given the DNN is re-initialized, your image is treated as the 'first image' to detect and performance will be lower than when using mlapi because the DNN is reused for subsequent images.
-- In general, the detection speed varies between runs, as you see below, at least using local detections.
+Image: 800px
 
-GPU Performance benchmarking, using an image with 1 person (face+object detection) on my 1050Ti:
-(Note in the remote detection case, I am running mlapi on the same system, so same specs)
+pp@homeserver:/var/lib/zmeventnotification/mlapi$ tail -F /var/log/zm/zm_mlapi.log | grep "perf:"
 
-::
+Run 1:
 
-  ** With GPU and local detection (Run 1) **
-
-  02/13/20 16:15:52 zmesdetect_m2[7494] DBG face_train.py:19 [Face Recognition library load time took: 959.26 milliseconds]
-  02/13/20 16:15:54 zmesdetect_m2[7494] DBG face.py:87 [Finding faces took 617.892 milliseconds]
-  02/13/20 16:15:55 zmesdetect_m2[7494] DBG face.py:92 [Computing face recognition distances took 504.214 milliseconds]
-  02/13/20 16:15:55 zmesdetect_m2[7494] DBG face.py:103 [Matching recognized faces to known faces took 1.432 milliseconds]
-  02/13/20 16:15:55 zmesdetect_m2[7494] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 415.967 milliseconds]
-  02/13/20 16:15:58 zmesdetect_m2[7494] DBG yolo.py:91 [YOLO detection took: 275.253 milliseconds]
-  02/13/20 16:15:59 zmesdetect_m2[7494] DBG yolo.py:122 [YOLO NMS filtering took: 2.467 milliseconds]
-
-  ** With GPU and local detection (Run 2, same image) **
-  02/13/20 16:16:52 zmesdetect_m2[7643] DBG face_train.py:19 [Face Recognition library load time took: 949.845 milliseconds]
-  02/13/20 16:16:54 zmesdetect_m2[7643] DBG face.py:87 [Finding faces took 663.26 milliseconds]
-  02/13/20 16:16:55 zmesdetect_m2[7643] DBG face.py:92 [Computing face recognition distances took 517.721 milliseconds]
-  02/13/20 16:16:55 zmesdetect_m2[7643] DBG face.py:103 [Matching recognized faces to known faces took 1.257 milliseconds]
-  02/13/20 16:16:55 zmesdetect_m2[7643] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 416.757 milliseconds]
-  02/13/20 16:16:59 zmesdetect_m2[7643] DBG yolo.py:91 [YOLO detection took: 189.495 milliseconds]
-  02/13/20 16:16:59 zmesdetect_m2[7643] DBG yolo.py:122 [YOLO NMS filtering took: 1.66 milliseconds]
-
-  ** With GPU and local detection (Run 3, same image) **
-  02/13/20 16:17:28 zmesdetect_m2[7747] DBG face_train.py:19 [Face Recognition library load time took: 997.392 milliseconds]
-  02/13/20 16:17:31 zmesdetect_m2[7747] DBG face.py:87 [Finding faces took 700.605 milliseconds]
-  02/13/20 16:17:31 zmesdetect_m2[7747] DBG face.py:92 [Computing face recognition distances took 575.662 milliseconds]
-  02/13/20 16:17:31 zmesdetect_m2[7747] DBG face.py:103 [Matching recognized faces to known faces took 1.161 milliseconds]
-  02/13/20 16:17:32 zmesdetect_m2[7747] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 372.729 milliseconds]
-  02/13/20 16:17:35 zmesdetect_m2[7747] DBG yolo.py:91 [YOLO detection took: 99.312 milliseconds]
-  02/13/20 16:17:35 zmesdetect_m2[7747] DBG yolo.py:122 [YOLO NMS filtering took: 1.619 milliseconds]
-
-  ** With GPU and local detection (Run 4, same image) **
-
-  02/13/20 16:18:37 zmesdetect_m2[8438] DBG face_train.py:19 [Face Recognition library load time took: 26.514 milliseconds]
-  02/13/20 16:18:40 zmesdetect_m2[8438] DBG face.py:87 [Finding faces too 819.668 milliseconds]
-  02/13/20 16:18:40 zmesdetect_m2[8438] DBG face.py:92 [Computing face recognition distances took 532.882 milliseconds]
-  02/13/20 16:18:40 zmesdetect_m2[8438] DBG face.py:103 [Matching recognized faces to known faces took 1.155 milliseconds]
-  02/13/20 16:18:41 zmesdetect_m2[8438] DBG yolo.py:79 [YOLO initialization (loading model from disk) took: 475.909 milliseconds]
-  02/13/20 16:18:44 zmesdetect_m2[8438] DBG yolo.py:91 [YOLO detection took: 385.332 milliseconds]
-  02/13/20 16:18:44 zmesdetect_m2[8438] DBG yolo.py:122 [YOLO NMS filtering took: 2.153 milliseconds]
+01/01/21 12:42:31 zm_mlapi[6027] DBG1 coral_edgetpu.py:96 [perf: processor:tpu TPU initialization (loading /var/lib/zmeventnotification/models/coral_edgetpu/ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite from disk) took: 0:00:03.250662]
+01/01/21 12:42:31 zm_mlapi[6027] DBG1 coral_edgetpu.py:134 [perf: processor:tpu Coral TPU detection took: 0:00:00.250596]
+01/01/21 12:42:35 zm_mlapi[6027] DBG1 yolo.py:88 [perf: processor:gpu Yolo initialization (loading /var/lib/zmeventnotification/models/yolov4/yolov4.weights model from disk) took: 0:00:03.498097]
+01/01/21 12:42:39 zm_mlapi[6027] DBG1 yolo.py:168 [perf: processor:gpu Yolo detection took: 0:00:03.862689 milliseconds]
+01/01/21 12:42:39 zm_mlapi[6027] DBG2 yolo.py:202 [perf: processor:gpu Yolo NMS filtering took: 0:00:00.003819]
+01/01/21 12:42:40 zm_mlapi[6027] DBG1 yolo.py:88 [perf: processor:cpu Yolo initialization (loading /var/lib/zmeventnotification/models/yolov4/yolov4.weights model from disk) took: 0:00:00.407074]
+01/01/21 12:42:44 zm_mlapi[6027] DBG1 yolo.py:168 [perf: processor:cpu Yolo detection took: 0:00:04.774685 milliseconds]
+01/01/21 12:42:45 zm_mlapi[6027] DBG2 yolo.py:202 [perf: processor:cpu Yolo NMS filtering took: 0:00:00.002026]
+01/01/21 12:42:48 zm_mlapi[6027] DBG1 face.py:41 [perf: processor:gpu Face Recognition library load time took: 0:00:00.000002 ]
+01/01/21 12:42:49 zm_mlapi[6027] DBG1 face.py:197 [perf: processor:gpu Finding faces took 0:00:00.414187]
+01/01/21 12:42:49 zm_mlapi[6027] DBG1 face.py:211 [perf: processor:gpu Computing face recognition distances took 0:00:00.002096]
+01/01/21 12:42:49 zm_mlapi[6027] DBG1 detect_sequence.py:527 [perf: TOTAL detection sequence (with image loads) took: 0:00:21.112358  to process 176878]
 
 
-  ** With GPU and remote detection via MLAPI (Run 1) **
-  DEBUG: Finding faces took 410.292 milliseconds
-  DEBUG: Computing face recognition distances took 19.237 milliseconds
-  DEBUG: Matching recognized faces to known faces took 0.942 milliseconds
-  DEBUG: YOLO detection took: 631.454 milliseconds
-  DEBUG: YOLO NMS filtering took: 1.612 milliseconds
+Run 2:
 
-  ** With GPU and remote detection via MLAPI (Run 2, same image) **
-  DEBUG: Finding faces took 454.663 milliseconds
-  DEBUG: Computing face recognition distances took 19.888 milliseconds
-  DEBUG: Matching recognized faces to known faces took 0.996 milliseconds
-  DEBUG: YOLO detection took: 63.139 milliseconds
-  DEBUG: YOLO NMS filtering took: 1.992 milliseconds
+01/01/21 12:43:07 zm_mlapi[6027] DBG1 coral_edgetpu.py:134 [perf: processor:tpu Coral TPU detection took: 0:00:00.046969]
+01/01/21 12:43:07 zm_mlapi[6027] DBG1 yolo.py:168 [perf: processor:gpu Yolo detection took: 0:00:00.085079 milliseconds]
+01/01/21 12:43:08 zm_mlapi[6027] DBG2 yolo.py:202 [perf: processor:gpu Yolo NMS filtering took: 0:00:00.001703]
+01/01/21 12:43:11 zm_mlapi[6027] DBG1 yolo.py:168 [perf: processor:cpu Yolo detection took: 0:00:03.167498 milliseconds]
+01/01/21 12:43:11 zm_mlapi[6027] DBG2 yolo.py:202 [perf: processor:cpu Yolo NMS filtering took: 0:00:00.003395]
+01/01/21 12:43:11 zm_mlapi[6027] DBG1 face.py:197 [perf: processor:gpu Finding faces took 0:00:00.232146]
+01/01/21 12:43:11 zm_mlapi[6027] DBG1 face.py:211 [perf: processor:gpu Computing face recognition distances took 0:00:00.002241]
+01/01/21 12:43:11 zm_mlapi[6027] DBG1 detect_sequence.py:527 [perf: TOTAL detection sequence (with image loads) took: 0:00:04.683837  to process 176878]
 
-  ** With GPU and remote detection via MLAPI (Run 3, same image) **
-  DEBUG: Finding faces took 454.351 milliseconds
-  DEBUG: Computing face recognition distances took 19.684 milliseconds
-  DEBUG: Matching recognized faces to known faces took 1.022 milliseconds
-  DEBUG: YOLO detection took: 63.935 milliseconds
-  DEBUG: YOLO NMS filtering took: 1.779 milliseconds
-
-  ** With GPU and remote detection via MLAPI (Run 4, different image) **
-  DEBUG: Finding faces took 464.449 milliseconds
-  DEBUG: Computing face recognition distances took 20.482 milliseconds
-  DEBUG: Matching recognized faces to known faces took 1.173 milliseconds
-  DEBUG: YOLO detection took: 64.402 milliseconds
-  DEBUG: YOLO NMS filtering took: 3.784 milliseconds
+Run 3:
+01/01/21 12:43:43 zm_mlapi[6027] DBG1 coral_edgetpu.py:134 [perf: processor:tpu Coral TPU detection took: 0:00:00.052399]
+01/01/21 12:43:43 zm_mlapi[6027] DBG1 yolo.py:168 [perf: processor:gpu Yolo detection took: 0:00:00.071308 milliseconds]
+01/01/21 12:43:43 zm_mlapi[6027] DBG2 yolo.py:202 [perf: processor:gpu Yolo NMS filtering took: 0:00:00.002627]
+01/01/21 12:43:47 zm_mlapi[6027] DBG1 yolo.py:168 [perf: processor:cpu Yolo detection took: 0:00:03.228092 milliseconds]
+01/01/21 12:43:47 zm_mlapi[6027] DBG2 yolo.py:202 [perf: processor:cpu Yolo NMS filtering took: 0:00:00.004108]
+01/01/21 12:43:47 zm_mlapi[6027] DBG1 face.py:197 [perf: processor:gpu Finding faces took 0:00:00.180780]
+01/01/21 12:43:47 zm_mlapi[6027] DBG1 face.py:211 [perf: processor:gpu Computing face recognition distances took 0:00:00.002052]
+01/01/21 12:43:47 zm_mlapi[6027] DBG1 detect_sequence.py:527 [perf: TOTAL detection sequence (with image loads) took: 0:00:04.765593  to process 176878]
 
 
 Manually testing if detection is working well
