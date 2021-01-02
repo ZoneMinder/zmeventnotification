@@ -427,8 +427,10 @@ Like this:
       
 
 
+About specific detection types
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-How to use license plate recognition
+License plate recognition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Three ALPR options are provided: 
@@ -437,10 +439,9 @@ Three ALPR options are provided:
 - `OpenALPR <https://www.openalpr.com>`__ . While OpenALPR's detection is not as good as Plate Recognizer, when it does detect, it provides a lot more information (like car make/model/year etc.)
 - `OpenALPR command line <http://doc.openalpr.com/compiling.html>`__. This is a basic version of OpenALPR that can be self compiled and executed locally. It is far inferior to the cloud services and does NOT use any form of deep learning. However, it is free, and if you have a camera that has a good view of plates, it will work.
 
-To enable alpr, simple add ``alpr`` to ``model_sequence`` and configure the variables correctly in the sequence.
+``alpr_service`` defined the service to be used.
 
-
-How to use face recognition
+Face Recognition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Face Recognition uses
@@ -522,9 +523,15 @@ Performance comparison
 
 * CPU:  Intel Xeon 3.16GHz 4Core machine, with 32GB RAM
 * GPU: GeForce 1050Ti
-* TPU: Google Coral USB stick, running on USB 2.0 in 'standard' mode (This makes a big difference. USB 3 is much faster as is max perf mode)
+* TPU: Google Coral USB stick, running on USB 2.0 in 'standard' mode 
 * Environment: I am running using mlapi, so you will see load time only once across multiple runs 
 * Image size: 800px
+
+**Important**: The TPU is on USB 2.0 which is supposed to be much slower than USB 3.0
+performance. Also, I am using standard mode, not performance mode. You should look at 
+Google's Coral `coral benchmark site <https://coral.ai/docs/edgetpu/benchmarks/>`__ for better numbers.
+Note that their performance figures are specific to their C++ code. Python will have 
+additional overheads (as noted on their site)
 
 ::
 
