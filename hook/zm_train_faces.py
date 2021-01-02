@@ -19,10 +19,15 @@ if __name__ == "__main__":
                     default='/etc/zm/objectconfig.ini',
                     help='config file with path')
 
+    ap.add_argument('-s',
+                    '--size',
+                    type=int,
+                    help='resize amount (if you run out of memory)')
+
     args, u = ap.parse_known_args()
     args = vars(args)
 
     #log.init(name='zm_face_train', dump_console=True)
     g.logger = log
     utils.process_config(args, g.ctx)
-    train.FaceTrain(options=g.config).train()
+    train.FaceTrain(options=g.config).train(size=args['size'])
