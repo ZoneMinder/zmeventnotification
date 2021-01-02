@@ -4,11 +4,10 @@ Breaking Changes
 Version 6.1.0 onwards 
 ~~~~~~~~~~~~~~~~~~~~~~
 - You can now string togther multiple models in arbitrary fashion to suit your needs. 
-  Read `this article <https://medium.com/zmninja/multi-frame-and-multi-model-analysis-533fa1d2799a>`__ for more details.
   There is a new entry in ``objectconfig.ini`` called ``ml_sequence`` that you can use to 
   create your own sequence. Note that if ``ml_sequence`` is present, it will override any/all
-  parameters in the ``[object]``, ``[face]`` and ``[alpr]`` sections.
-  See `here <https://pyzm.readthedocs.io/en/latest/source/pyzm.html#detectsequence>`__ for details (look at options attribute).
+  parameters in the ``[object]``, ``[face]`` and ``[alpr]`` sections. Please read `this section <https://zmeventnotification.readthedocs.io/en/latest/guides/hooks.html#understanding-detection-configuration>`__
+  to understand how this works.
 
 - The ``hog`` model has been removed. Note this refers to the ``hog`` person detection
   model, not the hog detection of a face. That still exists. With Yolo, TinyYolo, coral
