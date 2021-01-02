@@ -306,6 +306,27 @@ This section will describe the key constructs around two important structures:
 - stream_sequence (specifies frame detection preferences)
 
 
+6.1.0 vs previous versions
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+When you update to 6.1.0, you may be confused with objectconfig.
+Specifically, which attributes should you use and which ones are ignored?
+It's pretty simple, actually.
+
+- When ``use_sequence`` is set to ``yes`` (default), ``ml_options`` and ``stream_sequence``
+  structures override anything in the ``[object]``, ``[face]`` and ``[alpr]`` sections 
+  Specifically, the following values are ignored in objectconfig.ini in favor of values inside the sequence structure:
+   
+   - frame_id, resize, delete_after_analyze, the full [object], [alpr], [face] sections 
+   - any overrides related to object/face/alpr inside the [monitor] sections 
+   - However, that being said, if you take a look at ``objectconfig.ini``, the sample file
+     implements parameter substitution inside the structures, effectively importing the values right back in.
+     Just know that what you specify in these sequence structures overrides the above attributes. 
+     If you want to reuse them, you need to put them in as parameter substitutions like the same ini file has done 
+
+- When ``use_sequence`` is set to ``no``, zm_detect internally maps your old parameters 
+  to the new structures 
+
+
 
 Understanding ml_sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
