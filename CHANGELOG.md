@@ -1,5 +1,33 @@
 # Changelog
 
+## [v6.1.0](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.0) (2021-01-02)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.0.6...v6.1.0)
+
+**Implemented enhancements:**
+
+- Constant detection mode - \(ML\) [\#313](https://github.com/pliablepixels/zmeventnotification/issues/313)
+
+**Closed issues:**
+
+- zm\_detect.py Unrecoverable error: Already locked [\#351](https://github.com/pliablepixels/zmeventnotification/issues/351)
+- Possible to have more than 2 frames analysis for objects detection [\#348](https://github.com/pliablepixels/zmeventnotification/issues/348)
+- No face detection or recognition [\#347](https://github.com/pliablepixels/zmeventnotification/issues/347)
+- Migrate to pycoral  looks like python3-edgetpu is now deprecated [\#346](https://github.com/pliablepixels/zmeventnotification/issues/346)
+- Error in zm\_detect.py with assertion lock on es 6.0+? [\#344](https://github.com/pliablepixels/zmeventnotification/issues/344)
+- Is there a way to get phone notifications for person events only? [\#343](https://github.com/pliablepixels/zmeventnotification/issues/343)
+- Only recieve one notification per/recording. [\#342](https://github.com/pliablepixels/zmeventnotification/issues/342)
+- freebsd... [\#339](https://github.com/pliablepixels/zmeventnotification/issues/339)
+- push notification min interval still not working [\#336](https://github.com/pliablepixels/zmeventnotification/issues/336)
+- \(Suggestion/Question\) Multiple object detection sources [\#335](https://github.com/pliablepixels/zmeventnotification/issues/335)
+- multizone, different detection\_sequence [\#334](https://github.com/pliablepixels/zmeventnotification/issues/334)
+- Discrepancy between local and remote hook processing [\#333](https://github.com/pliablepixels/zmeventnotification/issues/333)
+
+**Merged pull requests:**
+
+- Unintentional nohup? [\#340](https://github.com/pliablepixels/zmeventnotification/pull/340) ([otkd](https://github.com/otkd))
+- Fix two typos in docs/guides/hooks.rst [\#338](https://github.com/pliablepixels/zmeventnotification/pull/338) ([adamjernst](https://github.com/adamjernst))
+
 ## [v6.0.6](https://github.com/pliablepixels/zmeventnotification/tree/v6.0.6) (2020-10-27)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.0.5...v6.0.6)
@@ -26,8 +54,8 @@
 **Fixed bugs:**
 
 - 1.6.000: Getting notifications for monitors that have "report events" unchecked  [\#321](https://github.com/pliablepixels/zmeventnotification/issues/321)
-- Push notification minimum timer does not work. [\#320](https://github.com/pliablepixels/zmeventnotification/issues/320)
 - objectconfig.ini version number not updated in example config  [\#318](https://github.com/pliablepixels/zmeventnotification/issues/318)
+- Push notification minimum timer does not work. [\#320](https://github.com/pliablepixels/zmeventnotification/issues/320)
 
 **Closed issues:**
 
