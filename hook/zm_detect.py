@@ -302,7 +302,7 @@ def main_handler():
     else:
         g.logger.Debug(2,'mapping legacy ml data from config')
         ml_options = utils.convert_config_to_ml_sequence()
-        g.config['ml_options'] = ml_options
+        g.config['ml_sequence'] = ml_options
 
     if g.config['stream_sequence'] and g.config['use_sequence'] == 'yes': # new sequence
         g.logger.Debug(2,'using stream_sequence')
