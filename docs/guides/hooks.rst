@@ -199,13 +199,8 @@ Test operation
 
     sudo -u www-data /var/lib/zmeventnotification/bin/zm_event_start.sh <eid> <mid> # replace www-data with apache if needed
 
-This will try and download the configured frame for alarm and analyze
-it. Replace with your own EID (Example 123456) The files will be in
-``/var/lib/zmeventnotification/images`` For example: if you configured
-``frame_id`` to be ``bestmatch`` you'll see two files
-``<eid>-alarm.jpg`` and ``<eid>-snapshot.jpg`` If you configured
-``frame_id`` to be ``snapshot`` or a specific number, you'll see one
-file ``<eid>.jpg``
+Replace with your own EID (Example 123456). The files will be in
+``/var/lib/zmeventnotification/images`` 
 
 The ``<mid>`` is optional and is the monitor ID. If you do specify it,
 it will pick up the right mask to apply (if it is in your config)
@@ -213,20 +208,6 @@ it will pick up the right mask to apply (if it is in your config)
 The above command will also try and run detection.
 
 If it doesn't work, go back and figure out where you have a problem
-
--  Other configuration notes, after you get everything working
-
-   -  Set ``delete_after_analyze`` to ``yes`` so that downloaded images
-      are removed after analysis. In the default installation, the
-      images are kept in ``/var/lib/zmeventnotification/images`` so you can debug.
-   -  Remember these rules:
-
-      -  ``frame_id=snapshot`` will work for any ZM >= 1.32
-      -  If you are running ZM < 1.33, to enable ``bestmatch`` or
-         ``alarm`` you need to enable the monitor to store JPEG frames
-         in its ZM monitor->storage configuration in ZM
-      -  If you are running ZM >= 1.33, you can use all fid modes
-         without requiring to enable frames in storage
 
 
 Upgrading
