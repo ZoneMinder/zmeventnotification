@@ -302,13 +302,12 @@ def main_handler():
     else:
         g.logger.Debug(2,'mapping legacy ml data from config')
         ml_options = utils.convert_config_to_ml_sequence()
-    
+        g.config['ml_options'] = ml_options
 
     if g.config['stream_sequence'] and g.config['use_sequence'] == 'yes': # new sequence
         g.logger.Debug(2,'using stream_sequence')
         stream_options = g.config['stream_sequence']
         stream_options = ast.literal_eval(stream_options)
-        g.config['stream_sequence'] = stream_options
     else: # legacy
         g.logger.Debug(2,'mapping legacy stream data from config')
         if g.config['detection_mode'] == 'all':
@@ -328,8 +327,9 @@ def main_handler():
 
     # These are stream options that need to be set outside of supplied configs         
     stream_options['api'] = zmapi
-    
     stream_options['polygons'] = g.polygons
+    g.config['stream_sequence'] = stream_options
+
 
     '''
     stream_options = {
