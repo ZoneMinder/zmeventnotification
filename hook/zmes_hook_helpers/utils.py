@@ -418,8 +418,8 @@ def process_config(args, ctx):
 
         # first, fill in config with default values
         for k,v in g.config_vals.items():
-            g.config[k] = v.get('default', None)
-
+            val = v.get('default', None)
+            g.config[k] = _correct_type(val, v['type'])
         # now iterate the file
         for sec in config_file.sections():
             if sec.startswith('monitor-'):
