@@ -503,7 +503,17 @@ In this example, you have 3 names, each with different images.
   sudo -u www-data /var/lib/zmeventnotification/bin/zm_train_faces.py
 
 
-- Note that you do not necessarily have to train it first but I highly recommend it. When detection runs, it will look for the trained file and if missing, will auto-create it. However, detection may also load yolo and if you have limited GPU resources, you may run out of memory when training. 
+If you find yourself running out of memory while training, use the size argument like so:
+
+::
+
+     sudo -u www-data /var/lib/zmeventnotification/bin/zm_train_faces.py --size 800
+
+   
+   
+- Note that you do not necessarily have to train it first but I highly recommend it. 
+  When detection runs, it will look for the trained file and if missing, will auto-create it. 
+  However, detection may also load yolo and if you have limited GPU resources, you may run out of memory when training. 
 
 -  When face recognition is triggered, it will load each of these files
    and if there are faces in them, will load them and compare them to
