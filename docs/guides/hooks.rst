@@ -278,6 +278,7 @@ Debugging and reporting problems
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you have problems with hooks, there are two areas of failure:
+
 - The ES is unable to unable to invoke hooks properly (missing files/etc)
 
    - This will be reported in ES logs. See :ref:`this section <debug_reporting_es>`
@@ -286,7 +287,7 @@ If you have problems with hooks, there are two areas of failure:
 
    - This is covered in this section 
 
-- The wrapper script (typically ``/var/lib/zmeventnotification/bin/zm_event_start.sh`` is not able to run ``zmd_etect.py``)
+- The wrapper script (typically ``/var/lib/zmeventnotification/bin/zm_event_start.sh`` is not able to run ``zm_detect.py``)
 
    - This won't be covered in either logs (I need to add logging for this...)
 
