@@ -293,7 +293,7 @@ When you update to 6.1.0, you may be confused with objectconfig.
 Specifically, which attributes should you use and which ones are ignored?
 It's pretty simple, actually.
 
-- When ``use_sequence`` is set to ``yes`` (default), ``ml_options`` and ``stream_sequence``
+- When ``use_sequence`` is set to ``yes`` (default is no), ``ml_options`` and ``stream_sequence``
   structures override anything in the ``[object]``, ``[face]`` and ``[alpr]`` sections 
   Specifically, the following values are ignored in objectconfig.ini in favor of values inside the sequence structure:
    
