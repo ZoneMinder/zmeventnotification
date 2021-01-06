@@ -568,14 +568,6 @@ and in sequence. I can't emphasize how important it is to be diligent.
 
 STOP (redux): Please don't send me emails without relevant logs (unless of course, it is to do with situations where, say, zmNinja doesn't load and you can't extract logs). Read :ref:`es-hooks-logging`.
 
-There could be several reasons why your output may not be what you are expecting:
-
--  Your event server is not running
--  You are running multiple instances of the ES and you don't know it
--  Your app is not able to reach the server
--  You have enabled SSL but the certificate is invalid
--  Your configuration is incorrect (either in ``zmeventnotification.ini`` or ``objectconfig.ini``)
--  You did not upgrade correctly (i.e. you updated hooks, but not the ES or vice-versa)
 
 Here is how to debug and report:
 
@@ -592,7 +584,6 @@ Here is how to debug and report:
 
 **When you send ES/detection logs:**
 
-- Make sure your ES and hooks versions have the same ``MAJOR.minor`` versions. This will show in the detection script logs. For example:
 
 ::
 
@@ -608,13 +599,21 @@ This shows my ES version is ``5.10`` and hooks version  is ``5.10.1``, which is 
 
   - If you have issues starting the ES, send me *all* logs starting from when the ES starts after you do a ``sudo zmdc.pl restart  zmeventnotification.pl``
 
-To monitor logs:
+To get DEBUG logs:
 
+**Option 1 (Easy):**
+
+-  Stop ES if it is running as a daemon (``sudo zmdc.pl stop zmeventnotification.pl``)
 -  Start a terminal and start zmeventnotification manually from
-   command line like so ``sudo -u www-data /usr/bin/zmeventnotification.pl``
-- Start another terminal and tail logs like so ``tail -F /var/log/zm/zmeventnotification.log /var/log/zm/zmesdetect_m*.log``. If you are NOT using hooks, simply do ``tail -F /var/log/zm/zmeventnotification.log``
-- Note that we are using ``-F`` and not ``-f`` for tail. ``-F`` tracks files as they change, which may happen when logs are rotated.
-- Make sure you see logs like this in the logs window like so: (this example shows logs from both ES and hooks)
+   command line like so ``sudo -u www-data /usr/bin/zmeventnotification.pl --debug``
+- This will print debug logs on the terminal
+- Note that this will NOT print debug logs for hooks, so if you feel the problem is with hooks, see :ref:`this section <debug_reporting_hooks>`
+
+**Option 2 (More comprehensive): Enable ZM logs**
+
+- Follow steps :ref:`here <es-hooks-logging>`
+- It is _very_ important to make sure you follow _all_ the steps or you won't see logs
+- When you set up debug logging via ZM, you will see debug logs from both ES and hooks in different files like so:
 
 ::
 
