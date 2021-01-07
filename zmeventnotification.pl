@@ -43,7 +43,7 @@ use Symbol qw(qualify_to_ref);
 use IO::Select;
 
 ####################################
-my $app_version = '6.1.5';
+my $app_version = '6.1.6';
 ####################################
 
 # do this before any log init etc.
