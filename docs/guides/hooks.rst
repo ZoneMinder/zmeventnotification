@@ -333,8 +333,8 @@ This section will describe the key constructs around two important structures:
 - stream_sequence (specifies frame detection preferences)
 
 
-6.1.0 vs previous versions
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+6.1.0+ vs previous versions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 When you update to 6.1.0, you may be confused with objectconfig.
 Specifically, which attributes should you use and which ones are ignored?
 It's pretty simple, actually.
@@ -353,6 +353,76 @@ It's pretty simple, actually.
 - When ``use_sequence`` is set to ``no``, zm_detect internally maps your old parameters 
   to the new structures 
 
+Internally, both options are mapped to ``ml_sequence``, but the difference is in the parameters that are processed.
+Specifically, before ES 6.1.0 came out, we had specific objectconfig fields that were used for various ML parameters
+that were processed. These were primarily single, well known variable names because we only had one model type running 
+per type of detection. 
+
+More details: What happens when you go with use_sequence=no?
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+In the old way, the following 'global' variables (which could be overriden on a per monitor basis) defined how
+ML would work:
+
+- ``xxx_max_processes`` and ``xxx_max_lock_wait`` that defined semaphore locks for each model (to control parallel memory consumption)
+- All the ``object_xxx`` variables that define the model file, name file, and a host of other parameters that are specific to object detection 
+- All the ``face_xxx`` variables, ``known_images_path``, `unknown_images_path``, ``save_unknown_*`` attributes 
+ that define the model file, name file, and a host of other parameters that are specific to face detection 
+- All the ``alpr_xxx`` variables that define the model file, name file, and a host of other parameters that are specific to alpr detection 
+
+When you make ``use_sequence=no`` in your config, I have a function called ``convert_config_to_ml_sequence()`` (see `here <https://github.com/pliablepixels/zmeventnotification/blob/v6.1.6/hook/zmes_hook_helpers/utils.py#L30>`__)
+that basically picks up those variable, maps it to an ``ml_sequence`` structure with exactly one model per sequence (like it was before).
+It picks up the sequence of models from ``detection_sequence`` which was the old way.
+
+Further, in this mode, a ``sream_sequence`` structure is internally created that picks up values from the old
+attributes, ``detection_mode``, ``frame_id``, ``bestmatch_order``, ``resize``
+
+Therefore, the concept here was, if you choose not to use the new detection sequence, you _should_ be able to continue using your old
+variables and the code will internally map.
+
+More details: What happens when you go with use_sequence=yes?
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+When you go with ``yes``, ``zm_detect.py`` does NOT try to map any of the old variables. Instead, it directly
+loads whatever is defined inside ``ml_sequence`` and ``stream_sequence``. However, you will notice that the default
+``ml_sequence`` and ``stream_sequence`` are pre-filled with template variables. 
+
+For example:
+
+::
+
+   ml_sequence= {
+	   <snip>
+		'object': {
+			'general':{
+				'pattern':'{{object_detection_pattern}}',
+				'same_model_sequence_strategy': 'first' # also 'most', 'most_unique's
+			},
+			'sequence': [{
+				#First run on TPU with higher confidence
+				'object_weights':'{{tpu_object_weights}}',
+				'object_labels': '{{tpu_object_labels}}',
+				'object_min_confidence': {{tpu_min_confidence}},
+            <snip>
+				
+			},
+			{
+				# YoloV4 on GPU if TPU fails (because sequence strategy is 'first')
+				'object_config':'{{yolo4_object_config}}',
+				'object_weights':'{{yolo4_object_weights}}',
+				'object_labels': '{{yolo4_object_labels}}',
+
+
+Note the variables inside ``{{}}``. They will be replaced when the structure is formed. And you'll note some are old 
+style variables (example ``object_detection_pattern``) along with may new ones. So here is the thing:
+You can use any variable names you want in the new style. Obviously, we can't use ``object_weights`` as the only variable 
+if we plan to chain different models. They'll have different values. 
+
+So remember, the config presented here is a **SAMPLE**. You are **expected to change them**.
+
+So in the new way, if you want to change ``ml_sequence`` or ``stream_sequence`` on a per monitor basis, you have 2 choices:
+- Put variables inside the main ``*_sequence`` options and simply redefine those variables on a per monitor basis
+- Or, redo the entire structure on a per monitor basis. I like Option 1. 
 
 
 Understanding ml_sequence
@@ -390,6 +460,27 @@ At a high level, this is how it is structured (not all attributes have been desc
 
 - Now for each detection type in ``model_sequence``, you can specify the type of models you want to leading
   along with other related paramters.
+
+Leveraging same_model_sequence_strategy and frame_strategy effectively
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+When we allow model chaining, the question we need to answer is 'How deep do we want to go to get what we want?'
+That is what these attributes offer. 
+
+``same_model_sequence_strategy`` is part ``ml_sequence``  with the following possible values:
+
+   - ``first`` - When detecting objects, if there are multiple fallbacks, break out the moment we get a match
+      using any object detection library (Default)
+   - ``most`` - run through all libraries, select one that has most object matches
+   - ``most_unique`` - run through all libraries, select one that has most unique object matches
+
+``frame_strategy`` is part of ``stream_sequence`` with the following possible values:
+
+   - 'most_models': Match the frame that has matched most models (does not include same model alternatives) (Default)
+   - 'first': Stop at first match 
+   - 'most': Match the frame that has the highest number of detected objects
+   - 'most_unique' Match the frame that has the highest number of unique detected objects
+           
 
 **A proper example:**
 
