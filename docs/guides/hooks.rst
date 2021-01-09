@@ -37,7 +37,7 @@ extensive documentation and ini file configs
 Installation
 ~~~~~~~~~~~~
 
-Option 1: Automatic install
+Automatic install
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 -  You need to have ``pip3`` installed. On ubuntu, it is
@@ -60,7 +60,16 @@ Option 1: Automatic install
 
    sudo -H ./install.sh # and follow the prompts
 
-**Note**: If you are planning on using Google EdgeTPU support,
+I use a library called `Shapely <https://github.com/Toblerity/Shapely>`__ for polygon intersection checks.
+Shapely requires a library called GeOS. If you see errors related to ``Failed `CDLL(libgeos_c.so)`
+`` you may manually need to install libgeos  like so:
+
+::
+
+   sudo apt-get install libgeos-dev
+
+**Google TPU**:
+If you are planning on using Google EdgeTPU support,
 you'll have to invoke the script using:
 
 ::
