@@ -113,5 +113,6 @@ The advantage of this is that you don't need to install any ML libraries within
 zoneminder if you are running mlapi on a different server. Further, mlapi loads the model
 only once so it is much faster. In older versions this was kludgy because you still
 had to install ML libraries locally in ZM, but no longer. Infact, I've completely 
-switched to mlapi now for my own use.
+switched to mlapi now for my own use. Note that when you use remote detection, you will
+still need opencv in the host machine (opencv is used for other functions)
 
