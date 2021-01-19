@@ -3774,7 +3774,7 @@ sub processNewAlarmsInFork {
   # will contain succ/fail of hook scripts, or 1 (fail) if not invoked
   my $hookResult      = 0;
   my $startHookResult = $hookResult;
-  my $startHookString = '';
+  my $hookString = '';
 
   my $endProcessed = 0;
 
@@ -3894,7 +3894,7 @@ sub processNewAlarmsInFork {
               . '--SPLIT--'
               . $alarm->{Start}->{Cause}
               . '--JSON--'
-              . $alarm->{Start}->{resJsonString} . "\n";
+              . $alarm->{Start}->{DetectionJson} . "\n";
 
   # This updates the ZM DB with the detected description
   # we are writing resTxt not alarm cause which is only detection text
@@ -3906,7 +3906,7 @@ sub processNewAlarmsInFork {
               . '--SPLIT--'
               . $resTxt . "\n";
 
-            $startHookString = $resTxt;
+            $hookString = $resTxt;
           }    # use_hook_desc
 
         }
@@ -4021,15 +4021,15 @@ sub processNewAlarmsInFork {
       else {    # start processing over, so end can be processed
 
         my $notes = getNotesFromEventDB($eid);
-        if ($startHookString) {
+        if ($hookString) {
           if ( index( $notes, 'detected:' ) == -1 ) {
             printDebug(
-              "ZM overwrote detection DB, current notes: [$notes], adding detection notes back into DB [$startHookString]",
+              "ZM overwrote detection DB, current notes: [$notes], adding detection notes back into DB [$hookString]",
               1
             );
 
             # This will be prefixed, so no need to add old notes back
-            updateEventinZmDB( $eid, $startHookString );
+            updateEventinZmDB( $eid, $hookString );
           }
           else {
             printDebug( "DB Event notes contain detection text, all good", 2 );
@@ -4111,6 +4111,38 @@ sub processNewAlarmsInFork {
             printDebug( "invoking user end notification script $user_cmd", 1 );
             my $user_res = `$user_cmd`;
           }    # user notify script
+
+          if ($use_hook_description && ($hookResult == 0) &&
+              (index($resTxt,'detected:') != -1) ) {
+            printDebug ("Event end: overwriting notes with $resTxt",1);
+            $alarm->{End}->{Cause} =
+              $resTxt . ' ' . $alarm->{End}->{Cause};
+            $alarm->{End}->{DetectionJson} = decode_json($resJsonString);
+
+            print WRITER 'active_event_update--TYPE--'
+              . $mid
+              . '--SPLIT--'
+              . $eid
+              . '--SPLIT--' . 'Start'
+              . '--SPLIT--' . 'Cause'
+              . '--SPLIT--'
+              . $alarm->{End}->{Cause}
+              . '--JSON--'
+              . $alarm->{End}->{DetectionJson} . "\n";
+
+            # This updates the ZM DB with the detected description
+            # we are writing resTxt not alarm cause which is only detection text
+            # when we write to DB, we will add the latest notes, which may have more zones
+            print WRITER 'event_description--TYPE--'
+              . $mid
+              . '--SPLIT--'
+              . $eid
+              . '--SPLIT--'
+              . $resTxt . "\n";
+
+            $hookString = $resTxt;
+
+          } # end hook description
 
         }
         else {
