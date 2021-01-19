@@ -3894,7 +3894,7 @@ sub processNewAlarmsInFork {
               . '--SPLIT--'
               . $alarm->{Start}->{Cause}
               . '--JSON--'
-              . $alarm->{Start}->{DetectionJson} . "\n";
+              . $resJsonString . "\n";
 
   # This updates the ZM DB with the detected description
   # we are writing resTxt not alarm cause which is only detection text
@@ -4036,7 +4036,7 @@ sub processNewAlarmsInFork {
           }
         }
 
-        if ( $event_end_hook && $use_hooks ) {
+        if ( $event_end_hook && $use_hooks) {
 
           # invoke end hook script
           my $cmd =
@@ -4112,8 +4112,8 @@ sub processNewAlarmsInFork {
             my $user_res = `$user_cmd`;
           }    # user notify script
 
-          if ($use_hook_description && ($hookResult == 0) &&
-              (index($resTxt,'detected:') != -1) ) {
+          if ($use_hook_description && 
+              ($hookResult == 0) && (index($resTxt,'detected:') != -1)) {
             printDebug ("Event end: overwriting notes with $resTxt",1);
             $alarm->{End}->{Cause} =
               $resTxt . ' ' . $alarm->{End}->{Cause};
@@ -4128,7 +4128,7 @@ sub processNewAlarmsInFork {
               . '--SPLIT--'
               . $alarm->{End}->{Cause}
               . '--JSON--'
-              . $alarm->{End}->{DetectionJson} . "\n";
+              . $resJsonString . "\n";
 
             # This updates the ZM DB with the detected description
             # we are writing resTxt not alarm cause which is only detection text
