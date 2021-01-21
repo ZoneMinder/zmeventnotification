@@ -320,7 +320,7 @@ conditions to be met:
 - You must use HTTPS
 - There is a 1MB limit to image size
 - You can't use self signed certs 
-- The IP/hostname needs to be publicly accessible (Apple/Google servers render the image) 
+- The IP/hostname needs to be accessible by zmNinja
 - You need ZM 1.32.3 or above
 - A good way to isolate if its a URL problem or something else is replace the ``picture_url`` with a knows HTTPS url like `this <https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/A_small_bird.jpg/800px-A_small_bird.jpg>`__
   Note that when you use a test image, comment out ``picture_portal_username`` and
