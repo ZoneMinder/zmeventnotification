@@ -460,7 +460,8 @@ def main_handler():
         if (matched_data['image'] is not None) and (g.config['write_image_to_zm'] == 'yes' or g.config['write_debug_image'] == 'yes'):
             debug_image = pyzmutils.draw_bbox(image=matched_data['image'],boxes=matched_data['boxes'], 
                                               labels=matched_data['labels'], confidences=matched_data['confidences'],
-                                              polygons=g.polygons, poly_thickness = g.config['poly_thickness'])
+                                              polygons=g.polygons, poly_thickness = g.config['poly_thickness'],
+                                              write_conf=True if g.config['show_percent'] == 'yes' else False )
 
             if g.config['write_debug_image'] == 'yes':
                 for _b in matched_data['error_boxes']:
