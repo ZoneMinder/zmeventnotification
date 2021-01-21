@@ -133,8 +133,9 @@ Will install the ES and hooks, but no configs and will add the coral libraries.
     However you choose to install openCV, you need a minimum version of `4.1.1`. Using a version below that will very likely not work.
 
 
-Installing OpenCV: Using the pip package (Easy, but not recommended)
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Installing OpenCV: Using the pip package (Easy, but not recommended if you plan to use OpenCV ML - example Yolo)
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
 ::
 
   # Note this does NOT enable GPU support
@@ -145,8 +146,8 @@ Installing OpenCV: Using the pip package (Easy, but not recommended)
   # NOTE: Do NOT install both opencv-contrib-python and opencv packages via pip. The contrib package includes opencv+extras
 
 
-Installing OpenCV: from source (Recommended)
-'''''''''''''''''''''''''''''''''''''''''''''''
+Installing OpenCV: from source (Recommended if you plan to use OpenCV ML - example Yolo)
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 General installation instructions are available at the `official openCV site <https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html>`__. However, see below, if you are looking for GPU support:
 
 If you want to install a version with GPU support, I'd recommend you install OpenCV 4.2.x because it supports a CUDA backend for deep learning. Adrian's blog has a `good howto <https://www.pyimagesearch.com/2020/02/03/how-to-use-opencvs-dnn-module-with-nvidia-gpus-cuda-and-cudnn/>`__ on compiling OpenCV 4.2.x from scratch.
