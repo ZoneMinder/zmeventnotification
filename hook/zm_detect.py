@@ -35,7 +35,7 @@ auth_header = None
 
 
 
-def remote_detect(stream=None, options=None, api=None):
+def remote_detect(stream=None, options=None, api=None, args=None):
     # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
 
     import requests
@@ -99,7 +99,21 @@ def remote_detect(stream=None, options=None, api=None):
     auth_header = {'Authorization': 'Bearer ' + access_token}
     
     params = {'delete': True, 'response_format': 'zm_detect'}
-    files = {}
+
+    if args.get('file'):
+        g.logger.Debug (2, "Reading image from {}".format(args.get('file')))
+        image = cv2.imread(args.get('file'))
+        if g.config['resize'] and g.config['resize'] != 'no':
+            g.logger.Debug (2,'Resizing image before sending')
+            img_new = imutils.resize(image,
+                                     width=min(int(g.config['resize']),
+                                               image.shape[1]))
+            image = img_new
+            ret, jpeg = cv2.imencode('.jpg', image)
+            files = {'file': ('image.jpg', jpeg.tobytes())}
+
+    else:
+        files = {}
     #print (object_url)
 
     
@@ -358,7 +372,7 @@ def main_handler():
         stream_options['monitorid'] = args.get('monitorid')
         start = datetime.datetime.now()
         try:
-            matched_data,all_data = remote_detect(stream=stream, options=stream_options, api=zmapi)
+            matched_data,all_data = remote_detect(stream=stream, options=stream_options, api=zmapi, args=args)
             diff_time = (datetime.datetime.now() - start)
             g.logger.Debug(1,'Total remote detection detection took: {}'.format(diff_time))
         except Exception as e:
