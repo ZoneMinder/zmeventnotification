@@ -129,22 +129,29 @@ def remote_detect(stream=None, options=None, api=None, args=None):
             'pattern': g.config['ml_sequence'].get('alpr',{}).get('general',{}).get('pattern')
         },
     }
-    g.logger.Debug(2,f'Invoking mlapi with url:{object_url} and json: stream={stream}, stream_options={options} ml_overrides={ml_overrides}')
+    g.logger.Debug(2,f'Invoking mlapi with url:{object_url} and json: stream={stream}, stream_options={options} ml_overrides={ml_overrides} headers={auth_header} params={params} ')
     start = datetime.datetime.now()
+    try:
+        r = requests.post(url=object_url,
+                        headers=auth_header,
+                        params=params,
+                        files=files,
+                        json = {
+                            'stream': stream,
+                            'stream_options':options,
+                            'ml_overrides':ml_overrides
+                        }
+                        )
+        r.raise_for_status()
+    except Exception as e:
+        g.logger.Error ('Error during remote post: {}'.format(str(e)))
+        g.logger.Debug(2,traceback.format_exc())
+        raise
 
-    r = requests.post(url=object_url,
-                      headers=auth_header,
-                      params=params,
-                      files=files,
-                      json = {
-                        'stream': stream,
-                        'stream_options':options,
-                        'ml_overrides':ml_overrides
-                      }
-                    )
     diff_time = (datetime.datetime.now() - start)
     g.logger.Debug(1,'remote detection inferencing took: {}'.format(diff_time))
     data = r.json()
+    print(r)
     matched_data = data['matched_data']
     if g.config['write_image_to_zm'] == 'yes'  and matched_data['frame_id']:
         url = '{}/index.php?view=image&eid={}&fid={}'.format(g.config['portal'], stream,matched_data['frame_id'] )
