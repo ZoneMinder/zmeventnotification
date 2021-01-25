@@ -555,6 +555,49 @@ Like this:
       
 
 
+Exceptions when using mlapi
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+If you are using the remote mlapi server, it gets a little murkier (and I need to clean this up) when it comes to 
+per monitor setting. ``objectconfig.ini`` allows you to override attributes on a per monitor basis. However, mlapi 
+has no concept of 'per monitor' settings (yet). It loads a config once and sits in memory, doing ML for whatever zm_detect
+throws at it. 
+
+So as a hack (for now), zm_detect passes the following attributes in a structure called ``ml_overrides`` to mlapi.
+mlapi then goes about replacing its own values with these overrides. The following are sent as overrides: 
+
+- `model_sequence` (inside the ``ml_sequence`` structure in objectconfig.ini)
+- ``pattern`` (inside ``ml_sequence->object,face,alpr`` structure in objectconfig.ini)
+
+**In other words, these values of ``objectconfig.ini`` will override whatever you put in ``mlapiconfig.ini``**
+
+So let's suppose you want to change ``model_sequence`` on a per monitor basis using mlapi, then:
+
+In objectconfig.ini:
+
+::
+
+   ml_sequence= {
+		'general': {
+			'model_sequence': '{{my_sequence}}',
+      <etc>
+
+And then override ``my_sequence`` on a per monitor basis in objectconfig.ini:
+
+::
+
+   [monitor-1]
+   my_sequence=face,object,alpr 
+
+   [monitor-2]
+   my_sequence=face,object
+   
+
+The same holds true for ``pattern``
+
+I am going to clean this up so that mlapiconfig.ini supports a notion of per monitor settings and has a way 
+to reload parameters based on monitors. Some time. And when I do, you'll see this section disappear.
+
+
 About specific detection types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
