@@ -37,13 +37,16 @@
 use strict;
 use bytes;
 use POSIX ':sys_wait_h';
+#use POSIX ':sys_wait_h';
 use Time::HiRes qw/gettimeofday/;
 use Time::Seconds;
 use Symbol qw(qualify_to_ref);
 use IO::Select;
 
+#use Memory::Usage;
+
 ####################################
-my $app_version = '6.1.8';
+my $app_version = '6.1.9';
 ####################################
 
 # do this before any log init etc.
@@ -182,6 +185,7 @@ use constant {
 };
 
 my $child_forks = 0;    # Global tracker of active children
+my $total_forks = 0;    # Global tracker of all forks since start
 
 # Declare options.
 
@@ -4382,7 +4386,7 @@ sub initSocketServer {
     listen => $ssl_enabled ? $ssl_server : $port,
     tick_period => $event_check_interval,
     on_tick     => sub {
-      printDebug( '---------->Tick START<--------------', 2 );
+      printDebug( "---------->Tick START (active forks:$child_forks, total forks:$total_forks)<--------------", 2 );
       if ( $restart_interval
         && ( ( time() - $es_start_time ) > $restart_interval ) )
       {
@@ -4415,18 +4419,33 @@ sub initSocketServer {
 
       printDebug( 'There are ' . scalar @newEvents . ' new Events to process',
         2 );
+
+      my $cpid;
+      my $numEvents = scalar @newEvents;
+
+      if ($numEvents) {
+        my $sigset = POSIX::SigSet->new;
+        my $blockset = POSIX::SigSet->new(SIGCHLD);
+        sigprocmask(SIG_BLOCK, $blockset, $sigset) or Fatal("Can't block SIGCHLD: $!");
+        # Apparently the child closing the db connection can affect the parent.
+        zmDbDisconnect();
+      }
+
       foreach (@newEvents) {
         $child_forks++;
-        my $pid = fork;
-        if ( !defined $pid ) {
-          die "Cannot fork: $!";
-        }
-        elsif ( $pid == 0 ) {
+        $total_forks++;
+        if ($cpid = fork() ) {
+          # We will reconnect after for loop
+          # Parent
+          #$dbh = zmDbConnect(1);
+          # This logReinit is required.  Not sure why.
+          #logReinit();
 
+        } elsif (defined ($cpid)) {
+          # Child
           # do this to get a proper return value
           # $SIG{CHLD} = undef;
           local $SIG{'CHLD'} = 'DEFAULT';
-
           #$wss->shutdown();
           close(READER);
           $dbh = zmDbConnect(1);
@@ -4436,17 +4455,24 @@ sub initSocketServer {
             "Forked process:$$ to handle alarm eid:" . $_->{Alarm}->{EventId},
             1 );
 
-# send it the list of current events to handle bcause checkNewEvents() will clean it
+          # send it the list of current events to handle bcause checkNewEvents() will clean it
           processNewAlarmsInFork($_);
           printDebug( "Ending process:$$ to handle alarms", 1 );
-
+          logTerm();
+          zmDbDisconnect();
           exit 0;
-
+         
+        } else {
+           Fatal("Can't fork: $!");
         }
 
+      } # for loop
+      if ($numEvents) {
+        $dbh = zmDbConnect(1);
+        logReinit();
       }
 
-      printDebug( '---------->Tick END<--------------', 2 );
+      printDebug( "---------->Tick END (active forks:$child_forks, total forks:$total_forks)<--------------", 2 );
     },
 
     # called when a new connection comes in
