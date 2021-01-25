@@ -472,7 +472,7 @@ At a high level, this is how it is structured (not all attributes have been desc
   along with other related paramters.
 
   **Note**: If you are using mlapi, there are certain parameters that get overriden by ``objectconfig.ini``
-  See :ref:`Exceptions when using mlapi`
+  See :ref:`mlapi_overrides`
 
 Leveraging same_model_sequence_strategy and frame_strategy effectively
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -557,6 +557,7 @@ Like this:
                if detected, use same_model_sequence_strategy to decide if we should try other model configurations
       
 
+.. _mlapi_overrides:
 
 Exceptions when using mlapi
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
