@@ -571,7 +571,7 @@ mlapi then goes about replacing its own values with these overrides. The followi
 - ``model_sequence`` (inside the ``ml_sequence`` structure in objectconfig.ini)
 - ``pattern`` (inside ``ml_sequence->object,face,alpr`` structure in objectconfig.ini)
 
-**In other words, these values of ``objectconfig.ini`` will override whatever you put in ``mlapiconfig.ini``**
+**In other words, these values from objectconfig.ini will override whatever you put in mlapiconfig.ini**
 
 So let's suppose you want to change ``model_sequence`` on a per monitor basis using mlapi, then:
 
