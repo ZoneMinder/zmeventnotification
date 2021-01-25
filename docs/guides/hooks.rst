@@ -437,7 +437,7 @@ So in the new way, if you want to change ``ml_sequence`` or ``stream_sequence`` 
 
 Understanding ml_sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-The ``ml_sequence`` structure lies in the ``[ml]`` section of ``objectconfig.ini``.
+The ``ml_sequence`` structure lies in the ``[ml]`` section of ``objectconfig.ini`` (or ``mlapiconfig.ini`` if using mlapi).
 At a high level, this is how it is structured (not all attributes have been described):
 
 ::
@@ -470,6 +470,9 @@ At a high level, this is how it is structured (not all attributes have been desc
 
 - Now for each detection type in ``model_sequence``, you can specify the type of models you want to leading
   along with other related paramters.
+
+  **Note**: If you are using mlapi, there are certain parameters that get overriden by ``objectconfig.ini``
+  See :ref:`Exceptions when using mlapi`
 
 Leveraging same_model_sequence_strategy and frame_strategy effectively
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -565,7 +568,7 @@ throws at it.
 So as a hack (for now), zm_detect passes the following attributes in a structure called ``ml_overrides`` to mlapi.
 mlapi then goes about replacing its own values with these overrides. The following are sent as overrides: 
 
-- `model_sequence` (inside the ``ml_sequence`` structure in objectconfig.ini)
+- ``model_sequence`` (inside the ``ml_sequence`` structure in objectconfig.ini)
 - ``pattern`` (inside ``ml_sequence->object,face,alpr`` structure in objectconfig.ini)
 
 **In other words, these values of ``objectconfig.ini`` will override whatever you put in ``mlapiconfig.ini``**
