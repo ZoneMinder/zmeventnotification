@@ -28,12 +28,10 @@ import zmes_hook_helpers.utils as utils
 import pyzm.helpers.utils as pyzmutils
 import zmes_hook_helpers.common_params as g
 from pyzm import __version__ as pyzm_version
-from zmes_hook_helpers import __version__ as hooks_version
-
 
 auth_header = None
 
-
+__app_version__ = '7.0.0'
 
 def remote_detect(stream=None, options=None, api=None, args=None):
     # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
@@ -56,21 +54,27 @@ def remote_detect(stream=None, options=None, api=None, args=None):
     if os.path.exists(data_file):
         g.logger.Debug(2,'Found token file, checking if token has not expired')
         with open(data_file) as json_file:
-            data = json.load(json_file)
-        generated = data['time']
-        expires = data['expires']
-        access_token = data['token']
-        now = time.time()
-        # lets make sure there is at least 30 secs left
-        if int(now + 30 - generated) >= expires:
-            g.logger.Debug(
-                1,'Found access token, but it has expired (or is about to expire)'
-            )
-            access_token = None
-        else:
-            g.logger.Debug(1,'Access token is valid for {} more seconds'.format(
-                int(now - generated)))
-            # Get API access token
+            try:
+                data = json.load(json_file)
+            except Exception as e: 
+                g.logger.Error ('Error loading login.json: {}'.format(e))
+                os.remove(data_file)
+                access_token = None
+            else:
+                generated = data['time']
+                expires = data['expires']
+                access_token = data['token']
+                now = time.time()
+                # lets make sure there is at least 30 secs left
+                if int(now + 30 - generated) >= expires:
+                    g.logger.Debug(
+                        1,'Found access token, but it has expired (or is about to expire)'
+                    )
+                    access_token = None
+                else:
+                    g.logger.Debug(1,'Access token is valid for {} more seconds'.format(
+                        int(now - generated)))
+                    # Get API access token
     if not access_token:
         g.logger.Debug(1,'Invoking remote API login')
         r = requests.post(url=login_url,
@@ -203,6 +207,10 @@ def main_handler():
                     '--version',
                     help='print version and quit',
                     action='store_true')
+    ap.add_argument(
+                    '--bareversion',
+                    help='print only app version and quit',
+                    action='store_true')
 
     ap.add_argument('-o', '--output-path',
                     help='internal testing use only - path for debug images to be written')
@@ -221,7 +229,11 @@ def main_handler():
     args = vars(args)
 
     if args.get('version'):
-        print('hooks:{} pyzm:{}'.format(hooks_version, pyzm_version))
+        print('app:{}, pyzm:{}'.format(__app_version__,pyzm_version))
+        exit(0)
+
+    if args.get('bareversion'):
+        print('{}'.format(__app_version__))
         exit(0)
 
     if not args.get('config'):
@@ -258,7 +270,7 @@ def main_handler():
     except ImportError as e:
         g.logger.Fatal (f'{e}: You might not have installed OpenCV as per install instructions. Remember, it is NOT automatically installed')
 
-    g.logger.Info('---------| pyzm version:{}, hook version:{},  ES version:{} , OpenCV version:{}|------------'.format(pyzm_version, hooks_version, es_version, cv2.__version__))
+    g.logger.Info('---------| app:{}, pyzm:{}, ES:{} , OpenCV:{}|------------'.format(__app_version__,pyzm_version, es_version, cv2.__version__))
    
 
     
