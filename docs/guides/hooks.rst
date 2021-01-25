@@ -713,7 +713,7 @@ Performance comparison
 * Image size: 800px
 
 The TPU is running in standard mode, not max. Also note that these figures use pycoral, which is a python
-wrapper around the TPU C libraries. 
+wrapper around the TPU C++ libraries. 
 You should also look at  Google's Coral `coral benchmark site <https://coral.ai/docs/edgetpu/benchmarks/>`__ for better numbers.
 Note that their performance figures are specific to their C++ code. Python will have 
 additional overheads (as noted on their site)
