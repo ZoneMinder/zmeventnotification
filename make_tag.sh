@@ -1,13 +1,7 @@
 #!/bin/bash
 if [ -z "$1" ]; then
-    echo "Inferring version name from hook/zmes_hook_helpers/__init__.py"
-    if [[ `cat hook/zmes_hook_helpers/__init__.py` =~ ^__version__\ =\ \"(.*)\" ]];
-    then
-	    TAGVER=${BASH_REMATCH[1]}
-    else
-	    echo "Bad version parsing"
-	    exit
-    fi
+    echo "Getting version name from zm_detect.py"
+    TAGVER=`python ./hook/zm_detect.py --bareversion`
 else
 	TAGVER=$1
 fi
