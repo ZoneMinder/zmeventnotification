@@ -43,8 +43,6 @@ use Time::Seconds;
 use Symbol qw(qualify_to_ref);
 use IO::Select;
 
-#use Memory::Usage;
-
 ####################################
 my $app_version = '6.1.9';
 ####################################
@@ -299,6 +297,8 @@ my $dummyEventInterval     = 20;       # timespan to generate events in seconds
 my $dummyEventTimeLastSent = time();
 
 # This part makes sure we have the right core deps. See later for optional deps
+
+
 
 if ( !try_use('Net::WebSocket::Server') ) {
   Fatal('Net::WebSocket::Server missing');
@@ -831,6 +831,7 @@ else {
 #
 # ==========================================================================
 
+
 use ZoneMinder;
 use POSIX;
 use DBI;
@@ -917,6 +918,7 @@ my $zmdc_active = 0;
 
 # Main entry point
 #
+
 
 printInfo("|------- Starting ES version: $app_version ---------|");
 printDebug( "Started with: perl:" . $^X . " and command:" . $0, 1 );
