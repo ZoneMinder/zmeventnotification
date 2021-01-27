@@ -155,7 +155,7 @@ def remote_detect(stream=None, options=None, api=None, args=None):
     diff_time = (datetime.datetime.now() - start)
     g.logger.Debug(1,'remote detection inferencing took: {}'.format(diff_time))
     data = r.json()
-    print(r)
+    #print(r)
     matched_data = data['matched_data']
     if g.config['write_image_to_zm'] == 'yes'  and matched_data['frame_id']:
         url = '{}/index.php?view=image&eid={}&fid={}'.format(g.config['portal'], stream,matched_data['frame_id'] )
