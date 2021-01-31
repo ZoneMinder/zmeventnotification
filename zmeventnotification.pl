@@ -47,6 +47,7 @@ use IO::Select;
 my $app_version = '6.1.11';
 ####################################
 
+
 # do this before any log init etc.
 my $first_arg = @ARGV[0];
 if ($first_arg eq '--version') {
@@ -54,16 +55,22 @@ if ($first_arg eq '--version') {
   exit(0);
 }
 
+#setpgrp();
+my $dbh = zmDbConnect(1);
 logInit();
 logSetSignal();
+
+$SIG{CHLD} = \&chld_sig_handler;
+$SIG{INT} = \&shutdown_sig_handler;
+$SIG{TERM} = \&shutdown_sig_handler;
+$SIG{ABRT} = \&shutdown_sig_handler;
 $SIG{HUP} = \&logrot;
 
 #$SIG{CHLD} = \&REAPER;
-$SIG{CHLD} = "IGNORE";
+#$SIG{CHLD} = "IGNORE";
 
 #$SIG{CHLD} = 'DEFAULT';
 
-my $dbh = zmDbConnect();
 
 if ( !try_use('JSON') ) {
   if ( !try_use('JSON::XS') ) {
@@ -181,6 +188,8 @@ use constant {
   ESCONTROL_FORCE_MUTE     => -1,
 
 };
+
+my $es_terminate = 0;
 
 my $child_forks = 0;    # Global tracker of active children
 my $total_forks = 0;    # Global tracker of all forks since start
@@ -423,6 +432,21 @@ if ($hook_pass_image_path) {
       'ZoneMinder::Event missing, you may be using an old version. Please turn off hook_pass_image_path in yoyr config'
     );
   }
+}
+
+sub shutdown_sig_handler {
+  $es_terminate = 1;
+}
+
+sub chld_sig_handler {
+  my $saved_status = $!;
+  printDebug ('Child signal handler invoked',4);
+  # Wait for a child to terminate
+  while ( (my $cpid = waitpid(-1, WNOHANG)) > 0 ) {
+    #$pids_to_reap{$cpid} = { status=>$?, stopped=>time() };
+  } # end while waitpid
+  $SIG{CHLD} = \&chld_sig_handler;
+  $! = $saved_status;
 }
 
 # this is just a wrapper around Config::IniFiles val
@@ -887,22 +911,6 @@ SLEEP:
 }
 sub at_eol($) { $_[0] =~ /\n\z/ }
 
-sub REAPER {
-
-  # don't mess up return codes for back ticks
-  local ( $!, $? );
-  my $pid;
-  $pid = waitpid( -1, &WNOHANG );
-  if ( $pid == -1 ) {    # no child waiting. Ignore it.
-  }
-  elsif ( WIFEXITED($?) ) {
-    printDebug( "REAPER: acknowledged child $pid exiting\n", 2 );
-  }
-  else {
-    printDebug( "REAPER: False alarm on $pid", 2 );
-  }
-  $SIG{CHLD} = \&REAPER;    # install *after* calling waitpid
-}
 
 my %monitors            = ();
 my %active_events       = ();
@@ -4388,7 +4396,11 @@ sub initSocketServer {
     listen => $ssl_enabled ? $ssl_server : $port,
     tick_period => $event_check_interval,
     on_tick     => sub {
-      printDebug( "---------->Tick START (active forks:$child_forks, total forks:$total_forks)<--------------", 2 );
+      if ($es_terminate) {
+        printInfo ('Event Server Terminating');
+        exit(0);
+      }
+      printDebug( "---------->$es_terminate ===> Tick START (active forks:$child_forks, total forks:$total_forks)<--------------", 2 );
       if ( $restart_interval
         && ( ( time() - $es_start_time ) > $restart_interval ) )
       {
@@ -4424,10 +4436,12 @@ sub initSocketServer {
 
       my $cpid;
       my $numEvents = scalar @newEvents;
+      my $sigset;
+      my $blockset;
 
       if ($numEvents) {
-        my $sigset = POSIX::SigSet->new;
-        my $blockset = POSIX::SigSet->new(SIGCHLD);
+        $sigset = POSIX::SigSet->new;
+        $blockset = POSIX::SigSet->new(SIGCHLD);
         sigprocmask(SIG_BLOCK, $blockset, $sigset) or Fatal("Can't block SIGCHLD: $!");
         # Apparently the child closing the db connection can affect the parent.
         zmDbDisconnect();
@@ -4447,12 +4461,13 @@ sub initSocketServer {
           # Child
           # do this to get a proper return value
           # $SIG{CHLD} = undef;
-          local $SIG{'CHLD'} = 'DEFAULT';
+          #local $SIG{'CHLD'} = 'DEFAULT';
           #$wss->shutdown();
           close(READER);
           $dbh = zmDbConnect(1);
           logReinit();
 
+          
           printDebug(
             "Forked process:$$ to handle alarm eid:" . $_->{Alarm}->{EventId},
             1 );
@@ -4462,7 +4477,16 @@ sub initSocketServer {
           printDebug( "Ending process:$$ to handle alarms", 1 );
           logTerm();
           zmDbDisconnect();
+
+       
+          $SIG{CHLD} = 'DEFAULT';
+          $SIG{HUP} = 'DEFAULT';
+          $SIG{INT} = 'DEFAULT';
+          $SIG{TERM} = 'DEFAULT';
+          $SIG{ABRT} = 'DEFAULT';
+
           exit 0;
+ 
          
         } else {
            Fatal("Can't fork: $!");
@@ -4472,6 +4496,8 @@ sub initSocketServer {
       if ($numEvents) {
         $dbh = zmDbConnect(1);
         logReinit();
+        sigprocmask(SIG_SETMASK, $sigset) or Fatal("Can't restore SIGCHLD: $!");
+
       }
 
       printDebug( "---------->Tick END (active forks:$child_forks, total forks:$total_forks)<--------------", 2 );
@@ -4499,7 +4525,7 @@ sub initSocketServer {
           $dmsg =~ s/\"password\":\"(.*?)\"/"password":\*\*\*/;
           printDebug( "Raw incoming message: $dmsg", 3 );
           processIncomingMessage( $conn, $msg );
-          printDebug( '---------->onConnect msg STOP<--------------', 2 );
+          printDebug( '---------->onConnect msg END<--------------', 2 );
         },
         handshake => sub {
           my ( $conn, $handshake ) = @_;
@@ -4599,7 +4625,7 @@ sub initSocketServer {
         },
       );
 
-      printDebug( '---------->onConnect STOP<--------------', 2 );
+      printDebug( '---------->onConnect END<--------------', 2 );
     }
   );
 
