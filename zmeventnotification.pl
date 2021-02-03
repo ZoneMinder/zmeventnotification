@@ -44,7 +44,7 @@ use Symbol qw(qualify_to_ref);
 use IO::Select;
 
 ####################################
-my $app_version = '6.1.11';
+my $app_version = '6.1.12';
 ####################################
 
 
@@ -60,7 +60,8 @@ my $dbh = zmDbConnect(1);
 logInit();
 logSetSignal();
 
-$SIG{CHLD} = \&chld_sig_handler;
+#$SIG{CHLD} = \&chld_sig_handler;
+$SIG{CHLD} ='IGNORE';
 $SIG{INT} = \&shutdown_sig_handler;
 $SIG{TERM} = \&shutdown_sig_handler;
 $SIG{ABRT} = \&shutdown_sig_handler;
@@ -4400,7 +4401,7 @@ sub initSocketServer {
         printInfo ('Event Server Terminating');
         exit(0);
       }
-      printDebug( "---------->$es_terminate ===> Tick START (active forks:$child_forks, total forks:$total_forks)<--------------", 2 );
+      printDebug( "----------> Tick START (active forks:$child_forks, total forks:$total_forks)<--------------", 2 );
       if ( $restart_interval
         && ( ( time() - $es_start_time ) > $restart_interval ) )
       {
@@ -4440,9 +4441,9 @@ sub initSocketServer {
       my $blockset;
 
       if ($numEvents) {
-        $sigset = POSIX::SigSet->new;
-        $blockset = POSIX::SigSet->new(SIGCHLD);
-        sigprocmask(SIG_BLOCK, $blockset, $sigset) or Fatal("Can't block SIGCHLD: $!");
+        #$sigset = POSIX::SigSet->new;
+        #$blockset = POSIX::SigSet->new(SIGCHLD);
+        #sigprocmask(SIG_BLOCK, $blockset, $sigset) or Fatal("Can't block SIGCHLD: $!");
         # Apparently the child closing the db connection can affect the parent.
         zmDbDisconnect();
       }
@@ -4461,7 +4462,8 @@ sub initSocketServer {
           # Child
           # do this to get a proper return value
           # $SIG{CHLD} = undef;
-          #local $SIG{'CHLD'} = 'DEFAULT';
+          
+          local $SIG{'CHLD'} = 'DEFAULT';
           #$wss->shutdown();
           close(READER);
           $dbh = zmDbConnect(1);
@@ -4479,11 +4481,11 @@ sub initSocketServer {
           zmDbDisconnect();
 
        
-          $SIG{CHLD} = 'DEFAULT';
-          $SIG{HUP} = 'DEFAULT';
-          $SIG{INT} = 'DEFAULT';
-          $SIG{TERM} = 'DEFAULT';
-          $SIG{ABRT} = 'DEFAULT';
+          #$SIG{CHLD} = 'DEFAULT';
+          #$SIG{HUP} = 'DEFAULT';
+          #$SIG{INT} = 'DEFAULT';
+          #$SIG{TERM} = 'DEFAULT';
+          #$SIG{ABRT} = 'DEFAULT';
 
           exit 0;
  
