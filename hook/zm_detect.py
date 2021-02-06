@@ -31,7 +31,7 @@ from pyzm import __version__ as pyzm_version
 
 auth_header = None
 
-__app_version__ = '6.1.11'
+__app_version__ = '6.1.12'
 
 def remote_detect(stream=None, options=None, api=None, args=None):
     # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
@@ -133,7 +133,8 @@ def remote_detect(stream=None, options=None, api=None, args=None):
             'pattern': g.config['ml_sequence'].get('alpr',{}).get('general',{}).get('pattern')
         },
     }
-    g.logger.Debug(2,f'Invoking mlapi with url:{object_url} and json: stream={stream}, stream_options={options} ml_overrides={ml_overrides} headers={auth_header} params={params} ')
+    mid = args.get('monitorid')
+    g.logger.Debug(2,f'Invoking mlapi with url:{object_url} and json: mid={mid} stream={stream}, stream_options={options} ml_overrides={ml_overrides} headers={auth_header} params={params} ')
     start = datetime.datetime.now()
     try:
         r = requests.post(url=object_url,
@@ -141,6 +142,8 @@ def remote_detect(stream=None, options=None, api=None, args=None):
                         params=params,
                         files=files,
                         json = {
+                            'version': __app_version__, 
+                            'mid': mid,
                             'stream': stream,
                             'stream_options':options,
                             'ml_overrides':ml_overrides
