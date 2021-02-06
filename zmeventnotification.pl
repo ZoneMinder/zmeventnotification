@@ -4051,7 +4051,7 @@ sub processNewAlarmsInFork {
           }
         }
 
-        if ( $event_end_hook && $use_hooks) {
+        if ( $event_end_hook && $use_hooks ) {
 
           # invoke end hook script
           my $cmd =
