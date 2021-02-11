@@ -297,7 +297,9 @@ The ES is missing events. I see them being triggered in ZM
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 There could be multiple issues:
 
-- First, alarms are only triggered on Mocord, Modect and Nocord monitors (admittedly this is likely not your issue if you see ZM triggering alarms)
+- Let's start with the most obvious one. The ES and ZM need to be running on the same server
+- Alarms are only triggered on Mocord, Modect and Nocord monitors 
+- If you changed monitor modes or added new monitors after the ES started running, restart the ES so it loads the latest information
 - The ES polls ZM every 5 seconds for new alarms (the duration is controlled by ``event_check_interval`` in ``zmeventnotification.ini``). This means that if your alarm is very brief, that is, it starts and ends before the ES polls for new events then it will be missed. Note that the ES will catch alarms both in ``ALARM`` and ``ALERT`` state. ``ALARM`` is when ZM is actually detecting motion in the event. ``ALERT`` is when ZM stops detecting motion but is still waiting around till it writes all your ``post event frames`` that you have configured on your ZM Monitor buffer settings. So here is an example: Let's say I have a "Garage" monitor that I've configured a post event buffer of 100 (frames) and I've set my camera FPS to 10. That means it will take ZM 10 seconds to close an event after my alarm occurs (it will be in ``ALERT`` stage all that time). In this case, no matter show short my actual alarm, the ES will always catch it.
 
 LetsEncrypt certificates cannot be found when running as a web user
