@@ -4401,7 +4401,8 @@ sub initSocketServer {
         printInfo ('Event Server Terminating');
         exit(0);
       }
-      printDebug( "----------> Tick START (active forks:$child_forks, total forks:$total_forks)<--------------", 2 );
+      my $elapsed_time_min =  ceil((time() - $es_start_time)/60);
+      printDebug( "----------> Tick START (active forks:$child_forks, total forks:$total_forks, running for:$elapsed_time_min min)<--------------", 2 );
       if ( $restart_interval
         && ( ( time() - $es_start_time ) > $restart_interval ) )
       {
