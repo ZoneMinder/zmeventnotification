@@ -134,7 +134,8 @@ def remote_detect(stream=None, options=None, api=None, args=None):
         },
     }
     mid = args.get('monitorid')
-    g.logger.Debug(2,f'Invoking mlapi with url:{object_url} and json: mid={mid} stream={stream}, stream_options={options} ml_overrides={ml_overrides} headers={auth_header} params={params} ')
+    reason = args.get('reason')
+    g.logger.Debug(2,f'Invoking mlapi with url:{object_url} and json: mid={mid} reason={reason} stream={stream}, stream_options={options} ml_overrides={ml_overrides} headers={auth_header} params={params} ')
     start = datetime.datetime.now()
     try:
         r = requests.post(url=object_url,
@@ -144,6 +145,7 @@ def remote_detect(stream=None, options=None, api=None, args=None):
                         json = {
                             'version': __app_version__, 
                             'mid': mid,
+                            'reason': reason,
                             'stream': stream,
                             'stream_options':options,
                             'ml_overrides':ml_overrides
