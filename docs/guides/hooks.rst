@@ -359,6 +359,53 @@ It's pretty simple, actually.
      implements parameter substitution inside the structures, effectively importing the values right back in.
      Just know that what you specify in these sequence structures overrides the above attributes. 
      If you want to reuse them, you need to put them in as parameter substitutions like the same ini file has done 
+   - If you are using the new ``use_sequence=yes`` please don't use old keywords as variables. They will likely fail.
+     
+   Example, this is **NOT WORK**:
+
+      ::
+
+         use_sequence=yes
+
+         [monitor-3]
+         detect_sequence='object,face,alpr'
+
+         [monitor-4]
+         detect_sequence='object'
+
+         [ml]
+         ml_sequence= {
+            <...>
+            general: {
+               'model_sequence': '{{detection_sequence}}'
+            },
+            <...>
+
+         }
+
+   What you need to do is use a different variable name (as ``detect_sequence`` is a reserved keyword which is used if ``use_sequence=no``)
+      
+   So this **WILL WORK**:
+
+      ::
+
+         use_sequence=yes
+
+         [monitor-3]
+         my_sequence='object,face,alpr'
+
+         [monitor-4]
+         my_sequence='object'
+
+         [ml]
+         ml_sequence= {
+            <...>
+            general: {
+               'model_sequence': '{{my_sequence}}'
+            },
+            <...>
+
+         }
 
 - When ``use_sequence`` is set to ``no``, zm_detect internally maps your old parameters 
   to the new structures 
