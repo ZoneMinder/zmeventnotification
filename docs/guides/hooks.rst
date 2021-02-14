@@ -608,46 +608,14 @@ Like this:
 
 Exceptions when using mlapi
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If you are using the remote mlapi server, it gets a little murkier (and I need to clean this up) when it comes to 
-per monitor setting. ``objectconfig.ini`` allows you to override attributes on a per monitor basis. However, mlapi 
-has no concept of 'per monitor' settings (yet). It loads a config once and sits in memory, doing ML for whatever zm_detect
-throws at it. 
+If you are using the remote mlapi server, then a lot of these settings migrate to ``mlapiconfig.ini``
+Specifically, when ``zm_detect.py`` sees ``ml_gateway`` in its ``[remote]`` section, it passes on 
+the detection work to mlapi. The sequence then flows like this:
 
-So as a hack (for now), zm_detect passes the following attributes in a structure called ``ml_overrides`` to mlapi.
-mlapi then goes about replacing its own values with these overrides. The following are sent as overrides: 
+- If ``mlapiconfig.ini`` has monitor specific sections, those are used (including polygons inside those sections). If not, the values in ``objectconfig.ini`` are used 
+- If ``mlapiconfig.ini`` has ``ml_sequence`` and ``stream_sequence``, those are used. If not, the values in ``objectconfig.ini`` are used 
 
-- ``model_sequence`` (inside the ``ml_sequence`` structure in objectconfig.ini)
-- ``pattern`` (inside ``ml_sequence->object,face,alpr`` structure in objectconfig.ini)
-
-**In other words, these values from objectconfig.ini will override whatever you put in mlapiconfig.ini**
-
-So let's suppose you want to change ``model_sequence`` on a per monitor basis using mlapi, then:
-
-In objectconfig.ini:
-
-::
-
-   ml_sequence= {
-		'general': {
-			'model_sequence': '{{my_sequence}}',
-      <etc>
-
-And then override ``my_sequence`` on a per monitor basis in objectconfig.ini:
-
-::
-
-   [monitor-1]
-   my_sequence=face,object,alpr 
-
-   [monitor-2]
-   my_sequence=face,object
-   
-
-The same holds true for ``pattern``
-
-I am going to clean this up so that mlapiconfig.ini supports a notion of per monitor settings and has a way 
-to reload parameters based on monitors. Some time. And when I do, you'll see this section disappear.
-
+To keep things simple, when using mlapi, specify ``ml_sequence``, ``stream_sequence`` and monitor specific settings in ``mlapiconfig.ini``
 
 About specific detection types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
