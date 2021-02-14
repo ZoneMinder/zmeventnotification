@@ -43,6 +43,7 @@ def remote_detect(stream=None, options=None, api=None, args=None):
     label = []
     conf = []
     model = 'object'
+    files={}
     api_url = g.config['ml_gateway']
     g.logger.Info('Detecting using remote API Gateway {}'.format(api_url))
     login_url = api_url + '/login'
