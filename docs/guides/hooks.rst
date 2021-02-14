@@ -361,7 +361,7 @@ It's pretty simple, actually.
      If you want to reuse them, you need to put them in as parameter substitutions like the same ini file has done 
    - If you are using the new ``use_sequence=yes`` please don't use old keywords as variables. They will likely fail.
      
-   Example, this is **NOT WORK**:
+   Example, this will **NOT WORK**:
 
       ::
 
@@ -385,7 +385,7 @@ It's pretty simple, actually.
 
    What you need to do is use a different variable name (as ``detect_sequence`` is a reserved keyword which is used if ``use_sequence=no``)
       
-   So this **WILL WORK**:
+   But this **WILL WORK**:
 
       ::
 
