@@ -443,14 +443,39 @@ and if you think this must be the reason, I'll wager that you are
 actually in the 99.9% lot and haven't checked properly.
 
 
-Push notifications are delayed (Android)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In ES 6.0, I switched from the legacy FCM protocol to the newer FCM v1 protocol, 
-as per `Google's guidelines <https://firebase.google.com/docs/cloud-messaging/migrate-v1>`__.
-It seems for several android users (see `issue <https://github.com/pliablepixels/zmeventnotification/issues/337>`__), this change caused a situation where messages get delayed late, 
-but *only when the phone is in low power or doze mode*.
+How do I reduce the time of delay from an alarm occuring in ZM to the notification being sent out?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- First, turn on debug logs. You'll know where the delays are occuring and then you can deep dive.
+- Read the priniciples document: :ref:`from-detection-to-notification`. Really, it will help you understand how this works 
+- There are some key areas you can optimize for:
 
-On further reading, there seems to be multiple potential reasons:
+   - The ES _polls_ ZoneMinder mapped memory for events. By default it is 5 seconds. To change it, 
+     change ``event_check_interval`` in ``zm_eventnotification.ini`` 
+
+   - One an alarm is detected, depending on whether you configured hooks or not, it will invoke 
+     object detection. Based on your server/desktop configuration, this can take just a few milliseconds 
+     to several seconds. If you are using machine learning hooks, consider using `mlapi <https://github.com/pliablepixels/mlapi>`__
+     as it preloads models into memory only once. Loading a model can take a few seconds, while detection, if you are on 
+     a GPU or TPU takes milliseconds. If you don't use hooks, turn it off in config.
+
+   - Again, if you are using hooks, there is a ``wait`` attribute in ``objectconfig.ini`` that waits for 
+     a few seconds before downloading the image from ZM. This was done because sometimes the ES may be asking 
+     to download an image that ZM hasn't written to disk yet (remember, ES is triggered when an alarm starts).
+     This is really no longer needed, if you are using it. Starting ES 6.1.0, you can instead just use the 
+     `much more powerful  `stream_sequence <https://pyzm.readthedocs.io/en/latest/source/pyzm.html#pyzm.ml.detect_sequence.DetectSequence.detect_stream>`__ 
+     construct to specify retries.
+
+This is really what comes to mind. If you are seeing unusual delays, please create a github issue and post 
+debug logs (again, NOT info logs please) 
+
+
+
+
+
+Push notifications are delayed by several minutes when the phone turns off (Android)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There seems to be multiple potential reasons:
 
 - Starting Android 6, a doze mode and battery optimization mode has been introduced which agressively tries to 
   put the phone into low power mode. This results in the apps disconnecting from FCM servers for around 10-15 mins
@@ -463,10 +488,10 @@ On further reading, there seems to be multiple potential reasons:
   them if we send too many high priority messages. So try setting your `fcm_android_priority` to `default` if it
   is set to `high`
 
-- Finally, if nothing else works, set `use_fcmv1` to `no` in `zmeventnotification.ini` to go back to legacy 
-  protocol (this should really be the last resort)
+- If nothing else works, set `use_fcmv1` to `no` in `zmeventnotification.ini` to go back to legacy 
+  protocol 
 
-- (More) Finally, it is entirely possible there is some magic-foo of combination of attributes in FCMv1 which
+- Finally, it is entirely possible there is some magic-foo of combination of attributes in FCMv1 which
   is not documented that may do the right thing. If you figure it out, please let me know.
 
 - If you are wondering what this all means for iOS - it is unaffected. iOS uses a priority 10 by default (high) 
