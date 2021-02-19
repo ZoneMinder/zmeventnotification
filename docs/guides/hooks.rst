@@ -617,6 +617,44 @@ the detection work to mlapi. The sequence then flows like this:
 
 To keep things simple, when using mlapi, specify ``ml_sequence``, ``stream_sequence`` and monitor specific settings in ``mlapiconfig.ini``
 
+- It is good practice, when using mlapi, to create sections for your monitors. This is actually required if you are using 
+  ``import_zm_zones=yes``. Since mlapi loads all settings at first start, if it does not find a monitor specific section in 
+  your config, it will not load its zones from ZM. 
+
+Here is a part of my config, for example:
+
+::
+   import_zm_zones=yes
+   ## Monitor specific settings
+   [monitor-3]
+   # doorbell
+   model_sequence=object,face
+   object_detection_pattern=(person|monitor_doorbell)
+   valid_face_area=184,235 1475,307 1523,1940 146,1940
+
+   [monitor-7]
+   # Driveway
+   model_sequence=object,alpr
+   object_detection_pattern=(person|car|motorbike|bus|truck|boat)
+
+   [monitor-2]
+   # Front lawn 
+   model_sequence=object
+   object_detection_pattern=(person)
+
+   [monitor-4]
+   #deck
+   object_detection_pattern=(person|monitor_deck)
+   stream_sequence = {
+         'frame_strategy': 'most_models',
+         'frame_set': 'alarm',
+         'contig_frames_before_error': 5,
+         'max_attempts': 3,
+         'sleep_between_attempts': 4,
+         'resize':800
+
+      }
+
 About specific detection types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
