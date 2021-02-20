@@ -316,17 +316,28 @@ The problem is read permissions, starting at the root level. Typically doing ``c
 Picture notifications don't show images
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Starting v2.0, I support images in alarms. However, there are several
-conditions to be met: 
+Before you read this, make sure push notifications in general are working (without images). To get images working, 
+the following conditions must be met:
 
 - You must use HTTPS
 - There is a 1MB limit to image size
 - You can't use self signed certs 
-- The IP/hostname needs to be accessible by zmNinja
+- The IP/hostname needs to be accessible by zmNinja on the mobile device you are receiving pushes on
 - You need ZM 1.32.3 or above
-- A good way to isolate if its a URL problem or something else is replace the ``picture_url`` with a knows HTTPS url like `this <https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/A_small_bird.jpg/800px-A_small_bird.jpg>`__
+- A good way to isolate if its a URL problem or something else is replace the ``picture_url`` in ``/etc/zm/secrets.ini`` 
+  with a knows HTTPS url like `this <https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/A_small_bird.jpg/800px-A_small_bird.jpg>`__
   Note that when you use a test image, comment out ``picture_portal_username`` and
-  ``picture_portal_password`` so they are not auto appended.
+  ``picture_portal_password`` so they are not auto appended. Remember to restart the ES.
+- Once you have a public URL working as above, look at your ES DEBUG logs (not INF). When a push is beint sent out, you will 
+  notice a message like so:
+
+  ::
+
+      [|----> FORK:Driveway (7), eid:9666 fcmv1: Final JSON using FCMV1 being sent is: {"title":"Driveway Alarm (9666)","image_url":"https://myserver:port/zm/index.php?view=image&eid=9666&fid=objdetect&width=600&username=admin&password=xxx}, <etc>
+
+  Take the URL inside ``image_url`` and replace the password with the actual password and paste it in your mobile device. If it works (without requiring to manually login), only then will push images show
+
+
 
 Before you report issues, please make sure you have been diligent in
 testing - Try with a public URL as indicated above. This is important. -
