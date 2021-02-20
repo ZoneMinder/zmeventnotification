@@ -494,10 +494,11 @@ There seems to be multiple potential reasons:
   optimization and doze mode effects. There are instructions `here <https://documentation.onesignal.com/docs/notifications-show-successful-but-are-not-being-shown>`__
   on how to do that (scroll to the middle of the page and see the table that describes what to do depending on your phone manufacturer).
 
-- In ES 6.0, I set the android notifications priority to 'high' by default. Frankly this was the same as what
-  I did in the legacy format too. However, it looks like google _may_ `deprioritize <https://stackoverflow.com/questions/53646761/firebase-push-notification-delay-after-triggering-few-high-priority-notification>__`
-  them if we send too many high priority messages. So try setting your `fcm_android_priority` to `default` if it
-  is set to `high`
+- The ES delivers messages using ``high`` priority in Android.  However, it looks like google _may_ `deprioritize <https://stackoverflow.com/questions/53646761/firebase-push-notification-delay-after-triggering-few-high-priority-notification>__`
+  them if we send too many high priority messages. So try setting your ``fcm_android_priority`` to ``normal`` if you see this issue. However, 
+  if you set it to normal, messages may be delayed if you are in doze mode.
+
+- Finally, experiment with setting ``fcm_android_ttl`` to ``0`` along with ``fcm_android_priority`` to ``high`` 
 
 - If nothing else works, set `use_fcmv1` to `no` in `zmeventnotification.ini` to go back to legacy 
   protocol 

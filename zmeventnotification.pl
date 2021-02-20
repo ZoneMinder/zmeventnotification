@@ -157,7 +157,7 @@ use constant {
   DEFAULT_ESCONTROL_INTERFACE_FILE =>
     '/var/lib/zmeventnotification/misc/escontrol_interface.dat',
   DEFAULT_FCM_DATE_FORMAT => '%I:%M %p, %d-%b',
-  DEFAULT_FCM_ANDROID_PRIORITY=>'default',
+  DEFAULT_FCM_ANDROID_PRIORITY=>'high',
   DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN => 8000
 };
 
@@ -237,6 +237,8 @@ my $api_push_script;
 my $token_file;
 my $fcm_date_format;
 my $fcm_android_priority;
+my $fcm_android_ttl;
+
 
 my $ssl_enabled;
 my $ssl_cert_file;
@@ -558,6 +560,8 @@ sub loadEsConfigSettings {
     config_get_val( $config, 'fcm', 'date_format', DEFAULT_FCM_DATE_FORMAT );
   $fcm_android_priority = 
     config_get_val( $config, 'fcm', 'android_priority', DEFAULT_FCM_ANDROID_PRIORITY );
+    $fcm_android_priority = 
+    config_get_val( $config, 'fcm', 'fcm_android_ttl');
 
   $use_api_push =
     config_get_val( $config, 'push', 'use_api_push', DEFAULT_USE_API_PUSH );
@@ -750,6 +754,7 @@ Use FCM V1 APIs....................... ${\(yes_or_no($use_fcmv1))}
 FCM Date Format....................... ${\(value_or_undefined($fcm_date_format))}
 Only show latest FCMv1 message........ ${\(yes_or_no($replace_push_messages))}
 Android FCM push priority............. ${\(value_or_undefined($fcm_android_priority))}
+Android FCM push ttl.................. ${\(value_or_undefined($fcm_android_ttl))}
 
 Token file ........................... ${\(value_or_undefined($token_file))}
 
@@ -1923,7 +1928,7 @@ sub sendOverFCMV1 {
       icon     => 'ic_stat_notification',
       priority => $fcm_android_priority
     };
-
+    $merssage_v2->{android}-{ttl} = $fcm_android_ttl if ($fcm_android_ttl;)
     $message_v2->{android}->{tag} = 'zmninjapush' if ($replace_push_messages);
     if (defined ($obj->{appversion}) && ($obj->{appversion} ne "unknown")) {
     printDebug ('setting channel to zmninja',2);
