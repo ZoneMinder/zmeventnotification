@@ -559,8 +559,8 @@ sub loadEsConfigSettings {
   $fcm_date_format =
     config_get_val( $config, 'fcm', 'date_format', DEFAULT_FCM_DATE_FORMAT );
   $fcm_android_priority = 
-    config_get_val( $config, 'fcm', 'android_priority', DEFAULT_FCM_ANDROID_PRIORITY );
-    $fcm_android_priority = 
+    config_get_val( $config, 'fcm', 'fcm_android_priority', DEFAULT_FCM_ANDROID_PRIORITY );
+  $fcm_android_ttl = 
     config_get_val( $config, 'fcm', 'fcm_android_ttl');
 
   $use_api_push =
@@ -710,7 +710,8 @@ sub yes_or_no {
 }
 
 sub value_or_undefined {
-  return $_[0] || '(undefined)';
+  return defined($_[0]) ? $_[0] : '(undefined)';
+  #return $_[0] || '(undefined)';
 }
 
 sub present_or_not {
@@ -1928,7 +1929,7 @@ sub sendOverFCMV1 {
       icon     => 'ic_stat_notification',
       priority => $fcm_android_priority
     };
-    $merssage_v2->{android}-{ttl} = $fcm_android_ttl if ($fcm_android_ttl;)
+    $message_v2->{android}->{ttl} = $fcm_android_ttl if (defined($fcm_android_ttl));
     $message_v2->{android}->{tag} = 'zmninjapush' if ($replace_push_messages);
     if (defined ($obj->{appversion}) && ($obj->{appversion} ne "unknown")) {
     printDebug ('setting channel to zmninja',2);
