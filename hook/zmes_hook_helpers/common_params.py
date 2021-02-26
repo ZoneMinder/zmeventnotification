@@ -304,7 +304,7 @@ config_vals = {
         },
         'object_labels':{
             'section': 'object',
-            'default': '/var/lib/zmeventnotification/models/yolov3/yolov3_classes.txt',
+            'default': '/var/lib/zmeventnotification/models/yolov3/coco.names',
             'type': 'string'
         },
        
