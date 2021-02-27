@@ -47,6 +47,7 @@ use IO::Select;
 my $app_version = '6.1.12';
 ####################################
 
+my $hack_dont_reload_monitors = 0;
 
 # do this before any log init etc.
 my $first_arg = @ARGV[0];
@@ -1345,7 +1346,7 @@ sub checkNewEvents() {
   my @newEvents  = ();
 
   #printDebug("inside checkNewEvents()");
-  if ( ( time() - $monitor_reload_time ) > $monitor_reload_interval ) {
+  if ( (( time() - $monitor_reload_time ) > $monitor_reload_interval)) {
 
     # use this time to keep token counters updated
     my $update_tokens = 0;
@@ -1409,10 +1410,16 @@ sub checkNewEvents() {
       close($fh);
     }
 
-    foreach my $monitor ( values(%monitors) ) {
-      zmMemInvalidate($monitor);
+    if (!$hack_dont_reload_monitors ) {
+      $hack_dont_reload_monitors = 1;
+      foreach my $monitor ( values(%monitors) ) {
+        zmMemInvalidate($monitor);
+      } 
+      loadMonitors();
+    } else {
+      printInfo ("HACK ACTIVE: Not reloading monitors");
     }
-    loadMonitors();
+    
   }
 
   # loop through all monitors getting SHM state
@@ -1547,6 +1554,8 @@ sub loadMonitor {
 # Refreshes list of monitors from DB
 #
 sub loadMonitors {
+
+
   printInfo("Re-loading monitors");
   $monitor_reload_time = time();
 
