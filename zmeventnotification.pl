@@ -47,8 +47,6 @@ use IO::Select;
 my $app_version = '6.1.12';
 ####################################
 
-my $hack_dont_reload_monitors = 0;
-
 # do this before any log init etc.
 my $first_arg = @ARGV[0];
 if ($first_arg eq '--version') {
@@ -1410,15 +1408,11 @@ sub checkNewEvents() {
       close($fh);
     }
 
-    if (!$hack_dont_reload_monitors ) {
-      $hack_dont_reload_monitors = 1;
-      foreach my $monitor ( values(%monitors) ) {
-        zmMemInvalidate($monitor);
-      } 
-      loadMonitors();
-    } else {
-      printInfo ("HACK ACTIVE: Not reloading monitors");
-    }
+    foreach my $monitor ( values(%monitors) ) {
+      zmMemInvalidate($monitor);
+    } 
+    loadMonitors();
+   
     
   }
 
