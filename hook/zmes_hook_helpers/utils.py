@@ -461,7 +461,7 @@ def process_config(args, ctx):
                     if k.endswith('_zone_detection_pattern'):
                         zone_name = k.split('_zone_detection_pattern')[0]
                         g.logger.Debug(2, 'found zone specific pattern:{} storing'.format(zone_name))
-                        poly_patterns.append({'name': zone_name, 'pattern':v});
+                        poly_patterns.append({'name': zone_name, 'pattern':v})
                         continue
 
                     if k in g.config_vals:
