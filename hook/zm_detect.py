@@ -57,6 +57,7 @@ def remote_detect(stream=None, options=None, api=None, args=None):
         with open(data_file) as json_file:
             try:
                 data = json.load(json_file)
+                json_file.close()
             except Exception as e: 
                 g.logger.Error ('Error loading login.json: {}'.format(e))
                 os.remove(data_file)

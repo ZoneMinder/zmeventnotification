@@ -3083,13 +3083,14 @@ sub initFCMTokens {
   my %tokens_data;
   my $hr;
   my $data = do { local $/ = undef; <$fh> };
+  close ($fh);
   eval { $hr = decode_json($data); };
   if ($@) {
     printInfo("tokens is not JSON, migrating format...");
-    close($fh);
     migrateTokens();
     open( my $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
     my $data = do { local $/ = undef; <$fh> };
+    close ($fh);
     eval { $hr = decode_json($data); };
     if ($@) {
       Fatal("Migration to JSON file failed: $!");
