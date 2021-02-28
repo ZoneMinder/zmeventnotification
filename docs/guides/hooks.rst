@@ -613,9 +613,11 @@ Specifically, when ``zm_detect.py`` sees ``ml_gateway`` in its ``[remote]`` sect
 the detection work to mlapi. The sequence then flows like this:
 
 - If ``mlapiconfig.ini`` has monitor specific sections, those are used (including polygons inside those sections). If not, the values in ``objectconfig.ini`` are used 
-- If ``mlapiconfig.ini`` has ``ml_sequence`` and ``stream_sequence``, those are used. If not, the values in ``objectconfig.ini`` are used 
+- If ``mlapiconfig.ini`` has ``ml_sequence`` and ``stream_sequence``, those are used. If not, the values in ``objectconfig.ini`` are used. Beware though, if you 
+  specify ``stream_sequence`` in ``mlapiconfig.ini``, polygons from ``objectconfig.ini`` will NOT be used, as ``stream_sequence`` contains polygons.
 
 To keep things simple, when using mlapi, specify ``ml_sequence``, ``stream_sequence`` and monitor specific settings in ``mlapiconfig.ini``
+If you are using fallback, put monitor specific sections in **both** configs.
 
 - It is good practice, when using mlapi, to create sections for your monitors. This is actually required if you are using 
   ``import_zm_zones=yes``. Since mlapi loads all settings at first start, if it does not find a monitor specific section in 
