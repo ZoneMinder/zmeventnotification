@@ -31,7 +31,7 @@ from pyzm import __version__ as pyzm_version
 
 auth_header = None
 
-__app_version__ = '6.1.12'
+__app_version__ = '6.1.13'
 
 def remote_detect(stream=None, options=None, api=None, args=None):
     # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
@@ -573,9 +573,13 @@ def main_handler():
 if __name__ == '__main__':
     try:
         main_handler()
+        g.logger.Debug (1, "Closing logs")
+        g.logger.close()
     except Exception as e:
         if g.logger:
             g.logger.Fatal('Unrecoverable error:{} Traceback:{}'.format(e,traceback.format_exc()))
+            g.logger.Debug (1, "Closing logs")
+            g.logger.close()
         else:
             print('Unrecoverable error:{} Traceback:{}'.format(e,traceback.format_exc())) 
         exit(1)
