@@ -55,7 +55,7 @@ if ($first_arg eq '--version') {
 }
 
 #setpgrp();
-my $dbh = zmDbConnect(1);
+my $dbh = zmDbConnect(1); # adding 1 disconnects old connection
 logInit();
 logSetSignal();
 
@@ -4478,9 +4478,10 @@ sub initSocketServer {
           #$wss->shutdown();
           close(READER);
           $dbh = zmDbConnect(1);
-          logReinit();
-
-          
+          logTerm();
+          logInit();
+          logSetSignal();
+         
           printDebug(
             "Forked process:$$ to handle alarm eid:" . $_->{Alarm}->{EventId},
             1 );
