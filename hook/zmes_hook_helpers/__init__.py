@@ -1,2 +1,2 @@
-__version__="6.1.13"
-VERSION=__version__
+__version__ = "6.1.14"
+VERSION = __version__
