@@ -626,6 +626,7 @@ If you are using fallback, put monitor specific sections in **both** configs.
 Here is a part of my config, for example:
 
 ::
+
    import_zm_zones=yes
    ## Monitor specific settings
    [monitor-3]
