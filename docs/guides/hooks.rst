@@ -610,18 +610,19 @@ Exceptions when using mlapi
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 If you are using the remote mlapi server, then a lot of these settings migrate to ``mlapiconfig.ini``
 Specifically, when ``zm_detect.py`` sees ``ml_gateway`` in its ``[remote]`` section, it passes on 
-the detection work to mlapi. The sequence then flows like this:
+the detection work to mlapi. 
 
-- If ``mlapiconfig.ini`` has monitor specific sections, those are used (including polygons inside those sections). If not, the values in ``objectconfig.ini`` are used 
-- If ``mlapiconfig.ini`` has ``ml_sequence`` and ``stream_sequence``, those are used. If not, the values in ``objectconfig.ini`` are used. Beware though, if you 
-  specify ``stream_sequence`` in ``mlapiconfig.ini``, polygons from ``objectconfig.ini`` will NOT be used, as ``stream_sequence`` contains polygons.
+So when using mlapi, migrate configurations that you typically specify in ``objectconfig.ini`` to ``mlapiconfig.ini``. This includes:
 
-To keep things simple, when using mlapi, specify ``ml_sequence``, ``stream_sequence`` and monitor specific settings in ``mlapiconfig.ini``
-If you are using fallback, put monitor specific sections in **both** configs.
+- Monitor specific sections 
+- ml_sequence and stream_sequence 
+- In general, if you see detection with mlapi missing something that worked when using 
+  objectconfig.ini, make sure you have not missed anything specific in mlapiconfig.ini 
+  with respect to related parameters 
 
-- It is good practice, when using mlapi, to create sections for your monitors. This is actually required if you are using 
-  ``import_zm_zones=yes``. Since mlapi loads all settings at first start, if it does not find a monitor specific section in 
-  your config, it will not load its zones from ZM. 
+Note that the ``wait`` parameter is ignored in mlapi. There is a ``delay`` parameter in 
+stream_sequence that you should use instead (and actually no longer needed, because stream_sequence
+has better options now like retries. See `docs in pyzm <https://pyzm.readthedocs.io/en/latest/source/pyzm.html#pyzm.ml.detect_sequence.DetectSequence.detect_stream>`__)
 
 Here is a part of my config, for example:
 
