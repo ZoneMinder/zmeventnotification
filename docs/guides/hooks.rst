@@ -624,6 +624,8 @@ Note that the ``wait`` parameter is ignored in mlapi. There is a ``delay`` param
 stream_sequence that you should use instead (and actually no longer needed, because stream_sequence
 has better options now like retries. See `docs in pyzm <https://pyzm.readthedocs.io/en/latest/source/pyzm.html#pyzm.ml.detect_sequence.DetectSequence.detect_stream>`__)
 
+Also note that if you are using ml_fallback, repeat the settings in both configs.
+
 Here is a part of my config, for example:
 
 ::

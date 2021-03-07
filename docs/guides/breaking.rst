@@ -1,6 +1,11 @@
 Breaking Changes
 ----------------
 
+Version 6.1.12 onwards 
+~~~~~~~~~~~~~~~~~~~~~~~~
+- A lot of config changes, if you are using mlapi. Basically, I'm no longer fully supporting settings in objectconfig.ini
+  transferring to mlapi. See :ref:`mlapi_overrides`
+
 Version 6.1.0 onwards 
 ~~~~~~~~~~~~~~~~~~~~~~
 - You can now string togther multiple models in arbitrary fashion to suit your needs. 
