@@ -276,8 +276,27 @@ Those who want to know more: - Read the detailed notes
 `this <https://medium.com/zmninja/inside-the-hood-machine-learning-enhanced-real-time-alarms-with-zoneminder-e26c34fe354c>`__
 for an explanation of how this works
 
+
 Troubleshooting common situations
 ---------------------------------
+
+The ES randomly hangs
+~~~~~~~~~~~~~~~~~~~~~~~
+If you have exposed the ES port (typically 9000) to the internet, there are chances your ES may lock up.
+The reason seems to be that that there are internet port scanners which establish a TCP connection that stays 
+connected for a long time and does not upgrade to websockets. This causes the library which I use for the ES to 
+handle websockets to lock up. I've logged an `issue with the author of the library <https://github.com/topaz/perl-Net-WebSocket-Server/issues/6>`__.
+So far, I've only seen censys port scanner to cause this issue, so I'd recommend you opt-out of it's tracking by blocking it's IP ranges 
+as `described on their website <https://github.com/topaz/perl-Net-WebSocket-Server/issues/6>`__.
+
+In Linux/ubuntu, I use ufw (make sure it is enabled) as a front-end to iptables and the following commmands do it:
+
+::
+
+   sudo ufw deny from 74.120.14.0/24 comment "Deny censys"
+   sudo ufw deny from 162.142.125.0/24 comment "Deny censys"
+   sudo ufw deny from 167.248.133.0/24 comment "Deny censys"
+   sudo ufw deny from 192.35.168.0/23 comment "Deny censys"
 
 I can't connect to the ES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -441,17 +460,23 @@ credentials (and in that case, you'll see an error message)
 I'm getting multiple notifications for the same event
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-99.9% of times, its because you have multiple copies of the eventserver
-running and you don't know it. Maybe you were manually testing it, and
-forgot to quit it and terminated the window. Do
-``sudo zmdc.pl stop zmeventnotification.pl`` and then
-``ps -aef | grep zme``, kill everything, and start again. Monitor the
-logs to see how many times a message is sent out.
+Some possibilities:
 
-The other 0.1% is at times Google's FCM servers send out multiple
-notifications. Why? I don't know. But it sorts itself out very quickly,
-and if you think this must be the reason, I'll wager that you are
-actually in the 99.9% lot and haven't checked properly.
+- Most often, its because you have multiple copies of the eventserver
+  running and you don't know it. Maybe you were manually testing it, and
+  forgot to quit it and terminated the window. Do
+  ``sudo zmdc.pl stop zmeventnotification.pl`` and then
+  ``ps -aef | grep zme``, kill everything, and start again. Monitor the
+  logs to see how many times a message is sent out.
+
+- There are situations where you device token has changed and ``/var/lib/zmeventnotification/push/tokens.txt`` has 
+  both the old and new token and both work. In this case, your device will get multiple 
+  notifications. Stop the ES, delete ``tokens.txt`` and let zmNinja re-register 
+
+- At times Google's FCM servers send out multiple
+  notifications. Why? I don't know. But it sorts itself out very quickly,
+  and if you think this must be the reason, I'll wager that you are
+  actually in the 99.9% lot and haven't checked properly.
 
 
 How do I reduce the time of delay from an alarm occuring in ZM to the notification being sent out?
