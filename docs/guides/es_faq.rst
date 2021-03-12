@@ -298,6 +298,9 @@ In Linux/ubuntu, I use ufw (make sure it is enabled) as a front-end to iptables 
    sudo ufw deny from 167.248.133.0/24 comment "Deny censys"
    sudo ufw deny from 192.35.168.0/23 comment "Deny censys"
 
+Note that atleast on Ubuntu, ufw keeps getting disabled when I reboot, even after I enable it via systemctl.
+To fix that I had to add ``After=netfilter-persistent.service`` inside the ``[Unit]`` block of ``/lib/systemd/system/ufw.service``
+
 I can't connect to the ES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 There could be multiple reasons:
