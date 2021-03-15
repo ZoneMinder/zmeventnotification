@@ -44,7 +44,7 @@ use Symbol qw(qualify_to_ref);
 use IO::Select;
 
 ####################################
-my $app_version = '6.1.14';
+my $app_version = '6.1.15';
 ####################################
 
 # do this before any log init etc.
@@ -309,11 +309,19 @@ my $dummyEventTimeLastSent = time();
 
 # This part makes sure we have the right core deps. See later for optional deps
 
-
+# for testing only
+#use lib qw(/home/pp/fiddle/perl-Net-WebSocket-Server/lib);
+use version;
 
 if ( !try_use('Net::WebSocket::Server') ) {
   Fatal('Net::WebSocket::Server missing');
 }
+
+Info ("Running on WebSocket library version:$Net::WebSocket::Server::VERSION");
+if (version->parse($Net::WebSocket::Server::VERSION) < version->parse('0.004000')) {
+  Warning ("You are using an old version of Net::WebSocket::Server which can cause lockups. Please upgrade. For more information please see https://zmeventnotification.readthedocs.io/en/latest/guides/es_faq.html#the-es-randomly-hangs");
+}
+
 if ( !try_use('IO::Socket::SSL') )  { Fatal('IO::Socket::SSL missing'); }
 if ( !try_use('IO::Handle') )       { Fatal('IO::Handle'); }
 if ( !try_use('Config::IniFiles') ) { Fatal('Config::Inifiles missing'); }
@@ -4388,6 +4396,7 @@ sub initSocketServer {
         Proto         => 'tcp',
         Reuse         => 1,
         ReuseAddr     => 1,
+        SSL_startHandshake => 0,
         SSL_cert_file => $ssl_cert_file,
         SSL_key_file  => $ssl_key_file
       );
