@@ -31,7 +31,7 @@ from pyzm import __version__ as pyzm_version
 
 auth_header = None
 
-__app_version__ = '6.1.14'
+__app_version__ = '6.1.15'
 
 def remote_detect(stream=None, options=None, api=None, args=None):
     # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
