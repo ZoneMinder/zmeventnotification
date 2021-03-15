@@ -282,13 +282,24 @@ Troubleshooting common situations
 
 The ES randomly hangs
 ~~~~~~~~~~~~~~~~~~~~~~~
+
+Short answer: Upgrade websocket library to 0.004000. You can do this by:
+
+::
+
+   sudo -H cpan 
+   # and inside the cpan shell
+   upgrade Net::WebSocket::Server
+   # exit after that
+
+Explanation: 
+
 If you have exposed the ES port (typically 9000) to the internet, there are chances your ES may lock up.
 The reason seems to be that that there are internet port scanners which establish a TCP connection that stays 
 connected for a long time and does not upgrade to websockets. This causes the library which I use for the ES to 
-handle websockets to lock up. I've logged an `issue with the author of the library <https://github.com/topaz/perl-Net-WebSocket-Server/issues/6>`__.
-So far, I've only seen censys port scanner to cause this issue, so I'd recommend you opt-out of it's tracking by blocking it's IP ranges 
-as `described on their website <https://github.com/topaz/perl-Net-WebSocket-Server/issues/6>`__.
+handle websockets to lock up. The original issue can be viewed `here <https://github.com/topaz/perl-Net-WebSocket-Server/issues/6>`__.
 
+If you want to disable censys, you can follow their instructions on their website to `opt-out <https://support.censys.io/hc/en-us/articles/360043177092-Opt-Out-of-Scanning>`__ 
 In Linux/ubuntu, I use ufw (make sure it is enabled) as a front-end to iptables and the following commmands do it:
 
 ::
