@@ -1,5 +1,40 @@
 # Changelog
 
+## [v6.1.15](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.15) (2021-03-15)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.14...v6.1.15)
+
+**Fixed bugs:**
+
+- ES randomly hangs if using WSS and a persistent TCP connection is made to it  [\#371](https://github.com/pliablepixels/zmeventnotification/issues/371)
+
+**Closed issues:**
+
+- No Object Detection [\#368](https://github.com/pliablepixels/zmeventnotification/issues/368)
+- Can't open memory map file '/dev/shm/zm.mmap.3': Too many open files [\#366](https://github.com/pliablepixels/zmeventnotification/issues/366)
+
+## [v6.1.14](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.14) (2021-03-01)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.13...v6.1.14)
+
+**Closed issues:**
+
+- Mask is ignored when event is triggered by ZM directly \(manual test is OK\). [\#353](https://github.com/pliablepixels/zmeventnotification/issues/353)
+- zm\_train\_Faces.py fails [\#308](https://github.com/pliablepixels/zmeventnotification/issues/308)
+
+## [v6.1.13](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.13) (2021-02-28)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.12...v6.1.13)
+
+**Closed issues:**
+
+- Object detected but not reported [\#365](https://github.com/pliablepixels/zmeventnotification/issues/365)
+- Bug with remote MLAPI [\#364](https://github.com/pliablepixels/zmeventnotification/issues/364)
+- Reducing detection latency [\#363](https://github.com/pliablepixels/zmeventnotification/issues/363)
+- zmeventserver does not catch events. [\#362](https://github.com/pliablepixels/zmeventnotification/issues/362)
+- KeyError if only one model type in ml\_sequence [\#354](https://github.com/pliablepixels/zmeventnotification/issues/354)
+- Images in /var/lib/... are not deleted [\#345](https://github.com/pliablepixels/zmeventnotification/issues/345)
+
 ## [v6.1.12](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.12) (2021-02-14)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.11...v6.1.12)
@@ -193,7 +228,6 @@
 - correct object\_labels value for tinyyolo v3 / v4 [\#293](https://github.com/pliablepixels/zmeventnotification/pull/293) ([hugalafutro](https://github.com/hugalafutro))
 - fix\(import\_zm\_zones\): remove findWholeWord\('All'\) condition from match\_reason [\#289](https://github.com/pliablepixels/zmeventnotification/pull/289) ([matthewtgilbride](https://github.com/matthewtgilbride))
 - Dev [\#286](https://github.com/pliablepixels/zmeventnotification/pull/286) ([pliablepixels](https://github.com/pliablepixels))
-- Modify process\_config\(\) to properly check only\_triggered\_zm\_zones for… [\#278](https://github.com/pliablepixels/zmeventnotification/pull/278) ([neillbell](https://github.com/neillbell))
 
 ## [v5.15.6](https://github.com/pliablepixels/zmeventnotification/tree/v5.15.6) (2020-06-30)
 
@@ -235,6 +269,7 @@
 **Merged pull requests:**
 
 - Update query parameters in utils.py to fix authentication failure [\#279](https://github.com/pliablepixels/zmeventnotification/pull/279) ([cornercase](https://github.com/cornercase))
+- Modify process\_config\(\) to properly check only\_triggered\_zm\_zones for… [\#278](https://github.com/pliablepixels/zmeventnotification/pull/278) ([neillbell](https://github.com/neillbell))
 - Properly check the state of only\_triggered\_zm\_zones  [\#276](https://github.com/pliablepixels/zmeventnotification/pull/276) ([neillbell](https://github.com/neillbell))
 - add a configuration option to set the topic for MQTT instead of the h… [\#272](https://github.com/pliablepixels/zmeventnotification/pull/272) ([dennyreiter](https://github.com/dennyreiter))
 - ftp\_detect\_image.py contrib script [\#261](https://github.com/pliablepixels/zmeventnotification/pull/261) ([0n3man](https://github.com/0n3man))
@@ -299,7 +334,6 @@
 - Fix typo in version option handling [\#239](https://github.com/pliablepixels/zmeventnotification/pull/239) ([lpomfrey](https://github.com/lpomfrey))
 - General skip monitors [\#234](https://github.com/pliablepixels/zmeventnotification/pull/234) ([connortechnology](https://github.com/connortechnology))
 - small efficiency improvement [\#233](https://github.com/pliablepixels/zmeventnotification/pull/233) ([connortechnology](https://github.com/connortechnology))
-- 191b mqtt publish from parent only [\#199](https://github.com/pliablepixels/zmeventnotification/pull/199) ([darknicht66](https://github.com/darknicht66))
 
 ## [v5.9.9](https://github.com/pliablepixels/zmeventnotification/tree/v5.9.9) (2020-03-08)
 
@@ -381,6 +415,7 @@
 **Merged pull requests:**
 
 - Update config.rst [\#200](https://github.com/pliablepixels/zmeventnotification/pull/200) ([undigo](https://github.com/undigo))
+- 191b mqtt publish from parent only [\#199](https://github.com/pliablepixels/zmeventnotification/pull/199) ([darknicht66](https://github.com/darknicht66))
 - fixes \#191 add MQTT tick [\#194](https://github.com/pliablepixels/zmeventnotification/pull/194) ([darknicht66](https://github.com/darknicht66))
 
 ## [v5.4.1](https://github.com/pliablepixels/zmeventnotification/tree/v5.4.1) (2019-12-22)
@@ -591,7 +626,6 @@
 - fix mislabeled picture\_url example in default config [\#108](https://github.com/pliablepixels/zmeventnotification/pull/108) ([joelsdc](https://github.com/joelsdc))
 - Replaced two occurrences where the incorrect equivalence operator was being used [\#106](https://github.com/pliablepixels/zmeventnotification/pull/106) ([humblking](https://github.com/humblking))
 - any config param can be overriden [\#102](https://github.com/pliablepixels/zmeventnotification/pull/102) ([pliablepixels](https://github.com/pliablepixels))
-- Silver ghost bs master [\#89](https://github.com/pliablepixels/zmeventnotification/pull/89) ([pliablepixels](https://github.com/pliablepixels))
 
 
 
