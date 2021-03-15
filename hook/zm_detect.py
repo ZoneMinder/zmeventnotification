@@ -31,7 +31,7 @@ from pyzm import __version__ as pyzm_version
 
 auth_header = None
 
-__app_version__ = '6.1.15'
+__app_version__ = '6.1.16'
 
 def remote_detect(stream=None, options=None, api=None, args=None):
     # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
@@ -174,19 +174,10 @@ def remote_detect(stream=None, options=None, api=None, args=None):
             if options.get('resize') and options.get('resize') != 'no':
                 img = imutils.resize(img,width=options.get('resize'))
             matched_data['image'] = img
-
-            # we also need to recompute polygons scale as it was remotely done
-            oldw = matched_data['image_dimensions']['original'][0]
-            oldh = matched_data['image_dimensions']['original'][1]
-            neww = matched_data['image_dimensions']['resized'][0] 
-            newh = matched_data['image_dimensions']['resized'][1]
-            g.logger.Debug (2, 'Rescaling polygons for remote_detect {}x{} => {}x{}'.format(oldw,oldh, neww, newh))
-            utils.rescale_polygons(neww / oldw, newh / oldh)
-
         except Exception as e:
             g.logger.Error ('Error during image grab: {}'.format(str(e)))
             g.logger.Debug(2,traceback.format_exc())
-    return data['matched_data'], data['all_matches'], data['polygons']
+    return data['matched_data'], data['all_matches']
 
 
 def append_suffix(filename, token):
@@ -387,7 +378,7 @@ def main_handler():
     m = None
     matched_data = None
     all_data = None
-    remote_polygons = None
+
 
     if not args['file'] and int(g.config['wait']) > 0:
         g.logger.Info('Sleeping for {} seconds before inferencing'.format(
@@ -399,7 +390,7 @@ def main_handler():
         stream_options['monitorid'] = args.get('monitorid')
         start = datetime.datetime.now()
         try:
-            matched_data,all_data, remote_polygons = remote_detect(stream=stream, options=stream_options, api=zmapi, args=args)
+            matched_data,all_data = remote_detect(stream=stream, options=stream_options, api=zmapi, args=args)
             diff_time = (datetime.datetime.now() - start)
             g.logger.Debug(1,'Total remote detection detection took: {}'.format(diff_time))
         except Exception as e:
@@ -499,11 +490,10 @@ def main_handler():
         print(pred + '--SPLIT--' + jos)
 
         if (matched_data['image'] is not None) and (g.config['write_image_to_zm'] == 'yes' or g.config['write_debug_image'] == 'yes'):
-            poly = remote_polygons if remote_polygons else g.polygons
             #print (f'********* REMOTE POLY: {remote_polygons}')
             debug_image = pyzmutils.draw_bbox(image=matched_data['image'],boxes=matched_data['boxes'], 
                                               labels=matched_data['labels'], confidences=matched_data['confidences'],
-                                              polygons=poly, poly_thickness = g.config['poly_thickness'],
+                                              polygons=matched_data['polygons'], poly_thickness = g.config['poly_thickness'],
                                               write_conf=True if g.config['show_percent'] == 'yes' else False )
 
             if g.config['write_debug_image'] == 'yes':
