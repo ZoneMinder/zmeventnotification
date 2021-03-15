@@ -292,8 +292,9 @@ Short answer: Upgrade websocket library to 0.004000. You can do this by:
    upgrade Net::WebSocket::Server
    # exit after that
 
-Explanation: 
+**Explanation:** 
 
+This is the reason why older versions of the websocket library would hang:
 If you have exposed the ES port (typically 9000) to the internet, there are chances your ES may lock up.
 The reason seems to be that that there are internet port scanners which establish a TCP connection that stays 
 connected for a long time and does not upgrade to websockets. This causes the library which I use for the ES to 
