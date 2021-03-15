@@ -15,6 +15,9 @@ You can get the version by doing:
 /var/lib/zmeventnotification/bin/zm_detect.py --version
 ```
 
+**Are you using MLAPI? (Y/N)**
+If you are using MLAPI, please mention the version
+
 **The version of ZoneMinder you are using:**
 
 (example only, please edit this line) 1.30.4
