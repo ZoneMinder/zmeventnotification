@@ -214,7 +214,7 @@ def processPastDetection(bbox, label, conf, mid):
         return bbox, label, conf
 
     #g.logger.Debug (1,'loaded past: bbox={}, labels={}'.format(saved_bs, saved_ls));
-
+    g.logger.Debug (4, 'process_past_detections: use_percent:{}, max_diff_area:{}'.format(use_percent,max_diff_area))
     new_label = []
     new_bbox = []
     new_conf = []
@@ -257,6 +257,9 @@ def processPastDetection(bbox, label, conf, mid):
                         .format(saved_ls[saved_idx], saved_b, label[idx], b))
                     foundMatch = True
                     break
+                else:
+                    g.logger.Debug(4,'Diff area of:{} > max_diff_pixels:{} for {}@{}, allowing it'
+                    .format(diff_area, max_diff_pixels,label[idx], b))
         if not foundMatch:
             new_bbox.append(old_b)
             new_label.append(label[idx])
