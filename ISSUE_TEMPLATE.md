@@ -16,7 +16,12 @@ You can get the version by doing:
 ```
 
 **Are you using MLAPI? (Y/N)**
+
 If you are using MLAPI, please mention the version
+You can get the version by doing: (change path to wherever you install mlapi)
+```
+/var/lib/zmeventnotification/mlapi/mlapi.py --version
+```
 
 **The version of ZoneMinder you are using:**
 
