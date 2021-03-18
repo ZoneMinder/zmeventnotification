@@ -444,6 +444,17 @@ if ($hook_pass_image_path) {
   }
 }
 
+sub check_for_duplicate_token {
+  my %token_duplicates = ();
+   foreach (@::active_connections) {
+     $token_duplicates{$_->{token}}++ if $_->{token}; 
+   }
+  foreach (keys %token_duplicates) {
+      printDebug('...'.substr($_,-10)." occurs: ".$token_duplicates{$_}." times",4) if ($token_duplicates{$_} > 1) ;
+    }
+
+}
+
 sub shutdown_sig_handler {
   $es_terminate = 1;
 }
@@ -934,7 +945,7 @@ my $apns_feedback_time  = 0;
 my $proxy_reach_time    = 0;
 my $wss;
 my @events             = ();
-my @active_connections = ();
+our @active_connections = (); # accessed in subs
 my $wss;
 my $zmdc_active = 0;
 
@@ -1406,6 +1417,7 @@ sub checkNewEvents() {
       );
       $ndx++;
     }
+    
 
     if ($update_tokens && $use_fcm) {
       open( my $fh, '>', $token_file )
@@ -4523,6 +4535,7 @@ sub initSocketServer {
 
       }
 
+      check_for_duplicate_token();
       printDebug( "---------->Tick END (active forks:$child_forks, total forks:$total_forks)<--------------", 2 );
     },
 
