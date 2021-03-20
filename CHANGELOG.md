@@ -1,5 +1,19 @@
 # Changelog
 
+## [v6.1.16](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.16) (2021-03-20)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.15...v6.1.16)
+
+**Closed issues:**
+- Fixes an issue where import_zm_zones won't import if global is no and local is yes
+- Updates pyzm to make sure sqlalchemy is not updated to 1.4
+- zm\_detect.py Fails to write image with polygons [\#374](https://github.com/pliablepixels/zmeventnotification/issues/374)
+- Zoneminder zones overlayed with offset on object detection images. [\#372](https://github.com/pliablepixels/zmeventnotification/issues/372)
+
+**Merged pull requests:**
+
+- print when tokens duplicate [\#375](https://github.com/pliablepixels/zmeventnotification/pull/375) ([pliablepixels](https://github.com/pliablepixels))
+
 ## [v6.1.15](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.15) (2021-03-15)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.14...v6.1.15)
