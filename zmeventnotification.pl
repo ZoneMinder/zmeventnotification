@@ -54,7 +54,6 @@ if ($first_arg eq '--version') {
   exit(0);
 }
 
-#setpgrp();
 my $dbh = zmDbConnect(1); # adding 1 disconnects old connection
 logInit();
 logSetSignal();
@@ -66,10 +65,6 @@ $SIG{TERM} = \&shutdown_sig_handler;
 $SIG{ABRT} = \&shutdown_sig_handler;
 $SIG{HUP} = \&logrot;
 
-#$SIG{CHLD} = \&REAPER;
-#$SIG{CHLD} = "IGNORE";
-
-#$SIG{CHLD} = 'DEFAULT';
 
 
 if ( !try_use('JSON') ) {
@@ -81,19 +76,6 @@ if ( !try_use('JSON') ) {
 
 # debugging only.
 #use Data::Dumper;
-
-# ==========================================================================
-#
-# Starting v1.0, configuration has moved to a separate file, please make sure
-# you see README
-#
-# Starting v0.95, I've moved to FCM which means I no longer need to maintain
-# my own push server. Plus this uses HTTP which is the new recommended
-# way. Note that 0.95 will only work with zmNinja 1.2.510 and beyond
-# Conversely, old versions of the event server will NOT work with zmNinja
-# 1.2.510 and beyond, so make sure you upgrade both
-#
-# ==========================================================================
 
 
 
@@ -298,10 +280,21 @@ my $pcnt = 0;
 
 my %fcm_tokens_map;
 
+my %monitors            = ();
+my %active_events       = ();
+my $monitor_reload_time = 0;
+my $es_start_time       = time();
+my $apns_feedback_time  = 0;
+my $proxy_reach_time    = 0;
+my $wss;
+my @events             = ();
+my @active_connections = (); 
+my $wss;
+my $zmdc_active = 0;
+
 # admin interface options
 
 my %escontrol_interface_settings = ( notifications => {} );
-
 my $dummyEventTest = 0
   ; # if on, will generate dummy events. Not in config for a reason. Only dev testing
 my $dummyEventInterval     = 20;       # timespan to generate events in seconds
@@ -338,9 +331,6 @@ if ( !try_use('Time::Piece') ) {
   $is_timepeice = 0;
 }
 #
-
-#if (!try_use ("threads")) {Fatal ("threads library/support  missing");}
-
 use constant USAGE => <<'USAGE';
 
 Usage: zmeventnotification.pl [OPTION]...
@@ -446,17 +436,18 @@ if ($hook_pass_image_path) {
 
 sub check_for_duplicate_token {
   my %token_duplicates = ();
-   foreach (@::active_connections) {
+   foreach (@active_connections) {
      $token_duplicates{$_->{token}}++ if $_->{token}; 
    }
   foreach (keys %token_duplicates) {
-      printDebug('...'.substr($_,-10)." occurs: ".$token_duplicates{$_}." times",4) if ($token_duplicates{$_} > 1) ;
+      printDebug('...'.substr($_,-10)." occurs: ".$token_duplicates{$_}." times",5) if ($token_duplicates{$_} > 1) ;
     }
 
 }
 
 sub shutdown_sig_handler {
   $es_terminate = 1;
+  printDebug ('Received request to shutdown, please wait');
 }
 
 sub chld_sig_handler {
@@ -937,17 +928,7 @@ SLEEP:
 sub at_eol($) { $_[0] =~ /\n\z/ }
 
 
-my %monitors            = ();
-my %active_events       = ();
-my $monitor_reload_time = 0;
-my $es_start_time       = time();
-my $apns_feedback_time  = 0;
-my $proxy_reach_time    = 0;
-my $wss;
-my @events             = ();
-our @active_connections = (); # accessed in subs
-my $wss;
-my $zmdc_active = 0;
+
 
 # Main entry point
 #
@@ -4038,12 +4019,17 @@ sub processNewAlarmsInFork {
         }
         printDebug( 'Matching alarm to connection rules...', 1 );
         my ($serv) = @_;
+        my %fcm_token_duplicates = ();
         foreach (@active_connections) {
-
+          if  ($_->{token} && $fcm_token_duplicates{$_->{token}}) {
+            printDebug ('...'.substr($_->{token},-10).' occurs mutiples times. NOT USUAL, ignoring',1);
+            next;
+          }
           if ( shouldSendEventToConn( $temp_alarm_obj, $_ ) ) {
             printDebug(
-              'shouldSendEventToConn returned true, so calling sendEvent', 1 );
+              'token is unique, shouldSendEventToConn returned true, so calling sendEvent', 1 );
             sendEvent( $temp_alarm_obj, $_, 'event_start', $hookResult );
+            $fcm_token_duplicates{$_->{token}}++ if $_->{token}; 
 
           }
         }    # foreach active_connections
