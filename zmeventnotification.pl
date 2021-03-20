@@ -43,6 +43,16 @@ use Time::Seconds;
 use Symbol qw(qualify_to_ref);
 use IO::Select;
 
+use ZoneMinder;
+use POSIX;
+use DBI;
+use version;
+
+
+$ENV{PATH} = '/bin:/usr/bin';
+$ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
+delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
+
 ####################################
 my $app_version = '6.1.16';
 ####################################
@@ -53,17 +63,6 @@ if ($first_arg eq '--version') {
   print ($app_version);
   exit(0);
 }
-
-my $dbh = zmDbConnect(1); # adding 1 disconnects old connection
-logInit();
-logSetSignal();
-
-#$SIG{CHLD} = \&chld_sig_handler;
-$SIG{CHLD} ='IGNORE';
-$SIG{INT} = \&shutdown_sig_handler;
-$SIG{TERM} = \&shutdown_sig_handler;
-$SIG{ABRT} = \&shutdown_sig_handler;
-$SIG{HUP} = \&logrot;
 
 
 
@@ -292,6 +291,8 @@ my @active_connections = ();
 my $wss;
 my $zmdc_active = 0;
 
+my $is_timepeice = 1;
+
 # admin interface options
 
 my %escontrol_interface_settings = ( notifications => {} );
@@ -304,7 +305,19 @@ my $dummyEventTimeLastSent = time();
 
 # for testing only
 #use lib qw(/home/pp/fiddle/perl-Net-WebSocket-Server/lib);
-use version;
+
+my $dbh = zmDbConnect(1); # adding 1 disconnects old connection
+logInit();
+logSetSignal();
+
+#$SIG{CHLD} = \&chld_sig_handler;
+$SIG{CHLD} ='IGNORE';
+$SIG{INT} = \&shutdown_sig_handler;
+$SIG{TERM} = \&shutdown_sig_handler;
+$SIG{ABRT} = \&shutdown_sig_handler;
+$SIG{HUP} = \&logrot;
+
+
 
 if ( !try_use('Net::WebSocket::Server') ) {
   Fatal('Net::WebSocket::Server missing');
@@ -324,7 +337,7 @@ if ( !try_use('File::Spec') )       { Fatal('File::Spec missing'); }
 if ( !try_use('URI::Escape') )      { Fatal('URI::Escape missing'); }
 if ( !try_use('Storable') )         { Fatal('Storable missing'); }
 
-my $is_timepeice = 1;
+
 if ( !try_use('Time::Piece') ) {
   Error(
     'rules: Time::Piece module missing. Dates will not work in es rules json');
@@ -865,20 +878,8 @@ else {
   printInfo('MQTT Disabled');
 }
 
-# ==========================================================================
-#
-# Don't change anything below here
-#
-# ==========================================================================
 
 
-use ZoneMinder;
-use POSIX;
-use DBI;
-
-$ENV{PATH} = '/bin:/usr/bin';
-$ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
-delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
 
 sub Usage {
   print("This daemon is not meant to be invoked from command line\n");
