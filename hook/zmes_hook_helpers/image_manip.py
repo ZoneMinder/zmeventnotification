@@ -164,10 +164,7 @@ def processPastDetection(bbox, label, conf, mid):
     filt_obj = ['cat', 'truck', 'boat', 'motorbike', 'person', 'dog', 'cat']
     if det_obj in filt_obj:
         conf_arg = 'diff_area_' + det_obj
-        if g.config[conf_arg]:
-            g.logger.Debug(4, f'det_obj={det_obj} value in ini={g.config[conf_arg]}')
-            pass
-        else:
+        if not g.config[conf_arg]:
             det_obj = None
     else:
         det_obj = None
@@ -207,7 +204,6 @@ def processPastDetection(bbox, label, conf, mid):
     # load past detection
     # work in custom object diff_area_obj - tsp84
     if det_obj:
-        conf_arg = 'diff_area_' + det_obj
         g.logger.Debug(4, 'There ARE overrides: {} for the object detected: {}'.format(g.config[conf_arg], det_obj))
         m = re.match('(\d+)(px|%)?$', g.config[conf_arg], re.IGNORECASE)
     else:
