@@ -234,10 +234,12 @@ def processPastDetection(bbox, label, conf, mid):
     # work in custom object diff_area_obj - tsp84
     if diff_area_obj:
         conf_arg = 'diff_area_' + diff_area_obj
-        g.logger.Debug(4, 'There ARE overrides for the object detected: {}, using its value: {}'.format(label[0], g.config[conf_arg]))
+        g.logger.Debug(4, 'There ARE overrides for the object detected: {}, using its value: {}'.format(
+                label[0], g.config[conf_arg]))
         m = re.match('(\d+)(px|%)?$', g.config[conf_arg], re.IGNORECASE)
     else:
-        g.logger.Debug(4, 'There are NO overrides for the object detected: {}, using past_det_max_diff_area: {}'.format(label[0], g.config['past_det_max_diff_area']))
+        g.logger.Debug(4, 'There are NO overrides for the object detected: {}, using past_det_max_diff_area: {}'.format(
+                label[0], g.config['past_det_max_diff_area']))
         m = re.match('(\d+)(px|%)?$', g.config['past_det_max_diff_area'],
                  re.IGNORECASE)
     if m:
