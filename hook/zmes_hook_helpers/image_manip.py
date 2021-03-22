@@ -247,7 +247,7 @@ def processPastDetection(bbox, label, conf, mid):
         use_percent = True if m.group(2) is None or m.group(
             2) == '%' else False
     else:
-        g.logger.Error('past_det_max_diff_area or diff_area_<object> misformatted: {}'.format(
+        g.logger.Error('past_det_max_diff_area/diff_area_<object> misformatted: {}'.format(
             g.config['past_det_max_diff_area']))
         return bbox, label, conf
 
