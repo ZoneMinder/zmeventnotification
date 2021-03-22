@@ -160,43 +160,12 @@ def createAnimation(frametype, eid, fname, types):
 # intersect the polygons, if specified
 # it also makes sure only patterns specified in detect_pattern are drawn
 def processPastDetection(bbox, label, conf, mid):
-    if 'car' in label:
-        if g.config['diff_area_car']:
-            diff_area_obj = 'car'
-        else:
-            diff_area_obj = None
-    elif 'truck' in label:
-        if g.config['diff_area_truck']:
-            diff_area_obj = 'truck'
-        else:
-            diff_area_obj = None
-    elif 'motorbike' in label:
-        if g.config['diff_area_motorbike']:
-            diff_area_obj = 'motorbike'
-        else:
-            diff_area_obj = None
-    elif 'boat' in label:
-        if g.config['diff_area_boat']:
-            diff_area_obj = 'boat'
-        else:
-            diff_area_obj = None
-    elif 'person' in label:
-        if g.config['diff_area_person']:
-            diff_area_obj = 'person'
-        else:
-            diff_area_obj = None
-    elif 'dog' in label:
-        if g.config['diff_area_dog']:
-            diff_area_obj = 'dog'
-        else:
-            diff_area_obj = None
-    elif 'cat' in label:
-        if g.config['diff_area_cat']:
-            diff_area_obj = 'cat'
-        else:
-            diff_area_obj = None
+    det_obj = label[0]
+    filt_obj = ['cat', 'truck', 'boat', 'motorbike', 'person', 'dog', 'cat']
+    if det_obj in filt_obj:
+            pass
     else:
-        diff_area_obj = None
+        det_obj = None
 
     try:
         FileNotFoundError
@@ -232,14 +201,12 @@ def processPastDetection(bbox, label, conf, mid):
 
     # load past detection
     # work in custom object diff_area_obj - tsp84
-    if diff_area_obj:
-        conf_arg = 'diff_area_' + diff_area_obj
-        g.logger.Debug(4, 'There ARE overrides for the object detected: {}, using its value: {}'.format(
-                label[0], g.config[conf_arg]))
+    if det_obj:
+        conf_arg = 'diff_area_' + det_obj
+        g.logger.Debug(4, 'There ARE overrides: {} for the object detected: {}'.format(g.config[conf_arg], det_obj))
         m = re.match('(\d+)(px|%)?$', g.config[conf_arg], re.IGNORECASE)
     else:
-        g.logger.Debug(4, 'There are NO overrides for the object detected: {}, using past_det_max_diff_area: {}'.format(
-                label[0], g.config['past_det_max_diff_area']))
+        g.logger.Debug(4, 'There are NO overrides for the object detected: {} - Using past_det_max_diff_area: {}'.format(det_obj, g.config['past_det_max_diff_area']))
         m = re.match('(\d+)(px|%)?$', g.config['past_det_max_diff_area'],
                  re.IGNORECASE)
     if m:
