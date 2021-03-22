@@ -161,7 +161,7 @@ def createAnimation(frametype, eid, fname, types):
 # it also makes sure only patterns specified in detect_pattern are drawn
 def processPastDetection(bbox, label, conf, mid):
     det_obj = label[0]
-    filt_obj = ['cat', 'truck', 'boat', 'motorbike', 'person', 'dog', 'cat']
+    filt_obj = ['car', 'truck', 'boat', 'motorbike', 'person', 'dog', 'cat']
     if det_obj in filt_obj:
             pass
     else:
