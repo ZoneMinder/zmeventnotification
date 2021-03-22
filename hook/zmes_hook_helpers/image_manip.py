@@ -161,9 +161,14 @@ def createAnimation(frametype, eid, fname, types):
 # it also makes sure only patterns specified in detect_pattern are drawn
 def processPastDetection(bbox, label, conf, mid):
     det_obj = label[0]
-    filt_obj = ['car', 'truck', 'boat', 'motorbike', 'person', 'dog', 'cat']
+    filt_obj = ['cat', 'truck', 'boat', 'motorbike', 'person', 'dog', 'cat']
     if det_obj in filt_obj:
+        conf_arg = 'diff_area_' + det_obj
+        if g.config[conf_arg]:
+            g.logger.Debug(4, f'det_obj={det_obj} value in ini={g.config[conf_arg]}')
             pass
+        else:
+            det_obj = None
     else:
         det_obj = None
 
@@ -206,7 +211,7 @@ def processPastDetection(bbox, label, conf, mid):
         g.logger.Debug(4, 'There ARE overrides: {} for the object detected: {}'.format(g.config[conf_arg], det_obj))
         m = re.match('(\d+)(px|%)?$', g.config[conf_arg], re.IGNORECASE)
     else:
-        g.logger.Debug(4, 'There are NO overrides for the object detected: {} - Using past_det_max_diff_area: {}'.format(det_obj, g.config['past_det_max_diff_area']))
+        g.logger.Debug(4, 'There are NO overrides for the object detected: {} - Using past_det_max_diff_area: {}'.format(label[0], g.config['past_det_max_diff_area']))
         m = re.match('(\d+)(px|%)?$', g.config['past_det_max_diff_area'],
                  re.IGNORECASE)
     if m:
