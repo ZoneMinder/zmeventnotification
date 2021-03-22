@@ -117,6 +117,41 @@ config_vals = {
             'default': '',
             'type': 'string'
         },
+        'diff_area_car':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        'diff_area_truck':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        'diff_area_motorbike':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        'diff_area_boat':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        'diff_area_person':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        'diff_area_dog':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        'diff_area_cat':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
         'frame_id':{
             'section': 'general',
             'default': 'snapshot',

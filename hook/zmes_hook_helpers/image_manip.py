@@ -160,6 +160,43 @@ def createAnimation(frametype, eid, fname, types):
 # intersect the polygons, if specified
 # it also makes sure only patterns specified in detect_pattern are drawn
 def processPastDetection(bbox, label, conf, mid):
+    if 'car' in label:
+        if g.config['diff_area_car']:
+            diff_area_obj = 'car'
+        else:
+            diff_area_obj = None
+    elif 'truck' in label:
+        if g.config['diff_area_truck']:
+            diff_area_obj = 'truck'
+        else:
+            diff_area_obj = None
+    elif 'motorbike' in label:
+        if g.config['diff_area_motorbike']:
+            diff_area_obj = 'motorbike'
+        else:
+            diff_area_obj = None
+    elif 'boat' in label:
+        if g.config['diff_area_boat']:
+            diff_area_obj = 'boat'
+        else:
+            diff_area_obj = None
+    elif 'person' in label:
+        if g.config['diff_area_person']:
+            diff_area_obj = 'person'
+        else:
+            diff_area_obj = None
+    elif 'dog' in label:
+        if g.config['diff_area_dog']:
+            diff_area_obj = 'dog'
+        else:
+            diff_area_obj = None
+    elif 'cat' in label:
+        if g.config['diff_area_cat']:
+            diff_area_obj = 'cat'
+        else:
+            diff_area_obj = None
+    else:
+        diff_area_obj = None
 
     try:
         FileNotFoundError
@@ -194,22 +231,28 @@ def processPastDetection(bbox, label, conf, mid):
         return bbox, label, conf
 
     # load past detection
-
-    m = re.match('(\d+)(px|%)?$', g.config['past_det_max_diff_area'],
+    # work in custom object diff_area_obj - tsp84
+    if diff_area_obj:
+        conf_arg = 'diff_area_' + diff_area_obj
+        g.logger.Debug(4, 'There ARE overrides for the object detected: {}, using its value: {}'.format(label[0], g.config[conf_arg]))
+        m = re.match('(\d+)(px|%)?$', g.config[conf_arg], re.IGNORECASE)
+    else:
+        g.logger.Debug(4, 'There are NO overrides for the object detected: {}, using past_det_max_diff_area: {}'.format(label[0], g.config['past_det_max_diff_area']))
+        m = re.match('(\d+)(px|%)?$', g.config['past_det_max_diff_area'],
                  re.IGNORECASE)
     if m:
         max_diff_area = int(m.group(1))
         use_percent = True if m.group(2) is None or m.group(
             2) == '%' else False
     else:
-        g.logger.Error('past_det_max_diff_area misformatted: {}'.format(
+        g.logger.Error('past_det_max_diff_area or diff_area_<object> misformatted: {}'.format(
             g.config['past_det_max_diff_area']))
         return bbox, label, conf
 
     # it's very easy to forget to add 'px' when using pixels
     if use_percent and (max_diff_area < 0 or max_diff_area > 100):
         g.logger.Error(
-            'past_det_max_diff_area must be in the range 0-100 when using percentages: {}'
+            'past_det_max_diff_area/diff_area_<object> must be in the range 0-100 when using percentages: {}'
             .format(g.config['past_det_max_diff_area']))
         return bbox, label, conf
 
