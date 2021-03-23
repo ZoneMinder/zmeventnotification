@@ -347,7 +347,7 @@ def process_config(args, ctx):
     has_secrets = False
     secrets_file = None
 
-    def _correct_type(val, t):
+    def _correct_type(val, t): 
         if t == 'int':
             return int(val)
         elif t == 'eval' or t == 'dict':
@@ -431,9 +431,9 @@ def process_config(args, ctx):
                 if g.config_vals.get(k):
                     _set_config_val(k,g.config_vals[k] )
                 else:
-                    #g.logger.Debug(4, 'storing unknown attribute {}={}'.format(k,v))
+                    g.logger.Debug(4, 'storing unknown attribute {}={}'.format(k,v))
                     g.config[k] = v 
-                    #_set_config_val(k,{'section': sec, 'default': None, 'type': 'string'} )
+                    _set_config_val(k,{'section': sec, 'default': None, 'type': 'string'} )
 
         if g.config['allow_self_signed'] == 'yes':
             ctx.check_hostname = False
@@ -456,21 +456,24 @@ def process_config(args, ctx):
                 for item in config_file[sec].items():
                     k = item[0]
                     v = item[1]
-                    g.config[k] = v
+                    g.config[k] = v 
 
                     if k.endswith('_zone_detection_pattern'):
                         zone_name = k.split('_zone_detection_pattern')[0]
                         g.logger.Debug(2, 'found zone specific pattern:{} storing'.format(zone_name))
                         poly_patterns.append({'name': zone_name, 'pattern':v})
                         continue
-
-                    if k in g.config_vals:
+                    # tsp84 - add wildcard for past_det_max_diff_area_<obj> - this is an ugly workaround. CANNOT comment max_diff_area_<obj> line or will get an error.
+                    # null/empty for default, 0 to bypass, and a number to set its own max_diff_area
+                    if k in g.config_vals or k.startswith('past_det_max_diff_area_'):
                         # This means its a legit config key that needs to be overriden
                         g.logger.Debug(4,
                             '[{}] overrides key:{} with value:{}'.format(
                                 sec, k, v))
-                        g.config[k] = _correct_type(v,
-                                                    g.config_vals[k]['type'])
+                        try:
+                            g.config[k] = _correct_type(v,g.config_vals[k]['type'])
+                        except Exception as e:
+                            pass
                     else:
                         # This means its a polygon for the monitor
                         if k.startswith(('object_','face_', 'alpr_')):

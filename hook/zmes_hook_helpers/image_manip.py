@@ -217,8 +217,6 @@ def processPastDetection(bbox, label, conf, mid):
             .format(g.config['past_det_max_diff_area']))
         return bbox, label, conf
 
-
-
     g.logger.Debug (1,'loaded past detection data: bbox={}, labels={}'.format(saved_bs, saved_ls));
     g.logger.Debug (4, 'process_past_detections global settings: max_diff_area:{} - use_percent:{}'.format(max_diff_area,use_percent))
     new_label = []
@@ -240,8 +238,12 @@ def processPastDetection(bbox, label, conf, mid):
         foundMatch = False
 #tsp84
         conf_arg = 'past_det_max_diff_area_' + label[idx]
-        l = re.match('(\d+)(px|%)?$', g.config[conf_arg],
-                 re.IGNORECASE)
+        try:
+            l = re.match('(\d+)(px|%)?$', g.config[conf_arg],
+                         re.IGNORECASE)
+        except Exception as e:
+            l = None
+            pass
         if l:
             if str(l.group(1)) == '0':
                 g.logger.Debug(4, f'Override set for object -> {label[idx]}: 0 (bypass mode), {label[idx]} will not be removed')
@@ -254,7 +256,7 @@ def processPastDetection(bbox, label, conf, mid):
                 2) == '%' else False
             g.logger.Debug(4, f'Override for object -> {label[idx]}: max_diff_area = {max_diff_area}, use_percent = {use_percent}')
         elif not l:
-            g.logger.Debug(4, f'Override for object -> {label[idx]} is set to nothing/commented out, using past_det_max_diff_area as default')
+            g.logger.Debug(4, f'Override for object -> {label[idx]} is set to nothing/null, using past_det_max_diff_area as default')
             max_diff_area = max_diff_area2
             use_percent = use_percent2
         else:
