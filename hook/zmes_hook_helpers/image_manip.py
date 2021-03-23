@@ -254,7 +254,7 @@ def processPastDetection(bbox, label, conf, mid):
                 2) == '%' else False
             g.logger.Debug(4, f'Override for object -> {label[idx]}: max_diff_area = {max_diff_area}, use_percent = {use_percent}')
         elif not l:
-            g.logger.Debug(4, f'Override for object -> {label[idx]} is set to nothing/commented out, using past_det_max_diff_area as default: {g.config['past_det_max_diff_area']}')
+            g.logger.Debug(4, f'Override for object -> {label[idx]} is set to nothing/commented out, using past_det_max_diff_area as default')
             max_diff_area = max_diff_area2
             use_percent = use_percent2
         else:

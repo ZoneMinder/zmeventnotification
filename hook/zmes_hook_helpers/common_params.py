@@ -148,42 +148,35 @@ config_vals = {
             'default': '',
             'type': 'string'
         },
-        },
         'past_det_max_diff_area_bus':{
             'section': 'general',
             'default': '',
             'type': 'string'
-        },
         },
         'past_det_max_diff_area_bird':{
             'section': 'general',
             'default': '',
             'type': 'string'
         },
-        },
         'past_det_max_diff_area_horse':{
             'section': 'general',
             'default': '',
             'type': 'string'
-        },
         },
         'past_det_max_diff_area_sheep':{
             'section': 'general',
             'default': '',
             'type': 'string'
         },
-        },
         'past_det_max_diff_area_cow':{
             'section': 'general',
             'default': '',
             'type': 'string'
         },
-        },
         'past_det_max_diff_area_bicycle':{
             'section': 'general',
             'default': '',
             'type': 'string'
-        },
         },
         'past_det_max_diff_area_train':{
             'section': 'general',
