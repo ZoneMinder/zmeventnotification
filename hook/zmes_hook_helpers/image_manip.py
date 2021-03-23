@@ -296,7 +296,7 @@ def processPastDetection(bbox, label, conf, mid):
                 if diff_area <= max_diff_pixels:
                     g.logger.Debug(1,
                         'past detection {}@{} approximately matches {}@{} removing'
-                        .format(saved_ls[saved_idx], saved_b, label[saved_idx], b))
+                        .format(saved_ls[saved_idx], saved_b, label[idx], b))
                     foundMatch = True
                     break
                 else:
