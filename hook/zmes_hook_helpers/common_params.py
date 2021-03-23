@@ -112,42 +112,86 @@ config_vals = {
             'default': '5%',
             'type': 'string'
         },
+#tsp84
+        'past_det_max_diff_area_person':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        'past_det_max_diff_area_car':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        'past_det_max_diff_area_boat':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        'past_det_max_diff_area_truck':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        'past_det_max_diff_area_motorbike':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        'past_det_max_diff_area_dog':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        'past_det_max_diff_area_cat':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        },
+        'past_det_max_diff_area_bus':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        },
+        'past_det_max_diff_area_bird':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        },
+        'past_det_max_diff_area_horse':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        },
+        'past_det_max_diff_area_sheep':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        },
+        'past_det_max_diff_area_cow':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        },
+        'past_det_max_diff_area_bicycle':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+        },
+        'past_det_max_diff_area_train':{
+            'section': 'general',
+            'default': '',
+            'type': 'string'
+        },
+#-----
         'max_detection_size':{
-            'section': 'general',
-            'default': '',
-            'type': 'string'
-        },
-        'diff_area_car':{
-            'section': 'general',
-            'default': '',
-            'type': 'string'
-        },
-        'diff_area_truck':{
-            'section': 'general',
-            'default': '',
-            'type': 'string'
-        },
-        'diff_area_motorbike':{
-            'section': 'general',
-            'default': '',
-            'type': 'string'
-        },
-        'diff_area_boat':{
-            'section': 'general',
-            'default': '',
-            'type': 'string'
-        },
-        'diff_area_person':{
-            'section': 'general',
-            'default': '',
-            'type': 'string'
-        },
-        'diff_area_dog':{
-            'section': 'general',
-            'default': '',
-            'type': 'string'
-        },
-        'diff_area_cat':{
             'section': 'general',
             'default': '',
             'type': 'string'

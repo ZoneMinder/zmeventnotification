@@ -156,18 +156,11 @@ def createAnimation(frametype, eid, fname, types):
     except Exception as e:
         g.logger.Error('animation: Traceback:{}'.format(traceback.format_exc()))
 
+
 # once all bounding boxes are detected, we check to see if any of them
 # intersect the polygons, if specified
 # it also makes sure only patterns specified in detect_pattern are drawn
 def processPastDetection(bbox, label, conf, mid):
-    det_obj = label[0]
-    filt_obj = ['cat', 'truck', 'boat', 'motorbike', 'person', 'dog', 'cat']
-    if det_obj in filt_obj:
-        conf_arg = 'diff_area_' + det_obj
-        if not g.config[conf_arg]:
-            det_obj = None
-    else:
-        det_obj = None
 
     try:
         FileNotFoundError
@@ -202,32 +195,32 @@ def processPastDetection(bbox, label, conf, mid):
         return bbox, label, conf
 
     # load past detection
-    # work in custom object diff_area_obj - tsp84
-    if det_obj:
-        g.logger.Debug(4, 'There ARE overrides: {} for the object detected: {}'.format(g.config[conf_arg], det_obj))
-        m = re.match('(\d+)(px|%)?$', g.config[conf_arg], re.IGNORECASE)
-    else:
-        g.logger.Debug(4, 'There are NO overrides for the object detected: {} - Using past_det_max_diff_area: {}'.format(label[0], g.config['past_det_max_diff_area']))
-        m = re.match('(\d+)(px|%)?$', g.config['past_det_max_diff_area'],
+    m = re.match('(\d+)(px|%)?$', g.config['past_det_max_diff_area'],
                  re.IGNORECASE)
     if m:
         max_diff_area = int(m.group(1))
         use_percent = True if m.group(2) is None or m.group(
             2) == '%' else False
+#tsp84
+        max_diff_area2 = int(m.group(1))
+        use_percent2 = True if m.group(2) is None or m.group(
+            2) == '%' else False
+#-----
     else:
-        g.logger.Error('past_det_max_diff_area/diff_area_<object> misformatted: {}'.format(
+        g.logger.Error('past_det_max_diff_area misformatted: {}'.format(
             g.config['past_det_max_diff_area']))
         return bbox, label, conf
-
     # it's very easy to forget to add 'px' when using pixels
     if use_percent and (max_diff_area < 0 or max_diff_area > 100):
         g.logger.Error(
-            'past_det_max_diff_area/diff_area_<object> must be in the range 0-100 when using percentages: {}'
+            'past_det_max_diff_area must be in the range 0-100 when using % (must state px for pixels or defaults to %): {}'
             .format(g.config['past_det_max_diff_area']))
         return bbox, label, conf
 
-    #g.logger.Debug (1,'loaded past: bbox={}, labels={}'.format(saved_bs, saved_ls));
-    g.logger.Debug (4, 'process_past_detections: use_percent:{}, max_diff_area:{}'.format(use_percent,max_diff_area))
+
+
+    g.logger.Debug (1,'loaded past detection data: bbox={}, labels={}'.format(saved_bs, saved_ls));
+    g.logger.Debug (4, 'process_past_detections global settings: max_diff_area:{} - use_percent:{}'.format(max_diff_area,use_percent))
     new_label = []
     new_bbox = []
     new_conf = []
@@ -240,10 +233,44 @@ def processPastDetection(bbox, label, conf, mid):
 
         b.insert(1, (b[1][0], b[0][1]))
         b.insert(3, (b[0][0], b[2][1]))
-        #g.logger.Debug (1,"Past detection: {}@{}".format(saved_ls[idx],b))
+#this is where it breaks if len(past_labels) < len(new_labels)
+#this line ->        #g.logger.Debug (1,"Past detection: {}@{}".format(saved_ls[idx],b))
         #g.logger.Debug (1,'BOBK={}'.format(b))
         obj = Polygon(b)
         foundMatch = False
+#tsp84
+        conf_arg = 'past_det_max_diff_area_' + label[idx]
+        l = re.match('(\d+)(px|%)?$', g.config[conf_arg],
+                 re.IGNORECASE)
+        if l:
+            if str(l.group(1)) == '0':
+                g.logger.Debug(4, f'Override set for object -> {label[idx]}: 0 (bypass mode), {label[idx]} will not be removed')
+                new_bbox.append(old_b)
+                new_label.append(label[idx])
+                new_conf.append(conf[idx])
+                continue
+            max_diff_area = int(l.group(1))
+            use_percent = True if l.group(2) is None or l.group(
+                2) == '%' else False
+            g.logger.Debug(4, f'Override for object -> {label[idx]}: max_diff_area = {max_diff_area}, use_percent = {use_percent}')
+        elif not l:
+            g.logger.Debug(4, f'Override for object -> {label[idx]} is set to nothing/commented out, using past_det_max_diff_area as default: {g.config['past_det_max_diff_area']}')
+            max_diff_area = max_diff_area2
+            use_percent = use_percent2
+        else:
+            g.logger.Error('past_det_max_diff_area_{} misformatted: {}'.format(
+                label[idx], g.config[conf_arg]))
+            return bbox, label, conf
+
+        # it's very easy to forget to add 'px' when using pixels
+        if use_percent and (max_diff_area < 0 or max_diff_area > 100):
+            g.logger.Error(
+                'past_det_max_diff_area_{} must be in the range 0-100 when using % (must state px for pixels or defaults to %): {}'
+                .format(label[idx], g.config[conf_arg]))
+            return bbox, label, conf
+        #g.logger.Debug (4, 'process_past_detections for object: {},  max_diff_area:{}, use_percent: {}'.format(label[idx],max_diff_area,use_percent))
+#-----
+
         for saved_idx, saved_b in enumerate(saved_bs):
             # compare current detection element with saved list from file
             if saved_ls[saved_idx] != label[idx]: continue
@@ -267,7 +294,7 @@ def processPastDetection(bbox, label, conf, mid):
                 if diff_area <= max_diff_pixels:
                     g.logger.Debug(1,
                         'past detection {}@{} approximately matches {}@{} removing'
-                        .format(saved_ls[saved_idx], saved_b, label[idx], b))
+                        .format(saved_ls[saved_idx], saved_b, label[saved_idx], b))
                     foundMatch = True
                     break
                 else:
@@ -277,8 +304,8 @@ def processPastDetection(bbox, label, conf, mid):
             new_bbox.append(old_b)
             new_label.append(label[idx])
             new_conf.append(conf[idx])
-
     return new_bbox, new_label, new_conf
+
 
 
 def processFilters(bbox, label, conf, match, model):
