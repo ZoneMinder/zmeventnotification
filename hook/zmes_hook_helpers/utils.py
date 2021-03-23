@@ -431,9 +431,9 @@ def process_config(args, ctx):
                 if g.config_vals.get(k):
                     _set_config_val(k,g.config_vals[k] )
                 else:
-                    g.logger.Debug(4, 'storing unknown attribute {}={}'.format(k,v))
+                    #g.logger.Debug(4, 'storing unknown attribute {}={}'.format(k,v))
                     g.config[k] = v 
-                    _set_config_val(k,{'section': sec, 'default': None, 'type': 'string'} )
+                    #_set_config_val(k,{'section': sec, 'default': None, 'type': 'string'} )
 
         if g.config['allow_self_signed'] == 'yes':
             ctx.check_hostname = False
