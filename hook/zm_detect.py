@@ -387,7 +387,6 @@ def main_handler():
 
     if g.config['ml_gateway']:
         stream_options['api'] = None
-        stream_options['monitorid'] = args.get('monitorid')
         start = datetime.datetime.now()
         try:
             matched_data,all_data = remote_detect(stream=stream, options=stream_options, api=zmapi, args=args)
@@ -401,13 +400,13 @@ def main_handler():
                 g.logger.Debug (1, "Falling back to local detection")
                 stream_options['api'] = zmapi
                 from pyzm.ml.detect_sequence import DetectSequence
-                m = DetectSequence(options=ml_options, logger=g.logger)
+                m = DetectSequence(options=ml_options, global_config=g.config)
                 matched_data,all_data = m.detect_stream(stream=stream, options=stream_options)
     
 
     else:
         from pyzm.ml.detect_sequence import DetectSequence
-        m = DetectSequence(options=ml_options, logger=g.logger)
+        m = DetectSequence(options=ml_options, global_config=g.config)
         matched_data,all_data = m.detect_stream(stream=stream, options=stream_options)
     
 
@@ -425,31 +424,6 @@ def main_handler():
             'image': matched_frame_img
         }
     '''
-
-    # let's remove past detections first, if enabled 
-    if g.config['match_past_detections'] == 'yes' and args.get('monitorid'):
-        # point detections to post processed data set
-        g.logger.Info('Removing matches to past detections')
-        bbox_t, label_t, conf_t = img.processPastDetection(
-            matched_data['boxes'], matched_data['labels'], matched_data['confidences'], args.get('monitorid'))
-        # save current objects for future comparisons
-        g.logger.Debug(1,
-            'Saving detections for monitor {} for future match'.format(
-                args.get('monitorid')))
-        try:
-            mon_file = g.config['image_path'] + '/monitor-' + args.get(
-            'monitorid') + '-data.pkl'
-            f = open(mon_file, "wb")
-            pickle.dump(matched_data['boxes'], f)
-            pickle.dump(matched_data['labels'], f)
-            pickle.dump(matched_data['confidences'], f)
-            f.close()
-        except Exception as e:
-            g.logger.Error(f'Error writing to {mon_file}, past detections not recorded:{e}')
-
-        matched_data['boxes'] = bbox_t
-        matched_data['labels'] = label_t
-        matched_data['confidences'] = conf_t
 
     obj_json = {
         'labels': matched_data['labels'],
