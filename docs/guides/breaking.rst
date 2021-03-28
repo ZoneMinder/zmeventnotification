@@ -1,6 +1,15 @@
 Breaking Changes
 ----------------
 
+Version 6.1.17 onwards
+~~~~~~~~~~~~~~~~~~~~~~~
+- You can now localize ``past_det_max_diff_area``, ``max_detection_size`` to specific objects
+  by prefixing the object name. Example ``car_max_detection_size`` if present will override 
+  values for ``max_detection_size`` for objects that are cars. Same holds true for ``car_past_det_max_diff_area`` if 
+  ``match_past_detections=yes``
+- ``mlapiconfig.ini`` also supports the above values - you no longer have to keep putting these to 
+``objectconfig.ini``
+
 Version 6.1.12 onwards 
 ~~~~~~~~~~~~~~~~~~~~~~~~
 - A lot of config changes, if you are using mlapi. Basically, I'm no longer fully supporting settings in objectconfig.ini
@@ -110,7 +119,7 @@ Version 5.15.7 onwards
   automatically downloaded unless you disabled it (You'll need OpenCV master
   as of Jul 11, 2020 as support for it was only merged 6 days ago)
 
-- A new attribute, ``max_object_area`` has been introduced in ``objectconfig.ini``.
+- A new attribute, ``ject_area`` has been introduced in ``objectconfig.ini``.
   This specifies the largest area a detected object should take inside the image. 
   You can keep it as a % or px value. Remember the image is resized to 416x416. better
   to keep in %
