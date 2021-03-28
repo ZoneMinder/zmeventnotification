@@ -8,7 +8,7 @@ Version 6.1.17 onwards
   values for ``max_detection_size`` for objects that are cars. Same holds true for ``car_past_det_max_diff_area`` if 
   ``match_past_detections=yes``
 - ``mlapiconfig.ini`` also supports the above values - you no longer have to keep putting these to 
-``objectconfig.ini``
+  ``objectconfig.ini``
 
 Version 6.1.12 onwards 
 ~~~~~~~~~~~~~~~~~~~~~~~~
