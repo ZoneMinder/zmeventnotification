@@ -613,6 +613,7 @@ Specifically, when ``zm_detect.py`` sees ``ml_gateway`` in its ``[remote]`` sect
 the detection work to mlapi. 
 
 Here are a list of parameters that still need to be in ``objectconfig.ini`` when using mlapi.
+
 - ``ml_gateway`` (obviously, as this triggers mlapi)
 - ``ml_fallback_local``
 - ``show_percent``
@@ -625,6 +626,7 @@ Here are a list of parameters that still need to be in ``objectconfig.ini`` when
 - ``animation_types``
 
 These need to be present in both mlapiconfig.ini and objectconfig.ini
+
 - ``secrets``
 - ``base_data_path``
 - ``api_portal``
