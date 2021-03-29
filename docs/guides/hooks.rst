@@ -608,7 +608,7 @@ Like this:
 
 Exceptions when using mlapi
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If you are using the remote mlapi server, then a lot of these settings migrate to ``mlapiconfig.ini``
+If you are using the remote mlapi server, then most of these settings migrate to ``mlapiconfig.ini``
 Specifically, when ``zm_detect.py`` sees ``ml_gateway`` in its ``[remote]`` section, it passes on 
 the detection work to mlapi. 
 
