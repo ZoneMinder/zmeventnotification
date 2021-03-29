@@ -253,81 +253,6 @@ Which models should I use?
 - For face recognition, use ``face_model=cnn`` for more accuracy and ``face_model=hog`` for better speed
 
 
-Troubleshooting
-~~~~~~~~~~~~~~~
-
--  In general, I expect you to debug properly. Please don't ask me basic
-   questions without investigating logs yourself
--  Always run ``zm_event_start.sh`` in manual mode first to make sure it
-   works
--  Make sure you've set up debug logging as described in :ref:`es-hooks-logging`
--  One of the big reasons why object detection fails is because the hook
-   is not able to download the image to check. This may be because your
-   ZM version is old or other errors. Some common issues:
-
-   -  Make sure your ``objectconfig.ini`` section for ``[general]`` are
-      correct (portal, user,admin)
-   -  For object detection to work, the hooks expect to download images
-      of events using
-      ``https://yourportal/zm/?view=image&eid=<eid>&fid=snapshot`` and
-      possibly ``https://yourportal/zm/?view=image&eid=<eid>&fid=alarm``
-   -  Open up a browser, log into ZM. Open a new tab and type in
-      ``https://yourportal/zm/?view=image&eid=<eid>&fid=snapshot`` in
-      your browser. Replace ``eid`` with an actual event id. Do you see
-      an image? If not, you'll have to fix/update ZM. Please don't ask
-      me how. Please post in the ZM forums
-   -  Open up a browser, log into ZM. Open a new tab and type in
-      ``https://yourportal/zm/?view=image&eid=<eid>&fid=alarm`` in your
-      browser. Replace ``eid`` with an actual event id. Do you see an
-      image? If not, you'll have to fix/update ZM. Please don't ask me
-      how. Please post in the ZM forums
-
-.. _debug_reporting_hooks:
-
-Debugging and reporting problems
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If you have problems with hooks, there are two areas of failure:
-
-- The ES is unable to unable to invoke hooks properly (missing files/etc)
-
-   - This will be reported in ES logs. See :ref:`this section <debug_reporting_es>`
-
-- Hooks don't work
-
-   - This is covered in this section 
-
-- The wrapper script (typically ``/var/lib/zmeventnotification/bin/zm_event_start.sh`` is not able to run ``zm_detect.py``)
-
-   - This won't be covered in either logs (I need to add logging for this...)
-
-
-To understand what is going wrong with hooks, I like to do things the following way:
-
-- Stop the ES if it is running (``sudo zmdc.pl stop zmeventnotification.pl``) so that we don't mix up what we are debugging
-  with any new events that the ES may generate 
-
-- Next, I take a look at ``/var/log/zm/zmeventnotification.log`` for the event that invoked a hook. Let's take 
-  this as an example:
-
-::
-
-   01/06/2021 07:20:31.936130 zmeventnotification[28118].DBG [main:977] [|----> FORK:DeckCamera (6), eid:182253 Invoking hook on event start:'/var/lib/zmeventnotification/bin/zm_event_start.sh' 182253 6 "DeckCamera" " stairs" "/var/cache/zoneminder/events/6/2021-01-06/182253"]
-
-
-Let's assume the above is what I want to debug, so then I run zm_detect manually like so:
-
-::
-
-   sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect.py --config /etc/zm/objectconfig.ini --debug --eventid 182253  --monitorid 6 --eventpath=/tmp
-
-
-Note that instead of ``/var/cache/zoneminder/events/6/2021-01-06/182253`` as the event path, I just use ``/tmp`` as it is easier for me. Feel free to use the actual
-event path (that is where objdetect.jpg/json are stored if an object is found). 
-
-This will print debug logs on the terminal.
-
-
 .. _detection_sequence:
 
 Understanding detection configuration
@@ -783,6 +708,81 @@ known faces images
    images, but experiment. Larger the image, the larger the memory
    requirements)
 - crop around the face - not a tight crop, but no need to add a full body. A typical "passport" photo crop, maybe with a bit more of shoulder is ideal.
+
+
+Troubleshooting
+~~~~~~~~~~~~~~~
+
+-  In general, I expect you to debug properly. Please don't ask me basic
+   questions without investigating logs yourself
+-  Always run ``zm_event_start.sh`` in manual mode first to make sure it
+   works
+-  Make sure you've set up debug logging as described in :ref:`es-hooks-logging`
+-  One of the big reasons why object detection fails is because the hook
+   is not able to download the image to check. This may be because your
+   ZM version is old or other errors. Some common issues:
+
+   -  Make sure your ``objectconfig.ini`` section for ``[general]`` are
+      correct (portal, user,admin)
+   -  For object detection to work, the hooks expect to download images
+      of events using
+      ``https://yourportal/zm/?view=image&eid=<eid>&fid=snapshot`` and
+      possibly ``https://yourportal/zm/?view=image&eid=<eid>&fid=alarm``
+   -  Open up a browser, log into ZM. Open a new tab and type in
+      ``https://yourportal/zm/?view=image&eid=<eid>&fid=snapshot`` in
+      your browser. Replace ``eid`` with an actual event id. Do you see
+      an image? If not, you'll have to fix/update ZM. Please don't ask
+      me how. Please post in the ZM forums
+   -  Open up a browser, log into ZM. Open a new tab and type in
+      ``https://yourportal/zm/?view=image&eid=<eid>&fid=alarm`` in your
+      browser. Replace ``eid`` with an actual event id. Do you see an
+      image? If not, you'll have to fix/update ZM. Please don't ask me
+      how. Please post in the ZM forums
+
+.. _debug_reporting_hooks:
+
+Debugging and reporting problems
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you have problems with hooks, there are two areas of failure:
+
+- The ES is unable to unable to invoke hooks properly (missing files/etc)
+
+   - This will be reported in ES logs. See :ref:`this section <debug_reporting_es>`
+
+- Hooks don't work
+
+   - This is covered in this section 
+
+- The wrapper script (typically ``/var/lib/zmeventnotification/bin/zm_event_start.sh`` is not able to run ``zm_detect.py``)
+
+   - This won't be covered in either logs (I need to add logging for this...)
+
+
+To understand what is going wrong with hooks, I like to do things the following way:
+
+- Stop the ES if it is running (``sudo zmdc.pl stop zmeventnotification.pl``) so that we don't mix up what we are debugging
+  with any new events that the ES may generate 
+
+- Next, I take a look at ``/var/log/zm/zmeventnotification.log`` for the event that invoked a hook. Let's take 
+  this as an example:
+
+::
+
+   01/06/2021 07:20:31.936130 zmeventnotification[28118].DBG [main:977] [|----> FORK:DeckCamera (6), eid:182253 Invoking hook on event start:'/var/lib/zmeventnotification/bin/zm_event_start.sh' 182253 6 "DeckCamera" " stairs" "/var/cache/zoneminder/events/6/2021-01-06/182253"]
+
+
+Let's assume the above is what I want to debug, so then I run zm_detect manually like so:
+
+::
+
+   sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect.py --config /etc/zm/objectconfig.ini --debug --eventid 182253  --monitorid 6 --eventpath=/tmp
+
+
+Note that instead of ``/var/cache/zoneminder/events/6/2021-01-06/182253`` as the event path, I just use ``/tmp`` as it is easier for me. Feel free to use the actual
+event path (that is where objdetect.jpg/json are stored if an object is found). 
+
+This will print debug logs on the terminal.
 
 
 Performance comparison 
