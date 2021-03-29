@@ -100,6 +100,22 @@ I'm having issues with accuracy of Face Recognition
 -  Experiment. Read the `accuracy wiki <https://github.com/ageitgey/face_recognition/wiki/Face-Recognition-Accuracy-Problems>`__ link.
 
 
+I am using a Coral TPU and while it works fine, at times it fails loading 
+--------------------------------------------------------------------------
+If you have configured the TPU properly, and on occassion you see an error like:
+
+::
+
+   Error running model: Failed to load delegate from libedgetpu.so.1
+
+then it is likely that you either need to replace your USB cable or need to reset your 
+USB device. In my case, after I set it up correctly, it would often show the error above 
+during runs. I realized that replacing the USB cable that Google provided solved it for 
+a majority of cases. See `this comment <https://github.com/tensorflow/tensorflow/issues/32743#issuecomment-766084239>`__
+for my experience on the cable. After buying the cable, I still saw it on occassion, but
+not frequently at all. In those cases, resetting USB works fine and you don't have to reboot.
+See `this comment <https://github.com/tensorflow/tensorflow/issues/32743#issuecomment-808912638>`__.
+
 .. _local_remote_ml:
 
 Local vs. Remote server for Machine Learning
