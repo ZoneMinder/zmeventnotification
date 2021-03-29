@@ -612,6 +612,27 @@ If you are using the remote mlapi server, then most of these settings migrate to
 Specifically, when ``zm_detect.py`` sees ``ml_gateway`` in its ``[remote]`` section, it passes on 
 the detection work to mlapi. 
 
+Here are a list of parameters that still need to be in ``objectconfig.ini`` when using mlapi.
+- ``ml_gateway`` (obviously, as this triggers mlapi)
+- ``ml_fallback_local``
+- ``show_percent``
+- ``wait``
+- ``write_image_to_zm``
+- ``write_debug_image``
+- ``poly_thickness``
+- ``image_path``
+- ``create_animation``
+- ``animation_types``
+
+These need to be present in both mlapiconfig.ini and objectconfig.ini
+- ``secrets``
+- ``base_data_path``
+- ``api_portal``
+- ``portal``
+- ``user``
+- ``password``
+
+
 So when using mlapi, migrate configurations that you typically specify in ``objectconfig.ini`` to ``mlapiconfig.ini``. This includes:
 
 - Monitor specific sections 
