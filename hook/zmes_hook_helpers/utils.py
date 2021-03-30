@@ -145,8 +145,11 @@ def rescale_polygons(xfactor, yfactor):
 
 
 def str2tuple(str):
-    return [tuple(map(int, x.strip().split(','))) for x in str.split(' ')]
-
+    m = [tuple(map(int, x.strip().split(','))) for x in str.split(' ')]
+    if len(m) < 3:
+        raise ValueError ('{} formed an invalid polygon. Needs to have at least 3 points'.format(m))
+    else:
+        return m
 
 def str2arr(str):
     return [map(int, x.strip().split(',')) for x in str.split(' ')]
@@ -472,19 +475,21 @@ def process_config(args, ctx):
                         g.config[k] = _correct_type(v,
                                                     g.config_vals[k]['type'])
                     else:
-                        # This means its a polygon for the monitor
                         if k.startswith(('object_','face_', 'alpr_')):
                             g.logger.Debug(2,'assuming {} is an ML sequence, adding to config'.format(k))
                         else:
-                            if not g.config['only_triggered_zm_zones'] == 'yes':
-                                try:
-                                    g.polygons.append({'name': k, 'value': str2tuple(v),'pattern': None})
+                            # This means its a polygon for the monitor or an unknown str
+                            try:
+                                p = str2tuple(v) # if not poly, exception will be thrown
+                                if not g.config['only_triggered_zm_zones'] == 'yes':
+                                    g.polygons.append({'name': k, 'value': p,'pattern': None})
                                     g.logger.Debug(2,'adding polygon: {} [{}]'.format(k, v ))
-                                except Exception as e:
-                                    g.logger.Debug(3,'{}={} is not a polygon definition. Error was {}. Ignoring.'.format(k,v,e))
-
-                            else:
-                                g.logger.Debug (2,'ignoring polygon: {} as only_triggered_zm_zones is true'.format(k))
+                                else:
+                                    g.logger.Debug (2,'ignoring polygon: {} as only_triggered_zm_zones is true'.format(k))
+                            except Exception as e:
+                                g.logger.Debug(2,'{} is not a polygon, adding it as unknown string key'.format(k))
+                                g.config[k]=v
+                           
             # now import zones if needed
             # this should be done irrespective of a monitor section
             if g.config['only_triggered_zm_zones'] == 'yes':
