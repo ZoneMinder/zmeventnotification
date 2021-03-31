@@ -236,6 +236,7 @@ def import_zm_zones(mid, reason):
 
 
 # downloaded ZM image files for future analysis
+# NOT USED?
 def download_files(args):
     if int(g.config['wait']) > 0:
         g.logger.Info('Sleeping for {} seconds before downloading'.format(

@@ -379,12 +379,6 @@ def main_handler():
     matched_data = None
     all_data = None
 
-
-    if not args['file'] and int(g.config['wait']) > 0:
-        g.logger.Info('Sleeping for {} seconds before inferencing'.format(
-            g.config['wait']))
-        time.sleep(g.config['wait'])
-
     if g.config['ml_gateway']:
         stream_options['api'] = None
         start = datetime.datetime.now()
@@ -405,6 +399,10 @@ def main_handler():
     
 
     else:
+        if not args['file'] and int(g.config['wait']) > 0:
+            g.logger.Info('Sleeping for {} seconds before inferencing'.format(
+            g.config['wait']))
+            time.sleep(g.config['wait'])
         from pyzm.ml.detect_sequence import DetectSequence
         m = DetectSequence(options=ml_options, global_config=g.config)
         matched_data,all_data = m.detect_stream(stream=stream, options=stream_options)
