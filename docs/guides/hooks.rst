@@ -540,15 +540,15 @@ the detection work to mlapi.
 Here are a list of parameters that still need to be in ``objectconfig.ini`` when using mlapi.
 (A simple rule to remember is zm_detect.py uses ``objectconfig.ini`` while mlapi uses ``mlapiconfig.ini``)
 
-- ``ml_gateway`` (obviously, as the ES calls zm_detect, and zm_detect calls mlapi if this parameter is present in ``objectconfig.ini``)
-- ``ml_fallback_local`` (if mlapi fails, or is not running, zm_detect will switch to local inferencing, so this needs to be in ``objectconfig.ini``)
-- ``show_percent`` (zm_detect is the one that actually creates the text you see in your object detection (``detected:[s] person:90%``))
-- ``write_image_to_zm`` (zm_detect is the one that actually puts ``objdetect.jpg`` in the ZM events folder - mlapi can't because it can be remote)
-- ``write_debug_image`` (zm_detect is the one that creates a debug image to inspect)
-- ``poly_thickness`` (because zm_detect is the one that actually writes the image/debug image as described above, makes sense that ``poly_thickness`` needs to be here)
+- ``ml_gateway`` (obviously, as the *ES* calls *zm_detect*, and zm_detect calls mlapi if this parameter is present in *objectconfig.ini*)
+- ``ml_fallback_local`` (if *mlapi* fails, or is not running, *zm_detect* will switch to local inferencing, so this needs to be in *objectconfig.ini*)
+- ``show_percent`` (*zm_detect* is the one that actually creates the text you see in your object detection (*detected:[s] person:90%*))
+- ``write_image_to_zm`` (zm_detect is the one that actually puts *objdetect.jpg* in the ZM events folder - *mlapi* can't because it can be remote)
+- ``write_debug_image`` (*zm_detect* is the one that creates a debug image to inspect)
+- ``poly_thickness`` (because *zm_detect* is the one that actually writes the image/debug image as described above, makes sense that *poly_thickness* needs to be here)
 - ``image_path`` (related to above - to know where to write the image )
-- ``create_animation`` (zm_detect has the code to put the animation of mp4/gif together)
-- ``animation_types`` (sane as above)
+- ``create_animation`` (*zm_detect* has the code to put the animation of mp4/gif together)
+- ``animation_types`` (same as above)
 
 These need to be present in both mlapiconfig.ini and objectconfig.ini
 
