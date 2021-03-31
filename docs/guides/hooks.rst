@@ -542,7 +542,6 @@ Here are a list of parameters that still need to be in ``objectconfig.ini`` when
 - ``ml_gateway`` (obviously, as this triggers mlapi)
 - ``ml_fallback_local``
 - ``show_percent``
-- ``wait``
 - ``write_image_to_zm``
 - ``write_debug_image``
 - ``poly_thickness``
@@ -567,10 +566,6 @@ So when using mlapi, migrate configurations that you typically specify in ``obje
 - In general, if you see detection with mlapi missing something that worked when using 
   objectconfig.ini, make sure you have not missed anything specific in mlapiconfig.ini 
   with respect to related parameters 
-
-Note that the ``wait`` parameter is ignored in mlapi. There is a ``delay`` parameter in 
-stream_sequence that you should use instead (and actually no longer needed, because stream_sequence
-has better options now like retries. See `docs in pyzm <https://pyzm.readthedocs.io/en/latest/source/pyzm.html#pyzm.ml.detect_sequence.DetectSequence.detect_stream>`__)
 
 Also note that if you are using ml_fallback, repeat the settings in both configs.
 
