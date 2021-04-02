@@ -167,7 +167,8 @@ Make sure OpenCV works
 
 
 
-**Note 3:** if you want to add "face recognition" you also need to do
+**Note 3:** if you want to add "face recognition" you also need to do the following: (Note that if you are using Google Coral,
+you can do face detection [not recognition] by using the coral libraries as well. You can skip this section if you want to use TPU based face detection)
 
 ::
 
@@ -619,8 +620,20 @@ Three ALPR options are provided:
 
 ``alpr_service`` defined the service to be used.
 
-Face Recognition
+Face Dection & Recognition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+When it comes to faces, there are two aspects (that many often confuse):
+
+- Detecting a Face
+- Recognizing a Face 
+
+Face Detection 
+'''''''''''''''
+If you only want "face detection", you can use either dlib/face_recognition or Google's TPU. Both are supported.
+Take a look at ``objectconfig.ini`` for how to set them up.
+
+Face Detection + Face Recognition
+'''''''''''''''''''''''''''''''''''
 
 Face Recognition uses
 `this <https://github.com/ageitgey/face_recognition>`__ library. Before
