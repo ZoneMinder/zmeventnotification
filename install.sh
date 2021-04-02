@@ -229,10 +229,12 @@ install_hook() {
             
 
             echo 'Checking for Google Coral Edge TPU data files...'
-            targets=( 'coco_indexed.names' 'ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite' 'ssdlite_mobiledet_coco_qat_postprocess_edgetpu.tflite')
+            targets=( 'coco_indexed.names' 'ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite' 'ssdlite_mobiledet_coco_qat_postprocess_edgetpu.tflite' 'ssd_mobilenet_v2_face_quant_postprocess_edgetpu.tflite')
             sources=('https://dl.google.com/coral/canned_models/coco_labels.txt'
                      'https://github.com/google-coral/edgetpu/raw/master/test_data/ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite'
                      'https://github.com/google-coral/test_data/raw/master/ssdlite_mobiledet_coco_qat_postprocess_edgetpu.tflite'
+                     'https://github.com/google-coral/test_data/raw/master/ssd_mobilenet_v2_face_quant_postprocess_edgetpu.tflite'
+
                     )
 
             for ((i=0;i<${#targets[@]};++i))

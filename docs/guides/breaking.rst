@@ -1,6 +1,14 @@
 Breaking Changes
 ----------------
 
+Version 6.1.18 onwards 
+~~~~~~~~~~~~~~~~~~~~~~~
+- I now support face detection using TPU (NOT recognition). See objectconfig.ini for an example
+- You can now add descriptive names for each model sequence to better differentiate in logs 
+- Each model sequence now has an ``enabled`` flag (default is ``yes``). If ``no`` that means the model won't be loaded. This is a good way 
+  to temporarily remove models while keeping config files intact 
+- We now also have a ``same_model_strategy`` value of ``union`` - when set to ``union`` it will combine detection from all models for that type 
+
 Version 6.1.17 onwards
 ~~~~~~~~~~~~~~~~~~~~~~~
 - You can now localize ``past_det_max_diff_area``, ``max_detection_size`` to specific objects
