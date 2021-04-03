@@ -448,12 +448,19 @@ def main_handler():
     else:
         prefix = '[x] '
         #g.logger.Debug (1,'CONFIDENCE ARRAY:{}'.format(conf))
+
     for idx, l in enumerate(matched_data['labels']):
         if l not in seen:
-            if g.config['show_percent'] == 'no':
-                pred = pred + l + ','
+            label_txt = ''
+            if g.config.get('show_percent') == 'no':
+                label_txt =  l + ','
             else:
-                pred = pred + l + ':{:.0%}'.format(matched_data['confidences'][idx]) + ' '
+                label_txt =  l + ':{:.0%}'.format(matched_data['confidences'][idx]) + ' '
+            if g.config.get('show_models')=='yes':
+                model_txt ='({}) '.format(matched_data['model_names'][idx])
+            else:
+                model_txt =''
+            pred = pred + model_txt + label_txt
             seen[l] = 1
 
     if pred != '':

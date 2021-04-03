@@ -550,6 +550,7 @@ Here are a list of parameters that still need to be in ``objectconfig.ini`` when
 - ``image_path`` (related to above - to know where to write the image )
 - ``create_animation`` (*zm_detect* has the code to put the animation of mp4/gif together)
 - ``animation_types`` (same as above)
+- ``show_models`` (if you want to show model names along with text)
 
 These need to be present in both mlapiconfig.ini and objectconfig.ini
 
