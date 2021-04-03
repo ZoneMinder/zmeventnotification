@@ -54,7 +54,7 @@ $ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
 delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
 
 ####################################
-my $app_version = '6.1.18';
+my $app_version = '6.1.19';
 ####################################
 
 # do this before any log init etc.
