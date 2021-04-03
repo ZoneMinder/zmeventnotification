@@ -405,6 +405,9 @@ def main_handler():
             time.sleep(g.config['wait'])
         from pyzm.ml.detect_sequence import DetectSequence
         m = DetectSequence(options=ml_options, global_config=g.config)
+        if args.get('monitorid'):
+            stream_options['mid'] = args.get('monitorid')
+
         matched_data,all_data = m.detect_stream(stream=stream, options=stream_options)
     
 
