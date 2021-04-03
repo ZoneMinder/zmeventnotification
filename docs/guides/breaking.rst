@@ -1,6 +1,21 @@
 Breaking Changes
 ----------------
 
+Version 6.1.19 onwards 
+~~~~~~~~~~~~~~~~~~~~~~~~~
+- ``match_past_detections``, ``past_det_max_diff_area`` and ``max_detection_size`` (and associated label prefixes) 
+  need to be in the ``general`` section of ``ml_sequence``. In the previous release they were stuffed inside each 
+  model sequence which lead to problems (imagine an event where snapshot and alarm had different objects and you
+  were checking both. In pass 1, snapshot would match but alarm would not, so you'd see objects in alarm. In pass 2,
+  alarm would match, but not snapshot and it would keep going on like this, effectively making match_past_detections 
+  useless. To avoid this, I am checking for match_past_detections *after* all matching is done)
+
+- ``stream_sequence`` now has a new field called ``delay_between_frames``. If specified, it will wait for those many 
+  seconds before processing each frame. This allows you to do something like this: ``frame_set ['snapshot','snapshot','snapshot']``
+  with a ``delay_between_frames:3``, which means it will keep analyzing snapshot 3 times, but with 3 seconds in between, which 
+  lets you grab multiple snapshot frames as it changes during an event. This is really only useful for this specific case...
+
+
 Version 6.1.18 onwards 
 ~~~~~~~~~~~~~~~~~~~~~~~
 - I now support face detection using TPU (NOT recognition). See objectconfig.ini for an example
