@@ -518,7 +518,7 @@ def process_config(args, ctx):
 
     # Now lets make sure we take care of parameter substitutions {{}}
 
-    g.logger.Debug (4,'********* REMOVE ME: BEFORE SUBSTITUTION {}'.format(g.config))
+    #g.logger.Debug (4,'********* REMOVE ME: BEFORE SUBSTITUTION {}'.format(g.config))
 
     g.logger.Debug (4,'Finally, doing parameter substitution')
     p = r'{{(\w+?)}}'
@@ -543,7 +543,7 @@ def process_config(args, ctx):
             if not replaced:
                 break
 
-    g.logger.Debug (4,'********* REMOVE ME: AFTER SUBSTITUTION {}'.format(g.config))
+    #g.logger.Debug (4,'********* REMOVE ME: AFTER SUBSTITUTION {}'.format(g.config))
 
     # Now munge config if testing args provide
     if args.get('file'):

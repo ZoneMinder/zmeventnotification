@@ -14,7 +14,7 @@ Version 6.1.19 onwards
 - ``stream_sequence`` now has a few new fields fields: 
   - ``delay_between_frames``. If specified, will wait for those many seconds before processing each frame. 
   - ``delay_between_snapshots``. If specified, will wait for those many seconds when processing snapshot frames.
-    This allows you to do something like this: ``frame_set ['snapshot','snapshot','snapshot','alarm']`` with a 
+    This allows you to do something like this: ``frame_set: snapshot,snapshot,snapshot,alarm`` with a 
     ``delay_between_snapshots:2``, which means it will keep analyzing snapshot 3 times, but with 2 seconds in between, which 
     lets you grab multiple snapshot frames as it changes during an event. This is really only useful for this specific case.
 
