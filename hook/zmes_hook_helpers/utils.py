@@ -460,37 +460,37 @@ def process_config(args, ctx):
                 for item in config_file[sec].items():
                     k = item[0]
                     v = item[1]
-                    g.config[k] = v
+                    #g.config[k] = v
 
                     if k.endswith('_zone_detection_pattern'):
                         zone_name = k.split('_zone_detection_pattern')[0]
                         g.logger.Debug(2, 'found zone specific pattern:{} storing'.format(zone_name))
                         poly_patterns.append({'name': zone_name, 'pattern':v})
                         continue
-
-                    if k in g.config_vals:
-                        # This means its a legit config key that needs to be overriden
-                        g.logger.Debug(4,
-                            '[{}] overrides key:{} with value:{}'.format(
-                                sec, k, v))
-                        g.config[k] = _correct_type(v,
-                                                    g.config_vals[k]['type'])
                     else:
-                        if k.startswith(('object_','face_', 'alpr_')):
-                            g.logger.Debug(2,'assuming {} is an ML sequence, adding to config'.format(k))
+                        if k in g.config_vals:
+                            # This means its a legit config key that needs to be overriden
+                            g.logger.Debug(4,
+                                '[{}] overrides key:{} with value:{}'.format(
+                                    sec, k, v))
+                            g.config[k] = _correct_type(v,
+                                                        g.config_vals[k]['type'])
                         else:
-                            # This means its a polygon for the monitor or an unknown str
-                            try:
-                                p = str2tuple(v) # if not poly, exception will be thrown
-                                if not g.config['only_triggered_zm_zones'] == 'yes':
-                                    g.polygons.append({'name': k, 'value': p,'pattern': None})
-                                    g.logger.Debug(2,'adding polygon: {} [{}]'.format(k, v ))
-                                else:
-                                    g.logger.Debug (2,'ignoring polygon: {} as only_triggered_zm_zones is true'.format(k))
-                            except Exception as e:
-                                g.logger.Debug(2,'{} is not a polygon, adding it as unknown string key'.format(k))
-                                g.config[k]=v
-                           
+                            if k.startswith(('object_','face_', 'alpr_')):
+                                g.logger.Debug(2,'assuming {} is an ML sequence, adding to config'.format(k))
+                            else:
+                                # This means its a polygon for the monitor or an unknown str
+                                try:
+                                    p = str2tuple(v) # if not poly, exception will be thrown
+                                    if not g.config['only_triggered_zm_zones'] == 'yes':
+                                        g.polygons.append({'name': k, 'value': p,'pattern': None})
+                                        g.logger.Debug(2,'adding polygon: {} [{}]'.format(k, v ))
+                                    else:
+                                        g.logger.Debug (2,'ignoring polygon: {} as only_triggered_zm_zones is true'.format(k))
+                                except Exception as e:
+                                    g.logger.Debug(2,'{} is not a polygon, adding it as unknown string key'.format(k))
+                                    g.config[k]=v
+                            
             # now import zones if needed
             # this should be done irrespective of a monitor section
             if g.config['only_triggered_zm_zones'] == 'yes':
@@ -517,6 +517,9 @@ def process_config(args, ctx):
         exit(0)
 
     # Now lets make sure we take care of parameter substitutions {{}}
+
+    g.logger.Debug (4,'********* REMOVE ME: BEFORE SUBSTITUTION {}'.format(g.config))
+
     g.logger.Debug (4,'Finally, doing parameter substitution')
     p = r'{{(\w+?)}}'
     for gk, gv in g.config.items():
@@ -535,8 +538,12 @@ def process_config(args, ctx):
                     #print ('replacing {} with {}'.format(g.config[gk], new_val))
                     g.config[gk] = new_val
                     gv = new_val
+                else:
+                    g.logger.Debug(4, 'substitution key: {} not found'.format(match_key))
             if not replaced:
                 break
+
+    g.logger.Debug (4,'********* REMOVE ME: AFTER SUBSTITUTION {}'.format(g.config))
 
     # Now munge config if testing args provide
     if args.get('file'):
