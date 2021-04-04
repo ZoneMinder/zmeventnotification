@@ -9,11 +9,14 @@ Version 6.1.19 onwards
   were checking both. In pass 1, snapshot would match but alarm would not, so you'd see objects in alarm. In pass 2,
   alarm would match, but not snapshot and it would keep going on like this, effectively making match_past_detections 
   useless. To avoid this, I am checking for match_past_detections *after* all matching is done)
+- You can now choose to ignore certain labels when you match past detections using `ignore_past_detection_labels` 
 
-- ``stream_sequence`` now has a new field called ``delay_between_frames``. If specified, it will wait for those many 
-  seconds before processing each frame. This allows you to do something like this: ``frame_set ['snapshot','snapshot','snapshot']``
-  with a ``delay_between_frames:3``, which means it will keep analyzing snapshot 3 times, but with 3 seconds in between, which 
-  lets you grab multiple snapshot frames as it changes during an event. This is really only useful for this specific case...
+- ``stream_sequence`` now has a few new fields fields: 
+  - ``delay_between_frames``. If specified, will wait for those many seconds before processing each frame. 
+  - ``delay_between_snapshots``. If specified, will wait for those many seconds when processing snapshot frames.
+    This allows you to do something like this: ``frame_set ['snapshot','snapshot','snapshot','alarm']`` with a 
+    ``delay_between_snapshots:2``, which means it will keep analyzing snapshot 3 times, but with 2 seconds in between, which 
+    lets you grab multiple snapshot frames as it changes during an event. This is really only useful for this specific case.
 
 
 Version 6.1.18 onwards 
