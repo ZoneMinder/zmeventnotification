@@ -9,7 +9,7 @@ if __name__ == "__main__":
     log.init(name='zm_train_faces', override={'dump_console':True})
 # needs to be after log init
 
-import pyzm.ml.face_train as train
+import pyzm.ml.face_train_dlib as train
 
 if __name__ == "__main__":
     g.ctx = ssl.create_default_context()

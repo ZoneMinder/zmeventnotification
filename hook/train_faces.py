@@ -5,7 +5,7 @@ import ssl
 import pyzm.ZMLog as log
 import zmes_hook_helpers.common_params as g
 import zmes_hook_helpers.utils as utils
-import pyzm.ml.face_train as train
+import pyzm.ml.face_train_dlib as train
 
 
 if __name__ == "__main__":
