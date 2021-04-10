@@ -12,7 +12,7 @@ You can get the version by doing:
 
 You can get the version by doing:
 ```
-/var/lib/zmeventnotification/bin/zm_detect.py --version
+sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect.py --version
 ```
 
 **Are you using MLAPI? (Y/N)**
