@@ -260,7 +260,7 @@ config_vals = {
         },
         'use_sequence': {
             'section': 'ml',
-            'default': 'no',
+            'default': 'yes',
             'type': 'string'
         },
         'ml_sequence': {
