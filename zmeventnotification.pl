@@ -3886,11 +3886,12 @@ sub processNewAlarmsInFork {
           }
           print WRITER "update_parallel_hooks--TYPE--add\n";
           my $res = `$cmd`;
+          $hookResult = $? >> 8; # make sure it is before pipe
+
           print WRITER "update_parallel_hooks--TYPE--del\n";
 
           chomp($res);
           my ( $resTxt, $resJsonString ) = parseDetectResults($res);
-          $hookResult      = $? >> 8;
           $startHookResult = $hookResult;
 
           printDebug(
@@ -4122,11 +4123,12 @@ sub processNewAlarmsInFork {
 
           print WRITER "update_parallel_hooks--TYPE--add\n";
           my $res = `$cmd`;
+          $hookResult = $? >> 8; # make sure it is before pipe
+
           print WRITER "update_parallel_hooks--TYPE--del\n";
 
           chomp($res);
           my ( $resTxt, $resJsonString ) = parseDetectResults($res);
-          $hookResult = $? >> 8;
 
           $alarm->{End}->{State} = 'ready';
           printDebug(
