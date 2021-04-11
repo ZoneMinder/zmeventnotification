@@ -5,7 +5,7 @@ trap 'cleanup' SIGINT SIGTERM
 # Handle situation of ZM terminates while this is running
 # so notifications are not sent
 cleanup() {
-        exit 1
+   exit 1
 }
 
 # When invoked by zmeventnotification.pl it will be passed:
