@@ -1,5 +1,13 @@
 #!/bin/bash
 
+trap 'cleanup' SIGINT SIGTERM
+
+# Handle situation of ZM terminates while this is running
+# so notifications are not sent
+cleanup() {
+        exit 1
+}
+
 # When invoked by zmeventnotification.pl it will be passed:
 # $1 = eventId that triggered an alarm
 # $2 = monitor ID of monitor that triggered an alarm
