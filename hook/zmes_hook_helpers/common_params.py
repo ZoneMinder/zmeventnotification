@@ -87,13 +87,13 @@ config_vals = {
         },
         'basic_user':{
             'section': 'general',
-            'default': '',
+            'default': None,
             'type': 'string'
         },
      
         'basic_password':{
             'section': 'general',
-            'default': '',
+            'default': None,
             'type': 'string'
         },
         'image_path':{
