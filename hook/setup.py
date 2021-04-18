@@ -27,14 +27,18 @@ with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
 
 
 def read(*parts):
+    here = os.path.abspath(os.path.dirname(__file__))
+    print ('VERBOSE: Reading {}'.format(os.path.join(here, *parts)))
     with codecs.open(os.path.join(here, *parts), 'r') as fp:
         return fp.read()
 
 
 def find_version(*file_paths):
     version_file = read(*file_paths)
+    print ('VERBOSE: version_file is {}'.format(version_file))
     version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
                               version_file, re.M)
+   
     if version_match:
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
