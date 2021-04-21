@@ -432,6 +432,17 @@ config_vals = {
             'type': 'string'
         },
 
+        'platerec_payload':{
+            'section': 'alpr',
+            'default': None,
+            'type': 'eval'
+        },
+        'platerec_config':{
+            'section': 'alpr',
+            'default': None,
+            'type': 'eval'
+        },
+
        
         'platerec_regions':{
             'section': 'alpr',

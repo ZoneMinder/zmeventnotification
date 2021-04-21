@@ -403,11 +403,12 @@ def process_config(args, ctx):
     # main
     try:
         config_file = ConfigParser(interpolation=None, inline_comment_prefixes='#')
+        g.logger.Info('Reading config from: {}'.format(args.get('config')))
         config_file.read(args.get('config'))
 
         if config_file.has_option('general', 'secrets'):
             secrets_filename = config_file.get('general', 'secrets')
-            g.logger.Debug(1,'secret filename: {}'.format(secrets_filename))
+            g.logger.Info('Reading secrets from: {}'.format(secrets_filename))
             has_secrets = True
             g.config['secrets'] = secrets_filename
             secrets_file = ConfigParser(interpolation=None, inline_comment_prefixes='#')
