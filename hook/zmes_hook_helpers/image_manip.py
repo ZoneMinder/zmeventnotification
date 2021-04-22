@@ -41,7 +41,7 @@ def createAnimation(frametype, eid, fname, types):
             resp.raise_for_status()
             r = resp.json()
         except requests.exceptions.RequestException as e:
-            g.logger.Error(f'{e}')
+            g.logger.Error('{}'.format(e))
             continue
 
         r_event = r['event']['Event']
@@ -55,9 +55,8 @@ def createAnimation(frametype, eid, fname, types):
         else:
             fid = int(frametype)
 
-        #g.logger.Debug (1,f'animation: Response {r}')
         if r_frame is None or not r_frame_len:
-            g.logger.Debug (1,f'No frames found yet via API, deferring check for {sleep_secs} seconds...')
+            g.logger.Debug (1,'No frames found yet via API, deferring check for {} seconds...'.format(sleep_secs))
             rtries = rtries - 1
             time.sleep(sleep_secs)
             continue
@@ -67,7 +66,7 @@ def createAnimation(frametype, eid, fname, types):
         fps=round(totframes/total_time)
 
         if not r_frame_len >= fid+fps*buffer_seconds:
-            g.logger.Debug (1,f'I\'ve got {r_frame_len} frames, but that\'s not enough as anchor frame is type:{frametype}:{fid}, deferring check for {sleep_secs} seconds...')
+            g.logger.Debug (1,'I\'ve got {} frames, but that\'s not enough as anchor frame is type:{}:{}, deferring check for {} seconds...'.format(r_frame_len, frametype, fid, sleep_secs))
             rtries = rtries - 1
             time.sleep(sleep_secs)
             continue
@@ -86,31 +85,31 @@ def createAnimation(frametype, eid, fname, types):
     end_frame = int(min(totframes, fid + (buffer_seconds*fps)))
     skip = round(fps/target_fps)
 
-    g.logger.Debug (1,f'animation: anchor={frametype} start={start_frame} end={end_frame} skip={skip}')
+    g.logger.Debug (1,'animation: anchor={} start={} end={} skip={}'.format(frametype, start_frame, end_frame, skip))
     g.logger.Debug(1,'animation: Grabbing frames...')
     images = []
     od_images = []
 
     # use frametype  (alarm/snapshot) to get od anchor, because fid can be wrong when translating from videos
     od_url= '{}/index.php?view=image&eid={}&fid={}&username={}&password={}&width={}'.format(g.config['portal'],eid,frametype,g.config['user'],urllib.parse.quote(g.config['password'], safe=''),g.config['animation_width'])
-    g.logger.Debug (1,f'Grabbing anchor frame: {frametype}...')
+    g.logger.Debug (1,'Grabbing anchor frame: {}...'.format(frametype))
     try:
         od_frame = imageio.imread(od_url)
         # 1 second @ 2fps
         od_images.append(od_frame)
         od_images.append(od_frame)
     except Exception as e:
-        g.logger.Error (f'Error downloading anchor  frame: Error:{e}')
+        g.logger.Error ('Error downloading anchor  frame: Error:{}'.format(e))
 
     for i in range(start_frame, end_frame+1, skip):
         p_url=url+'&fid={}'.format(i)
-        g.logger.Debug (2,f'animation: Grabbing Frame:{i}')
+        g.logger.Debug (2,'animation: Grabbing Frame:{}'.format(i))
         try:
             images.append(imageio.imread(p_url))
         except Exception as e:
-            g.logger.Error (f'Error downloading frame {i}: Error:{e}')
+            g.logger.Error ('Error downloading frame {}: Error:{}'.format(i,e))
 
-    g.logger.Debug (1,f'animation: Saving {fname}...')
+    g.logger.Debug (1,'animation: Saving {}...'.format(fname))
     try:
         if 'mp4' in types.lower():
             g.logger.Debug (1,'Creating MP4...')
@@ -118,7 +117,7 @@ def createAnimation(frametype, eid, fname, types):
             mp4_final.extend(images)
             imageio.mimwrite(fname+'.mp4', mp4_final, format='mp4', fps=target_fps)
             size = os.stat(fname+'.mp4').st_size
-            g.logger.Debug (1,f'animation: saved to {fname}.mp4, size {size} bytes, frames: {len(images)}')
+            g.logger.Debug (1,'animation: saved to {}.mp4, size {} bytes, frames: {}'.format(fname, size, len(images)))
 
         if 'gif' in types.lower():
             from pygifsicle import optimize
@@ -140,16 +139,16 @@ def createAnimation(frametype, eid, fname, types):
                     gif_images = images[0+s1:-s2:2]
                 else:
                     gif_images = images[0+s1:-s2]
-                g.logger.Debug (1,f'For GIF, slicing {s1} to -{s2} from a total of {len(images)}')
+                g.logger.Debug (1,'For GIF, slicing {} to -{} from a total of {}'.format(s1, s2, len(images)))
                 g.logger.Debug (1,'animation:Saving...')
                 gif_final = gif_images.copy()
                 imageio.mimwrite(fname+'.gif', gif_final, format='gif', fps=target_fps)
                 g.logger.Debug (1,'animation:Optimizing...')
                 optimize(source=fname+'.gif', colors=256)
                 size = os.stat(fname+'.gif').st_size
-                g.logger.Debug (1,f'animation: saved to {fname}.gif, size {size} bytes, frames:{len(gif_images)}')
+                g.logger.Debug (1,'animation: saved to {}.gif, size {} bytes, frames:{}'.format(fname, size, len(gif_images)))
             else:
-                g.logger.Debug (1,f'Bailing in GIF creation, range is weird start:{s1}:end offset {-s2}')
+                g.logger.Debug (1,'Bailing in GIF creation, range is weird start:{}:end offset {}'.format(s1, s2))
 
         
         

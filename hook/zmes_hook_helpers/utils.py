@@ -199,10 +199,10 @@ def import_zm_zones(mid, reason):
     try:
         input_file = opener.open(url)
     except HTTPError as e:
-        g.logger.Error(f'HTTP Error in import_zm_zones:{e}')
+        g.logger.Error('HTTP Error in import_zm_zones:{}'.format(e))
         raise
     except Exception as e:
-        g.logger.Error(f'General error in import_zm_zones:{e}')
+        g.logger.Error('General error in import_zm_zones:{}'.format(e))
         raise
 
     c = input_file.read()
@@ -370,7 +370,6 @@ def process_config(args, ctx):
 
     def _set_config_val(k, v):
         # internal function to parse all keys
-        #print (f'inside set_config_val with {k}={v}')
         if config_file.has_section(v['section']):
             val = config_file[v['section']].get(k, v.get('default'))
         else:

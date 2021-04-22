@@ -15,7 +15,7 @@ breaking = False
 def sanity_check(s, c, v):
 
     for attr in s:
-        print (f'Doing a sanity check, {attr} should not be there...')
+        print ('Doing a sanity check, {} should not be there...'.format(attr))
         #if attr in c:
         if re.search(f'(^| |\t|\n){attr}(=| |\t)',c):
             print  (
@@ -332,7 +332,7 @@ version = 'unknown'
 if config_file.has_option('general', 'version'):
     version = config_file.get('general', 'version')
 
-print (f'Current version of file is {version}')
+print ('Current version of file is {}'.format(version))
 f=open(args.get('config'))
 str_conf = f.read()
 f.close()

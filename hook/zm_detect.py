@@ -137,7 +137,8 @@ def remote_detect(stream=None, options=None, api=None, args=None):
     }
     mid = args.get('monitorid')
     reason = args.get('reason')
-    g.logger.Debug(2,f'Invoking mlapi with url:{object_url} and json: mid={mid} reason={reason} stream={stream}, stream_options={options} ml_overrides={ml_overrides} headers={auth_header} params={params} ')
+    g.logger.Debug(2,'Invoking mlapi with url:{} and json: mid={} reason={} stream={}, stream_options={} ml_overrides={} headers={} params={} '.format(object_url,mid, reason, stream, options, ml_overrides, auth_header, params))
+    
     start = datetime.datetime.now()
     try:
         r = requests.post(url=object_url,
@@ -266,7 +267,7 @@ def main_handler():
     try:
         import cv2
     except ImportError as e:
-        g.logger.Fatal (f'{e}: You might not have installed OpenCV as per install instructions. Remember, it is NOT automatically installed')
+        g.logger.Fatal ('{}: You might not have installed OpenCV as per install instructions. Remember, it is NOT automatically installed'.format(e))
 
     g.logger.Info('---------| app:{}, pyzm:{}, ES:{} , OpenCV:{}|------------'.format(__app_version__,pyzm_version, es_version, cv2.__version__))
    
@@ -276,7 +277,7 @@ def main_handler():
     try:
         import zmes_hook_helpers.image_manip as img
     except Exception as e:
-        g.logger.Error (f'{e}')
+        g.logger.Error ('{}'.format(e))
         exit(1)
     g.polygons = []
 
@@ -412,11 +413,6 @@ def main_handler():
 
         matched_data,all_data = m.detect_stream(stream=stream, options=stream_options)
     
-
-
-    #print(f'ALL FRAMES: {all_data}\n\n')
-    #print (f"SELECTED FRAME {matched_data['frame_id']}, size {matched_data['image_dimensions']} with LABELS {matched_data['labels']} {matched_data['boxes']} {matched_data['confidences']}")
-    #print (matched_data)
     '''
      matched_data = {
             'boxes': matched_b,
@@ -474,7 +470,6 @@ def main_handler():
         print(pred + '--SPLIT--' + jos)
 
         if (matched_data['image'] is not None) and (g.config['write_image_to_zm'] == 'yes' or g.config['write_debug_image'] == 'yes'):
-            #print (f'********* REMOTE POLY: {remote_polygons}')
             debug_image = pyzmutils.draw_bbox(image=matched_data['image'],boxes=matched_data['boxes'], 
                                               labels=matched_data['labels'], confidences=matched_data['confidences'],
                                               polygons=matched_data['polygons'], poly_thickness = g.config['poly_thickness'],
@@ -499,7 +494,7 @@ def main_handler():
                         json.dump(obj_json, jo)
                         jo.close()
                 except Exception as e:
-                    g.logger.Error(f'Error creating {jf}:{e}')
+                    g.logger.Error('Error creating {}:{}'.format(jf,e))
                     
         if args.get('notes'):
             url = '{}/events/{}.json'.format(g.config['api_portal'], args['eventid'])
