@@ -60,7 +60,7 @@ my $app_version = '6.1.23';
 # do this before any log init etc.
 my $first_arg = @ARGV[0];
 if ($first_arg eq '--version') {
-  print ($app_version);
+  print ("$app_version\n");
   exit(0);
 }
 
