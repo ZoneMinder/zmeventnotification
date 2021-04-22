@@ -524,7 +524,6 @@ def process_config(args, ctx):
     p = r'{{(\w+?)}}'
     for gk, gv in g.config.items():
         #input ('Continue')
-        #print(f"PROCESSING {gk} {gv}")
         gv = '{}'.format(gv)
         #if not isinstance(gv, str):
         #    continue

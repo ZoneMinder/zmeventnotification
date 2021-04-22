@@ -34,7 +34,7 @@ def createAnimation(frametype, eid, fname, types):
         fast_gif = True
 
     while True and rtries:
-        g.logger.Debug (1,f"animation: Try:{g.config['animation_max_tries']-rtries+1} Getting {disp_api_url}")
+        g.logger.Debug (1,'animation: Try:{} Getting {}'.format(g.config['animation_max_tries']-rtries+1,disp_api_url ))
         r = None
         try:
             resp = requests.get(api_url)
