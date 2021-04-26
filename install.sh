@@ -6,7 +6,7 @@
 #
 # /install.sh --help
 #
-# Note that this doesn't install all the event server
+# Note that this does not install all the event server
 # dependencies. You still need to follow the README
 #
 # It does however try to install all the hook dependencies
@@ -15,46 +15,46 @@
 
 # --- Change these if you want --
 
-PYTHON=python3
-PIP=pip3
-INSTALLER=$(which apt-get || which yum)
+PYTHON=${PYTHON:-python3}
+PIP=${PIP:-pip3}
+INSTALLER=${INSTALLER:-$(which apt-get || which yum))}
 
 # Models to install
-# If you don't want them, pass them as variables to install.sh
+# If you do not want them, pass them as variables to install.sh
 # example: sudo INSTALL_YOLO4=no ./install.sh
+
 INSTALL_YOLOV3=${INSTALL_YOLOV3:-yes}
 INSTALL_TINYYOLOV3=${INSTALL_TINYYOLOV3:-yes}
-
 INSTALL_YOLOV4=${INSTALL_YOLOV4:-yes}
 INSTALL_TINYYOLOV4=${INSTALL_TINYYOLOV4:-yes}
-
 INSTALL_CORAL_EDGETPU=${INSTALL_CORAL_EDGETPU:-no}
 
 
-TARGET_CONFIG='/etc/zm'
-TARGET_DATA='/var/lib/zmeventnotification'
-TARGET_BIN_ES='/usr/bin'
-TARGET_BIN_HOOK='/var/lib/zmeventnotification/bin'
+TARGET_CONFIG=${TARGET_CONFIG:-'/etc/zm'}
+TARGET_DATA=${TARGET_DATA:-'/var/lib/zmeventnotification'}
+TARGET_BIN_ES=${TARGET_BIN_ES:-'/usr/bin'}
+TARGET_BIN_HOOK=${TARGET_BIN_HOOK:-'/var/lib/zmeventnotification/bin'}
 
-WGET=$(which wget)
-WEB_OWNER_FROM_PS=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $1}')
-#WEB_OWNER='www-data' # uncomment this if the above mechanism fails
+WGET=${WGET:-$(which wget)}
+_WEB_OWNER_FROM_PS=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $1}')
+#_WEB_OWNER='www-data' # uncomment this if the above mechanism fails
 
-WEB_GROUP_FROM_PS=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $2}')
-#WEB_GROUP='www-data' # uncomment if above line fails
-# make this empty if you don't want backups
+_WEB_GROUP_FROM_PS=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $2}')
+#_WEB_GROUP='www-data' # uncomment if above line fails
+# make this empty if you do not want backups
 MAKE_CONFIG_BACKUP='--backup=numbered'
 
 # --- end of change these ---
 
 # set default values 
 # if we have a value from ps use it, otherwise look in env
-WEB_OWNER=${WEB_OWNER_FROM_PS:-$WEB_OWNER}
-WEB_GROUP=${WEB_GROUP_FROM_PS:-$WEB_GROUP}
-# if we don't have a value from ps or env, use default
+
+WEB_OWNER=${WEB_OWNER:-_WEB_OWNER_FROM_PS}
+WEB_GROUP=${WEB_GROUP:-_WEB_GROUP_FROM_PS}
+# if we do not have a value from ps or env, use default
+
 WEB_OWNER=${WEB_OWNER:-www-data}
 WEB_GROUP=${WEB_GROUP:-www-data}
-WGET=${WGET:-/usr/bin/wget}
 
 
 # utility functions for color coded pretty printing
@@ -467,7 +467,7 @@ EOF
 display_help() {
     cat << EOF
     
-    $0 [-h|--help] [--install-es|--no-install-es] [--install-hook|--no-install-hook] [--install-config|--no-install-config] [--no-pysudo] [--no-download-models]
+    sudo -H [VAR1=value|VAR2=value...] $0 [-h|--help] [--install-es|--no-install-es] [--install-hook|--no-install-hook] [--install-config|--no-install-config] [--no-pysudo] [--no-download-models]
 
         When used without any parameters executes in interactive mode
 
@@ -489,6 +489,28 @@ display_help() {
 
         --no-download-models: If specified will not download any models.
         You may want to do this if using mlapi
+
+        In addition to the above, you can also override all variables used for your own needs 
+        Overridable variables are: 
+
+        PYTHON: python interpreter (default: python3)
+        PIP: pip package installer (default: pip3)
+        WGET: path to wget (default `which wget`)
+
+        INSTALLER: Your OS equivalent of apt-get or yum (default: apt-get or yum)
+        INSTALL_YOLOV3: Download and install yolov3 model (default:yes)
+        INSTALL_TINYYOLOV3: Download and install tiny yolov3 model (default:yes)
+        INSTALL_YOLOV4: Download and install yolov4 model (default:yes)
+        INSTALL_TINY_YOLOV4: Download and install tiny yolov4 model (default:yes)
+        INSTALL_CORAL_EDGETPU: Download and install coral models (default:no)
+
+        TARGET_CONFIG: Path to ES config dir (default: /etc/zm)
+        TARGET_DATA: Path to ES data dir (default: /var/lib/zmeventnotification)
+        TARGET_BIN_ES: Path to ES binary (default:/usr/bin)
+        TARGET_BIN_HOOK: Path to hook script files (default: /var/lib/zmeventnotification/bin)
+
+        WEB_OWNER: Your webserver user (default: www-data)
+        WEB_GROUP: Your webserver group (default: www-data)
 
 
 EOF
