@@ -49,12 +49,13 @@ MAKE_CONFIG_BACKUP='--backup=numbered'
 # set default values 
 # if we have a value from ps use it, otherwise look in env
 
-WEB_OWNER=${WEB_OWNER:-_WEB_OWNER_FROM_PS}
-WEB_GROUP=${WEB_GROUP:-_WEB_GROUP_FROM_PS}
+WEB_OWNER=${WEB_OWNER:-${_WEB_OWNER_FROM_PS}}
+WEB_GROUP=${WEB_GROUP:-${_WEB_GROUP_FROM_PS}}
+
 # if we do not have a value from ps or env, use default
 
-WEB_OWNER=${WEB_OWNER:-www-data}
-WEB_GROUP=${WEB_GROUP:-www-data}
+WEB_OWNER=${WEB_OWNER:-'www-data'}
+WEB_GROUP=${WEB_GROUP:-'www-data'}
 
 
 # utility functions for color coded pretty printing
