@@ -160,6 +160,7 @@ verify_config() {
     echo "Install Event Server config: ${INSTALL_ES_CONFIG}"
     echo "Install Hooks: ${INSTALL_HOOK}"
     echo "Install Hooks config: ${INSTALL_HOOK_CONFIG}"
+    echo "Upgrade Hooks config (if applicable): ${HOOK_CONFIG_UPGRADE}"
     echo "Download and install models (if needed): ${DOWNLOAD_MODELS}"
     echo
 
@@ -468,7 +469,7 @@ EOF
 display_help() {
     cat << EOF
     
-    sudo -H [VAR1=value|VAR2=value...] $0 [-h|--help] [--install-es|--no-install-es] [--install-hook|--no-install-hook] [--install-config|--no-install-config] [--no-pysudo] [--no-download-models]
+    sudo -H [VAR1=value|VAR2=value...] $0 [-h|--help] [--install-es|--no-install-es] [--install-hook|--no-install-hook] [--install-config|--no-install-config] [--hook-config-upgrade|--no-hook-config-upgrade] [--no-pysudo] [--no-download-models]
 
         When used without any parameters executes in interactive mode
 
@@ -490,6 +491,10 @@ display_help() {
 
         --no-download-models: If specified will not download any models.
         You may want to do this if using mlapi
+
+        --hook-config-upgrade: Updates objectconfig.ini with any new/modified attributes 
+        and creates a sample output file. You will need to manually merge/update/review your real config
+        --no-hook-config-upgrade: skips aboe process
 
         In addition to the above, you can also override all variables used for your own needs 
         Overridable variables are: 
@@ -527,6 +532,7 @@ check_args() {
     INTERACTIVE='yes'
     PY_SUDO='sudo -H'
     DOWNLOAD_MODELS='yes'
+    HOOK_CONFIG_UPGRADE='yes'
 
     for key in "${cmd_args[@]}"
     do
@@ -562,6 +568,14 @@ check_args() {
             ;;
         --no-install-hook)
             INSTALL_HOOK='no'
+            shift
+            ;;
+        --no-hook-config-upgrade)
+            HOOK_CONFIG_UPGRADE='no'
+            shift
+            ;;
+        --hook-config-upgrade)
+            HOOK_CONFIG_UPGRADE='yes'
             shift
             ;;
         --install-config)
@@ -669,9 +683,15 @@ then
 EOF
 fi
 
-echo
-echo "Creating a migrated objectconfig if required"
-./hook/config_upgrade.py -c "${TARGET_CONFIG}/objectconfig.ini" 
+if [ "${HOOK_CONFIG_UPGRADE}" == "yes" ] 
+then
+    echo
+    echo "Creating a migrated objectconfig if required"
+    ./hook/config_upgrade.py -c "${TARGET_CONFIG}/objectconfig.ini" 
+else 
+    echo "Skipping hook config upgrade process"
+fi
+
 
 echo
 echo "*** Please remember to start the Event Server after this update ***" 
