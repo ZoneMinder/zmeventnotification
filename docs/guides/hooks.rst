@@ -213,9 +213,6 @@ Test operation
 Replace with your own EID (Example 123456). The files will be in
 ``/var/lib/zmeventnotification/images`` 
 
-The ``<mid>`` is optional and is the monitor ID. If you do specify it,
-it will pick up the right mask to apply (if it is in your config)
-
 The above command will also try and run detection.
 
 If it doesn't work, go back and figure out where you have a problem
