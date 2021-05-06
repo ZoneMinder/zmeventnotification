@@ -210,10 +210,10 @@ Test operation
 
     sudo -u www-data /var/lib/zmeventnotification/bin/zm_event_start.sh <eid> <mid> # replace www-data with apache if needed
 
-Replace with your own EID (Example 123456). The files will be in
-``/var/lib/zmeventnotification/images`` 
+Replace with your own EID (Example 123456). This will be an event id for an event that you want to test. Typically,
+open up the ZM console, look for an event you want to run analysis on and select the ID of the event. That is the EID.
 
-The above command will also try and run detection.
+The above command will  try and run detection.
 
 If it doesn't work, go back and figure out where you have a problem
 
