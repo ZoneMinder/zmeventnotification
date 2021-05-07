@@ -54,7 +54,7 @@ $ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
 delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
 
 ####################################
-my $app_version = '6.1.23';
+my $app_version = '6.1.24';
 ####################################
 
 # do this before any log init etc.
@@ -3892,6 +3892,8 @@ sub processNewAlarmsInFork {
 
           chomp($res);
           my ( $resTxt, $resJsonString ) = parseDetectResults($res);
+          # don't know why, but exit 1 from signal handler in shell script lands up as 0 here
+          $hookResult = 1 if (!$resTxt); 
           $startHookResult = $hookResult;
 
           printDebug(
@@ -4124,11 +4126,15 @@ sub processNewAlarmsInFork {
           print WRITER "update_parallel_hooks--TYPE--add\n";
           my $res = `$cmd`;
           $hookResult = $? >> 8; # make sure it is before pipe
+          
 
           print WRITER "update_parallel_hooks--TYPE--del\n";
 
           chomp($res);
           my ( $resTxt, $resJsonString ) = parseDetectResults($res);
+
+          # don't know why, but exit 1 from signal handler in shell script lands up as 0 here
+          $hookResult = 1 if (!$resTxt); 
 
           $alarm->{End}->{State} = 'ready';
           printDebug(

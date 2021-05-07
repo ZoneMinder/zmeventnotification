@@ -210,8 +210,10 @@ Test operation
 
     sudo -u www-data /var/lib/zmeventnotification/bin/zm_event_start.sh <eid> <mid> # replace www-data with apache if needed
 
-Replace with your own EID (Example 123456). This will be an event id for an event that you want to test. Typically,
-open up the ZM console, look for an event you want to run analysis on and select the ID of the event. That is the EID.
+Replace with your own ``eid`` (Example 123456). This will be an event id for an event that you want to test. Typically,
+open up the ZM console, look for an event you want to run analysis on and select the ID of the event. That is the ``eid``.
+The ``mid`` is the monitor ID for the event. This is optional. If you specify it, any monitor specific settings (such as 
+zones, hook customizations, etc. in ``objectconfig/mlapiconfig.ini`` will be used).
 
 The above command will  try and run detection.
 

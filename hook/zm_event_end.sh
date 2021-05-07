@@ -7,7 +7,7 @@ trap 'cleanup' SIGINT SIGTERM
 # Handle situation of ZM terminates while this is running
 # so notifications are not sent
 cleanup() {
-    echo "ZM is probably restarting, caught in cleanup signal handler"
+    # Don't echo anything here
     exit 1
 }
 

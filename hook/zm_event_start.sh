@@ -5,7 +5,7 @@ trap 'cleanup' SIGINT SIGTERM
 # Handle situation of ZM terminates while this is running
 # so notifications are not sent
 cleanup() {
-   echo "ZM is probably restarting, caught in cleanup signal handler"
+   # Don't echo anything here
    exit 1
 }
 
@@ -25,13 +25,18 @@ cleanup() {
 
 # change this to the path of the object detection config"
 CONFIG_FILE="/etc/zm/objectconfig.ini"
-EVENT_PATH="$5"
-REASON="$4"
+COMMAND="/var/lib/zmeventnotification/bin/zm_detect.py --config \"${CONFIG_FILE}\""
+
+[[ ! -z "${1}" ]] && COMMAND="${COMMAND} --eventid ${1}"
+[[ ! -z "${2}" ]] && COMMAND="${COMMAND} --monitorid ${1}"
+[[ ! -z "${4}" ]] && COMMAND="${COMMAND} --reason \"${4}\""
+[[ ! -z "${5}" ]] && COMMAND="${COMMAND} --reason \"${5}\""
 
 
 # use arrays instead of strings to avoid quote hell
-DETECTION_SCRIPT=(/var/lib/zmeventnotification/bin/zm_detect.py --monitorid $2 --eventid $1 --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}"  )
-
+DETECTION_SCRIPT=( "${COMMAND}" )
+echo $DETECTION_SCRIPT
+exit 
 RESULTS=$("${DETECTION_SCRIPT[@]}" | grep "detected:")
 
 _RETVAL=1
