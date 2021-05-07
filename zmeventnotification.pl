@@ -458,19 +458,19 @@ sub check_for_duplicate_token {
      $token_duplicates{$_->{token}}++ if $_->{token}; 
    }
   foreach (keys %token_duplicates) {
-      printDebug('...'.substr($_,-10)." occurs: ".$token_duplicates{$_}." times",5) if ($token_duplicates{$_} > 1) ;
+      printDebug('...'.substr($_,-10)." occurs: ".$token_duplicates{$_}." times",2) if ($token_duplicates{$_} > 1) ;
     }
 
 }
 
 sub shutdown_sig_handler {
   $es_terminate = 1;
-  printDebug ('Received request to shutdown, please wait');
+  printDebug ('Received request to shutdown, please wait',1);
 }
 
 sub chld_sig_handler {
   my $saved_status = $!;
-  printDebug ('Child signal handler invoked',4);
+  printDebug ('Child signal handler invoked',1);
   # Wait for a child to terminate
   while ( (my $cpid = waitpid(-1, WNOHANG)) > 0 ) {
     #$pids_to_reap{$cpid} = { status=>$?, stopped=>time() };
@@ -529,7 +529,7 @@ sub config_get_val {
 
     my $val = $config->val( 'general', $token );
     $val = $config->val( $sect, $token ) if !$val;
-    printDebug( "config string substitution: {{$token}} is '$val'", 3 );
+    printDebug( "config string substitution: {{$token}} is '$val'", 2 );
     $final_val =~ s/\{\{$token\}\}/$val/g;
 
   }
@@ -648,7 +648,7 @@ sub loadEsConfigSettings {
   if ($es_rules_file) {
     my $hr;
     my $fh;
-    printDebug("rules: Loading es rules json: $es_rules_file");
+    printDebug("rules: Loading es rules json: $es_rules_file",2);
     if ( open( $fh, "<", $es_rules_file ) ) {
       my $data = do { local $/ = undef; <$fh> };
       eval { $hr = decode_json($data); };
@@ -862,7 +862,7 @@ if ($use_fcm) {
   }
   else {
     printInfo('Push enabled via FCM');
-    printDebug("fcmv1: --> FCM V1 APIs: $use_fcmv1");
+    printDebug("fcmv1: --> FCM V1 APIs: $use_fcmv1",2);
   }
 
 }
@@ -948,7 +948,7 @@ sub at_eol($) { $_[0] =~ /\n\z/ }
 
 
 printInfo("|------- Starting ES version: $app_version ---------|");
-printDebug( "Started with: perl:" . $^X . " and command:" . $0, 1 );
+printDebug( "Started with: perl:" . $^X . " and command:" . $0, 2 );
 
 my $zmdc_status = `zmdc.pl status zmeventnotification.pl`;
 if ( index( $zmdc_status, 'running since' ) != -1 ) {
@@ -1050,13 +1050,13 @@ sub parseDetectResults {
 
 sub saveEsControlSettings() {
   if ( !$use_escontrol_interface ) {
-    printDebug( 'ESCONTROL_INTERFACE is disabled. Not saving control data', 1 );
+    printDebug( 'ESCONTROL_INTERFACE is disabled. Not saving control data', 2 );
 
   }
   return if ( !$use_escontrol_interface );
   printDebug(
     "ESCONTROL_INTERFACE: Saving admin interfaces to $escontrol_interface_file",
-    1
+    2
   );
   store( \%escontrol_interface_settings, $escontrol_interface_file )
     or Fatal("Error writing to $escontrol_interface_file: $!");
@@ -1071,12 +1071,12 @@ sub loadEsControlSettings() {
   }
   printDebug(
     "ESCONTROL_INTERFACE: Loading persistent admin interface settings from $escontrol_interface_file",
-    1
+    2
   );
   if ( !-f $escontrol_interface_file ) {
     printDebug(
       'ESCONTROL_INTERFACE: admin interface file does not exist, creating...',
-      1 );
+      2 );
     saveEsControlSettings();
 
   }
@@ -1118,7 +1118,7 @@ sub populateEsControlNotification {
         $found = 1;
         printDebug(
           "ESCONTROL_INTERFACE: Discovered new monitor:$id, settings notification to ESCONTROL_DEFAULT_NOTIFY",
-          1
+          2
         );
       }
 
@@ -1210,7 +1210,7 @@ sub processEsControlCommand {
       $escontrol_interface_settings{notifications}{$mid} = ESCONTROL_FORCE_MUTE;
       printDebug(
         "ESCONTROL: setting notification for Mid:$mid to ESCONTROL_FORCE_MUTE",
-        1
+        2
       );
     }
 
@@ -1848,7 +1848,7 @@ sub sendOverFCMV1 {
     my $month = $obj->{invocations}->{at};
     if ($curmonth != $month) {
       $obj->{invocations}->{count} = 0;
-      printDebug ('Resetting counters for token'. substr( $obj->{token}, -10 )." as month changed");
+      printDebug ('Resetting counters for token'. substr( $obj->{token}, -10 )." as month changed",1);
 
     }
     if ($obj->{invocations}->{count} > DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN) {
@@ -2627,7 +2627,7 @@ sub processIncomingMessage {
     # This sub type is when a device token is registered
     if ( $json_string->{data}->{type} eq 'token' ) {
       if (!defined($json_string->{data}->{token}) || ($json_string->{data}->{token} eq "")) {
-        printDebug ("Ignoring token command, I got ".encode_json($json_string));
+        printDebug ("Ignoring token command, I got ".encode_json($json_string),2);
         return;
       }
       # a token must have a platform
@@ -3473,7 +3473,7 @@ sub sendEvent {
     . '--SPLIT--'
     . $t . "\n";
 
-  printDebug( 'child finished writing to parent', 3 );
+  printDebug( 'child finished writing to parent', 2 );
 
 }
 
@@ -4370,7 +4370,7 @@ sub processNewAlarmsInFork {
         # The alarm has ended
       {
         printDebug( "For $mid ($mname), SHM says: state=$state, eid=$shm_eid",
-          3 );
+          2 );
         printInfo("Event $eid for Monitor $mid has finished");
         $endProcessed = 1;
 
@@ -4385,7 +4385,7 @@ sub processNewAlarmsInFork {
             . $alarm->{End}->{State}
             . ' with cause=>'
             . $alarm->{End}->{Cause},
-          3
+          2
         );
       }
     }
@@ -4407,7 +4407,7 @@ sub restartES {
     exit 0;
   }
   else {
-    printDebug('Self exec-ing as zmdc is not tracking me');
+    printDebug('Self exec-ing as zmdc is not tracking me',1);
 
     # untaint via reg-exp
     if ( $0 =~ /^(.*)$/ ) {

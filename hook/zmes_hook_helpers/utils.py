@@ -122,7 +122,7 @@ def convert_config_to_ml_sequence():
             #'model_sequence': 'object,face',        
     }
     if g.config['detection_mode'] == 'all':
-        g.logger.Debug(3, 'Changing detection_mode from all to most_models to adapt to new features')
+        g.logger.Debug(2, 'Changing detection_mode from all to most_models to adapt to new features')
         g.config['detection_mode'] = 'most_models'
     return ml_options
 
@@ -427,7 +427,7 @@ def process_config(args, ctx):
         # now iterate the file
         for sec in config_file.sections():
             if sec.startswith('monitor-'):
-                #g.logger.Debug(4, 'Skipping {} for now'.format(sec))
+                #g.logger.Debug(2, 'Skipping {} for now'.format(sec))
                 continue
             if sec == 'secrets':
                 continue
@@ -435,7 +435,7 @@ def process_config(args, ctx):
                 if g.config_vals.get(k):
                     _set_config_val(k,g.config_vals[k] )
                 else:
-                    #g.logger.Debug(4, 'storing unknown attribute {}={}'.format(k,v))
+                    #g.logger.Debug(2, 'storing unknown attribute {}={}'.format(k,v))
                     g.config[k] = v 
                     #_set_config_val(k,{'section': sec, 'default': None, 'type': 'string'} )
 
@@ -452,7 +452,7 @@ def process_config(args, ctx):
 
 
         # Check if we have a custom overrides for this monitor
-        g.logger.Debug(4,'Now checking for monitor overrides')
+        g.logger.Debug(2,'Now checking for monitor overrides')
         if 'monitorid' in args and args.get('monitorid'):
             sec = 'monitor-{}'.format(args.get('monitorid'))
             if sec in config_file:
@@ -470,7 +470,7 @@ def process_config(args, ctx):
                     else:
                         if k in g.config_vals:
                             # This means its a legit config key that needs to be overriden
-                            g.logger.Debug(4,
+                            g.logger.Debug(3,
                                 '[{}] overrides key:{} with value:{}'.format(
                                     sec, k, v))
                             g.config[k] = _correct_type(v,
@@ -518,9 +518,8 @@ def process_config(args, ctx):
 
     # Now lets make sure we take care of parameter substitutions {{}}
 
-    #g.logger.Debug (4,'********* REMOVE ME: BEFORE SUBSTITUTION {}'.format(g.config))
 
-    g.logger.Debug (4,'Finally, doing parameter substitution')
+    g.logger.Debug (3,'Finally, doing parameter substitution')
     p = r'{{(\w+?)}}'
     for gk, gv in g.config.items():
         #input ('Continue')
@@ -538,11 +537,10 @@ def process_config(args, ctx):
                     g.config[gk] = new_val
                     gv = new_val
                 else:
-                    g.logger.Debug(4, 'substitution key: {} not found'.format(match_key))
+                    g.logger.Debug(3, 'substitution key: {} not found'.format(match_key))
             if not replaced:
                 break
 
-    #g.logger.Debug (4,'********* REMOVE ME: AFTER SUBSTITUTION {}'.format(g.config))
 
     # Now munge config if testing args provide
     if args.get('file'):
