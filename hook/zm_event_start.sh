@@ -30,7 +30,7 @@ COMMAND="/var/lib/zmeventnotification/bin/zm_detect.py --config \"${CONFIG_FILE}
 [[ ! -z "${1}" ]] && COMMAND="${COMMAND} --eventid ${1}"
 [[ ! -z "${2}" ]] && COMMAND="${COMMAND} --monitorid ${1}"
 [[ ! -z "${4}" ]] && COMMAND="${COMMAND} --reason \"${4}\""
-[[ ! -z "${5}" ]] && COMMAND="${COMMAND} --reason \"${5}\""
+[[ ! -z "${5}" ]] && COMMAND="${COMMAND} --eventpath \"${5}\""
 
 
 # use arrays instead of strings to avoid quote hell
