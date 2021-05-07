@@ -35,8 +35,6 @@ COMMAND="/var/lib/zmeventnotification/bin/zm_detect.py --config \"${CONFIG_FILE}
 
 # use arrays instead of strings to avoid quote hell
 DETECTION_SCRIPT=( "${COMMAND}" )
-echo $DETECTION_SCRIPT
-exit 
 RESULTS=$("${DETECTION_SCRIPT[@]}" | grep "detected:")
 
 _RETVAL=1
