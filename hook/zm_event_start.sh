@@ -25,16 +25,18 @@ cleanup() {
 
 # change this to the path of the object detection config"
 CONFIG_FILE="/etc/zm/objectconfig.ini"
-COMMAND="/var/lib/zmeventnotification/bin/zm_detect.py --config \"${CONFIG_FILE}\""
-
-[[ ! -z "${1}" ]] && COMMAND="${COMMAND} --eventid ${1}"
-[[ ! -z "${2}" ]] && COMMAND="${COMMAND} --monitorid ${2}"
-[[ ! -z "${4}" ]] && COMMAND="${COMMAND} --reason \"${4}\""
-[[ ! -z "${5}" ]] && COMMAND="${COMMAND} --eventpath \"${5}\""
+EVENT_PATH="$5"
+REASON="$4"
 
 
 # use arrays instead of strings to avoid quote hell
-DETECTION_SCRIPT=( "${COMMAND}" )
+if [[ ! -z "${2}" ]]
+then 
+   DETECTION_SCRIPT=(/var/lib/zmeventnotification/bin/zm_detect.py --monitorid $2 --eventid $1 --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}"  )
+else
+   DETECTION_SCRIPT=(/var/lib/zmeventnotification/bin/zm_detect.py  --eventid $1 --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}"  )
+
+fi
 RESULTS=$("${DETECTION_SCRIPT[@]}" | grep "detected:")
 
 _RETVAL=1
