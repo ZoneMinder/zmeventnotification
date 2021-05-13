@@ -5,9 +5,7 @@ Summary
 +++++++++
 This guide is meant to give you an idea of how the Event Notification Server (ES) works, how it invokes hooks and how notifications are finally sent out.
 
-
-... _from-detection-to-notification:
-
+.. _from-detection-to-notification:
 
 From Event Detection to Notification
 +++++++++++++++++++++++++++++++++++++
