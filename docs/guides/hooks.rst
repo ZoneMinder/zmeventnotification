@@ -61,8 +61,8 @@ Automatic install
    sudo -H ./install.sh # and follow the prompts
 
 I use a library called `Shapely <https://github.com/Toblerity/Shapely>`__ for polygon intersection checks.
-Shapely requires a library called GeOS. If you see errors related to ``Failed `CDLL(libgeos_c.so)`
-`` you may manually need to install libgeos  like so:
+Shapely requires a library called GeOS. If you see errors related to ``Failed `CDLL(libgeos_c.so)``` 
+you may manually need to install libgeos  like so:
 
 ::
 
@@ -100,7 +100,7 @@ On my ubuntu system, I needed to do:
 code crashes when you run the ES in daemon mode (may work fine in manual mode)
 
 
-.. _install-specific-models:
+.._install-specific-models:
 
 Starting version 5.13.3, you can *optionally* choose to only install specific models by passing them as variables to the install script. The variables are labelled as ``INSTALL_<model>`` with possible values of ``yes`` (default) or ``no``. ``<model>`` is the specific model.
 
@@ -355,8 +355,7 @@ ML would work:
 
 - ``xxx_max_processes`` and ``xxx_max_lock_wait`` that defined semaphore locks for each model (to control parallel memory consumption)
 - All the ``object_xxx`` variables that define the model file, name file, and a host of other parameters that are specific to object detection 
-- All the ``face_xxx`` variables, ``known_images_path``, `unknown_images_path``, ``save_unknown_*`` attributes 
- that define the model file, name file, and a host of other parameters that are specific to face detection 
+- All the ``face_xxx`` variables, ``known_images_path``, `unknown_images_path``, ``save_unknown_*`` attributes that define the model file, name file, and a host of other parameters that are specific to face detection 
 - All the ``alpr_xxx`` variables that define the model file, name file, and a host of other parameters that are specific to alpr detection 
 
 When you make ``use_sequence=no`` in your config, I have a function called ``convert_config_to_ml_sequence()`` (see `here <https://github.com/pliablepixels/zmeventnotification/blob/v6.1.6/hook/zmes_hook_helpers/utils.py#L30>`__)

@@ -12,6 +12,7 @@ Version 6.1.19 onwards
 - You can now choose to ignore certain labels when you match past detections using `ignore_past_detection_labels` 
 
 - ``stream_sequence`` now has a few new fields fields: 
+
   - ``delay_between_frames``. If specified, will wait for those many seconds before processing each frame. 
   - ``delay_between_snapshots``. If specified, will wait for those many seconds when processing snapshot frames.
     This allows you to do something like this: ``frame_set: snapshot,snapshot,snapshot,alarm`` with a 
