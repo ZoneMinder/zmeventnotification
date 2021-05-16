@@ -1,3 +1,17 @@
+.. _third_party_dockers:
+
+3rd party dockers 
+------------------
+I don't maintain docker images, so please don't ask me any questions about docker environments. There are others who maintain docker images. 
+I have no affiliation with any of them. Feel free to explore the various options below, but please don't ask me about them:
+
+- `Various ZM configurations, currently ZM and ZM+ES (no hooks) <https://github.com/zoneminder-containers>`__ : watch this repo, I like how this is proceeding 
+- `A docker container with ZM+ES+hooks+MLAPI <https://github.com/vangorra/zoneminder-zmeventnotification>`__
+- `A docker container for MLAPI <https://github.com/themoosman/mlapi>`__
+- `A ZM+ES+hooks container (may not be free/maintained anymore) <https://github.com/dlandon/zoneminder.machine.learning>`__
+
+If you are using docker images, the next section does not apply
+
 Installation of the Event Server (ES)
 --------------------------------------
 
