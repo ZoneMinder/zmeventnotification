@@ -3,12 +3,13 @@
 3rd party dockers 
 ------------------
 I don't maintain docker images, so please don't ask me any questions about docker environments. There are others who maintain docker images. 
-I have no affiliation with any of them. Feel free to explore the various options below, but please don't ask me about them:
+I have no affiliation with any of them. Feel free to explore the various options below, but please don't ask me about them. I've also not tried any of these 
+dockers.
 
-- Alex's repo: `Various ZM configurations, currently ZM and ZM+ES (no hooks) <https://github.com/zoneminder-containers>`__ : watch this repo, I like how this is proceeding 
+- Alex's repo (in progress): `Various ZM configurations, currently ZM and ZM+ES (no hooks) <https://github.com/zoneminder-containers>`__ 
 - Vangorra's repo:`A docker container with ZM+ES+hooks+MLAPI <https://github.com/vangorra/zoneminder-zmeventnotification>`__
-- The Moosman's  repo: `A docker container for MLAPI <https://github.com/themoosman/mlapi>`__
 - dlandon's repo: `A ZM+ES+hooks container (may not be free/maintained anymore) <https://github.com/dlandon/zoneminder.machine.learning>`__
+- The Moosman's  repo: `A docker container for MLAPI <https://github.com/themoosman/mlapi>`__
 
 If there are other repositories you are aware of that work well, let me know.
 
