@@ -1,7 +1,12 @@
+
+Installation of the Event Server (ES)
+--------------------------------------
+
 .. _third_party_dockers:
 
 3rd party dockers 
-------------------
+~~~~~~~~~~~~~~~~~~
+
 I don't maintain docker images, so please don't ask me any questions about docker environments. There are others who maintain docker images. 
 I have no affiliation with any of them. Feel free to explore the various options below, but please don't ask me about them. I've also not tried any of these 
 dockers.
@@ -14,9 +19,6 @@ dockers.
 If there are other repositories you are aware of that work well, let me know.
 
 If you are using docker images, the next section does not apply.
-
-Installation of the Event Server (ES)
---------------------------------------
 
 Clone the repo
 ~~~~~~~~~~~~~~~~~
