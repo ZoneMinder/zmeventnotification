@@ -17,7 +17,7 @@
 
 PYTHON=${PYTHON:-python3}
 PIP=${PIP:-pip3}
-INSTALLER=${INSTALLER:-$(which apt-get || which yum))}
+INSTALLER=${INSTALLER:-$(which apt-get || which yum)}
 
 # Models to install
 # If you do not want them, pass them as variables to install.sh
