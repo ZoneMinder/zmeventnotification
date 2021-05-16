@@ -687,7 +687,7 @@ if [ "${HOOK_CONFIG_UPGRADE}" == "yes" ]
 then
     echo
     echo "Creating a migrated objectconfig if required"
-    ./hook/config_upgrade.py -c "${TARGET_CONFIG}/objectconfig.ini" 
+    ./tools/config_upgrade.py -c "${TARGET_CONFIG}/objectconfig.ini" 
 else 
     echo "Skipping hook config upgrade process"
 fi

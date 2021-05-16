@@ -100,7 +100,7 @@ Version 6.0.0 onwards
 - To help with this 'big bad breaking change', I've provided an upgrade script.
   When you run ``./install.sh`` it will automatically run it at the end and put a
   ``migrated-objectconfig.ini`` in your current directory (from where you ran ``./install.sh``)
-  You can also run it manually by invoking ``hook/config_upgrade.py -c /etc/zm/objectconfig.ini`` 
+  You can also run it manually by invoking ``tools/config_upgrade.py -c /etc/zm/objectconfig.ini`` 
 - All the ml code has now moved to pyzm and both local hook and mlapi use pyzm. This means
   when I update ml code, both systems get it right always
 - This version also supports Google Coral Edge TPU
