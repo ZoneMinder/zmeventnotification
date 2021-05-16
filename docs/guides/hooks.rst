@@ -343,6 +343,13 @@ per type of detection.
 More details: What happens when you go with use_sequence=no?
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
+**NOTE**: Please use ``use_sequence=yes``. In the past, I've allowed a mode where legacy settings were converted
+to ``stream_sequence`` auto-magically when I changed formats. This caused a lot of issues and was a 
+nightmare to maintain. So please migrate to the proper format. If you've been using ``use_sequence=no``
+it will likely break things, but please read the help and convert properly. ``use_sequence=no`` is no 
+longer maintained.
+
+
 In the old way, the following 'global' variables (which could be overriden on a per monitor basis) defined how
 ML would work:
 
@@ -536,6 +543,12 @@ Exceptions when using mlapi
 If you are using the remote mlapi server, then most of these settings migrate to ``mlapiconfig.ini``
 Specifically, when ``zm_detect.py`` sees ``ml_gateway`` in its ``[remote]`` section, it passes on 
 the detection work to mlapi. 
+
+**NOTE**: Please use ``use_sequence=yes``. In the past, I've allowed a mode where legacy settings were converted
+to ``stream_sequence`` auto-magically when I changed formats. This caused a lot of issues and was a 
+nightmare to maintain. So please migrate to the proper format. If you've been using ``use_sequence=no``
+it will likely break things, but please read the help and convert properly. ``use_sequence=no`` is no 
+longer maintained.
 
 Here are a list of parameters that still need to be in ``objectconfig.ini`` when using mlapi.
 (A simple rule to remember is zm_detect.py uses ``objectconfig.ini`` while mlapi uses ``mlapiconfig.ini``)
