@@ -12,7 +12,7 @@ I have no affiliation with any of them. Feel free to explore the various options
 
 If there are other repositories you are aware of that work well, let me know.
 
-If you are using docker images, the next section does not apply
+If you are using docker images, the next section does not apply.
 
 Installation of the Event Server (ES)
 --------------------------------------
