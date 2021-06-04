@@ -49,6 +49,7 @@ def remote_detect(stream=None, options=None, api=None, args=None):
     login_url = api_url + '/login'
     object_url = api_url + '/detect/object?type='+model
     access_token = None
+    cmdline_image = None 
     global auth_header
 
     data_file = g.config['base_data_path'] + '/zm_login.json'
@@ -110,11 +111,11 @@ def remote_detect(stream=None, options=None, api=None, args=None):
         g.logger.Debug (2, "Reading image from {}".format(args.get('file')))
         image = cv2.imread(args.get('file'))
         if g.config['resize'] and g.config['resize'] != 'no':
-            g.logger.Debug (2,'Resizing image before sending')
-            img_new = imutils.resize(image,
-                                     width=min(int(g.config['resize']),
-                                               image.shape[1]))
+            neww = min(int(g.config['resize']),image.shape[1])
+            g.logger.Debug (2,'Resizing --file image to {}'.format(neww))
+            img_new = imutils.resize(image,width=neww)
             image = img_new
+            cmdline_image = image
             ret, jpeg = cv2.imencode('.jpg', image)
             files = {'file': ('image.jpg', jpeg.tobytes())}
 
@@ -165,6 +166,9 @@ def remote_detect(stream=None, options=None, api=None, args=None):
     data = r.json()
     #print(r)
     matched_data = data['matched_data']
+    if args.get('file'):
+
+        matched_data['image'] = cmdline_image
     if g.config['write_image_to_zm'] == 'yes'  and matched_data['frame_id']:
         url = '{}/index.php?view=image&eid={}&fid={}'.format(g.config['portal'], stream,matched_data['frame_id'] )
         g.logger.Debug(2,'Grabbing image from {} as we need to write objdetect.jpg'.format(url))
@@ -172,8 +176,16 @@ def remote_detect(stream=None, options=None, api=None, args=None):
             response = api._make_request(url=url,  type='get')
             img = np.asarray(bytearray(response.content), dtype='uint8')
             img = cv2.imdecode (img, cv2.IMREAD_COLOR)
-            if options.get('resize') and options.get('resize') != 'no':
-                img = imutils.resize(img,width=options.get('resize'))
+           
+            #newh =matched_data['image_dimensions']['resized'][0]
+            if matched_data['image_dimensions'] and matched_data['image_dimensions']['resized']:
+                neww =min(matched_data['image_dimensions']['resized'][1], img.shape[1])
+                oldh, oldw = img.shape[:2]
+                if oldw != neww:
+                    g.logger.Debug (2, 'Resizing source image from width={} to width={} in zm_detect as that is the size mlapi used'.format(oldw, neww))
+                    img = imutils.resize(img,width=neww)
+                else:
+                    g.logger.Debug (2, 'No need to resize as image widths are same from mlapi and zm_detect: {}'.format(neww))
             matched_data['image'] = img
         except Exception as e:
             g.logger.Error ('Error during image grab: {}'.format(str(e)))
