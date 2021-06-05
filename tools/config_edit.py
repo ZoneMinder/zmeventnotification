@@ -50,11 +50,11 @@ ap = argparse.ArgumentParser(
     description='config editing script',
     epilog='''
             Example:
-            %(prog)s --config /etc/zm/zmeventnotification.ini --set network:address=comment_out general:restart_interval=60 network:port=9999 general:base_data_path='/my new/path with/spaces'
+            %(prog)s --input /etc/zm/zmeventnotification.ini --output mynewconf.ini --set network:address=comment_out general:restart_interval=60 network:port=9999 general:base_data_path='/my new/path with/spaces'
 
         '''
     )
-ap.add_argument('-c', '--config', help='input ini file with path', required=True)
+ap.add_argument('-c', '--config', '-i', '--input', help='input ini file with path', required=True)
 ap.add_argument('-o', '--output', help='output file with path')
 ap.add_argument('--nologs', action='store_true', help='disable logs')
 ap.add_argument('--set',
@@ -85,6 +85,7 @@ values = parse_vars(args['set'])
 
 input_file = args['config']
 updater = ConfigUpdater(space_around_delimiters=False)
+logger.debug('reading input: {}'.format(input_file))
 updater.read(input_file)
 
 
@@ -112,8 +113,13 @@ if values.get('_global_'):
                     logger.debug ('{} found in [{}] setting to {}'.format(key,secname,values['_global_'][key]))
 
        
+if args.get('output'):
+    logger.debug ('writing output: {}'.format(args.get('output')))
+    output_file_handle =  open(args['output'],'w') 
+else:
+    logger.debug ('writing output: stdout') 
+    output_file_handle = sys.stdout
 
-output_file_handle =  open(args['output'],'w') if args.get('output') else sys.stdout
 updater.write(output_file_handle)
 if output_file_handle is not sys.stdout:
     output_file_handle.close()
