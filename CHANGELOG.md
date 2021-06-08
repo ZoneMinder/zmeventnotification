@@ -1,12 +1,91 @@
 # Changelog
 
+## [v6.1.25](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.25) (2021-06-08)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.23...v6.1.25)
+
+**Fixed bugs:**
+
+- invalid user ‘\_WEB\_OWNER\_FROM\_PS’ [\#393](https://github.com/pliablepixels/zmeventnotification/issues/393)
+- Basic Authentication fails for zm\_detect.py [\#392](https://github.com/pliablepixels/zmeventnotification/issues/392)
+- ModuleNotFoundError: No module named 'zmes\_hook\_helpers' [\#391](https://github.com/pliablepixels/zmeventnotification/issues/391)
+
+**Closed issues:**
+
+- mlapi debug help [\#394](https://github.com/pliablepixels/zmeventnotification/issues/394)
+
+## [v6.1.23](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.23) (2021-04-21)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.22...v6.1.23)
+
+**Fixed bugs:**
+
+- Many zm\_detect.py processes crash the computer [\#384](https://github.com/pliablepixels/zmeventnotification/issues/384)
+
+**Closed issues:**
+
+- adding pre-trained model to the detection sequence ,bypassing 2nd model results. [\#390](https://github.com/pliablepixels/zmeventnotification/issues/390)
+- Error if import\_zm\_zones = yes  [\#389](https://github.com/pliablepixels/zmeventnotification/issues/389)
+- No alpr details in zoneminder "Cause" field after detecting a car. [\#388](https://github.com/pliablepixels/zmeventnotification/issues/388)
+- multiple notifications [\#367](https://github.com/pliablepixels/zmeventnotification/issues/367)
+
+## [v6.1.22](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.22) (2021-04-11)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.21...v6.1.22)
+
+**Closed issues:**
+
+- problem adding  "own" pre-trained model to ML sequence. [\#387](https://github.com/pliablepixels/zmeventnotification/issues/387)
+- I can't limit the uploaded pictures to platerecognizer to 1 [\#386](https://github.com/pliablepixels/zmeventnotification/issues/386)
+- match\_past\_detections = yes make an error in debug log [\#385](https://github.com/pliablepixels/zmeventnotification/issues/385)
+
+## [v6.1.21](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.21) (2021-04-10)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.20...v6.1.21)
+
+## [v6.1.20](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.20) (2021-04-09)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.19...v6.1.20)
+
+**Closed issues:**
+
+- zmdetects api.py:311 raising BAD\_IMAGE valueerror for a 404 [\#383](https://github.com/pliablepixels/zmeventnotification/issues/383)
+- Python Python3 [\#382](https://github.com/pliablepixels/zmeventnotification/issues/382)
+
+## [v6.1.19](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.19) (2021-04-04)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.18...v6.1.19)
+
+**Closed issues:**
+
+- Using snapshot for hooks, while on h264 camera passthrough [\#381](https://github.com/pliablepixels/zmeventnotification/issues/381)
+- zm\_detect.py crashes with Unrecoverable error:Expecting value: line 1 column 1 \(char 0\) [\#380](https://github.com/pliablepixels/zmeventnotification/issues/380)
+
+## [v6.1.18](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.18) (2021-04-02)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.17...v6.1.18)
+
+**Closed issues:**
+
+- Silence log warning about no SSL when using traefik to add certificates [\#379](https://github.com/pliablepixels/zmeventnotification/issues/379)
+- ZM\_DETECT.PY unexpected keyword argument 'global\_config' [\#378](https://github.com/pliablepixels/zmeventnotification/issues/378)
+- Delayed notifications to Android phone [\#337](https://github.com/pliablepixels/zmeventnotification/issues/337)
+
+## [v6.1.17](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.17) (2021-03-28)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.16...v6.1.17)
+
+**Closed issues:**
+
+- Problem with pushapi\_pushover.py [\#376](https://github.com/pliablepixels/zmeventnotification/issues/376)
+- OpenALPR command line issue with  6.1.16 [\#373](https://github.com/pliablepixels/zmeventnotification/issues/373)
+
 ## [v6.1.16](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.16) (2021-03-20)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.15...v6.1.16)
 
 **Closed issues:**
-- Fixes an issue where import_zm_zones won't import if global is no and local is yes
-- Updates pyzm to make sure sqlalchemy is not updated to 1.4
+
 - zm\_detect.py Fails to write image with polygons [\#374](https://github.com/pliablepixels/zmeventnotification/issues/374)
 - Zoneminder zones overlayed with offset on object detection images. [\#372](https://github.com/pliablepixels/zmeventnotification/issues/372)
 
