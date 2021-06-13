@@ -269,36 +269,15 @@ Optional but Recommended: Making sure everything is running (in manual mode)
 Making sure the ES gets auto-started when ZM starts
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  In ZM 1.32.0 and above, go to your web interface, and go to
+-  Go to your web interface, and go to
    ``Options->Systems`` and enable ``OPT_USE_EVENTNOTIFICATION`` and you
    are all set.
 - If you plan on using the machine learning hooks, there is more work to do. Please refer to :ref:`hooks_install`.
 
 **The rest of this section is NOT NEEDED for 1.32.0 and above!**
 
-.. deprecated:: 1.32.0
 
-**WARNING** : Do NOT do this before you run it manually as I've
-mentioned above to test. Make sure it works, all packages are present
-etc. before you add it as a daemon as if you don't and it crashes you
-won't know why
-
-(Note if you have compiled from source using cmake, the paths may be
-``/usr/local/bin`` not ``/usr/bin``)
-
--  Edit ``/usr/bin/zmdc.pl`` and in the array ``@daemons`` (starting
-   line 89 or so, may change depending on ZM version) add
-   ``'zmeventnotification.pl'`` like
-   `this <https://gist.github.com/pliablepixels/18bb68438410d5e4b644>`__
--  Edit ``/usr/bin/zmpkg.pl`` and around line 275 (exact line # may
-   change depending on ZM version), right after the comment that says
-   ``#this is now started unconditionally`` and right before the line
-   that says ``runCommand( "zmdc.pl start zmfilter.pl" );`` start
-   zmeventnotification.pl by adding
-   ``runCommand( "zmdc.pl start zmeventnotification.pl" );`` like
-   `this <https://gist.github.com/pliablepixels/b4e4fd38ac526c5c881ee55da05195ff>`__
--  Make sure you restart ZM. Rebooting the server is better - sometimes
-   zmdc hangs around and you'll be wondering why your new daemon hasn't
-   started
--  To check if its running do a
-   ``zmdc.pl status zmeventnotification.pl``
+Set up logging correctly for troubleshooting
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For quick debugging, you can just run the ES or hooks manually by adding ``--debug`` but for proper logging,
+follow steps :ref:`here <es-hooks-logging>`
