@@ -19,7 +19,12 @@ Key Features
 
 - Detection: objects, faces 
 - Recognition: faces 
-- Platforms: CPU, GPU (NVIDIA), Coral EdgeTPU 
+- Platforms: 
+
+   - CPU (object, face detection, face recognition), 
+   - GPU (object, face detection, face recognition), 
+   - EdgeTPU (object, face detection)
+
 - Machine learning can be installed locally with ZM, or remotely via mlapi 
 
 Limitations
