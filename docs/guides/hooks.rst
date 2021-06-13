@@ -13,6 +13,15 @@ Machine Learning Hooks
         knowledge and familiarity with troubleshooting. I don't plan to
         provide support for these hooks. They are for reference only
 
+
+Key Features 
+~~~~~~~~~~~~~
+
+- Detection: objects, faces 
+- Recognition: faces 
+- Platforms: CPU, GPU (NVIDIA), Coral EdgeTPU 
+- Machine learning can be installed locally with ZM, or remotely via mlapi 
+
 Limitations
 ~~~~~~~~~~~
 
@@ -31,6 +40,7 @@ recognition.
 
 Please don't ask me questions on how to use them. Please read the
 extensive documentation and ini file configs
+
 
 .. _hooks_install:
 
@@ -278,7 +288,7 @@ It's pretty simple, actually.
 
    use_sequence=no is no longer supported. Please make sure it is set to yes, and follow instructions 
    on how to set up ml_sequence and stream_sequence correctly 
-   
+
 
 - When ``use_sequence`` is set to ``yes`` (default is yes), ``ml_options`` and ``stream_sequence``
   structures override anything in the ``[object]``, ``[face]`` and ``[alpr]`` sections 
