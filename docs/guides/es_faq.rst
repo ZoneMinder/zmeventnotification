@@ -608,6 +608,11 @@ Logging
 
 Setting up logging in both ES and detection (if you use them) is critical to be able to diagnose issues. Here is what I do:
 
+This gives you a summary of what you need to do:
+
+.. image:: images/loglevel.png
+
+
 - In ``ZM->Options->Logs:``
 
   - LOG_DEBUG is on
