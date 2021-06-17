@@ -757,7 +757,7 @@ Troubleshooting
 
 -  In general, I expect you to debug properly. Please don't ask me basic
    questions without investigating logs yourself
--  Always run ``zm_event_start.sh`` in manual mode first to make sure it
+-  Always run ``zm_event_start.sh`` or ``zm_detect.py`` in manual mode first to make sure it
    works
 -  Make sure you've set up debug logging as described in :ref:`es-hooks-logging`
 -  One of the big reasons why object detection fails is because the hook
@@ -785,6 +785,11 @@ Troubleshooting
 
 Debugging and reporting problems
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Reporting Problems:
+
+1. Make sure you have debug logging enabled as described in :ref:`es-hooks-logging`
+2. Don't just post the final error message. Please post _full_ debug logs. 
 
 If you have problems with hooks, there are two areas of failure:
 
