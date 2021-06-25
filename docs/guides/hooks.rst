@@ -338,10 +338,10 @@ It's pretty simple, actually.
          use_sequence=yes
 
          [monitor-3]
-         my_sequence='object,face,alpr'
+         my_sequence=object,face,alpr
 
          [monitor-4]
-         my_sequence='object'
+         my_sequence=object
 
          [ml]
          ml_sequence= {
