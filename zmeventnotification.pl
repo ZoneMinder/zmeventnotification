@@ -119,6 +119,7 @@ use constant {
   DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID            => 'no',
   DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND => 'no',
   DEFAULT_CUSTOMIZE_INCLUDE_PICTURE               => 'no',
+  
 
   DEFAULT_USE_HOOKS                          => 'no',
   DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE         => 'yes',
@@ -138,6 +139,8 @@ use constant {
     '/var/lib/zmeventnotification/misc/escontrol_interface.dat',
   DEFAULT_FCM_DATE_FORMAT => '%I:%M %p, %d-%b',
   DEFAULT_FCM_ANDROID_PRIORITY=>'high',
+  DEFAULT_FCM_LOG_RAW_MESSAGE=>'no',
+  DEFAULT_FCM_LOG_MESSAGE_ID=>'NONE',
   DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN => 8000,
 
   DEFAULT_MAX_PARALLEL_HOOKS => 0,
@@ -221,6 +224,8 @@ my $token_file;
 my $fcm_date_format;
 my $fcm_android_priority;
 my $fcm_android_ttl;
+my $fcm_log_raw_message;
+my $fcm_log_message_id;
 
 
 my $ssl_enabled;
@@ -601,6 +606,12 @@ sub loadEsConfigSettings {
 
   $token_file =
     config_get_val( $config, 'fcm', 'token_file', DEFAULT_FCM_TOKEN_FILE );
+
+  $fcm_log_raw_message=
+    config_get_val( $config, 'fcm', 'fcm_log_raw_message', DEFAULT_FCM_LOG_RAW_MESSAGE );
+   $fcm_log_message_id=
+    config_get_val( $config, 'fcm', 'fcm_log_message_id', DEFAULT_FCM_LOG_MESSAGE_ID );
+
   $ssl_enabled = config_get_val( $config, 'ssl', 'enable', DEFAULT_SSL_ENABLE );
   $ssl_cert_file = config_get_val( $config, 'ssl', 'cert' );
   $ssl_key_file  = config_get_val( $config, 'ssl', 'key' );
@@ -789,6 +800,8 @@ FCM Date Format....................... ${\(value_or_undefined($fcm_date_format))
 Only show latest FCMv1 message........ ${\(yes_or_no($replace_push_messages))}
 Android FCM push priority............. ${\(value_or_undefined($fcm_android_priority))}
 Android FCM push ttl.................. ${\(value_or_undefined($fcm_android_ttl))}
+Log FCM message ID.................... ${\(value_or_undefined($fcm_log_message_id))}
+Log RAW FCM Messages...................${\(yes_or_no($fcm_log_raw_message))}
 
 Token file ........................... ${\(value_or_undefined($token_file))}
 
@@ -863,6 +876,7 @@ if ($use_fcm) {
   else {
     printInfo('Push enabled via FCM');
     printDebug("fcmv1: --> FCM V1 APIs: $use_fcmv1",2);
+    printDebug ("fcmv1:--> Your FCM messages will be LOGGED at pliablepixel's server because your fcm_log_raw_message in zmeventnotification.ini is yes. Please turn it off, if you don't want it to!",1) if ($fcm_log_raw_message);
   }
 
 }
@@ -1933,6 +1947,7 @@ sub sendOverFCMV1 {
     body  => $body,
     sound => 'default',
     badge => int($badge),
+    log_message_id => $fcm_log_message_id,
     data  => {
       mid                     => $mid,
       eid                     => $eid,
@@ -1975,6 +1990,10 @@ sub sendOverFCMV1 {
 
   }
 
+  if ($fcm_log_raw_message) {
+      $message_v2->{log_raw_message} = 'yes';
+      printDebug ("The server cloud function at $uri will log your full message. Please ONLY USE THIS FOR DEBUGGING with me author and turn off later",2);
+  }
 
   if ( $picture_url && $include_picture ) {
 
