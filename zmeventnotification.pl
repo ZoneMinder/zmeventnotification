@@ -3679,14 +3679,14 @@ sub isAllowedInRules {
       next;
     }
     printDebug(
-      "rules:(eid: $eid)  seeing if cause_has:"
+      "rules:(eid: $eid)  seeing if cause_has: ->"
         . $rule_ref->{cause_has}
-        . " is part of $cause:",
+        . "<- is part of ->$cause<-",
       2
     );
     if ( exists( $rule_ref->{cause_has} ) ) {
-      my $re = qr/$rule_ref->{cause_has}/;
-      if ( lc($cause) !~ /$re/i ) {
+      my $re = qr/$rule_ref->{cause_has}/i;
+      if ( lc($cause) !~ /$re/) {
         printDebug(
           "rules: (eid: $eid) Skipping this rule as "
             . $rule_ref->{cause_has}
