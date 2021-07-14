@@ -142,7 +142,7 @@ use constant {
   DEFAULT_FCM_LOG_RAW_MESSAGE=>'no',
   DEFAULT_FCM_LOG_MESSAGE_ID=>'NONE',
   DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN => 8000,
-
+  DEFAULT_FCM_V1_KEY => 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJnZW5lcmF0b3IiOiJwbGlhYmxlIHBpeGVscyIsImlhdCI6MTYwMTIwOTUyNSwiY2xpZW50Ijoiem1uaW5qYSJ9.mYgsZ84i3aUkYNv8j8iDsZVVOUIJmOWmiZSYf15O0zc',
   DEFAULT_MAX_PARALLEL_HOOKS => 0,
 };
 
@@ -226,6 +226,7 @@ my $fcm_android_priority;
 my $fcm_android_ttl;
 my $fcm_log_raw_message;
 my $fcm_log_message_id;
+my $fcm_v1_key;
 
 
 my $ssl_enabled;
@@ -611,6 +612,8 @@ sub loadEsConfigSettings {
     config_get_val( $config, 'fcm', 'fcm_log_raw_message', DEFAULT_FCM_LOG_RAW_MESSAGE );
    $fcm_log_message_id=
     config_get_val( $config, 'fcm', 'fcm_log_message_id', DEFAULT_FCM_LOG_MESSAGE_ID );
+      $fcm_v1_key=
+    config_get_val( $config, 'fcm', 'fcm_v1_key', DEFAULT_FCM_V1_KEY );
 
   $ssl_enabled = config_get_val( $config, 'ssl', 'enable', DEFAULT_SSL_ENABLE );
   $ssl_cert_file = config_get_val( $config, 'ssl', 'cert' );
@@ -753,6 +756,10 @@ sub yes_or_no {
   return $_[0] ? 'yes' : 'no';
 }
 
+sub default_or_custom {
+  return $_[0] eq $_[1] ? 'default':'custom';
+}
+
 sub value_or_undefined {
   return defined($_[0]) ? $_[0] : '(undefined)';
   #return $_[0] || '(undefined)';
@@ -802,6 +809,7 @@ Android FCM push priority............. ${\(value_or_undefined($fcm_android_prior
 Android FCM push ttl.................. ${\(value_or_undefined($fcm_android_ttl))}
 Log FCM message ID.................... ${\(value_or_undefined($fcm_log_message_id))}
 Log RAW FCM Messages...................${\(yes_or_no($fcm_log_raw_message))}
+FCM V1 Key.............................${\(default_or_custom($fcm_v1_key, DEFAULT_FCM_V1_KEY))}
 
 Token file ........................... ${\(value_or_undefined($token_file))}
 
