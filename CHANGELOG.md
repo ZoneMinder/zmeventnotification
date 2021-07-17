@@ -1,5 +1,30 @@
 # Changelog
 
+## [v6.1.26](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.26) (2021-07-17)
+
+[Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.25...v6.1.26)
+
+**Fixed bugs:**
+
+- past\_det\_max\_diff\_area was not being picked up when specified in ml\_config structure [\#405](https://github.com/pliablepixels/zmeventnotification/issues/405)
+- Need help with the "cause\_has" field [\#403](https://github.com/pliablepixels/zmeventnotification/issues/403)
+- match\_past\_detections=yes results in zmdetect.py throwing an error [\#397](https://github.com/pliablepixels/zmeventnotification/issues/397)
+
+**Closed issues:**
+
+- Not receiving notifications since the EOL announcement [\#404](https://github.com/pliablepixels/zmeventnotification/issues/404)
+- ZMLog \(No Attribute\) Error after upgrading Ubuntu from 18.04 to 20.04 [\#402](https://github.com/pliablepixels/zmeventnotification/issues/402)
+- Issue configuring rules [\#401](https://github.com/pliablepixels/zmeventnotification/issues/401)
+- Monitor overrides for detection\_sequence not working [\#399](https://github.com/pliablepixels/zmeventnotification/issues/399)
+- File discrepancy - coco\_labels.txt != /coco\_indexed.names [\#398](https://github.com/pliablepixels/zmeventnotification/issues/398)
+- live notifications only sending image, not animation [\#396](https://github.com/pliablepixels/zmeventnotification/issues/396)
+- bad bcrypt settings at /usr/bin/zmeventnotification.pl line 1684 [\#395](https://github.com/pliablepixels/zmeventnotification/issues/395)
+- Expanded MQTT [\#370](https://github.com/pliablepixels/zmeventnotification/issues/370)
+
+**Merged pull requests:**
+
+- Fix bug in zmeventnotification.pl [\#400](https://github.com/pliablepixels/zmeventnotification/pull/400) ([gablin](https://github.com/gablin))
+
 ## [v6.1.25](https://github.com/pliablepixels/zmeventnotification/tree/v6.1.25) (2021-06-08)
 
 [Full Changelog](https://github.com/pliablepixels/zmeventnotification/compare/v6.1.23...v6.1.25)
@@ -426,7 +451,6 @@
 
 - Fix typo in version option handling [\#239](https://github.com/pliablepixels/zmeventnotification/pull/239) ([lpomfrey](https://github.com/lpomfrey))
 - General skip monitors [\#234](https://github.com/pliablepixels/zmeventnotification/pull/234) ([connortechnology](https://github.com/connortechnology))
-- small efficiency improvement [\#233](https://github.com/pliablepixels/zmeventnotification/pull/233) ([connortechnology](https://github.com/connortechnology))
 
 ## [v5.9.9](https://github.com/pliablepixels/zmeventnotification/tree/v5.9.9) (2020-03-08)
 
@@ -471,6 +495,7 @@
 
 **Merged pull requests:**
 
+- small efficiency improvement [\#233](https://github.com/pliablepixels/zmeventnotification/pull/233) ([connortechnology](https://github.com/connortechnology))
 - remove uneeded quotes. Convert " to ' where possible. [\#217](https://github.com/pliablepixels/zmeventnotification/pull/217) ([connortechnology](https://github.com/connortechnology))
 
 ## [v5.7.4](https://github.com/pliablepixels/zmeventnotification/tree/v5.7.4) (2020-02-12)
