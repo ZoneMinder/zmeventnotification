@@ -54,7 +54,7 @@ $ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
 delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
 
 ####################################
-my $app_version = '6.1.25';
+my $app_version = '6.1.26';
 ####################################
 
 # do this before any log init etc.
@@ -143,6 +143,7 @@ use constant {
   DEFAULT_FCM_LOG_MESSAGE_ID=>'NONE',
   DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN => 8000,
   DEFAULT_FCM_V1_KEY => 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJnZW5lcmF0b3IiOiJwbGlhYmxlIHBpeGVscyIsImlhdCI6MTYwMTIwOTUyNSwiY2xpZW50Ijoiem1uaW5qYSJ9.mYgsZ84i3aUkYNv8j8iDsZVVOUIJmOWmiZSYf15O0zc',
+  DEFAULT_FCM_V1_URL => 'https://us-central1-ninja-1105.cloudfunctions.net/send_push',
   DEFAULT_MAX_PARALLEL_HOOKS => 0,
 };
 
@@ -227,7 +228,7 @@ my $fcm_android_ttl;
 my $fcm_log_raw_message;
 my $fcm_log_message_id;
 my $fcm_v1_key;
-
+my $fcm_v1_url;
 
 my $ssl_enabled;
 my $ssl_cert_file;
@@ -610,10 +611,12 @@ sub loadEsConfigSettings {
 
   $fcm_log_raw_message=
     config_get_val( $config, 'fcm', 'fcm_log_raw_message', DEFAULT_FCM_LOG_RAW_MESSAGE );
-   $fcm_log_message_id=
+  $fcm_log_message_id=
     config_get_val( $config, 'fcm', 'fcm_log_message_id', DEFAULT_FCM_LOG_MESSAGE_ID );
-      $fcm_v1_key=
+  $fcm_v1_key=
     config_get_val( $config, 'fcm', 'fcm_v1_key', DEFAULT_FCM_V1_KEY );
+  $fcm_v1_url=
+    config_get_val( $config, 'fcm', 'fcm_v1_url', DEFAULT_FCM_V1_URL );
 
   $ssl_enabled = config_get_val( $config, 'ssl', 'enable', DEFAULT_SSL_ENABLE );
   $ssl_cert_file = config_get_val( $config, 'ssl', 'cert' );
@@ -809,8 +812,9 @@ Android FCM push priority............. ${\(value_or_undefined($fcm_android_prior
 Android FCM push ttl.................. ${\(value_or_undefined($fcm_android_ttl))}
 Log FCM message ID.................... ${\(value_or_undefined($fcm_log_message_id))}
 Log RAW FCM Messages...................${\(yes_or_no($fcm_log_raw_message))}
+FCM V1 URL............................ ${\(value_or_undefined($fcm_v1_url))}
 FCM V1 Key.............................${\(default_or_custom($fcm_v1_key, DEFAULT_FCM_V1_KEY))}
-
+ 
 Token file ........................... ${\(value_or_undefined($token_file))}
 
 Use MQTT ............................. ${\(yes_or_no($use_mqtt))}
@@ -1849,17 +1853,12 @@ sub sendOverFCM {
 
 sub sendOverFCMV1 {
 
-  use constant NINJA_FCMV1_TOKEN =>
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJnZW5lcmF0b3IiOiJwbGlhYmxlIHBpeGVscyIsImlhdCI6MTYwMTIwOTUyNSwiY2xpZW50Ijoiem1uaW5qYSJ9.mYgsZ84i3aUkYNv8j8iDsZVVOUIJmOWmiZSYf15O0zc';
-  use constant NINJA_FCMV1_URL =>
-    'https://us-central1-ninja-1105.cloudfunctions.net/send_push';
-
   my $alarm      = shift;
   my $obj        = shift;
   my $event_type = shift;
   my $resCode    = shift;
-  my $key        = NINJA_FCMV1_TOKEN;
-  my $uri        = NINJA_FCMV1_URL;
+  my $key        = $fcm_v1_key;
+  my $uri        = $fcm_v1_url;
 
   my $mid   = $alarm->{MonitorId};
   my $eid   = $alarm->{EventId};
