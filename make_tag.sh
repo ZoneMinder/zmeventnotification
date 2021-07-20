@@ -26,3 +26,4 @@ echo "VERSION = __version__" >> hook/zmes_hook_helpers/__init__.py
 
 git tag -fa v$VER -m"v$VER"
 git push -f --tags
+git push upstream -f  --tags
