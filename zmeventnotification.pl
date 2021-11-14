@@ -43,27 +43,33 @@ use Time::Seconds;
 use Symbol qw(qualify_to_ref);
 use IO::Select;
 
-use ZoneMinder;
-use POSIX;
-use DBI;
-use version;
-
-
-$ENV{PATH} = '/bin:/usr/bin';
-$ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
-delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
-
 ####################################
-my $app_version = '6.1.28';
+my $app_version = '7.0.3';
 ####################################
 
 # do this before any log init etc.
 my $first_arg = @ARGV[0];
 if ($first_arg eq '--version') {
-  print ("$app_version\n");
+  print ($app_version);
   exit(0);
 }
 
+#setpgrp();
+my $dbh = zmDbConnect(1); # adding 1 disconnects old connection
+logInit();
+logSetSignal();
+
+#$SIG{CHLD} = \&chld_sig_handler;
+$SIG{CHLD} ='IGNORE';
+$SIG{INT} = \&shutdown_sig_handler;
+$SIG{TERM} = \&shutdown_sig_handler;
+$SIG{ABRT} = \&shutdown_sig_handler;
+$SIG{HUP} = \&logrot;
+
+#$SIG{CHLD} = \&REAPER;
+#$SIG{CHLD} = "IGNORE";
+
+#$SIG{CHLD} = 'DEFAULT';
 
 
 if ( !try_use('JSON') ) {
@@ -75,6 +81,19 @@ if ( !try_use('JSON') ) {
 
 # debugging only.
 #use Data::Dumper;
+
+# ==========================================================================
+#
+# Starting v1.0, configuration has moved to a separate file, please make sure
+# you see README
+#
+# Starting v0.95, I've moved to FCM which means I no longer need to maintain
+# my own push server. Plus this uses HTTP which is the new recommended
+# way. Note that 0.95 will only work with zmNinja 1.2.510 and beyond
+# Conversely, old versions of the event server will NOT work with zmNinja
+# 1.2.510 and beyond, so make sure you upgrade both
+#
+# ==========================================================================
 
 
 
@@ -119,7 +138,6 @@ use constant {
   DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID            => 'no',
   DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND => 'no',
   DEFAULT_CUSTOMIZE_INCLUDE_PICTURE               => 'no',
-  
 
   DEFAULT_USE_HOOKS                          => 'no',
   DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE         => 'yes',
@@ -139,12 +157,7 @@ use constant {
     '/var/lib/zmeventnotification/misc/escontrol_interface.dat',
   DEFAULT_FCM_DATE_FORMAT => '%I:%M %p, %d-%b',
   DEFAULT_FCM_ANDROID_PRIORITY=>'high',
-  DEFAULT_FCM_LOG_RAW_MESSAGE=>'no',
-  DEFAULT_FCM_LOG_MESSAGE_ID=>'NONE',
-  DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN => 8000,
-  DEFAULT_FCM_V1_KEY => 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJnZW5lcmF0b3IiOiJwbGlhYmxlIHBpeGVscyIsImlhdCI6MTYwMTIwOTUyNSwiY2xpZW50Ijoiem1uaW5qYSJ9.mYgsZ84i3aUkYNv8j8iDsZVVOUIJmOWmiZSYf15O0zc',
-  DEFAULT_FCM_V1_URL => 'https://us-central1-ninja-1105.cloudfunctions.net/send_push',
-  DEFAULT_MAX_PARALLEL_HOOKS => 0,
+  DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN => 8000
 };
 
 # connection state
@@ -179,7 +192,6 @@ use constant {
 my $es_terminate = 0;
 
 my $child_forks = 0;    # Global tracker of active children
-my $parallel_hooks = 0; # Global tracker for active hooks
 my $total_forks = 0;    # Global tracker of all forks since start
 
 # Declare options.
@@ -225,10 +237,7 @@ my $token_file;
 my $fcm_date_format;
 my $fcm_android_priority;
 my $fcm_android_ttl;
-my $fcm_log_raw_message;
-my $fcm_log_message_id;
-my $fcm_v1_key;
-my $fcm_v1_url;
+
 
 my $ssl_enabled;
 my $ssl_cert_file;
@@ -289,25 +298,10 @@ my $pcnt = 0;
 
 my %fcm_tokens_map;
 
-my $max_parallel_hooks= 0;
-
-my %monitors            = ();
-my %active_events       = ();
-my $monitor_reload_time = 0;
-my $es_start_time       = time();
-my $apns_feedback_time  = 0;
-my $proxy_reach_time    = 0;
-my $wss;
-my @events             = ();
-my @active_connections = (); 
-my $wss;
-my $zmdc_active = 0;
-
-my $is_timepeice = 1;
-
 # admin interface options
 
 my %escontrol_interface_settings = ( notifications => {} );
+
 my $dummyEventTest = 0
   ; # if on, will generate dummy events. Not in config for a reason. Only dev testing
 my $dummyEventInterval     = 20;       # timespan to generate events in seconds
@@ -315,31 +309,11 @@ my $dummyEventTimeLastSent = time();
 
 # This part makes sure we have the right core deps. See later for optional deps
 
-# for testing only
-#use lib qw(/home/pp/fiddle/perl-Net-WebSocket-Server/lib);
-
-my $dbh = zmDbConnect(1); # adding 1 disconnects old connection
-logInit();
-logSetSignal();
-
-#$SIG{CHLD} = \&chld_sig_handler;
-$SIG{CHLD} ='IGNORE';
-$SIG{INT} = \&shutdown_sig_handler;
-$SIG{TERM} = \&shutdown_sig_handler;
-$SIG{ABRT} = \&shutdown_sig_handler;
-$SIG{HUP} = \&logrot;
-
 
 
 if ( !try_use('Net::WebSocket::Server') ) {
   Fatal('Net::WebSocket::Server missing');
 }
-
-Info ("Running on WebSocket library version:$Net::WebSocket::Server::VERSION");
-if (version->parse($Net::WebSocket::Server::VERSION) < version->parse('0.004000')) {
-  Warning ("You are using an old version of Net::WebSocket::Server which can cause lockups. Please upgrade. For more information please see https://zmeventnotification.readthedocs.io/en/latest/guides/es_faq.html#the-es-randomly-hangs");
-}
-
 if ( !try_use('IO::Socket::SSL') )  { Fatal('IO::Socket::SSL missing'); }
 if ( !try_use('IO::Handle') )       { Fatal('IO::Handle'); }
 if ( !try_use('Config::IniFiles') ) { Fatal('Config::Inifiles missing'); }
@@ -349,13 +323,16 @@ if ( !try_use('File::Spec') )       { Fatal('File::Spec missing'); }
 if ( !try_use('URI::Escape') )      { Fatal('URI::Escape missing'); }
 if ( !try_use('Storable') )         { Fatal('Storable missing'); }
 
-
+my $is_timepeice = 1;
 if ( !try_use('Time::Piece') ) {
   Error(
     'rules: Time::Piece module missing. Dates will not work in es rules json');
   $is_timepeice = 0;
 }
 #
+
+#if (!try_use ("threads")) {Fatal ("threads library/support  missing");}
+
 use constant USAGE => <<'USAGE';
 
 Usage: zmeventnotification.pl [OPTION]...
@@ -453,31 +430,23 @@ my $notId = 1;
 
 if ($hook_pass_image_path) {
   if ( !try_use('ZoneMinder::Event') ) {
-    Fatal(
-      'ZoneMinder::Event missing, you may be using an old version. Please turn off hook_pass_image_path in yoyr config'
+    undef $hook_pass_image_path;
+    printInfo(
+        'ZoneMinder::Event missing, you may be using an old version. Turning off hook_pass_image_path ... UNKNOWN WHY THIS IS HAPPENING AS ZoneMinder::Event is in perl5 packages'
     );
+    # Fatal(
+    #   'ZoneMinder::Event missing, you may be using an old version. Please turn off hook_pass_image_path in your config'
+    # );
   }
-}
-
-sub check_for_duplicate_token {
-  my %token_duplicates = ();
-   foreach (@active_connections) {
-     $token_duplicates{$_->{token}}++ if $_->{token}; 
-   }
-  foreach (keys %token_duplicates) {
-      printDebug('...'.substr($_,-10)." occurs: ".$token_duplicates{$_}." times",2) if ($token_duplicates{$_} > 1) ;
-    }
-
 }
 
 sub shutdown_sig_handler {
   $es_terminate = 1;
-  printDebug ('Received request to shutdown, please wait',1);
 }
 
 sub chld_sig_handler {
   my $saved_status = $!;
-  printDebug ('Child signal handler invoked',1);
+  printDebug ('Child signal handler invoked',4);
   # Wait for a child to terminate
   while ( (my $cpid = waitpid(-1, WNOHANG)) > 0 ) {
     #$pids_to_reap{$cpid} = { status=>$?, stopped=>time() };
@@ -536,7 +505,7 @@ sub config_get_val {
 
     my $val = $config->val( 'general', $token );
     $val = $config->val( $sect, $token ) if !$val;
-    printDebug( "config string substitution: {{$token}} is '$val'", 2 );
+    printDebug( "config string substitution: {{$token}} is '$val'", 3 );
     $final_val =~ s/\{\{$token\}\}/$val/g;
 
   }
@@ -588,13 +557,13 @@ sub loadEsConfigSettings {
   $use_fcm = config_get_val( $config, 'fcm', 'enable', DEFAULT_FCM_ENABLE );
   $use_fcmv1 = config_get_val( $config, 'fcm', 'use_fcmv1', DEFAULT_USE_FCMV1 );
   $replace_push_messages = config_get_val( $config, 'fcm', 'replace_push_messages', DEFAULT_REPLACE_PUSH_MSGS );
-  
+
 
   $fcm_date_format =
     config_get_val( $config, 'fcm', 'date_format', DEFAULT_FCM_DATE_FORMAT );
-  $fcm_android_priority = 
+  $fcm_android_priority =
     config_get_val( $config, 'fcm', 'fcm_android_priority', DEFAULT_FCM_ANDROID_PRIORITY );
-  $fcm_android_ttl = 
+  $fcm_android_ttl =
     config_get_val( $config, 'fcm', 'fcm_android_ttl');
 
   $use_api_push =
@@ -608,16 +577,6 @@ sub loadEsConfigSettings {
 
   $token_file =
     config_get_val( $config, 'fcm', 'token_file', DEFAULT_FCM_TOKEN_FILE );
-
-  $fcm_log_raw_message=
-    config_get_val( $config, 'fcm', 'fcm_log_raw_message', DEFAULT_FCM_LOG_RAW_MESSAGE );
-  $fcm_log_message_id=
-    config_get_val( $config, 'fcm', 'fcm_log_message_id', DEFAULT_FCM_LOG_MESSAGE_ID );
-  $fcm_v1_key=
-    config_get_val( $config, 'fcm', 'fcm_v1_key', DEFAULT_FCM_V1_KEY );
-  $fcm_v1_url=
-    config_get_val( $config, 'fcm', 'fcm_v1_url', DEFAULT_FCM_V1_URL );
-
   $ssl_enabled = config_get_val( $config, 'ssl', 'enable', DEFAULT_SSL_ENABLE );
   $ssl_cert_file = config_get_val( $config, 'ssl', 'cert' );
   $ssl_key_file  = config_get_val( $config, 'ssl', 'key' );
@@ -665,7 +624,7 @@ sub loadEsConfigSettings {
   if ($es_rules_file) {
     my $hr;
     my $fh;
-    printDebug("rules: Loading es rules json: $es_rules_file",2);
+    printDebug("rules: Loading es rules json: $es_rules_file");
     if ( open( $fh, "<", $es_rules_file ) ) {
       my $data = do { local $/ = undef; <$fh> };
       eval { $hr = decode_json($data); };
@@ -718,12 +677,6 @@ sub loadEsConfigSettings {
     DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS
   );
 
-  $max_parallel_hooks = config_get_val(
-    $config, 'hook',
-    'max_parallel_hooks',
-    DEFAULT_MAX_PARALLEL_HOOKS
-  );
-
   # get channels and convert to hash
 
   %event_start_notify_on_hook_fail = map { $_ => 1 }
@@ -757,10 +710,6 @@ sub loadEsConfigSettings {
 # helper routines to print config status in help
 sub yes_or_no {
   return $_[0] ? 'yes' : 'no';
-}
-
-sub default_or_custom {
-  return $_[0] eq $_[1] ? 'default':'custom';
 }
 
 sub value_or_undefined {
@@ -810,11 +759,7 @@ FCM Date Format....................... ${\(value_or_undefined($fcm_date_format))
 Only show latest FCMv1 message........ ${\(yes_or_no($replace_push_messages))}
 Android FCM push priority............. ${\(value_or_undefined($fcm_android_priority))}
 Android FCM push ttl.................. ${\(value_or_undefined($fcm_android_ttl))}
-Log FCM message ID.................... ${\(value_or_undefined($fcm_log_message_id))}
-Log RAW FCM Messages...................${\(yes_or_no($fcm_log_raw_message))}
-FCM V1 URL............................ ${\(value_or_undefined($fcm_v1_url))}
-FCM V1 Key.............................${\(default_or_custom($fcm_v1_key, DEFAULT_FCM_V1_KEY))}
- 
+
 Token file ........................... ${\(value_or_undefined($token_file))}
 
 Use MQTT ............................. ${\(yes_or_no($use_mqtt))}
@@ -843,11 +788,10 @@ Send event end notification............${\(yes_or_no($send_event_end_notificatio
 Monitor rules JSON file................${\(value_or_undefined($es_rules_file))}
 
 Use Hooks............................. ${\(yes_or_no($use_hooks))}
-Max Parallel Hooks.................... ${\(value_or_undefined($max_parallel_hooks))}
 Hook Script on Event Start ........... ${\(value_or_undefined($event_start_hook))}
 User Script on Event Start.............${\(value_or_undefined($event_start_hook_notify_userscript))}
 Hook Script on Event End.............. ${\(value_or_undefined($event_end_hook))}
-User Script on Event End...............${\(value_or_undefined($event_end_hook_notify_userscript))}
+User Script on Event End.............${\(value_or_undefined($event_end_hook_notify_userscript))}
 Hook Skipped monitors................. ${\(value_or_undefined($hook_skip_monitors))}
 
 Notify on Event Start (hook success).. ${\(value_or_undefined($event_start_notify_on_hook_success))}
@@ -887,8 +831,7 @@ if ($use_fcm) {
   }
   else {
     printInfo('Push enabled via FCM');
-    printDebug("fcmv1: --> FCM V1 APIs: $use_fcmv1",2);
-    printDebug ("fcmv1:--> Your FCM messages will be LOGGED at pliablepixel's server because your fcm_log_raw_message in zmeventnotification.ini is yes. Please turn it off, if you don't want it to!",1) if ($fcm_log_raw_message);
+    printDebug("fcmv1: --> FCM V1 APIs: $use_fcmv1");
   }
 
 }
@@ -916,8 +859,20 @@ else {
   printInfo('MQTT Disabled');
 }
 
+# ==========================================================================
+#
+# Don't change anything below here
+#
+# ==========================================================================
 
 
+use ZoneMinder;
+use POSIX;
+use DBI;
+
+$ENV{PATH} = '/bin:/usr/bin';
+$ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
+delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
 
 sub Usage {
   print("This daemon is not meant to be invoked from command line\n");
@@ -967,14 +922,24 @@ SLEEP:
 sub at_eol($) { $_[0] =~ /\n\z/ }
 
 
-
+my %monitors            = ();
+my %active_events       = ();
+my $monitor_reload_time = 0;
+my $es_start_time       = time();
+my $apns_feedback_time  = 0;
+my $proxy_reach_time    = 0;
+my $wss;
+my @events             = ();
+my @active_connections = ();
+my $wss;
+my $zmdc_active = 0;
 
 # Main entry point
 #
 
 
 printInfo("|------- Starting ES version: $app_version ---------|");
-printDebug( "Started with: perl:" . $^X . " and command:" . $0, 2 );
+printDebug( "Started with: perl:" . $^X . " and command:" . $0, 1 );
 
 my $zmdc_status = `zmdc.pl status zmeventnotification.pl`;
 if ( index( $zmdc_status, 'running since' ) != -1 ) {
@@ -1035,8 +1000,8 @@ sub printDebug {
     print( "DBG-$level:", $now, " ", $str, "\n" ) if $console_logs;
     Debug($str) ;
   }
-  
-  
+
+
 }
 
 sub printInfo {
@@ -1076,13 +1041,13 @@ sub parseDetectResults {
 
 sub saveEsControlSettings() {
   if ( !$use_escontrol_interface ) {
-    printDebug( 'ESCONTROL_INTERFACE is disabled. Not saving control data', 2 );
+    printDebug( 'ESCONTROL_INTERFACE is disabled. Not saving control data', 1 );
 
   }
   return if ( !$use_escontrol_interface );
   printDebug(
     "ESCONTROL_INTERFACE: Saving admin interfaces to $escontrol_interface_file",
-    2
+    1
   );
   store( \%escontrol_interface_settings, $escontrol_interface_file )
     or Fatal("Error writing to $escontrol_interface_file: $!");
@@ -1097,12 +1062,12 @@ sub loadEsControlSettings() {
   }
   printDebug(
     "ESCONTROL_INTERFACE: Loading persistent admin interface settings from $escontrol_interface_file",
-    2
+    1
   );
   if ( !-f $escontrol_interface_file ) {
     printDebug(
       'ESCONTROL_INTERFACE: admin interface file does not exist, creating...',
-      2 );
+      1 );
     saveEsControlSettings();
 
   }
@@ -1144,7 +1109,7 @@ sub populateEsControlNotification {
         $found = 1;
         printDebug(
           "ESCONTROL_INTERFACE: Discovered new monitor:$id, settings notification to ESCONTROL_DEFAULT_NOTIFY",
-          2
+          1
         );
       }
 
@@ -1236,7 +1201,7 @@ sub processEsControlCommand {
       $escontrol_interface_settings{notifications}{$mid} = ESCONTROL_FORCE_MUTE;
       printDebug(
         "ESCONTROL: setting notification for Mid:$mid to ESCONTROL_FORCE_MUTE",
-        2
+        1
       );
     }
 
@@ -1402,7 +1367,7 @@ sub checkNewEvents() {
         $update_tokens = 1;
       }
     }
-    
+
 
     # this means we have hit the reload monitor timeframe
     my $len = scalar @active_connections;
@@ -1413,7 +1378,7 @@ sub checkNewEvents() {
         if ($_->{type} == FCM) {
           $tokens_data{tokens}->{$_->{token}}->{invocations}=
             defined($_->{invocations})? $_->{invocations} : {count=>0, at=>(localtime)[4]};
-            
+
         }
       }
       my $cip = '(none)';
@@ -1437,7 +1402,6 @@ sub checkNewEvents() {
       );
       $ndx++;
     }
-    
 
     if ($update_tokens && $use_fcm) {
       open( my $fh, '>', $token_file )
@@ -1450,10 +1414,10 @@ sub checkNewEvents() {
 
     foreach my $monitor ( values(%monitors) ) {
       zmMemInvalidate($monitor);
-    } 
+    }
     loadMonitors();
-   
-    
+
+
   }
 
   # loop through all monitors getting SHM state
@@ -1696,6 +1660,7 @@ sub validateAuth {
           return 0;
         }
         my $encryptedPassword = password41($p);
+        #TYLER add printing messages to log if autorized or unautorized
         return $state->{Password} eq $encryptedPassword;
       }
       else {                     # try bcrypt
@@ -1709,6 +1674,7 @@ sub validateAuth {
         $saved_pass =~ s/^\$2.\$/\$2a\$/;
         my $new_hash = Crypt::Eksblowfish::Bcrypt::bcrypt( $p, $saved_pass );
         printDebug( "Comparing using bcrypt", 2 );
+        #TYLER add printing messages to log if autorized or unautorized
         return $new_hash eq $saved_pass;
       }
     }
@@ -1771,6 +1737,7 @@ sub sendOverMQTTBroker {
   my $resCode    = shift;
 
   my $json;
+  my $detection_json;
 
 # only remove if not removed before. If you are sending over multiple channels, it may have already been stripped
   $alarm->{Cause} = substr( $alarm->{Cause}, 4 )
@@ -1781,20 +1748,27 @@ sub sendOverMQTTBroker {
   $description = 'Ended:' . $description if ( $event_type eq 'event_end' );
 
   $json = encode_json(
-    { monitor   => $alarm->{MonitorId},
-      name      => $description,
-      state     => 'alarm',
-      eventid   => $alarm->{EventId},
-      hookvalue => $resCode,
-      eventtype => $event_type,
-      detection => $alarm->{DetectionJson}
-    }
+      { monitor     => $alarm->{MonitorId},
+          name      => $description,
+          state     => 'alarm',
+          eventid   => $alarm->{EventId},
+          hookvalue => $resCode,
+          eventtype => $event_type,
+          # detection => $alarm->{DetectionJson}
+      }
+  );
+  $detection_json = encode_json(
+      {
+                detection => $alarm->{DetectionJson}
+
+      }
+
   );
 
   printDebug( 'requesting MQTT Publishing Job for EID:' . $alarm->{EventId},
     2 );
-  my $topic = join( '/', $mqtt_topic, $alarm->{MonitorId} );
-
+  my $topic = join( '/', $mqtt_topic, $alarm->{MonitorId}, 'info' );
+  my $detection_topic = join( '/', $mqtt_topic, $alarm->{MonitorId}, 'detection' );
   # Net:MQTT:Simple does not appear to be thread/fork safe so send message to
   # parent process via pipe to create a mqtt_publish job.
   print WRITER 'mqtt_publish--TYPE--'
@@ -1803,6 +1777,13 @@ sub sendOverMQTTBroker {
     . $topic
     . '--SPLIT--'
     . $json . "\n";
+
+  print WRITER 'mqtt_publish--TYPE--'
+      . $ac->{id}
+      . '--SPLIT--'
+      . $detection_topic
+      . '--SPLIT--'
+      . $detection_json . "\n";
 
 }
 
@@ -1853,12 +1834,17 @@ sub sendOverFCM {
 
 sub sendOverFCMV1 {
 
+  use constant NINJA_FCMV1_TOKEN =>
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJnZW5lcmF0b3IiOiJwbGlhYmxlIHBpeGVscyIsImlhdCI6MTYwMTIwOTUyNSwiY2xpZW50Ijoiem1uaW5qYSJ9.mYgsZ84i3aUkYNv8j8iDsZVVOUIJmOWmiZSYf15O0zc';
+  use constant NINJA_FCMV1_URL =>
+    'https://us-central1-ninja-1105.cloudfunctions.net/send_push';
+
   my $alarm      = shift;
   my $obj        = shift;
   my $event_type = shift;
   my $resCode    = shift;
-  my $key        = $fcm_v1_key;
-  my $uri        = $fcm_v1_url;
+  my $key        = NINJA_FCMV1_TOKEN;
+  my $uri        = NINJA_FCMV1_URL;
 
   my $mid   = $alarm->{MonitorId};
   my $eid   = $alarm->{EventId};
@@ -1869,7 +1855,7 @@ sub sendOverFCMV1 {
     my $month = $obj->{invocations}->{at};
     if ($curmonth != $month) {
       $obj->{invocations}->{count} = 0;
-      printDebug ('Resetting counters for token'. substr( $obj->{token}, -10 )." as month changed",1);
+      printDebug ('Resetting counters for token'. substr( $obj->{token}, -10 )." as month changed");
 
     }
     if ($obj->{invocations}->{count} > DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN) {
@@ -1924,8 +1910,16 @@ sub sendOverFCMV1 {
     $alarm->{Cause} = substr( $alarm->{Cause}, 4 )
       if ( !$keep_frame_match_type );
   }
-  elsif ( substr( $alarm->{Cause}, 0, 3 ) eq '[x]' ) {
+    elsif ( substr( $alarm->{Cause}, 0, 3 ) eq '[x]' ) {
     $alarm->{Cause} = substr( $alarm->{Cause}, 4 )
+      if ( !$keep_frame_match_type );
+  }
+  elsif ( substr( $alarm->{Cause}, 0, 1 ) eq '[' ) {
+    # $alarm->{Cause} = substr( $alarm->{Cause}, 4 );
+    my @sp_cause = split( ' ', substr( $alarm->{Cause}, 9 ));
+    # $alarm->{Cause} = @sp_cause[0]
+    printInfo(@sp_cause + ' TYLER TEST')
+
       if ( !$keep_frame_match_type );
   }
 
@@ -1938,7 +1932,7 @@ sub sendOverFCMV1 {
   my $count = defined($obj->{invocations})?$obj->{invocations}->{count}+1:0;
   my $at = (localtime)[4];
 
-  print WRITER 'fcm_notification--TYPE--' . $obj->{token} . '--SPLIT--' . $badge 
+  print WRITER 'fcm_notification--TYPE--' . $obj->{token} . '--SPLIT--' . $badge
                 .'--SPLIT--' . $count .'--SPLIT--' . $at . "\n";
   my $json;
 
@@ -1954,7 +1948,6 @@ sub sendOverFCMV1 {
     body  => $body,
     sound => 'default',
     badge => int($badge),
-    log_message_id => $fcm_log_message_id,
     data  => {
       mid                     => $mid,
       eid                     => $eid,
@@ -1986,8 +1979,8 @@ sub sendOverFCMV1 {
       #aps_custom_data=>{
       #
       #},
-      headers => { 
-        'apns-priority' => '10' , 
+      headers => {
+        'apns-priority' => '10' ,
         'apns-push-type'=>'alert',
         #'apns-expiration'=>'0'
         }
@@ -1997,10 +1990,6 @@ sub sendOverFCMV1 {
 
   }
 
-  if ($fcm_log_raw_message) {
-      $message_v2->{log_raw_message} = 'yes';
-      printDebug ("The server cloud function at $uri will log your full message. Please ONLY USE THIS FOR DEBUGGING with me author and turn off later",2);
-  }
 
   if ( $picture_url && $include_picture ) {
 
@@ -2045,7 +2034,7 @@ sub sendOverFCMV1 {
     }
 
   }
-    
+
   # send supplementary event data over websocket, same SSL state issue
   # so use a parent pipe
   if ( $obj->{state} == VALID_CONNECTION && exists $obj->{conn} ) {
@@ -2136,6 +2125,14 @@ sub sendOverFCMLegacy {
     $alarm->{Cause} = substr( $alarm->{Cause}, 4 )
       if ( !$keep_frame_match_type );
   }
+  elsif ( substr( $alarm->{Cause}, 0, 1 ) eq '[' ) {
+    # $alarm->{Cause} = substr( $alarm->{Cause}, 4 );
+    my @sp_cause = split( ' ', substr( $alarm->{Cause}, 9 ));
+    # $alarm->{Cause} = @sp_cause[0]
+    printInfo(@sp_cause + ' TYLER TEST 2111')
+
+      if ( !$keep_frame_match_type );
+  }
 
   my $now = strftime( $fcm_date_format, localtime );
   my $body = $alarm->{Cause};
@@ -2146,9 +2143,9 @@ sub sendOverFCMLegacy {
   my $count = defined($obj->{invocations})?$obj->{invocations}->{count}+1:0;
   my $at = (localtime)[4];
 
-  print WRITER 'fcm_notification--TYPE--' . $obj->{token} . '--SPLIT--' . $badge 
+  print WRITER 'fcm_notification--TYPE--' . $obj->{token} . '--SPLIT--' . $badge
                 .'--SPLIT--' . $count .'--SPLIT--' . $at . "\n";
- 
+
 
    my $uri = 'https://fcm.googleapis.com/fcm/send';
   my $json;
@@ -2412,17 +2409,6 @@ sub processJobs {
         delete( $active_events{$mid}->{$eid} );
         $child_forks--;
       }
-      elsif ( $job eq 'update_parallel_hooks' ) {
-        if ($msg eq "add") {
-          $parallel_hooks++;
-        }
-        elsif ($msg eq "del") {
-          $parallel_hooks--;
-        } 
-        else { 
-          printError ("Parallel hooks update: command not understood: $msg");
-        }
-      }
       elsif ( $job eq 'mqtt_publish' ) {
         my ( $id, $topic, $payload ) = split( '--SPLIT--', $msg );
         printDebug( "Job: MQTT Publish on topic: $topic", 2 );
@@ -2653,7 +2639,7 @@ sub processIncomingMessage {
     # This sub type is when a device token is registered
     if ( $json_string->{data}->{type} eq 'token' ) {
       if (!defined($json_string->{data}->{token}) || ($json_string->{data}->{token} eq "")) {
-        printDebug ("Ignoring token command, I got ".encode_json($json_string),2);
+        printDebug ("Ignoring token command, I got ".encode_json($json_string));
         return;
       }
       # a token must have a platform
@@ -2699,7 +2685,7 @@ sub processIncomingMessage {
             my $new_token = substr( $json_string->{data}->{token}, -10 );
             my $existing_conn = $_->{conn} ? $_->{conn}->ip().':'.$_->{conn}->port() : 'undefined';
             my $new_conn = $conn ? $conn->ip().':'.$conn->port() : 'undefined';
-            
+
             printDebug( "JOB: new token matched existing token: ($new_token <==> $existing_token) but connection did not ($new_conn <==> $existing_conn)", 2 );
             printDebug(
               'JOB: Duplicate token found: marking ...'
@@ -2707,7 +2693,7 @@ sub processIncomingMessage {
                 . ' to be deleted',
               1
             );
-            
+
             $_->{state} = PENDING_DELETE;
             # make sure loaded invocations are not erased
             $stored_invocations = $_->{invocations};
@@ -2721,7 +2707,7 @@ sub processIncomingMessage {
             printDebug(
               'JOB: token matched, updating entry in active connections', 2 );
             #$_->{invocations} = $stored_invocations if (defined($stored_invocations));
-            
+
             $_->{invocations} = $stored_invocations if (defined($stored_invocations));
             $_->{last_sent} = $stored_last_sent if (defined($stored_last_sent));
 
@@ -2734,13 +2720,13 @@ sub processIncomingMessage {
               $_->{monlist} =
                 $json_string->{data}->{monlist};
             }
-           
+
             if ( isValidMonIntList( $json_string->{data}->{intlist} ))
             {
               $_->{intlist} =
                 $json_string->{data}->{intlist};
             }
-          
+
             $_->{pushstate} = $json_string->{data}->{state};
             printDebug(
               'JOB: Storing token ...'
@@ -2775,11 +2761,11 @@ sub processIncomingMessage {
           my $new_token = substr( $json_string->{data}->{token}, -10 );
           my $existing_conn = $_->{conn} ? $_->{conn}->ip().':'.$_->{conn}->port() : 'undefined';
           my $new_conn = $conn ? $conn->ip().':'.$conn->port() : 'undefined';
-            
+
           printDebug(
             "JOB: connection matched ($new_conn <==> $existing_conn) but token did not ($new_token <==> $existing_token). first registration?",
             2 );
-        
+
           $_->{type}     = FCM;
           $_->{token}    = $json_string->{data}->{token};
           $_->{platform} = $json_string->{data}->{platform};
@@ -2787,12 +2773,12 @@ sub processIncomingMessage {
 
           $_->{monlist}  = $json_string->{data}->{monlist}
             if (isValidMonIntList($json_string->{data}->{monlist}) );
-            
+
 
           $_->{intlist}  = $json_string->{data}->{intlist}
                       if (isValidMonIntList($json_string->{data}->{intlist})) ;
 
-         
+
           $_->{pushstate} = $json_string->{data}->{state};
           $_->{invocations} = defined ($stored_invocations) ? $stored_invocations:{count=>0, at=>(localtime)[4]};
           #print ("REMOVE applied:". Dumper($_->{invocations}));
@@ -2947,7 +2933,7 @@ sub processIncomingMessage {
           my $reason = 'BADAUTH';
           $reason = 'ESCONTROLDISABLED'
             if ( $category eq 'escontrol' && !$use_escontrol_interface );
-
+          # TYLER auth for escontrol? esadmin? es WS?
           # bad username or password, so reject and mark for deletion
           my $str = encode_json(
             { event  => 'auth',
@@ -2961,6 +2947,7 @@ sub processIncomingMessage {
             Error("Error sending BADAUTH: $@");
 
           }
+          #printInfo( "UNAUTHORIZED login attempted by " . $_->{conn}->ip() );
           printDebug(
             'marking for deletion - bad authentication provided by '
               . $_->{conn}->ip(),
@@ -3426,8 +3413,8 @@ sub sendEvent {
 
   if ( $ac->{type} == FCM
     && $ac->{pushstate} ne 'disabled'
-    && $ac->{state} != PENDING_AUTH 
-    && $ac->{state} != PENDING_DELETE 
+    && $ac->{state} != PENDING_AUTH
+    && $ac->{state} != PENDING_DELETE
     )
   {
 
@@ -3499,7 +3486,7 @@ sub sendEvent {
     . '--SPLIT--'
     . $t . "\n";
 
-  printDebug( 'child finished writing to parent', 2 );
+  printDebug( 'child finished writing to parent', 3 );
 
 }
 
@@ -3565,7 +3552,7 @@ sub isAllowedInRules {
   my $alarm = shift;
   my $id    = $alarm->{MonitorId};
   my $name  = $alarm->{Name};
-  
+
 
   my $cause =$alarm->{Start}->{Cause};
   if (index($cause, 'detected:') == -1) {
@@ -3574,7 +3561,7 @@ sub isAllowedInRules {
     } elsif (index($alarm->{Cause}, 'detected:') != -1)  {
           $cause = $alarm->{Cause};
     }
-  } 
+  }
 
   my $eid = $alarm->{EventId};
   my $now = Time::Piece->new;
@@ -3587,7 +3574,7 @@ sub isAllowedInRules {
   if ( !exists( $es_rules{notifications}->{monitors} )
     || !exists( $es_rules{notifications}->{monitors}->{$id} ) )
   {
-    printDebug( "rules: No rules found for Monitor, allowing:$id", 1 );
+    printDebug( "rules: No rules found for Monitor '$id', allowing", 1 );
     return ( $MISSING_RULE_RESULT, {} );
   }
 
@@ -3686,14 +3673,14 @@ sub isAllowedInRules {
       next;
     }
     printDebug(
-      "rules:(eid: $eid)  seeing if cause_has: ->"
+      "rules:(eid: $eid)  seeing if cause_has:"
         . $rule_ref->{cause_has}
-        . "<- is part of ->$cause<-",
+        . " is part of $cause:",
       2
     );
     if ( exists( $rule_ref->{cause_has} ) ) {
-      my $re = qr/$rule_ref->{cause_has}/i;
-      if ( lc($cause) !~ /$re/) {
+      my $re = qr/$rule_ref->{cause_has}/;
+      if ( lc($cause) !~ /$re/i ) {
         printDebug(
           "rules: (eid: $eid) Skipping this rule as "
             . $rule_ref->{cause_has}
@@ -3887,12 +3874,18 @@ sub processNewAlarmsInFork {
         if ( $event_start_hook && $use_hooks ) {
 
           # invoke hook start script
+          # $1 = eventId that triggered an alarm
+          # $2 = monitor ID of monitor that triggered an alarm
+          # $3 = monitor Name of monitor that triggered an alarm
+          # $4 = cause of alarm
+          # $5 = 'live' = LIVE event
+          # $6 = path to event store (if store_frame_in_zm is 1)
           my $cmd =
               $event_start_hook . ' '
             . $eid . ' '
             . $mid . ' "'
             . $alarm->{MonitorName} . '" "'
-            . $alarm->{Start}->{Cause} . '"';
+            . $alarm->{Start}->{Cause} . '" live';
 
           if ($hook_pass_image_path) {
             my $event = new ZoneMinder::Event($eid);
@@ -3910,16 +3903,10 @@ sub processNewAlarmsInFork {
           if ( $cmd =~ /^(.*)$/ ) {
             $cmd = $1;
           }
-          print WRITER "update_parallel_hooks--TYPE--add\n";
           my $res = `$cmd`;
-          $hookResult = $? >> 8; # make sure it is before pipe
-
-          print WRITER "update_parallel_hooks--TYPE--del\n";
-
           chomp($res);
           my ( $resTxt, $resJsonString ) = parseDetectResults($res);
-          # don't know why, but exit 1 from signal handler in shell script lands up as 0 here
-          $hookResult = 1 if (!$resTxt); 
+          $hookResult      = $? >> 8;
           $startHookResult = $hookResult;
 
           printDebug(
@@ -4075,17 +4062,12 @@ sub processNewAlarmsInFork {
         }
         printDebug( 'Matching alarm to connection rules...', 1 );
         my ($serv) = @_;
-        my %fcm_token_duplicates = ();
         foreach (@active_connections) {
-          if  ($_->{token} && $fcm_token_duplicates{$_->{token}}) {
-            printDebug ('...'.substr($_->{token},-10).' occurs mutiples times. NOT USUAL, ignoring',1);
-            next;
-          }
+
           if ( shouldSendEventToConn( $temp_alarm_obj, $_ ) ) {
             printDebug(
-              'token is unique, shouldSendEventToConn returned true, so calling sendEvent', 1 );
+              'shouldSendEventToConn returned true, so calling sendEvent', 1 );
             sendEvent( $temp_alarm_obj, $_, 'event_start', $hookResult );
-            $fcm_token_duplicates{$_->{token}}++ if $_->{token}; 
 
           }
         }    # foreach active_connections
@@ -4117,7 +4099,6 @@ sub processNewAlarmsInFork {
 
             # This will be prefixed, so no need to add old notes back
             updateEventinZmDB( $eid, $hookString );
-            $notes = $hookString . " " . $notes;
           }
           else {
             printDebug( "DB Event notes contain detection text, all good", 2 );
@@ -4132,7 +4113,7 @@ sub processNewAlarmsInFork {
             . $eid . ' '
             . $mid . ' "'
             . $alarm->{MonitorName} . '" "'
-            . $notes . '"';
+            . $notes . '" live';
 
           if ($hook_pass_image_path) {
             my $event = new ZoneMinder::Event($eid);
@@ -4149,19 +4130,10 @@ sub processNewAlarmsInFork {
           if ( $cmd =~ /^(.*)$/ ) {
             $cmd = $1;
           }
-
-          print WRITER "update_parallel_hooks--TYPE--add\n";
           my $res = `$cmd`;
-          $hookResult = $? >> 8; # make sure it is before pipe
-          
-
-          print WRITER "update_parallel_hooks--TYPE--del\n";
-
           chomp($res);
           my ( $resTxt, $resJsonString ) = parseDetectResults($res);
-
-          # don't know why, but exit 1 from signal handler in shell script lands up as 0 here
-          $hookResult = 1 if (!$resTxt); 
+          $hookResult = $? >> 8;
 
           $alarm->{End}->{State} = 'ready';
           printDebug(
@@ -4209,7 +4181,7 @@ sub processNewAlarmsInFork {
             my $user_res = `$user_cmd`;
           }    # user notify script
 
-          if ($use_hook_description && 
+          if ($use_hook_description &&
               ($hookResult == 0) && (index($resTxt,'detected:') != -1)) {
             printDebug ("Event end: overwriting notes with $resTxt",1);
             $alarm->{End}->{Cause} =
@@ -4397,7 +4369,7 @@ sub processNewAlarmsInFork {
         # The alarm has ended
       {
         printDebug( "For $mid ($mname), SHM says: state=$state, eid=$shm_eid",
-          2 );
+          3 );
         printInfo("Event $eid for Monitor $mid has finished");
         $endProcessed = 1;
 
@@ -4412,7 +4384,7 @@ sub processNewAlarmsInFork {
             . $alarm->{End}->{State}
             . ' with cause=>'
             . $alarm->{End}->{Cause},
-          2
+          3
         );
       }
     }
@@ -4434,7 +4406,7 @@ sub restartES {
     exit 0;
   }
   else {
-    printDebug('Self exec-ing as zmdc is not tracking me',1);
+    printDebug('Self exec-ing as zmdc is not tracking me');
 
     # untaint via reg-exp
     if ( $0 =~ /^(.*)$/ ) {
@@ -4460,7 +4432,6 @@ sub initSocketServer {
         Proto         => 'tcp',
         Reuse         => 1,
         ReuseAddr     => 1,
-        SSL_startHandshake => 0,
         SSL_cert_file => $ssl_cert_file,
         SSL_key_file  => $ssl_key_file
       );
@@ -4485,7 +4456,7 @@ sub initSocketServer {
         exit(0);
       }
       my $elapsed_time_min =  ceil((time() - $es_start_time)/60);
-      printDebug( "----------> Tick START (active forks:$child_forks, total forks:$total_forks, active hooks: $parallel_hooks running for:$elapsed_time_min min)<--------------", 2 );
+      printDebug( "----------> Tick START (active forks:$child_forks, total forks:$total_forks, running for:$elapsed_time_min min)<--------------", 2 );
       if ( $restart_interval
         && ( ( time() - $es_start_time ) > $restart_interval ) )
       {
@@ -4511,7 +4482,7 @@ sub initSocketServer {
       checkConnection();
       processJobs();
 
-      printDebug( "There are $child_forks active child forks & $parallel_hooks zm_detect processes running...", 2 );
+      printDebug( "There are $child_forks active child forks...", 2 );
       my (@newEvents) = checkNewEvents();
 
       #print Dumper(\@newEvents);
@@ -4533,10 +4504,6 @@ sub initSocketServer {
       }
 
       foreach (@newEvents) {
-        if (($parallel_hooks >= $max_parallel_hooks) && ($max_parallel_hooks != 0)) {
-          printError("There are $parallel_hooks hooks running as of now. This exceeds your set limit of max_parallel_hooks=$max_parallel_hooks. Ignoring this event. Either increase your max_parallel_hooks value, or, adjust your ZM motion sensitivity ");
-          return;
-        }
         $child_forks++;
         $total_forks++;
         if ($cpid = fork() ) {
@@ -4550,7 +4517,7 @@ sub initSocketServer {
           # Child
           # do this to get a proper return value
           # $SIG{CHLD} = undef;
-          
+
           local $SIG{'CHLD'} = 'DEFAULT';
           #$wss->shutdown();
           close(READER);
@@ -4558,7 +4525,7 @@ sub initSocketServer {
           logTerm();
           logInit();
           logSetSignal();
-         
+
           printDebug(
             "Forked process:$$ to handle alarm eid:" . $_->{Alarm}->{EventId},
             1 );
@@ -4569,7 +4536,7 @@ sub initSocketServer {
           logTerm();
           zmDbDisconnect();
 
-       
+
           #$SIG{CHLD} = 'DEFAULT';
           #$SIG{HUP} = 'DEFAULT';
           #$SIG{INT} = 'DEFAULT';
@@ -4577,8 +4544,8 @@ sub initSocketServer {
           #$SIG{ABRT} = 'DEFAULT';
 
           exit 0;
- 
-         
+
+
         } else {
            Fatal("Can't fork: $!");
         }
@@ -4591,8 +4558,7 @@ sub initSocketServer {
 
       }
 
-      check_for_duplicate_token();
-      printDebug( "---------->Tick END (active forks:$child_forks, total forks:$total_forks, active hooks: $parallel_hooks)<--------------", 2 );
+      printDebug( "---------->Tick END (active forks:$child_forks, total forks:$total_forks)<--------------", 2 );
     },
 
     # called when a new connection comes in

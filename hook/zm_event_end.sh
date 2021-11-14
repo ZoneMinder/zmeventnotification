@@ -1,25 +1,61 @@
 #!/bin/bash
 
-# Just a dummy script for event end. Do what you want here
-
 trap 'cleanup' SIGINT SIGTERM
 
 # Handle situation of ZM terminates while this is running
 # so notifications are not sent
 cleanup() {
-    # Don't echo anything here
-    exit 1
+   # Don't echo anything here
+   exit 1
 }
 
-
 # When invoked by zmeventnotification.pl it will be passed:
-# $1 = eventId that triggered an alarm
+# $1 = event Id that triggered an alarm
 # $2 = monitor ID of monitor that triggered an alarm
 # $3 = monitor Name of monitor that triggered an alarm
-# $4 = cause of alarm 
+# $4 = cause of alarm
+# $5 = 'live' - means a LIVE event for logic
+# $6 = path to event store (if store_frame_in_zm is 1)
 
-# If people run it as is, without modifying it, lets make sure we 
-# return the cause back so its sent in the notification
-echo "${4}"
-#echo "$(date): POST EVENT FOR EID:${1} FOR MONITOR ${2} NAME ${3} CAUSE ${4}" > /tmp/post_log.txt
-exit 0
+
+
+# Only tested with ZM 1.32.3+. May or may not work with older versions
+# Logic:
+# This script is invoked by zmeventnotification if you've specified its location in the hook= variable of zmeventnotification.ini
+
+
+# change this to the path of the object detection config"
+CONFIG_FILE="/etc/zm/objectconfig.yml"
+ZMES_DIR="/var/lib/zmeventnotification"
+LIVE=''
+if [[ "$5" == 'live' ]]; then
+  LIVE='--live'
+fi
+EVENT_PATH="$6"
+REASON="$4"
+
+# Pass the monitor ID so the api creation can be created in its own Thread - if no monitor ID is passed the system will
+# create the api object, login and ask for the monitor ID based on the event ID (adds an extra 1-2 seconds to the
+# response time) PASSING THE MONITOR ID SPEEDS THINGS UP!  SINCE MONITOR id AND --LIVE ARE PASSED WE CAN BE SURE THAT
+# THE MONITOR ID HAS BEEN VERIFIED BEFOREHAND
+# use arrays instead of strings to avoid quote hell
+#if [[ -n "${2}" ]]
+#then
+#  echo "2 arguments"
+#   echo "1 = $1, 2 = $2, 3 = $3, 4 = $4, 5 = $5, 6= $6"
+#   DETECTION_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --monitor-id "$2" --eventid "$1" --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}" --event-type "end" "$LIVE")
+#else
+#  echo "1 argument"
+#   echo "1 = $1, 2 = $2, 3 = $3, 4 = $4, 5 = $5, 6= $6"
+#   DETECTION_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --eventid "$1" --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}" --event-type "end" "$LIVE")
+#fi
+## this is why the python script prints out the detection with 'detected:' in the string somewhere
+#RESULTS=$("${DETECTION_SCRIPT[@]}" | grep "detected:")
+#
+#_RET_VAL=1
+## The script needs  to return a 0 for success ( detected) or 1 for failure (not detected)
+#if [[ -n "${RESULTS}" ]]; then
+#   _RET_VAL=0
+#fi
+#echo "${RESULTS}"
+exit "${_RET_VAL}"

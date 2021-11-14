@@ -1,0 +1,52 @@
+#aliases for ZMES and MLAPI you can add to .bashrc or .zshrc
+
+# [ ZMES ]
+#These aliases assume you have sudo setup to allow this command to not need a password.
+alias es.start.debug='sudo -u www-data /usr/bin/zmeventnotification.pl --debug &'
+alias es.start='sudo -u www-data zmdc.pl start zmeventnotification.pl &'
+alias es.restart='sudo -u www-data zmdc.pl restart zmeventnotification.pl &'
+alias es.stop='sudo -u www-data zmdc.pl stop zmeventnotification.pl &'
+alias es.status='sudo -u www-data zmdc.pl status zmeventnotification.pl &'
+
+alias es.log.base='tail -F /var/log/zm/zmeventnotification.log &'
+alias es.log.detect='tail -F /var/log/zm/zmesdetect_m*.log &'
+alias es.log='tail -F /var/log/zm/zmesdetect_m*.log &'
+alias es.syslog="sudo tail -F /var/log/syslog &"
+
+#IF YOU HAVE DOWNLOADED 'bat - the cat replacement' uncomment these lines instead of the 4 above
+#alias es.log.base='tail -F /var/log/zm/zmeventnotification.log | bat --style changes,header,rule,snip --paging never -l log --theme DarkNeon &'
+#alias es.log.detect='tail -F /var/log/zm/zmesdetect_m*.log  /var/log/zm/zmesdetect_file_input.log  | bat --style changes,header,rule,snip --paging never -l log --theme TwoDark &'
+#alias es.log='tail -F /var/log/zm/zmesdetect_m*.log | bat --style changes,header,rule,snip --paging never -l log --theme TwoDark &'
+#alias es.syslog="sudo tail -F /var/log/syslog | bat --style changes,header,rule,snip --paging never -l log --theme 'Solarized (dark)' &"
+
+
+# [ MLAPI ]
+MLAPI_DIR=/path/to/mlapi
+alias mlapi.reg.start="python3 ${MLAPI_DIR}/mlapi.py --config ${MLAPI_DIR}/mlapiconfig.ini &"
+alias mlapi.debug="python3 ${MLAPI_DIR}/mlapi.py --config ${MLAPI_DIR}/mlapiconfig.ini --debug &"
+alias mlapi.baredebug="python3 ${MLAPI_DIR}/mlapi.py --config ${MLAPI_DIR}/mlapiconfig.ini --baredebug &"
+# use the -d or --debug flag to enable printing to the console, if you already are monitoring the logs using the cat/bat
+# commands above use the -bd --baredebug option to not print output to the console (or use this option when you see
+# double output to the console)
+
+alias mlapi.logs="tail -F ${MLAPI_DIR}/logs/zm_mlapi.log &"
+alias mlapi.syslog="sudo tail -F /var/log/syslog &"
+
+#IF YOU HAVE DOWNLOADED 'bat - the cat replacement' uncomment these 2 lines instead of the 2 above
+#alias mlapi.logs="tail -F ${MLAPI_DIR}/logs/zm_mlapi.log | bat --paging never -l log --style changes,header,rule,snip &"
+#alias mlapi.syslog="sudo tail -F /var/log/syslog | bat --paging never -l log --style changes,header,rule,snip --theme 'Solarized (dark)' &"
+
+
+#-- The mlapi.init aliases assume you have mlapi installed as a service and
+# can run 'sudo systemctl <start/stop/status/restart> mlapi.service' without entering a password.
+
+alias mlapi.init.start='sudo systemctl start mlapi.service &'
+alias mlapi.init.restart='sudo systemctl restart mlapi.service &'
+alias mlapi.init.stop='sudo systemctl stop mlapi.service &'
+alias mlapi.init.status='sudo systemctl status mlapi.service &'
+
+# FUNCTION that runs zm_detect.sh with console output -> es.debug.objdet
+# FUNCTION that runs zm_detect.sh WITHOUT console output -> es.baredebug.objdet
+# the baredebug function is same as debug the only difference is baredebug does not print its output to console
+# this is handy if you are using the above alias to watch the log files and don't want double output
+

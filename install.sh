@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #-----------------------------------------------------
-# Install script for the EventServer and the 
+# Install script for the EventServer and the
 # machine learning hooks
 #
 # /install.sh --help
@@ -14,7 +14,7 @@
 #-----------------------------------------------------
 
 # --- Change these if you want --
-
+GIT=${GIT:-$(which git)}
 PYTHON=${PYTHON:-python3}
 PIP=${PIP:-pip3}
 INSTALLER=${INSTALLER:-$(which apt-get || which yum)}
@@ -46,7 +46,7 @@ MAKE_CONFIG_BACKUP='--backup=numbered'
 
 # --- end of change these ---
 
-# set default values 
+# set default values
 # if we have a value from ps use it, otherwise look in env
 
 WEB_OWNER=${WEB_OWNER:-${_WEB_OWNER_FROM_PS}}
@@ -105,7 +105,7 @@ get_installer() {
             installer='yum'
             ;;
     esac
-    echo ${installer}        
+    echo ${installer}
 }
 
 # generic confirm function that returns 0 for yes and 1 for no
@@ -119,14 +119,14 @@ confirm() {
        must_match='[nN]'
     fi
     read -p "${display_str} [${default_ans}]:" ans
-    [[ $ans == $must_match ]]   
+    [[ $ans == $must_match ]]
 }
 
 # Are we running as root? If not, install may fail
 check_root() {
     if [[ $EUID -ne 0 ]]
     then
-        echo 
+        echo
         echo "********************************************************************************"
         print_warning "Unless you have changed paths, this script requires to be run as sudo"
         echo "********************************************************************************"
@@ -139,10 +139,10 @@ check_root() {
 # Some of these may be default values, so give user a change to change
 verify_config() {
 
-    if [[ ${INTERACTIVE} == 'no' && 
+    if [[ ${INTERACTIVE} == 'no' &&
           ( ${INSTALL_ES} == 'prompt' || ${INSTALL_HOOK} == 'prompt' ||
-            ${INSTALL_HOOK_CONFIG} == 'prompt' || ${INSTALL_ES_CONFIG} == 'prompt' ) 
-       ]] 
+            ${INSTALL_HOOK_CONFIG} == 'prompt' || ${INSTALL_ES_CONFIG} == 'prompt' )
+       ]]
     then
         print_error 'In non-interactive mode, you need to specify flags for all components'
         echo
@@ -154,6 +154,7 @@ verify_config() {
     echo "Your webserver user seems to be ${WEB_OWNER}"
     echo "Your webserver group seems to be ${WEB_GROUP}"
     echo "wget is ${WGET}"
+    echo "git is ${GIT}"
     echo "installer software is ${INSTALLER}"
 
     echo "Install Event Server: ${INSTALL_ES}"
@@ -183,16 +184,18 @@ verify_config() {
 
     fi
     echo
+    print_important "  DO NOT USE 'sudo pip install pyzm' TO INSTALL PYZM, that will install ZoneMinder repo version of pyzm, ZM (source) is not compatible with baudneo fork!"
+    echo "This script will attempt to install the baudneo forked pyzm. If it fails - git clone the baudneo pyzm repo, cd into the directory and use 'sudo pip3 install .'"
+    echo
      [[ ${INTERACTIVE} == 'yes' ]] && read -p "If any of this looks wrong, please hit Ctrl+C and edit the variables in this script..."
 
 }
-
 
 # move proc for zmeventnotification.pl
 install_es() {
     echo '*** Installing ES ***'
     mkdir -p "${TARGET_DATA}/push" 2>/dev/null
-    install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN_ES}" && 
+    install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN_ES}" &&
             print_success "Completed, but you will still have to install ES dependencies as per https://zmeventnotification.readthedocs.io/en/latest/guides/install.html#install-dependencies"  || print_error "failed"
     #echo "Done, but you will still have to manually install all ES dependencies as per https://github.com/pliablepixels/zmeventnotification#how-do-i-install-it"
 }
@@ -217,7 +220,7 @@ install_hook() {
     mkdir -p "${TARGET_DATA}/models/coral_edgetpu" 2>/dev/null
     mkdir -p "${TARGET_DATA}/misc" 2>/dev/null
     echo "everything that does not fit anywhere else :-)" > "${TARGET_DATA}/misc/README.txt" 2>/dev/null
-    
+
     if [ "${DOWNLOAD_MODELS}" == "yes" ]
     then
 
@@ -228,16 +231,28 @@ install_hook() {
             #echo "Installing pycoral libs, if needed..."
             #${PY_SUDO} apt-get install libedgetpu1-std -qq
             #${PY_SUDO} ${INSTALLER} install python3-pycoral -qq
-            
+
 
             echo 'Checking for Google Coral Edge TPU data files...'
-            targets=( 'coco_indexed.names' 'ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite' 'ssdlite_mobiledet_coco_qat_postprocess_edgetpu.tflite' 'ssd_mobilenet_v2_face_quant_postprocess_edgetpu.tflite')
-            sources=('https://dl.google.com/coral/canned_models/coco_labels.txt'
-                     'https://github.com/google-coral/edgetpu/raw/master/test_data/ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite'
-                     'https://github.com/google-coral/test_data/raw/master/ssdlite_mobiledet_coco_qat_postprocess_edgetpu.tflite'
-                     'https://github.com/google-coral/test_data/raw/master/ssd_mobilenet_v2_face_quant_postprocess_edgetpu.tflite'
+           targets=(
+              'coco_indexed.names'
+              'ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite'
+              'ssdlite_mobiledet_coco_qat_postprocess_edgetpu.tflite'
+              'ssd_mobilenet_v2_face_quant_postprocess_edgetpu.tflite'
+              # EfficeintDet lite 3
+              'efficientdet_lite3_512_ptq_edgetpu.tflite'
+              # MobileNetv2 but TF2 trained
+              'tf2_ssd_mobilenet_v2_coco17_ptq_edgetpu.tflite'
+             )
+            sources=(
+               'https://dl.google.com/coral/canned_models/coco_labels.txt'
+               'https://github.com/google-coral/edgetpu/raw/master/test_data/ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite'
+               'https://github.com/google-coral/test_data/raw/master/ssdlite_mobiledet_coco_qat_postprocess_edgetpu.tflite'
+               'https://github.com/google-coral/test_data/raw/master/ssd_mobilenet_v2_face_quant_postprocess_edgetpu.tflite'
+               'https://github.com/google-coral/test_data/raw/master/tf2_ssd_mobilenet_v2_coco17_ptq_edgetpu.tflite'
+               'https://github.com/google-coral/test_data/raw/master/efficientdet_lite3_512_ptq_edgetpu.tflite'
+            )
 
-                    )
 
             for ((i=0;i<${#targets[@]};++i))
             do
@@ -262,7 +277,7 @@ install_hook() {
                 'https://pjreddie.com/media/files/yolov3.weights')
 
         [ -f "${TARGET_DATA}/models/yolov3/yolov3_classes.txt" ] && rm "${TARGET_DATA}/models/yolov3/yolov3_classes.txt"
-        
+
 
         for ((i=0;i<${#targets[@]};++i))
         do
@@ -329,12 +344,12 @@ install_hook() {
 
             # Next up, YoloV4
             if [ -d "${TARGET_DATA}/models/cspn" ]
-            then 
+            then
                 echo "Removing old CSPN files, it is YoloV4 now"
                 rm -rf "${TARGET_DATA}/models/cspn" 2>/dev/null
             fi
 
-            
+
             echo
             echo 'Checking for YOLOV4 data files...'
             print_warning 'Note, you need OpenCV 4.4+ for Yolov4 to work'
@@ -358,11 +373,13 @@ install_hook() {
     else
         echo "Skipping model downloads"
     fi
-    
+
     # Now install the ML hooks
 
-    echo "*** Installing push api plugins ***"
+    echo "*** Installing push api plugins and new custom push script shell script option ***"
      install -m 755 -o "${WEB_OWNER}" pushapi_plugins/pushapi_pushover.py "${TARGET_BIN_HOOK}"
+     install -m 755 -o "${WEB_OWNER}" tools/zmes_gotify.sh "${TARGET_BIN_HOOK}"
+
 
     echo "*** Installing detection scripts ***"
     install -m 755 -o "${WEB_OWNER}" hook/zm_event_start.sh "${TARGET_BIN_HOOK}"
@@ -379,21 +396,24 @@ install_hook() {
       install -m 755 -o "${WEB_OWNER}" "$file" "${TARGET_DATA}/contrib"
     done
     echo
-    
+
 
     echo "Removing old version of zmes_hook_helpers, if any"
     ${PY_SUDO} ${PIP} uninstall -y zmes-hooks   >/dev/null 2>&1
     ${PY_SUDO} ${PIP} uninstall -y zmes_hook_helpers   >/dev/null 2>&1
- 
 
-    ZM_DETECT_VERSION=`./hook/zm_detect.py --bareversion`
-    echo "__version__ = \"${ZM_DETECT_VERSION}\"" > hook/zmes_hook_helpers/__init__.py
-    echo "VERSION=__version__" >> hook/zmes_hook_helpers/__init__.py
+    echo "Removing old source version of pyzm (from ZM repos). baudneo fork and ZoneMinder repo zmes, pyzm or mlapi are not compatible."
+    echo "Only baudneo pyzm, zmeventnotification and mlapi or the source ZM repos pyzm, zmeventnotification and mlapi."
+    ${PY_SUDO} ${PIP} uninstall -y pyzm # >/dev/null 2>&1
 
-    ${PY_SUDO} ${PIP} -v install hook/ && print_opencv_message || print_error "python hooks setup failed"
+#    ZM_DETECT_VERSION=`./hook/zm_detect.py --bareversion`
+#    echo "__version__ = \"${ZM_DETECT_VERSION}\"" > hook/zmes_hook_helpers/__init__.py
+#    echo "VERSION=__version__" >> hook/zmes_hook_helpers/__init__.py
+
+    print_opencv_message
 
     echo "Installing package deps..."
-    echo "Installing gifsicle, if needed..."
+    echo "Installing gifsicle, if not installed, gifsicle is used to create the gif animations. pygifsicle is the python wrapper for the gifsicle binary"
     ${PY_SUDO} ${INSTALLER} install gifsicle -qq
 
 }
@@ -401,15 +421,15 @@ install_hook() {
 
 # move ES config files
 install_es_config() {
-    echo 'Replacing ES config & rules file'
-    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 zmeventnotification.ini "${TARGET_CONFIG}" && 
+    echo 'Replacing ES config & rules file (zmeventnotification.ini and secrets.ini are needed for the perl daemon script)'
+    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 zmeventnotification.ini "${TARGET_CONFIG}" &&
         print_success "config copied" || print_error "could not copy config"
     if [ ! -f "${TARGET_CONFIG}/secrets.ini" ]; then
-     install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 secrets.ini "${TARGET_CONFIG}" && 
+     install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 secrets.ini "${TARGET_CONFIG}" &&
         print_success "secrets copied" || print_error "could not copy secrets"
     fi
-    echo 'Replacing ES rules file'
-    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 es_rules.json "${TARGET_CONFIG}" && 
+    echo 'Replacing ES rules file (es_rules.json)'
+    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 es_rules.json "${TARGET_CONFIG}" &&
         print_success "rules copied" || print_error "could not copy rules"
 
 
@@ -419,15 +439,27 @@ install_es_config() {
 
 # move Hook config files
 install_hook_config() {
-    echo 'Replacing Hook config file'
-    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.ini "${TARGET_CONFIG}" &&
-        print_success "config copied" || print_error "could not copy config"
-    echo "====> Remember to fill in the right values in the config files, or your system won't work! <============="
+    echo 'Replacing Object Detection Hook config file'
+    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.yml "${TARGET_CONFIG}" &&
+        install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/zm_secrets.yml "${TARGET_CONFIG}" &&
+        print_success "YAML config and secrets copied" || print_error "could not copy YAML config or secrets"
+    echo "====> Remember to fill in the right values in the YAML config files, or your system won't work! <============="
     echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN_HOOK}/zm_event_start.sh! <========"
     echo
 }
+install_pyzm() {
 
-# returns 'ok' if openCV version >= version passed 
+    echo
+    echo "Checking for git binary...."
+    if [ -z "$(which git)" ]; then
+        print_error "git not found, installing git..."
+        ${INSTALLER} install git -qqy
+    fi
+    echo
+    echo "Installing forked neo-pyzm..."
+    ${PY_SUDO} ${PIP} install git+https://github.com/baudneo/pyzm # >/dev/null 2>&1
+}
+# returns 'ok' if openCV version >= version passed
 check_opencv_version() {
     MAJOR=$1
     MINOR=$2
@@ -454,11 +486,11 @@ print_opencv_message() {
     cat << EOF
 
     |-------------------------- NOTE -------------------------------------|
-    
-     Hooks are installed, but please make sure you have the right version
+
+     The object detection 'Hooks' are installed, please make sure you have the right version
      of OpenCV installed. I recommend removing any pip packages you may
-     have installed of opencv* and compiling OpenCV 4.4.x+ from source. 
-     See https://zmeventnotification.readthedocs.io/en/latest/guides/hooks.html#opencv-install
+     have installed of opencv* and compiling OpenCV 4.4.x+ from source.
+     See https://medium.com/@baudneo/install-zm-1-36-branch-ubuntu-21-04-part-2-5e76edd5d619
 
     |----------------------------------------------------------------------|
 
@@ -468,7 +500,7 @@ EOF
 # wuh
 display_help() {
     cat << EOF
-    
+
     sudo -H [VAR1=value|VAR2=value...] $0 [-h|--help] [--install-es|--no-install-es] [--install-hook|--no-install-hook] [--install-config|--no-install-config] [--hook-config-upgrade|--no-hook-config-upgrade] [--no-pysudo] [--no-download-models]
 
         When used without any parameters executes in interactive mode
@@ -486,18 +518,18 @@ display_help() {
 
         --no-interactive: run automatically, but you need to specify flags for all components
 
-        --no-pysudo: If specified will install python packages 
+        --no-pysudo: If specified will install python packages
         without sudo (some users don't install packages globally)
 
         --no-download-models: If specified will not download any models.
         You may want to do this if using mlapi
 
-        --hook-config-upgrade: Updates objectconfig.ini with any new/modified attributes 
+        --hook-config-upgrade: Updates objectconfig.ini with any new/modified attributes
         and creates a sample output file. You will need to manually merge/update/review your real config
         --no-hook-config-upgrade: skips aboe process
 
-        In addition to the above, you can also override all variables used for your own needs 
-        Overridable variables are: 
+        In addition to the above, you can also override all variables used for your own needs
+        Overridable variables are:
 
         PYTHON: python interpreter (default: python3)
         PIP: pip package installer (default: pip3)
@@ -526,6 +558,7 @@ EOF
 check_args() {
     # credit: https://stackoverflow.com/a/14203146/1361529
     INSTALL_ES='prompt'
+    INSTALL_PYZM='prompt'
     INSTALL_HOOK='prompt'
     INSTALL_ES_CONFIG='prompt'
     INSTALL_HOOK_CONFIG='prompt'
@@ -554,9 +587,17 @@ check_args() {
             INTERACTIVE='no'
             shift
             ;;
+        --install-pyzm)
+            INSTALL_PYZM='yes'
+            shift
+            ;;
+        --no-install-pyzm)
+            INSTALL_PYZM='no'
+            shift
+            ;;
         --install-es)
             INSTALL_ES='yes'
-            shift 
+            shift
             ;;
         --no-install-es)
             INSTALL_ES='no'
@@ -564,7 +605,7 @@ check_args() {
             ;;
         --install-hook)
             INSTALL_HOOK='yes'
-            shift 
+            shift
             ;;
         --no-install-hook)
             INSTALL_HOOK='no'
@@ -589,10 +630,10 @@ check_args() {
             shift
             ;;
         *)  # unknown option
-            shift 
+            shift
             ;;
     esac
-    done  
+    done
 
     # if ES won't be installed, doesn't make sense to copy ES config. Umm actually...
     [[ ${INSTALL_ES} == 'no' ]] && INSTALL_ES_CONFIG='no'
@@ -604,10 +645,8 @@ check_args() {
     [[ ${INSTALL_HOOK} == 'no' ]] && INSTALL_HOOK_CONFIG='no'
     [[ ${INSTALL_HOOK} == 'prompt' && ${INSTALL_HOOK_CONFIG} == 'yes' ]] && INSTALL_HOOK_CONFIG='prompt'
 
-   
+
 }
-
-
 ###################################################
 # script main
 ###################################################
@@ -617,13 +656,19 @@ check_args() {
 cmd_args=("$@") # because we need a function to access them
 check_args
 check_root
+if [[ -x $(command git) ]]; then
+  echo "git is not detected on your system! git is needed to install neo-pyzm from its source repo using git+pip"
+  confirm "Install git?" 'y/N' && $INSTALLER install -yqq git || echo "Skipping git install"
+fi
+
+echo
+echo
 verify_config
 echo
 echo
-
 [[ ${INSTALL_ES} == 'yes' ]] && install_es
 [[ ${INSTALL_ES} == 'no' ]] && echo 'Skipping Event Server install'
-if [[ ${INSTALL_ES} == 'prompt' ]] 
+if [[ ${INSTALL_ES} == 'prompt' ]]
 then
     confirm 'Install Event Server' 'y/N' && install_es || echo 'Skipping Event Server install'
 fi
@@ -633,7 +678,7 @@ echo
 
 [[ ${INSTALL_ES_CONFIG} == 'yes' ]] && install_es_config
 [[ ${INSTALL_ES_CONFIG} == 'no' ]] && echo 'Skipping Event Server config install'
-if [[ ${INSTALL_ES_CONFIG} == 'prompt' ]] 
+if [[ ${INSTALL_ES_CONFIG} == 'prompt' ]]
 then
     confirm 'Install Event Server Config' 'y/N' && install_es_config || echo 'Skipping Event Server config install'
 fi
@@ -641,9 +686,9 @@ fi
 echo
 echo
 
-[[ ${INSTALL_HOOK} == 'yes' ]] && install_hook 
+[[ ${INSTALL_HOOK} == 'yes' ]] && install_hook
 [[ ${INSTALL_HOOK} == 'no' ]] && echo 'Skipping Hook'
-if [[ ${INSTALL_HOOK} == 'prompt' ]] 
+if [[ ${INSTALL_HOOK} == 'prompt' ]]
 then
     confirm 'Install Hook' 'y/N' && install_hook || echo 'Skipping Hook install'
 fi
@@ -653,11 +698,17 @@ echo
 
 [[ ${INSTALL_HOOK_CONFIG} == 'yes' ]] && install_hook_config
 [[ ${INSTALL_HOOK_CONFIG} == 'no' ]] && echo 'Skipping Hook config install'
-if [[ ${INSTALL_HOOK_CONFIG} == 'prompt' ]] 
+if [[ ${INSTALL_HOOK_CONFIG} == 'prompt' ]]
 then
     confirm 'Install Hook Config' 'y/N' && install_hook_config || echo 'Skipping Hook config install'
 fi
-
+# forked pyzm
+[[ ${INSTALL_PYZM} == 'yes' ]] && install_pyzm
+[[ ${INSTALL_PYZM} == 'no' ]] && echo 'Skipping forked neo-pyzm install'
+if [[ ${INSTALL_PYZM} == 'prompt' ]]
+then
+    confirm 'Install forked neo-pyzm?' 'y/N' && install_pyzm || echo 'Skipping forked neo-pyzm install'
+fi
 # Make sure webserver can access them
 chown -R ${WEB_OWNER}:${WEB_GROUP} "${TARGET_DATA}"
 
@@ -665,33 +716,34 @@ chown -R ${WEB_OWNER}:${WEB_GROUP} "${TARGET_DATA}"
 if [ "${INSTALL_CORAL_EDGETPU}" == "yes" ]
 then
     cat << EOF
-    -------------------------- EdgeTPU note ---------------------------- 
+    -------------------------- EdgeTPU note ----------------------------
 
-    Note that while edgetpu support has been added, the expectation is 
+    Note that while edgetpu support has been added, the expectation is
     that you have followed all the instructions at:
     https://coral.ai/docs/accelerator/get-started/ first. Specifically,
     you need to make sure you have:
     1. Installed the right libedgetpu library (max or std)
-    2. Installed the right tensorflow-lite library 
+    2. Installed the right tensorflow-lite library
     3. Installed pycoral APIs as per https://coral.ai/software/#pycoral-api
 
-    If you don't, things will break. Further, you also need to make sure 
+    If you don't, things will break. Further, you also need to make sure
     your web user (${WEB_OWNER}) has access to the coral device.
     On my ubuntu system, I needed to do:
         sudo usermod -a -G plugdev www-data
     --------------------------------------------------------------------
 EOF
 fi
-
-if [ "${HOOK_CONFIG_UPGRADE}" == "yes" ] 
-then
-    echo
-    echo "Creating a migrated objectconfig if required"
-    ./tools/config_upgrade.py -c "${TARGET_CONFIG}/objectconfig.ini" 
-else 
-    echo "Skipping hook config upgrade process"
-fi
-
+#
+#if [ "${HOOK_CONFIG_UPGRADE}" == "yes" ]
+#then
+#    echo
+#    echo "Creating a migrated objectconfig if required"
+#    ./tools/config_upgrade.py -c "${TARGET_CONFIG}/objectconfig.ini"
+#else
+#    echo "Skipping hook config upgrade process"
+#fi
 
 echo
-echo "*** Please remember to start the Event Server after this update ***" 
+echo "To uninstall forked pyzm 'sudo pip3 uninstall neo-pyzm'"
+echo
+echo "*** Please remember to start the Event Server after this update ***"
