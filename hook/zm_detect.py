@@ -365,7 +365,7 @@ def remote_detect(options=None, args=None):
         g.logger.error(
             f"{lp} error during post to mlapi host-> {all_ex}"
         )
-        # g.logger.debug(f"traceback-> {format_exc()}")
+        g.logger.debug(f"traceback-> {format_exc()}")
     else:
         data: Optional[dict] = None
         multipart_data: decoder.MultipartDecoder = decoder.MultipartDecoder.from_response(r)
