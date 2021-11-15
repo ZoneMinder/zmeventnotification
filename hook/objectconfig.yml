@@ -2,10 +2,10 @@
 # Configuration file for object detection
 # *** NOTE: zmeventnotification.ini and secrets.ini are for configuring the ZMEventnotification.pl (Perl) daemon
 # that reads the shared memory to find new events that are happening in ZM. objectconfig.yml and its secrets.yml
-# are stricly for the object detection part of ZMES.
+# are strictly for the object detection part of ZMES.
 
-# NOTE: Most of these base config keys can be overriden
-# on a per monitor basis if you want. Just
+# NOTE: Most of these base config keys can be overridden
+# on a per-monitor basis if you want. Just
 # duplicate it inside the correct monitor: section, Example ->
 
 # This is in the base config (not nested inside the 'monitors' section)
@@ -22,9 +22,9 @@
 #    my_other_thing :  '{{my_thing}} - Evil minds that plot destruction - Sorcerer of death's construction'
 
 #  2:
-#    my_thing :  Hi
+#    my_thing :  Hello
 #    NOTICE that the {{var}} is quoted even though it is all by itself
-#    my_other_thing :  '{{my_thing}}'
+#    my_other_thing :  '{{my_thing}}, World!'
 
 ###########################################
 #    ------ [ General SECTION ] ------
@@ -39,9 +39,9 @@ base_data_path: /var/lib/zmeventnotification
 secrets : /etc/zm/zm_secrets.yml
 
 # Push notification customized script. See the provided gotify_zmes.sh for an example and what ARGS are passed.
-# When install.sh was run it installed thius example gotify script to the {{base_data_path}}/bin directory.
+# When install.sh was run it installed this example gotify script to the {{base_data_path}}/bin directory (you can modify install.sh to install to a different dir).
 # THIS IS a working example, you can make your own shell script and use the ARGS however you like. If you want the logger to record that
-# your custom script was a success you need to echo out a 0 for success or a 1 for failure
+# your custom script was a success you need to echo out a 0 for success or anything else for failure.
 # (Default: no)
 custom_push: no
 custom_push_script: '{{base_data_path}}/bin/gotify_zmes.sh'
