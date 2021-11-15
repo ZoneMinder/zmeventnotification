@@ -234,25 +234,15 @@ def remote_detect(options=None, args=None):
         },
     }
     # Send PushOver notification on GPU/TPU failures with some info
-    if str2bool(g.config.get("push_errors")):
-        # Encrypt the app token and user key for transport
-        sub_options = {
-            "push_errors": g.config.get("push_errors"),
-            "push_options": {
-                "token": g.config.get("push_err_token", g.config.get("push_token")),
-                "user": g.config.get("push_err_key", g.config.get("push_key")),
-                "sound": g.config.get("push_sound"),
-            },
-        }
-    else:
-        sub_options = {
-            "push_errors": 'no',
-            "push_options": {
-                "token": None,
-                "user": None,
-                "sound": None,
-            },
-        }
+
+    sub_options = {
+        "push_errors": 'no',
+        "push_options": {
+            "token": None,
+            "user": None,
+            "sound": None,
+        },
+    }
     # Get api creds ready
     encrypted_data = None
     try:
@@ -291,11 +281,12 @@ def remote_detect(options=None, args=None):
         if auth_type == 'token':
             kickstart['api_url'] = g.api.api_url
             kickstart['portal_url'] = g.api.portal_url
-            for k, v in kickstart.items():
-                if v:
-                    encrypted_data[f.encrypt(str(k).encode('utf-8'))] = f.encrypt(str(v).encode('utf-8'))
-                # Add the route name after encryption so that it is readable on the other end
-                encrypted_data['name'] = route_name
+            encrypted_data: dict = {
+                f.encrypt(str(k).encode('utf-8')): f.encrypt(str(v).encode('utf-8'))
+                              for k, v in kickstart.items() if v is not None
+            }
+            # Add the route name after encryption so that it is readable on the other end
+            encrypted_data['name'] = route_name
         else:
             g.logger.error(f"{lp} Only JWT Auth token is supported (no basic auth),"
                            f" please upgrade to using that auth method!")
