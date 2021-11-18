@@ -33,7 +33,7 @@ Removing the 'local' aspect from ZMEventnotification. What I mean is that at the
 
 MLAPI keeps the ML models loaded into memory instead of having to load the models every single detection. This is a huge performance boost and I do not see the need to keep the 'local' aspect of ZMES around. MLAPI will be installed alongside ZMEventnotification server as the default way to process detections and will retain the ability to be installed by itself (NO ZMES or ZM on same host, mlapi still needs pyzm)
 
-Pydantic models with validators to validate the configs and data (I have started to move MLAPI over to Pydantic models)
+(non performant) - SHELVED - ~~Pydantic models with validators to validate the configs and data (I have started to move MLAPI over to Pydantic models)~~
 
 FastAPI rewrite instead of Flask/bjoern - I may have 2 separate branches that I will maintain to have the option of either or. I do not think that moving MLAPI to FastAPI will get many benefits as the bottlenecks for ML are the hardware. 
 
