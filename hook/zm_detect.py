@@ -257,11 +257,13 @@ def remote_detect(options=None, args=None):
         Fernet = None
         del Fernet
         # raise an exception to trigger the next route or local fallback
-        raise ValueError(f"cryptography library not installed or accessible")
+        raise ValueError(f"cryptography library not installed or not accessible")
     else:
         encrypted_data = {}
         try:
+            # encode str into bytes for encrpytion use
             key: str = route['enc_key'].encode('utf-8')
+            # get the credential data needed to pass mlapi
             kickstart = g.api.cred_dump()
             # init the Fernet object with the key
             f = f(key)
@@ -272,21 +274,19 @@ def remote_detect(options=None, args=None):
             )
             # raise an exception to trigger the next route or local fallback
             raise ValueError(f"encryption key malformed for {route['name']}")
-        auth_type = None
-        # Encode into a byte string and encrypt using 'key'
         route_name = route['name'] or 'default_route'
         # Auth type and creds based on which type
         auth_type = g.api.auth_type
-
         if auth_type == 'token':
             kickstart['api_url'] = g.api.api_url
             kickstart['portal_url'] = g.api.portal_url
             encrypted_data: dict = {
-                f.encrypt(str(k).encode('utf-8')): f.encrypt(str(v).encode('utf-8'))
+                f.encrypt(str(k).encode('utf-8')).decode(): f.encrypt(str(v).encode('utf-8')).decode()
                               for k, v in kickstart.items() if v is not None
             }
             # Add the route name after encryption so that it is readable on the other end
             encrypted_data['name'] = route_name
+            print(f'{encrypted_data = }')
         else:
             g.logger.error(f"{lp} Only JWT Auth token is supported (no basic auth),"
                            f" please upgrade to using that auth method!")
@@ -304,7 +304,7 @@ def remote_detect(options=None, args=None):
         "stream": g.eid,
         "stream_options": options,
         "ml_overrides": ml_overrides,
-        "sub_options": sub_options,
+        "sub_options": None,
         "encrypted data": encrypted_data,
     }
     # files = {
@@ -1231,7 +1231,7 @@ def main_handler():
                     wrote_objdetect = True
             else:
                 g.logger.debug(
-                    f"{lp} not writing objdetect.jpg or objects.json as monitor {g.mid}->'{args['mon_name']}' "
+                    f"{lp} not writing objdetect.jpg or objects.json as monitor {g.mid}->'{g.config.get('mon_name')}' "
                     f"event: {g.eid} has a previous detection and it matches the current one"
                 )
             # GOTIFY / OTHER PUSH APIS
