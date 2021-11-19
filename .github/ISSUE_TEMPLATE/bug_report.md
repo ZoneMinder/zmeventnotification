@@ -22,6 +22,13 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
+Debug Logs (if applicable)
+
+Important: Please post DEBUG logs NOT INF logs. Instructions on how to enable debug logs are posted [HERE](https://zmeventnotification.readthedocs.io/en/latest/guides/es_faq.html#logging)
+```
+Paste logs here
+```
+
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
