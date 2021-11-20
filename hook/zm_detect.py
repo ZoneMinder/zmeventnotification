@@ -286,7 +286,6 @@ def remote_detect(options=None, args=None):
             }
             # Add the route name after encryption so that it is readable on the other end
             encrypted_data['name'] = route_name
-            print(f'{encrypted_data = }')
         else:
             g.logger.error(f"{lp} Only JWT Auth token is supported (no basic auth),"
                            f" please upgrade to using that auth method!")
