@@ -45,6 +45,10 @@ secrets: /etc/zm/zm_secrets.yml
 # (Default: no)
 custom_push: no
 custom_push_script: '{{base_data_path}}/bin/gotify_zmes.sh'
+# ***** DO NOT UNCOMMENT THESE 2 LINES, THESE ARE SET-UP IN THE PUSHOVER SECTION, this is just a reminder that it exists *****
+# The username and password of the ZM API user that the clickable URL link will be authorized with. Make an API user with VIEW privs of EVENT and STREAM.
+############_____push_user: '{[my_secret_user]}'
+############_____push_pass: '{[my_secret_pass]}'
 
 #  comma split list of monitor IDs to skip processing hooks on.
 #  I put it here, so you don't have to restart zmeventnotification.pl to have the changes take effect, you can change these every detection at the moment
@@ -303,9 +307,9 @@ push_key: '{[PUSHOVER_USER_KEY]}'
 # (Default: no)
 push_url: no
 
-# The ZM API user for the clickable URL link in the pushover notification. I HIGHLY recommend https on your ZM host,
-# making a user with VIEW privileges of stream and events only and using that for push_user and pass
-# example: make a user named 'push_view' and VIEW privs only for STREAM and EVENT
+# The ZM API user for the clickable URL link in push notifications (Pushover and custom_push_script).
+#  I HIGHLY recommend https on your ZM host, making a user with VIEW privileges of stream and events only and
+# using that for push_user and pass. Example: make a user named 'push_view' with VIEW privs only for STREAM and EVENT
 push_user: '{[PUSHOVER_USER]}'
 push_pass: '{[PUSHOVER_PASS]}'
 # -------------------------------------------------------------
