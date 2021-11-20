@@ -21,19 +21,19 @@ Event NotificationServer Documentation
          
  
 
-`Github Repository <https://github.com/pliablepixels/zmeventnotification>`__        
+`Github Repository <https://github.com/baudneo/zmeventnotification>`__
 
 
 :doc:`guides/principles`
         Key principles of how things work. Read this to understand how everything ties together.
 :doc:`guides/breaking`
-        Breaking changes. Always read this if you are upgrading (for example, lots changed with 3.x and 3.2) 
+        Breaking changes.
 :doc:`guides/install`
         How to install the Event Notification Server 
 :doc:`guides/hooks`
         How to configure the machine learning hooks *after* you install the Event Server
 :doc:`guides/config`
-        How to use config files
+        How to use config files, YAML is now the syntax used to configure hooks and MLAPI.
 :doc:`guides/es_faq`
         Event Notification Server FAQ covering common scenarios/issues
 :doc:`guides/hooks_faq`

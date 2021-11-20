@@ -1918,7 +1918,7 @@ sub sendOverFCMV1 {
     # $alarm->{Cause} = substr( $alarm->{Cause}, 4 );
     my @sp_cause = split( ' ', substr( $alarm->{Cause}, 9 ));
     # $alarm->{Cause} = @sp_cause[0]
-    printInfo(@sp_cause + ' TYLER TEST')
+    printInfo(@sp_cause)
 
       if ( !$keep_frame_match_type );
   }
@@ -2129,7 +2129,7 @@ sub sendOverFCMLegacy {
     # $alarm->{Cause} = substr( $alarm->{Cause}, 4 );
     my @sp_cause = split( ' ', substr( $alarm->{Cause}, 9 ));
     # $alarm->{Cause} = @sp_cause[0]
-    printInfo(@sp_cause + ' TYLER TEST 2111')
+    printInfo(@sp_cause)
 
       if ( !$keep_frame_match_type );
   }

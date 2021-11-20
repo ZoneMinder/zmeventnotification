@@ -1,5 +1,12 @@
 Breaking Changes
 ----------------
+'neo-ZMES' is starting out at version 7.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- The 'hooks' (object detection) of ZMES is now configured using YAML syntax/structure.
+- !SECRETS are now {[SECRETS]} - This allows for embedding in substrings and nested data structures.
+- Absolutely not compatible with the source repos!
+- ZMEventnotification.pl has been modified to add a --live flag when running the hooks python script zm_detect.py.
+
 
 Version 6.1.19 onwards 
 ~~~~~~~~~~~~~~~~~~~~~~~~~

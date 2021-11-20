@@ -1148,24 +1148,31 @@ def main_handler():
                     display_param_dict["url"] = display_url
 
                     if matched_data.get("labels"):
-
+                        # todo: polish this
                         vehicles = ('truck', 'car', 'motorbike', 'bus')
                         # priority is in descending order
                         labels = tuple(matched_data.get("labels"))
                         if 'person' in labels and g.config.get('push_sound_person'):
                             param_dict['sound'] = g.config['push_sound_person']
+                            display_param_dict['sound'] = g.config['push_sound_person']
                         elif any(w in vehicles for w in labels) and g.config.get('push_sound_vehicle'):
                             param_dict['sound'] = g.config['push_sound_vehicle']
+                            display_param_dict['sound'] = g.config['push_sound_vehicle']
                         elif 'car' in labels:
-                            pass
+                            param_dict['sound'] = g.config['push_sound_car']
+                            display_param_dict['sound'] = g.config['push_sound_car']
                         elif 'truck' in labels:
-                            pass
+                            param_dict['sound'] = g.config['push_sound_truck']
+                            display_param_dict['sound'] = g.config['push_sound_truck']
                         elif 'motorbike' in labels:
-                            pass
+                            param_dict['sound'] = g.config['push_sound_motorbike']
+                            display_param_dict['sound'] = g.config['push_sound_motorbike']
                         elif 'dog' in labels:
-                            pass
+                            param_dict['sound'] = g.config['push_sound_dog']
+                            display_param_dict['sound'] = g.config['push_sound_dog']
                         elif 'cat' in labels:
-                            pass
+                            param_dict['sound'] = g.config['push_sound_cat']
+                            display_param_dict['sound'] = g.config['push_sound_cat']
 
                     files = {
                         "attachment": (

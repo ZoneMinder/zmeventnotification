@@ -15,7 +15,7 @@ The ES is a perl process (typically ``/usr/bin/zmeventnotification.pl``) that ac
 
 .. sidebar:: Configuration files
     
-    This may be a good place to talk about configuration files. The ES has many customizations that are controlled by ``/etc/zm/zmeventnotification.ini``. If you are using hooks, they are controlled by ``/etc/zm/objectconfig.ini``. Both these files use ``/etc/zm/secrets.ini`` to move personal information away from config files. Study both these ini files well. They are heavily commented for your benefit.
+    This may be a good place to talk about configuration files. The ES has many customizations that are controlled by ``/etc/zm/zmeventnotification.ini``. If you are using hooks, they are controlled by ``/etc/zm/objectconfig.yml``. Both these files use ``/etc/zm/secrets.ini`` to move personal information away from config files. Study both these ini files well. They are heavily commented for your benefit.
 
 2: Detecting New Events
 -----------------------------
@@ -28,7 +28,7 @@ Once the ES is up and running, it uses shared memory to know when new events are
 
 3: Deciding what to do when a new event starts
 -----------------------------------------------------
-When the ES detects a new event, it forks a sub-process to handle that event and continues its loop to listening for new events (by polling SHM). There is exactly one fork for each new event and that fork typically lives till the event is completely finished.
+When the ES detects a new event, it forks a sub-process to handle that event and continues its loop to listening for new events (by polling SHM). There is exactly one fork for each new event and that fork typically lives until the event is completely finished.
 
 3.1: Hooks (Optional)
 ***************************
@@ -39,7 +39,7 @@ The entire concept of hooks is to "influence" whether or not to actually send ou
 
 So when you have hooks enabled, the script that is invoked when a new event is detected by the ES is defined in ``event_start_hook`` inside ``zmeventnotification.ini``. I am going to assume you did not change that hook script, because the default script does the fancy image recognition that lot of people love. That script, which is usually ``/var/lib/zmeventnotification/bin/zm_event_start.sh`` does the following:
 
-* It invokes `/var/lib/zmeventnotification/bin/zm_detect.py` that is the actual script that does the fancy detection and waits for a response. If this python file detects objects that meet the criteria in ``/etc/zm/objectconfig.ini`` it will return an exit code of ``0`` (success) with a text string describing the objects, else it will return an exit code of ``1`` (fail) 
+* It invokes `/var/lib/zmeventnotification/bin/zm_detect.py` that is the actual script that does the fancy detection and waits for a response. If this python file detects objects that meet the criteria in ``/etc/zm/objectconfig.yml`` it will return an exit code of ``0`` (success) with a text string describing the objects, else it will return an exit code of ``1`` (fail) 
 * It passes on the output and the return value of the script back to the ES
 
 * At this stage, if hooks were used and it returned a success (``0``) and ``use_hook_description=yes`` in ``zmeventnotification.ini`` then the detection text gets written to the ZM DB for the event
@@ -260,7 +260,7 @@ Controlling the Event Server
 ++++++++++++++++++++++++++++
 There is both a static and dynamic way to control the ES.
 
-- You can change parameters in ``zmeventnotification.ini``. This will however require you to restart the ES (``sudo zmdc.pl restart  zmeventnotification.pl``). You can also change hook related parameters in ``objectconfig.ini`` and they will automatically take effect for the next detection (because the hook scripts restart with each invocation), if you are using local detections.
+- You can change parameters in ``zmeventnotification.ini``. This will however require you to restart the ES (``sudo zmdc.pl restart  zmeventnotification.pl``). You can also change hook related parameters in ``objectconfig.yml`` and they will automatically take effect for the next detection (because the hook scripts restart with each invocation), if you are using local detections.
 
 - So obviously, there was a need to allow for programmatic change to the ES and dynamically.
 
@@ -276,20 +276,20 @@ How Machine Learning works
 
 There is a dedicated document that describes how hooks work at :doc:`hooks`. Refer to that for details. This section will describe high level principles.
 
-As described earlier, the entry point to all the machine learning goodness starts with ``/var/lib/zmeventnotitication/bin/zm_detect.py``. This file reads ``/etc/zm/objectconfig.ini`` and based on the many settings there goes about doing various forms of detection. There are some important things to remember:
+As described earlier, the entry point to all the machine learning goodness starts with ``/var/lib/zmeventnotitication/bin/zm_detect.py``. This file reads ``/etc/zm/objectconfig.yml`` and based on the many settings there goes about doing various forms of detection. There are some important things to remember:
 
-* When the hooks are invoked, ZM has *just started* recording the event. Which means there are only limited frames to analyze. Infact, at times, if you see the detection scripts are not able to download frames, then it is possible they haven't yet been written to disk by ZM. This is a good situation to use the ``wait`` attribute in ``objectconfig.ini`` and wait for a few seconds before it tries to get frames. 
+* When the hooks are invoked, ZM has *just started* recording the event. Which means there are only limited frames to analyze. Infact, at times, if you see the detection scripts are not able to download frames, then it is possible they haven't yet been written to disk by ZM. This is a good situation to use the ``wait`` attribute in ``objectconfig.yml`` and wait for a few seconds before it tries to get frames. 
 
 .. sidebar:: Gotcha
 
     If you ever wonder why detection did not work when the ES invoked it, but worked just fine when you ran the detection manually, this may be why: during detection the snapshot was different from the final value.
 
-* The detection scripts DO NOT analyze all frames recorded so far. That would take too long (well, not if you have a powerful GPU). It only analyzes two frames at most, depending on your ``frame_id`` value in ``objectconfig.ini``.  Those two frames are ``snapshot`` and ``alarm``, assuming you set ``frame_id=bestmatch``
+* The detection scripts DO NOT analyze all frames recorded so far. That would take too long (well, not if you have a powerful GPU). It only analyzes two frames at most, depending on your ``frame_id`` value in ``objectconfig.yml``.  Those two frames are ``snapshot`` and ``alarm``, assuming you set ``frame_id=bestmatch``
 * ``snapshot`` is the frame that has the highest score. It is very possible this frame changes *after* the detection is done, because it is entirely possible that another frame with a higher score is recorded by ZM as the event proceeds. 
 * There are various steps to detection:
 
-  1. Match all the rules in ``objectconfig.ini`` (example type(s) of detection for that monitor, etc.) 
+  1. Match all the rules in ``objectconfig.yml`` (example type(s) of detection for that monitor, etc.) 
   2. Do the actual detection
-  3. Make sure the detections meet the rules in ``objectconfig.ini`` (example, it intersects  the polygon boundaries, category of detections, etc.)
+  3. Make sure the detections meet the rules in ``objectconfig.yml`` (example, it intersects  the polygon boundaries, category of detections, etc.)
   4. Of these step 2. can either be done locally or remotely, depending on how you set up ``ml_gateway``. Everything else is done locally. See  :ref:`this FAQ entry <local_remote_ml>` for more details.
 

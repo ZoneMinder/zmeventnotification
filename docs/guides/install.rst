@@ -30,7 +30,7 @@ To clone the latest stable release:
 
 ::
 
-  git clone https://github.com/pliablepixels/zmeventnotification.git
+  git clone https://github.com/baudneo/zmeventnotification.git
   cd zmeventnotification
   # repeat these two steps each time you want to update to the latest stable
   git fetch --tags
@@ -41,7 +41,7 @@ To clone master:
 
 ::
 
-  git clone https://github.com/pliablepixels/zmeventnotification.git
+  git clone https://github.com/baudneo/zmeventnotification.git
   # repeat these two steps each time you want to update
   git checkout master # only needed if you are on some other branch later
   git pull
@@ -228,10 +228,11 @@ When you install the ES, it comes with default configuration files. They key fil
 are:
 
 - ``/etc/zm/zmeventnotification.ini`` - various parameters that control the ES
-- ``/etc/zm/objectconfig.ini`` - various parameters that control the machine learning hooks
+- ``/etc/zm/objectconfig.yml`` - various parameters that control the machine learning hooks
+- ``/etc/zm/zm_secrets.yml`` - secrets file for hooks.
 - ``/etc/zm/secrets.ini`` - a common key/value mapping file where you store your personal configurations
 
-You **always** have to modify ``/etc/zm/secrets.ini`` to your server settings. Please review
+You **always** have to modify ``/etc/zm/secrets.ini`` and ``/etc/zm/zm_secrets.yml`` to your server settings. Please review
 the keys and update them with your settings. At the least, you will need to modify:
 
 - ``ZM_USER`` - the username used to log into your ZM web console

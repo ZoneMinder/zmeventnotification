@@ -36,7 +36,7 @@ base_data_path: /var/lib/zmeventnotification
 # This is an optional file
 # If specified, you can specify tokens with secret values in that file
 # and only refer to the tokens in your main config file ** !SECRETS are now {[SECRETS]} **
-secrets : /etc/zm/zm_secrets.yml
+secrets: /etc/zm/zm_secrets.yml
 
 # Push notification customized script. See the provided gotify_zmes.sh for an example and what ARGS are passed.
 # When install.sh was run it installed this example gotify script to the {{base_data_path}}/bin directory (you can modify install.sh to install to a different dir).

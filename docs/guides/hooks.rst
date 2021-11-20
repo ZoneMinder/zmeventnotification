@@ -17,13 +17,13 @@ Machine Learning Hooks
 Key Features 
 ~~~~~~~~~~~~~
 
-- Detection: objects, faces 
-- Recognition: faces 
+- Detection: objects, faces, License Plates
+- Recognition: faces, License plates
 - Platforms: 
 
-   - CPU (object, face detection, face recognition), 
-   - GPU (object, face detection, face recognition), 
-   - EdgeTPU (object, face detection)
+   - CPU (object, face detection, face recognition, ALPR), 
+   - GPU (object, face detection, face recognition, ALPR), 
+   - EdgeTPU (object, face detection, ALPR)
 
 - Machine learning can be installed locally with ZM, or remotely via mlapi 
 
@@ -31,7 +31,7 @@ Limitations
 ~~~~~~~~~~~
 
 - Only tested with ZM 1.32+. May or may not work with older versions
-- Needs Python3 (Python2 is not supported)
+- Needs Python3.6+ (Python2 is not supported)
 
 What
 ~~~~
@@ -40,11 +40,10 @@ Kung-fu machine learning goodness.
 
 This is an example of how you can use the ``hook`` feature of the
 notification server to invoke a custom script on the event before it
-generates an alarm. I currently support object detection and face
-recognition.
+generates an alarm. I currently support object detection, face detection/recognition and ALPR (Automatic License Plate Recognition).
 
 Please don't ask me questions on how to use them. Please read the
-extensive documentation and ini file configs
+extensive documentation and ini/yml file configs
 
 
 .. _hooks_install:
@@ -58,11 +57,11 @@ Automatic install
 -  You need to have ``pip3`` installed. On ubuntu, it is
    ``sudo apt install python3-pip``, or see
    `this <https://pip.pypa.io/en/stable/installing/>`__
--  Clone the event server and go to the ``hook`` directory
+-  Clone the event server repository and go to the ``hook`` directory
 
 .. code:: bash
 
-    git clone https://github.com/pliablepixels/zmeventnotification # if you don't already have it downloaded
+    git clone https://github.com/baudneo/zmeventnotification # if you don't already have it downloaded
 
     cd zmeventnotification
 
@@ -91,7 +90,7 @@ you'll have to invoke the script using:
 
    sudo -H INSTALL_CORAL_EDGETPU=yes ./install.sh # and follow the prompts
 
-EdgeTPU models/underlying libraries are not downloaded automatically.
+EdgeTPU models/underlying libraries are not downloaded automatically. (EfficeintDet lite v3 and MobileNetv2 TF2 models added Nov 2021)
 
 For EdgeTPU, the expectation is  that you have followed all the instructions 
 at `the coral site <https://coral.ai/docs/accelerator/get-started/>`__ first. 
@@ -138,9 +137,9 @@ Will install the ES and hooks, but no configs and will add the coral libraries.
 
 .. _opencv_install:
 
-**Note:**: If you plan on using object detection, starting v5.0.0 of the ES, the setup script no longer installs opencv for you. This is because you may want to install your own version with GPU accelaration or other options. There are two options to install OpenCV:
+**Note:**: If you plan on using object detection, starting v5.0.0 of the ES, the setup script no longer installs opencv for you. This is because you may want to install your own version with GPU acceleration or other options. There are two options to install OpenCV:
 
-  - You install a pip package. Very easy, but you don't get GPU support
+  - You install a pip package (opencv-contrib-python). Very easy, but you don't get GPU support
   - You compile from source. Takes longer, but you get all the right modules as well as GPU support. Instructions are simple, if you follow them well.
 
   .. important::
@@ -190,7 +189,7 @@ you can do face detection [not recognition] by using the coral libraries as well
     sudo apt-get install libopenblas-dev liblapack-dev libblas-dev  # not mandatory, but gives a good speed boost!
     sudo -H pip3 install face_recognition # mandatory
 
-Takes a while and installs a gob of stuff, which is why I did not add it
+Takes a while (building DLib) and installs a gob of stuff, which is why I did not add it
 automatically, especially if you don't need face recognition.
 
 Note, if you installed ``face_recognition`` earlier without blas, do this:
@@ -211,7 +210,7 @@ If automatic install fails for you, or you like to be in control, take a look at
 Post install steps
 ~~~~~~~~~~~~~~~~~~
 
--  Make sure you edit your installed ``objectconfig.ini`` to the right
+-  Make sure you edit your installed ``objectconfig.yml`` to the right
    settings. You MUST change the ``[general]`` section for your own
    portal.
 -  Make sure the ``CONFIG_FILE`` variable in ``zm_event_start.sh`` is
@@ -275,7 +274,7 @@ Understanding detection configuration
 
 Starting v6.1.0, you can chain arbitrary detection types (object, face, alpr)
 and multiple models within them. In older versions, you were only allowed one model type 
-per detection type. Obviously, this has required structural changes to ``objectconfig.ini`` 
+per detection type. Obviously, this has required structural changes to ``objectconfig.yml`` 
 
 This section will describe the key constructs around two important structures:
 
@@ -297,11 +296,11 @@ It's pretty simple, actually.
 
 - When ``use_sequence`` is set to ``yes`` (default is yes), ``ml_options`` and ``stream_sequence``
   structures override anything in the ``[object]``, ``[face]`` and ``[alpr]`` sections 
-  Specifically, the following values are ignored in objectconfig.ini in favor of values inside the sequence structure:
+  Specifically, the following values are ignored in objectconfig.yml in favor of values inside the sequence structure:
    
    - frame_id, resize, delete_after_analyze, the full [object], [alpr], [face] sections 
    - any overrides related to object/face/alpr inside the [monitor] sections 
-   - However, that being said, if you take a look at ``objectconfig.ini``, the sample file
+   - However, that being said, if you take a look at ``objectconfig.yml``, the sample file
      implements parameter substitution inside the structures, effectively importing the values right back in.
      Just know that what you specify in these sequence structures overrides the above attributes. 
      If you want to reuse them, you need to put them in as parameter substitutions like the same ini file has done 
@@ -436,7 +435,7 @@ So in the new way, if you want to change ``ml_sequence`` or ``stream_sequence`` 
 
 Understanding ml_sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-The ``ml_sequence`` structure lies in the ``[ml]`` section of ``objectconfig.ini`` (or ``mlapiconfig.ini`` if using mlapi).
+The ``ml_sequence`` structure lies in the ``[ml]`` section of ``objectconfig.yml`` (or ``mlapiconfig.ini`` if using mlapi).
 At a high level, this is how it is structured (not all attributes have been described):
 
 ::
@@ -470,7 +469,7 @@ At a high level, this is how it is structured (not all attributes have been desc
 - Now for each detection type in ``model_sequence``, you can specify the type of models you want to leading
   along with other related paramters.
 
-  **Note**: If you are using mlapi, there are certain parameters that get overriden by ``objectconfig.ini``
+  **Note**: If you are using mlapi, there are certain parameters that get overriden by ``objectconfig.yml``
   See :ref:`mlapi_overrides`
 
 Leveraging same_model_sequence_strategy and frame_strategy effectively
@@ -505,7 +504,7 @@ that describes all options. The ``options`` parameter is what you are looking fo
 
 Understanding stream_sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The ``stream_sequence`` structure lies in the ``[ml]`` section of ``objectconfig.ini``.
+The ``stream_sequence`` structure lies in the ``[ml]`` section of ``objectconfig.yml``.
 At a high level, this is how it is structured (not all attributes have been described):
 
 ::
@@ -570,11 +569,11 @@ nightmare to maintain. So please migrate to the proper format. If you've been us
 it will likely break things, but please read the help and convert properly. ``use_sequence=no`` is no 
 longer maintained.
 
-Here are a list of parameters that still need to be in ``objectconfig.ini`` when using mlapi.
-(A simple rule to remember is zm_detect.py uses ``objectconfig.ini`` while mlapi uses ``mlapiconfig.ini``)
+Here are a list of parameters that still need to be in ``objectconfig.yml`` when using mlapi.
+(A simple rule to remember is zm_detect.py uses ``objectconfig.yml`` while mlapi uses ``mlapiconfig.ini``)
 
-- ``ml_gateway`` (obviously, as the *ES* calls *zm_detect*, and zm_detect calls mlapi if this parameter is present in *objectconfig.ini*)
-- ``ml_fallback_local`` (if *mlapi* fails, or is not running, *zm_detect* will switch to local inferencing, so this needs to be in *objectconfig.ini*)
+- ``ml_gateway`` (obviously, as the *ES* calls *zm_detect*, and zm_detect calls mlapi if this parameter is present in *objectconfig.yml*)
+- ``ml_fallback_local`` (if *mlapi* fails, or is not running, *zm_detect* will switch to local inferencing, so this needs to be in *objectconfig.yml*)
 - ``show_percent`` (*zm_detect* is the one that actually creates the text you see in your object detection (*detected:[s] person:90%*))
 - ``write_image_to_zm`` (zm_detect is the one that actually puts *objdetect.jpg* in the ZM events folder - *mlapi* can't because it can be remote)
 - ``write_debug_image`` (*zm_detect* is the one that creates a debug image to inspect)
@@ -584,7 +583,7 @@ Here are a list of parameters that still need to be in ``objectconfig.ini`` when
 - ``animation_types`` (same as above)
 - ``show_models`` (if you want to show model names along with text)
 
-These need to be present in both mlapiconfig.ini and objectconfig.ini
+These need to be present in both mlapiconfig.ini and objectconfig.yml
 
 - ``secrets``
 - ``base_data_path``
@@ -594,12 +593,12 @@ These need to be present in both mlapiconfig.ini and objectconfig.ini
 - ``password``
 
 
-So when using mlapi, migrate configurations that you typically specify in ``objectconfig.ini`` to ``mlapiconfig.ini``. This includes:
+So when using mlapi, migrate configurations that you typically specify in ``objectconfig.yml`` to ``mlapiconfig.ini``. This includes:
 
 - Monitor specific sections 
 - ml_sequence and stream_sequence 
 - In general, if you see detection with mlapi missing something that worked when using 
-  objectconfig.ini, make sure you have not missed anything specific in mlapiconfig.ini 
+  objectconfig.yml, make sure you have not missed anything specific in mlapiconfig.ini 
   with respect to related parameters 
 
 Also note that if you are using ml_fallback, repeat the settings in both configs.
@@ -663,7 +662,7 @@ When it comes to faces, there are two aspects (that many often confuse):
 Face Detection 
 '''''''''''''''
 If you only want "face detection", you can use either dlib/face_recognition or Google's TPU. Both are supported.
-Take a look at ``objectconfig.ini`` for how to set them up.
+Take a look at ``objectconfig.yml`` for how to set them up.
 
 Face Detection + Face Recognition
 '''''''''''''''''''''''''''''''''''
@@ -687,7 +686,7 @@ dependencies that takes time (including dlib) and not everyone wants it.
 Using the right face recognition modes
 '''''''''''''''''''''''''''''''''''''''
 
-- Face recognition uses dlib. Note that in ``objectconfig.ini`` you have two options of face detection/recognition. Dlib has two modes of operation (controlled by ``face_model``). Face recognition works in two steps:
+- Face recognition uses dlib. Note that in ``objectconfig.yml`` you have two options of face detection/recognition. Dlib has two modes of operation (controlled by ``face_model``). Face recognition works in two steps:
   - A: Detect a face
   - B: Recognize a face
 
@@ -764,7 +763,7 @@ Troubleshooting
    is not able to download the image to check. This may be because your
    ZM version is old or other errors. Some common issues:
 
-   -  Make sure your ``objectconfig.ini`` section for ``[general]`` are
+   -  Make sure your ``objectconfig.yml`` section for ``[general]`` are
       correct (portal, user,admin)
    -  For object detection to work, the hooks expect to download images
       of events using
@@ -823,7 +822,7 @@ Let's assume the above is what I want to debug, so then I run zm_detect manually
 
 ::
 
-   sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect.py --config /etc/zm/objectconfig.ini --debug --eventid 182253  --monitorid 6 --eventpath=/tmp
+   sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect.py --config /etc/zm/objectconfig.yml --debug --eventid 182253  --monitorid 6 --eventpath=/tmp
 
 
 Note that instead of ``/var/cache/zoneminder/events/6/2021-01-06/182253`` as the event path, I just use ``/tmp`` as it is easier for me. Feel free to use the actual
@@ -887,7 +886,7 @@ You can manually invoke the detection module to check if it works ok:
 
 .. code:: bash
 
-    sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid> --debug
+    sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect.py --config /etc/zm/objectconfig.yml  --eventid <eid> --monitorid <mid> --debug
 
 The ``--monitorid <mid>`` is optional and is the monitor ID. If you do
 specify it, it will pick up the right mask to apply (if it is in your

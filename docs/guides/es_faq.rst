@@ -40,12 +40,17 @@ Why do we need it?
 Is this officially developed by ZM developers?
 ----------------------------------------------
 
-No. I developed it for zmNinja, but you can use it with your own
+No. `@pliablepixels <https://github.com/pliablepixels>`__ developed it for zmNinja, `@baudneo <https://github.com/baudneo>`__ forked it to make changes. You can use it with your own
 consumer.
 
 How can I use this with Node-Red or Home Assistant?
 ---------------------------------------------------
+**UPDATED AS OF neo-ZMES 7.0:**
+The 'hooks' config (objectconfig.yml) now has a section for sending MQTT messages to topics. There is support for sending the matching image that is labeled and has bounding boxes drawn on it via MQTT to a Home Assistant MQTT Camera.
 
+See the 'MQTT Add-On' section of objectconfig.yml for more details.
+
+**The old MQTT system is configured in the zmeventnotification.ini file and the Perl side of ES handles it.**
 As of version 1.1, the event server also supports MQTT (Contributed by
 `@vajonam <https://github.com/vajonam>`__). zmeventnotification server can
 be configured to broadcast on a topic called
@@ -104,7 +109,7 @@ Download the latest version & change dir to it:
 
 ::
 
-  git clone https://github.com/pliablepixels/zmeventnotification.git
+  git clone https://github.com/baudneo/zmeventnotification.git
   cd zmeventnotification/
 
 STEP 2: stop the current ES
@@ -117,7 +122,7 @@ STEP 2: stop the current ES
 STEP 3: Make a backup of your config files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Before you execute the next step you may want to create a backup of your existing ``zmeventnotification.ini`` and ``objectconfig.ini`` config files. The script will prompt you to overwrite. If you say 'Y' then your old configs will be overwritten. Note that old configs are backed up using suffixes like ``~1``, ``~2`` etc. but it is always good to backup on your own.
+Before you execute the next step you may want to create a backup of your existing ``zmeventnotification.ini`` and ``objectconfig.yml`` config files. The script will prompt you to overwrite. If you say 'Y' then your old configs will be overwritten. Note that the script tries to back up old configs using suffixes like ``~1``, ``~2`` etc. but it is always good to backup on your own.
 
 
 STEP 4: Execute the install script
@@ -140,7 +145,7 @@ Note that you can also automate updates like so:
 
   sudo -H ./install.sh --install-hook --install-es --no-install-config --no-interactive
 
-The above will install/update the hooks, install/update the ES server but will not overwrite your existing config files. **NOTE** that newer versions of the ES/detection scripts may introduce new parameters in ``zmeventnotification.ini`` and ``objectconfig.ini``. You may need to paste them in manually, so always read :doc:`breaking`
+The above will install/update the hooks, install/update the ES server but will not overwrite your existing config files. **NOTE** that newer versions of the ES/detection scripts may introduce new parameters in ``zmeventnotification.ini`` and ``objectconfig.yml``. You may need to paste them in manually, so always read :doc:`breaking`
 
 STEP 5: Start the new updated server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -241,7 +246,7 @@ sending a notification for.
 
 Related to ``hook`` we also have a ``hook_description`` attribute. When
 set to 1, the text returned by the hook script will overwrite the alarm
-text that is notified.
+text that is notified. Example: 'Motion: Front Yard' becomes -> '[120] person(58%)[yolo-gpu] Motion: Front Yard'
 
 We also have a ``hook_skip_monitors`` attribute. This is a comma separated
 list of monitors. When alarms occur in those monitors, hooks will not be
@@ -261,11 +266,9 @@ support for person detection)
    directory. This script is invoked by the notification server when an
    event starts.
 -  This script in turn invokes a python OpenCV based script that grabs
-   an image with maximum score from the current event so far and runs a
-   fast person detection routine.
--  It returns the value "person detected" if a person is found and none
-   if not
--  The wrapper script then checks for this value and exits with either 0
+   configured frames from the ZoneMinder API and runs different types of models to detect objects, faces or license plates.
+-  It returns some formatted strings to indicate what was found, if anything.
+-  The wrapper script then checks for a key word that is returned when there are detections and exits with either 0
    (send alarm) or 1 (don't send alarm)
 -  the notification server then sends out a ": person detected"
    notification to the clients listening
@@ -317,23 +320,25 @@ I can't connect to the ES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 There could be multiple reasons:
 
-- If you are connecting from WAN make sure you have set up port forwarding as needed
+- If you are connecting from WAN make sure you have set up port forwarding as needed, reverse proxies set up correctly or cloudflare.
 - Try changing the ``address`` attribute in ``[network]`` section of ``zmeventnotification.ini``.
   If you don't have your IP specified, it will use ``[::]``. Try ``0.0.0.0`` instead.
 
 I just added a new monitor and the ES is not sending notifications for it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This generally happens if you add a monitor _after_ you configure the ES.
+This generally happens if you add a monitor _after_ you configure the ES and it is already running.
 What you need to do is go to zmNinja's ``Menu->Settings->Event Server`` option and enable the monitor you just added and press save.
+The list of available monitors is cahced and only updated every x (300 by default) seconds. This means if you change a monitors status from None or Monitor to Modect and an alarm triggers, the ES may not see it because it has the Monitors 'mode; cached and thinks its still set to its previous setting.
+You can either restart the ES or ait until it 'reloads the monitors'.
 
 The ES is missing events. I see them being triggered in ZM
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 There could be multiple issues:
 
 - Let's start with the most obvious one. The ES and ZM need to be running on the same server
-- Alarms are only triggered on Mocord, Modect and Nocord monitors 
-- If you changed monitor modes or added new monitors after the ES started running, restart the ES so it loads the latest information
+- Alarms are only triggered on Mocord, Modect and Nocord monitors, so make sure your monitor is set to a correct mode that allows triggering alarms.
+- If you changed monitor modes or added new monitors after the ES started running, restart the ES so it loads the latest information (as mentioned above the monitor list is cached because it does not change much)
 - The ES polls ZM every 5 seconds for new alarms (the duration is controlled by ``event_check_interval`` in ``zmeventnotification.ini``). This means that if your alarm is very brief, that is, it starts and ends before the ES polls for new events then it will be missed. Note that the ES will catch alarms both in ``ALARM`` and ``ALERT`` state. ``ALARM`` is when ZM is actually detecting motion in the event. ``ALERT`` is when ZM stops detecting motion but is still waiting around till it writes all your ``post event frames`` that you have configured on your ZM Monitor buffer settings. So here is an example: Let's say I have a "Garage" monitor that I've configured a post event buffer of 100 (frames) and I've set my camera FPS to 10. That means it will take ZM 10 seconds to close an event after my alarm occurs (it will be in ``ALERT`` stage all that time). In this case, no matter show short my actual alarm, the ES will always catch it.
 
 LetsEncrypt certificates cannot be found when running as a web user
@@ -354,7 +359,7 @@ Before you read this, make sure push notifications in general are working (witho
 the following conditions must be met:
 
 - You must use HTTPS
-- There is a 1MB limit to image size
+- **There is a 1MB limit to image size**
 - You can't use self signed certs 
 - The IP/hostname needs to be accessible by zmNinja on the mobile device you are receiving pushes on
 - You need ZM 1.32.3 or above
@@ -494,22 +499,23 @@ Some possibilities:
   actually in the 99.9% lot and haven't checked properly.
 
 
-How do I reduce the time of delay from an alarm occuring in ZM to the notification being sent out?
+How do I reduce the time of delay from an alarm occurring in ZM to the notification being sent out?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- First, turn on debug logs. You'll know where the delays are occuring and then you can deep dive.
-- Read the priniciples document: :ref:`from-detection-to-notification`. Really, it will help you understand how this works 
+**neo-ZMES has been rewritten to be performant**
+- First, turn on debug logs. You'll know where the delays are occurring and then you can deep dive.
+- Read the principles document: :ref:`from-detection-to-notification`. Really, it will help you understand how this works
 - There are some key areas you can optimize for:
 
    - The ES _polls_ ZoneMinder mapped memory for events. By default it is 5 seconds. To change it, 
      change ``event_check_interval`` in ``zm_eventnotification.ini`` 
 
-   - One an alarm is detected, depending on whether you configured hooks or not, it will invoke 
+   - Once an alarm is detected, depending on whether you configured hooks or not, it will invoke
      object detection. Based on your server/desktop configuration, this can take just a few milliseconds 
-     to several seconds. If you are using machine learning hooks, consider using `mlapi <https://github.com/pliablepixels/mlapi>`__
+     to several seconds. If you are using machine learning hooks, consider using `mlapi <https://github.com/baudneo/mlapi>`__
      as it preloads models into memory only once. Loading a model can take a few seconds, while detection, if you are on 
      a GPU or TPU takes milliseconds. If you don't use hooks, turn it off in config.
 
-   - Again, if you are using hooks, there is a ``wait`` attribute in ``objectconfig.ini`` that waits for 
+   - Again, if you are using hooks, there is a ``wait`` attribute in ``objectconfig.yml`` that waits for
      a few seconds before downloading the image from ZM. This was done because sometimes the ES may be asking 
      to download an image that ZM hasn't written to disk yet (remember, ES is triggered when an alarm starts).
      This is really no longer needed, if you are using it. Starting ES 6.1.0, you can instead just use the 
@@ -553,7 +559,7 @@ The server runs fine when manually executed, but fails when run in daemon mode (
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 (This only covers daemon mode of the ES server. If you are facing issues related to hooks running
-in daemon model, please see :doc:`hooks_faq`)
+in daemon mode, please see :doc:`hooks_faq`)
 
 -  Make sure the file where you store tokens
    (``/var/lib/zmeventnotification/push/tokens.txt or whatever you have used``)
@@ -581,7 +587,7 @@ you can start it from command line again.
 Running hooks manually detects the objects I want but fails to detect via ES (daemon mode)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There may be multiple reasons, but a common one is of timing. When the ES invokes the hook, it is invoked almost immediately upon event detection. In some cases, ZoneMinder still has not had time to create an alarmed frame, or the right snapshot frame. So what happens is that when the ES invokes the hook, it runs detection on a different image from the one you run later when invoked manually. Try adding a ``wait = 5`` to ``objectconfig.ini`` to that monitor section and see if it helps
+There may be multiple reasons, but a common one is of timing. When the ES invokes the hook, it is invoked almost immediately upon event detection. In some cases, ZoneMinder still has not had time to create an alarmed frame, or the right snapshot frame. So what happens is that when the ES invokes the hook, it runs detection on a different image from the one you run later when invoked manually. Try adding a ``delay_between_frames = 0.5`` to ``objectconfig.yml`` to that monitor section and see if it helps
 
 
 Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!
@@ -746,11 +752,6 @@ resource? It's over TLS**
 Yup its encrypted but it may show up in the history of a browser you
 tried it from (if you are using a browser) Plus it may get passed along
 from the source when accessing another URL via the Referral header
-
-**So it's encrypted, but passing password is a bad idea. Why not some
-token?**
-
--  Well, now that ZM supports login tokens (starting 1.33), I'll get to supporting it, eventually.
 
 **Why WSS and not WS?**
 
