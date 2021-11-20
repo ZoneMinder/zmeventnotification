@@ -483,8 +483,6 @@ def _parse_args():
 
 
 def main_handler():
-    from multiprocessing.pool import ThreadPool
-    pool = ThreadPool(processes=1)
     global final_msg, g, start_of_local_detection, start_of_local_fallback_detection, \
         start_of_after_detection, start_of_remote_detection, start_of_script
     global bg_pushover_jpg, bg_pushover_gif, bg_animations, bg_mqtt
