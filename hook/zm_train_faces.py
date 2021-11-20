@@ -29,7 +29,7 @@ if __name__ == "__main__":
         args['debug'] = True
     args['from_face_train'] = True
 
-    zmesc = proc_conf(args=args, conf_globals=g, type_='zmes')
+    zmesc, g = proc_conf(args=args, conf_globals=g, type_='zmes')
     # Monitor overrides (returns default config if there are no per monitor overrides)
     g.config = zmesc.config
     # start the logger (you can Thread this if you want)
