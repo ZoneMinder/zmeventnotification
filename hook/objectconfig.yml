@@ -96,6 +96,19 @@ model_sequence :  object
 frame_set :  snapshot, alarm, snapshot
 #frame_set :  snapshot, 70, snapshot, 120, 150, alarm
 
+### STRATEGIES ###
+# first - stop after finding a detection that makes it through filtering
+# most - whichever frame/sequence has the most labels detected
+# most_unique - whichever frame/sequence has more unique matches (a dog and a person would beat 3 persons detected)
+# most_models (frame only) - whichever frame has more than 1 model detected in it
+# ---- an object and a face detection beats just an object detection even if the object detection has 6 matches
+# union (frame only) - chain together the matches from one frame to the next
+
+# Frame strategy -> first, most, most_models, most_unique, union
+frame_strategy: first
+# When running the same model, and you have more than 1 sequence in that model, this is the strategy
+# first, most, most_unique
+same_model_sequence_strategy: most
 
 
 # You can now limit the # of detection process
