@@ -10,13 +10,12 @@ import urllib.parse
 from argparse import ArgumentParser
 from ast import literal_eval
 from datetime import datetime
-from inspect import getframeinfo
 from io import BytesIO
 from pathlib import Path
 from re import findall
 from threading import Thread
 from traceback import format_exc
-from typing import Optional
+from typing import Optional, Union
 
 import cv2
 import numpy as np
@@ -24,9 +23,9 @@ import requests
 import urllib3
 # BytesIO and Image for saving images to bytes buffer
 from PIL import Image
+from yaml import safe_load
 
-import pyzm.api
-import pyzm.helpers.globals as gl
+import pyzm.helpers.new_yaml
 from pyzm import __version__ as pyzm_version
 from pyzm.helpers.new_yaml import create_api, start_logs
 from pyzm.helpers.pyzm_utils import (
@@ -42,35 +41,248 @@ from pyzm.helpers.pyzm_utils import (
     do_hass
 )
 
-g: gl = gl
 lp: str = 'zmes:'
-caller: Optional[getframeinfo] = None
-auth_header: Optional[dict] = None
-access_token: Optional[str] = None
-final_msg: Optional[str] = None
-weighted_routes: Optional[dict] = None
-ml_routes: Optional[dict] = None
-start_of_script: Optional[datetime] = None
-start_of_remote_detection: Optional[datetime] = None
-start_of_local_detection: Optional[datetime] = None
-start_of_local_fallback_detection: Optional[datetime] = None
-start_of_after_detection: Optional[datetime] = None
-bg_animations: Optional[Thread] = None
-bg_pushover_jpg: Optional[Thread] = None
-bg_pushover_gif: Optional[Thread] = None
-bg_mqtt: Optional[Thread] = None
+__app_version__: str = "7.0.4"
+DEFAULT_CONFIG: dict = safe_load('''
+    custom_push: no
+    custom_push_script: ''
+    force_mpd: no
+    same_model_high_conf: no
+    skip_mons: 
+    force_live: no
+    sanitize_logs: no
+    sanitize_str: <sanitized>
+    show_models: no
+    save_image_train: no
+    save_image_train_dir: '/var/lib/zmeventnotification/images'
+    force_debug: no
+    frame_set: snapshot,alarm,snapshot
+    cpu_max_processes: 2
+    gpu_max_processes: 2
+    tpu_max_processes: 2
+    cpu_max_lock_wait: 120
+    gpu_max_lock_wait: 120
+    tpu_max_lock_wait: 120
+    pyzm_overrides: '{ "log_level_debug" : 5 }'
+    secrets: ''
+    user: ''
+    password: ''
+    basic_user: ''
+    basic_password: ''
+    portal: ''
+    api_portal: ''
+    image_path: '/var/lib/zmeventnotification/images'
+    allow_self_signed: yes
+    match_past_detections: no
+    past_det_max_diff_area: '5%'
+    max_detection_size: ''
+    contained_area: 1px
+    model_sequence: 'object,face,alpr'
+    base_data_path: '/var/lib/zmeventnotification'
+    resize: no
+    picture_timestamp:
+      enabled: no
+      date format: '%Y-%m-%d %H:%M:%S'
+      monitor id: yes
+      text color: (255,255,255)
+      background: yes
+      bg color: (0,0,0)
 
-__app_version__: str = "7.0.3"
+    delete_after_analyze: yes
+    write_debug_image: no
+    write_image_to_zm: yes
+    show_percent: yes
+    draw_poly_zone: yes
+    contained_area: 1px
+    poly_color: (0,0,255)
+    poly_thickness: 2
+    import_zm_zones: no
+    only_triggered_zm_zones: no
+    show_filtered_detections: no
+    show_conf_filtered: no
+
+    hass_enabled: no
+    hass_server: ''
+    hass_token: ''
+
+    hass_people: {}
+    hass_notify: ''
+    hass_cooldown: ''
+
+    push_enable: no
+    push_force: no
+    push_token: ''
+    push_key: ''
+
+    push_url: no
+    push_user: ''
+    push_pass: ''
+
+    push_errors: no
+    push_err_token: ''
+    push_err_key: ''
+    push_err_device: ''
+
+    push_jpg: ''
+    push_jpg_key: ''
+    push_gif: ''
+    push_gif_key: ''
+
+    push_debug_device: '' 
+    push_cooldown: ''
+
+    mqtt_enable: no
+    mqtt_force: no
+    mqtt_topic: ''
+    mqtt_broker: ''
+    mqtt_port: '' 
+    mqtt_user: ''
+    mqtt_pass: ''
+    mqtt_tls_allow_self_signed: no
+    mqtt_tls_insecure: no
+    tls_ca: ''
+    tls_cert: ''
+    tls_key: ''
+
+    create_animation: no
+    animation_timestamp:
+      enabled: no
+      date format: '%Y-%m-%d %H:%M:%S'
+      monitor id: yes
+      text color: (255,255,255)
+      background: yes
+      bg color: (0,0,0)
+    animation_types: 'gif,mp4'
+    fast_gif: no
+    animation_width: 640
+    animation_retry_sleep: 3
+    animation_max_tries: 8
+
+    ml_fallback_local: no
+    ml_enable: no
+    ml_routes: []
+
+    object_detection_pattern: '(person|car|motorbike|bus|truck|boat|dog|cat)'
+    object_min_confidence: 0.6
+    tpu_object_labels: '/var/lib/zmeventnotification/models/coral_edgetpu/coco_indexed.names'
+    tpu_object_framework: coral_edgetpu
+    tpu_object_processor: tpu
+    tpu_min_confidence: 0.6
+
+    yolo4_object_weights: '/var/lib/zmeventnotification/models/yolov4/yolov4.weights'
+    yolo4_object_labels: '/var/lib/zmeventnotification/models/yolov4/coco.names'
+    yolo4_object_config: '/var/lib/zmeventnotification/models/yolov4/yolov4.cfg'
+    yolo4_object_framework: opencv
+    yolo4_object_processor: gpu
+    fp16_target: no
+
+    yolo3_object_weights: '/var/lib/zmeventnotification/models/yolov3/yolov3.weights'
+    yolo3_object_labels: '/var/lib/zmeventnotification/models/yolov3/coco.names'
+    yolo3_object_config: '/var/lib/zmeventnotification/models/yolov3/yolov3.cfg'
+    yolo3_object_framework: opencv
+    yolo3_object_processor: gpu
+
+    tinyyolo_object_config: '/var/lib/zmeventnotification/models/tinyyolov4/yolov4-tiny.cfg'
+    tinyyolo_object_weights: '/var/lib/zmeventnotification/models/tinyyolov4/yolov4-tiny.weights'
+    tinyyolo_object_labels: '/var/lib/zmeventnotification/models/tinyyolov4/coco.names'
+    tinyyolo_object_framework: opencv
+    tinyyolo_object_processor: gpu
+
+    face_detection_pattern: .*
+    known_images_path: '/var/lib/zmeventnotification/known_faces'
+    unknown_images_path: '/var/lib/zmeventnotification/unknown_faces'
+    save_unknown_faces: no
+    save_unknown_faces_leeway_pixels: 100
+    face_detection_framework: dlib
+    face_dlib_processor: gpu
+    face_num_jitters: 1
+    face_model: cnn
+    face_upsample_times: 1
+    face_recog_dist_threshold: 0.6
+    face_train_model: cnn
+    unknown_face_name: Unknown
+
+    alpr_detection_pattern: .*
+    alpr_api_type: ''
+    alpr_service: ''
+    alpr_url: ''
+    alpr_key: ''
+    platerec_stats: no
+    platerec_regions: []
+    platerec_min_dscore: 0.1
+    platerec_min_score: 0.2
+
+    openalpr_recognize_vehicle: 0
+    openalpr_country: '' 
+    openalpr_state: ''
+    openalpr_min_confidence: 0.3
+
+    openalpr_cmdline_binary: alpr
+    openalpr_cmdline_params: -j -d
+    openalpr_cmdline_min_confidence: 0.3
+
+    smart_fs_thresh :  5
+    disable_locks :  no
+    frame_strategy :  first
+    same_model_sequence_strategy :  most
+
+    stream_sequence :
+      frame_strategy: '{{frame_strategy}}'
+      frame_set: '{{frame_set}}'
+      contig_frames_before_error: 2
+      max_attempts: 3
+      sleep_between_attempts: 2.23
+      sleep_between_frames: 0
+      sleep_between_snapshots: 1.5
+      smart_fs_thresh: '5'
+
+    ml_sequence:
+      general:
+        model_sequence: '{{model_sequence}}'
+        disable_locks: no
+
+      object:
+        general:
+          object_detection_pattern: '(person|dog|cat|car|truck)'
+          same_model_sequence_strategy: '{{same_model_sequence_strategy}}'
+          contained_area: '1px'
+        sequence:
+        - name: 'Yolo v4'
+        enabled: 'yes'
+        object_config: '{{yolo4_object_config}}'
+        object_weights: '{{yolo4_object_weights}}'
+        object_labels: '{{yolo4_object_labels}}'
+        object_min_confidence: '{{object_min_confidence}}'
+        object_framework: '{{yolo4_object_framework}}'
+        object_processor: '{{yolo4_object_processor}}'
+        gpu_max_processes: '{{gpu_max_processes}}'
+        gpu_max_lock_wait: '{{gpu_max_lock_wait}}'
+        cpu_max_processes: '{{cpu_max_processes}}'
+        cpu_max_lock_wait: '{{cpu_max_lock_wait}}'
+        fp16_target: '{{fp16_target}}'  # only applies to GPU, default is 'no'
+
+      alpr:
+        general:
+          same_model_sequence_strategy: 'first'
+          alpr_detection_pattern: '{{alpr_detection_pattern}}'
+
+        sequence: []
+
+      face:
+        general:
+          face_detection_pattern: '{{face_detection_pattern}}'
+          same_model_sequence_strategy: 'union'
+
+          sequence: []
+    ''')
 
 
-def remote_login(user, password, ml_api_url: str, name: str = None):
-    # todo move sending encrypted creds here so it can be threaded?
-    global auth_header, access_token
+def remote_login(user, password, ml_api_url: str, globs=None):
+    g: pyzm.helpers.new_yaml.GlobalConfig = globs
+    access_token: Optional[str] = None
     lp = "zmes:mlapi:login:"
-    # g.logger.info(f"{lp} '{g.api.api_url}'")
     ml_login_url = f"{ml_api_url}/login"
-    _file_name = ml_api_url.lstrip('http://')
-    show_route = f"{g.config.get('sanitize_str')}"
+    _file_name = ml_api_url.lstrip('http://').lstrip('https://')
     # If there is a :port
     _file_name = _file_name.split(':')
     if len(_file_name) > 1:
@@ -140,46 +352,38 @@ def remote_login(user, password, ml_api_url: str, name: str = None):
                 g.logger.error(f"{lp} error while writing MLAPI AUTH JWT to disk!\n{ex}")
             else:
                 g.logger.debug(2, f"{lp} writing MLAPI AUTH JWT to disk")
+    return access_token
 
 
-def remote_detect(options=None, args=None):
+def remote_detect(options=None, args=None, globs=None, route=None):
     """Sends an http request to mlapi host with data needed for inference"""
     # This uses mlapi (https://github.com/baudneo/mlapi) to run inference with the sent data and converts format to
     # what is required by the rest of the code.
-    global auth_header, access_token, weighted_routes, ml_routes, start_of_remote_detection
-    lp = "zmes:mlapi:"
+    g: pyzm.helpers.new_yaml.GlobalConfig = globs
+    lp: str = "zmes:mlapi:"
     # print(f"{g.eid = } {options = } {g.api = } {args =}")
-    model = "object"  # default to object
-    show_header = None
-    show_route = f"{g.config.get('sanitize_str')}"
-    files = {}
+    model: str = "object"  # default to object
+    access_token: Optional[str] = None
+    auth_header = Optional[dict]
+    show_header: Optional[dict] = None
+    files: dict = {}
     # ml_routes integration, we know ml_enabled is True
-    ml_routes = g.config.get('ml_routes')
-    route: Optional[dict] = None
-    if ml_routes:
-        weighted_routes = None
-        if isinstance(ml_routes, str):
-            ml_routes = literal_eval(ml_routes)
-        weighted_routes = sorted(ml_routes, key=lambda _route: _route['weight'])
-        g.config['ml_routes'] = weighted_routes
-        route = weighted_routes[0]
-        g.config['ml_gateway'] = route['gateway']
-        g.config['ml_user'] = route['user']
-        g.config['ml_password'] = route['pass']
+    ml_api_url: Optional[str] = route['gateway']
+    route_name: str = route['name'] or 'default_route'
 
-    ml_api_url = g.config.get('ml_gateway')
     g.logger.info(
-        f"|----------= Encrypted Route Name: '{route['name']}' | Gateway URL: "
-        f"'{ml_api_url if not str2bool(g.config.get('sanitize_logs')) else show_route}' | "
+        f"|----------= Encrypted Route Name: '{route_name}' | Gateway URL: "
+        f"'{ml_api_url if not str2bool(g.config.get('sanitize_logs')) else g.config.get('sanitize_str')}' | "
         f"Weight: {route['weight']} =----------|"
     )
-    ml_object_url = f"{ml_api_url}/detect/object?type={model}"
-    use_auth = True
+    ml_object_url: str = f"{ml_api_url}/detect/object?type={model}"
 
-    if not g.config.get("ml_user") and not g.config.get("ml_password"):
-        use_auth = False
-    if use_auth and not access_token:
-        remote_login(g.config['ml_user'], g.config['ml_password'], g.config['ml_gateway'], name=route.get('name'))
+    if not route.get("user") or not route.get("pass"):
+        g.logger.error(f"{lp} No MLAPI user/password configured")
+        g.logger.log_close()
+        exit(1)
+    if not access_token:
+        access_token = remote_login(route['user'], route['pass'], route['gateway'], globs=g)
         if not access_token:  # add a re login loop?
             raise ValueError("Can't obtain MLAPI AUTH JWT")
         auth_header = {"Authorization": f"Bearer {access_token}"}
@@ -187,7 +391,7 @@ def remote_detect(options=None, args=None):
 
     params = {"delete": True, "response_format": "zm_detect"}
 
-    file_image = None
+    file_image: Optional[np.ndarray] = None
     if args.get("file"):  # File Input
         g.logger.debug(
             2,
@@ -199,18 +403,17 @@ def remote_detect(options=None, args=None):
         ):  # resize before converting to http serializable
             vid_w = g.config.get("resize", file_image.shape[1])
             image = resize_image(file_image, vid_w)
-            succ, jpeg = cv2.imencode(".jpg", image)
-            if not succ:
+            _succ, jpeg = cv2.imencode(".jpg", image)
+            if not _succ:
                 g.logger.error(f"{lp} ERROR: cv2.imencode('.jpg', <FILE IMAGE>)")
                 raise ValueError("--file Can't encode image on disk into jpeg")
             files = {
                 "image": ("image.jpg", jpeg.tobytes(), 'application/octet')
             }
-
     # ml-overrides grabs the default value for these patterns because their actual values are held in g.config
     # we can send these now and enforce them? but if using mlapi should mlapiconfig.yml take precedence over
     # ml_overrides? model_sequence already overrides mlapi, so..... ???
-    ml_overrides = {
+    ml_overrides: dict = {
         # Only enable when we are running with --file
         "enable": True if args.get('file') else False,
         "model_sequence": g.config["ml_sequence"].get("general", {}).get("model_sequence"),
@@ -233,60 +436,47 @@ def remote_detect(options=None, args=None):
                 .get("alpr_detection_pattern")
         },
     }
-    # Send PushOver notification on GPU/TPU failures with some info
-
-    sub_options = {
-        "push_errors": 'no',
-        "push_options": {
-            "token": None,
-            "user": None,
-            "sound": None,
-        },
-    }
-    # Get api creds ready
-    encrypted_data = None
+    # Get api credentials ready
+    encrypted_data: Optional[dict] = None
     try:
         from cryptography.fernet import Fernet
         # assign Fernet object to a variable
-        f = Fernet
     except ImportError:
         g.logger.error(
             f"{lp} the cryptography library does not seem to be installed! Please install using -> "
             f"(sudo) pip3 install cryptography"
         )
         Fernet = None
-        del Fernet
         # raise an exception to trigger the next route or local fallback
         raise ValueError(f"cryptography library not installed or not accessible")
     else:
         encrypted_data = {}
         try:
-            # encode str into bytes for encrpytion use
+            # encode str into bytes for encryption use
             key: str = route['enc_key'].encode('utf-8')
             # get the credential data needed to pass mlapi
-            kickstart = g.api.cred_dump()
-            # init the Fernet object with the key
-            f = f(key)
+            kickstart: dict = g.api.cred_dump()
+            # init the Fernet object with the encryption key
+            f: Fernet = Fernet(key=key)
         except Exception as exc:
             g.logger.error(
                 f"{lp} it appears the encryption key provided is malformed! "
-                f"check the encryption key in route '{route['name']}'"
+                f"check the encryption key in route '{route_name}'"
             )
+            g.logger.error(exc)
             # raise an exception to trigger the next route or local fallback
-            raise ValueError(f"encryption key malformed for {route['name']}")
-        route_name = route['name'] or 'default_route'
+            raise ValueError(f"encryption key malformed for {route_name}")
         # Auth type and creds based on which type
-        auth_type = g.api.auth_type
+        auth_type: str = g.api.auth_type
         if auth_type == 'token':
             kickstart['api_url'] = g.api.api_url
             kickstart['portal_url'] = g.api.portal_url
-            encrypted_data: dict = {
+            encrypted_data = {
                 f.encrypt(str(k).encode('utf-8')).decode(): f.encrypt(str(v).encode('utf-8')).decode()
-                              for k, v in kickstart.items() if v is not None
+                for k, v in kickstart.items() if v is not None
             }
             # Add the route name after encryption so that it is readable on the other end
             encrypted_data['name'] = route_name
-            print(f'{encrypted_data = }')
         else:
             g.logger.error(f"{lp} Only JWT Auth token is supported (no basic auth),"
                            f" please upgrade to using that auth method!")
@@ -297,7 +487,7 @@ def remote_detect(options=None, args=None):
     if not options.get('resize') and g.config.get('resize'):
         # make 'resize' activated by just having a value in the config
         options['resize'] = g.config['resize']
-    mlapi_json = {
+    mlapi_json: dict = {
         "version": __app_version__,
         "mid": g.mid,
         "reason": args.get("reason"),
@@ -312,9 +502,8 @@ def remote_detect(options=None, args=None):
     #     'datas' : ('datas', json.dumps(datas), 'application/json'),
     # }
     if files:
-        # If we are sending a file we must add the JSON to the files dict HACK
+        # If we are sending a file we must add the JSON to the files dict (flask interprets this as a multipart)
         files['json'] = (json.dumps(mlapi_json))
-    # ml_api_url if not str2bool(g.config.get('sanitize_logs')) else show_route
     g.logger.debug(
         2,
         f"\n** Gateway URL: '"
@@ -325,7 +514,7 @@ def remote_detect(options=None, args=None):
     )
     try:
         from requests_toolbelt.multipart import decoder
-        r = requests.post(
+        r: requests.post = requests.post(
             url=ml_object_url,
             headers=auth_header,
             params=params,
@@ -376,31 +565,41 @@ def remote_detect(options=None, args=None):
                     part.headers.get(b'Content-Type') == b'image/jpeg'
                     or part.headers.get(b'Content-Type') == b'application/octet'
             ):
-                g.logger.debug(f"{lp} parsed the matched image from bytes to a jpeg encoded array in multipart response")
+                g.logger.debug(
+                    f"{lp} decoding jpeg from the multipart response")
                 img = part.content
-
-            elif part.headers.get(b'Content-Type') == b'application/json':
-                g.logger.debug(f"{lp} parsed JSON detection data in multipart response")
-                data = json.loads(part.content.decode('utf-8'))
-        if data.get('success'):
-            # success only when there is an image
-            try:
                 img = np.frombuffer(img, dtype=np.uint8)
                 img = cv2.imdecode(img, cv2.IMREAD_UNCHANGED)
 
-            except Exception as exc:
-                g.logger.error(f"{lp} the image in the response is malformed! -> \n{exc}")
-                g.logger.error(format_exc())
-            else:
-                if img is not None and len(img.shape) <= 3:
-                    # check if the image is already resized to the configured 'resize' value
-                    if options.get("resize", 'no') != "no" and options.get('resize') != img.shape[1]:
-                        img = resize_image(img, options.get("resize"))
-                    data["matched_data"]["image"] = img
-                else:
-                    g.logger.fatal(f"{lp} mlapi replied with an image. "
-                                   f"ZMES was unable to reconstruct the image. FATAL, exiting...")
+            elif part.headers.get(b'Content-Type') == b'application/json':
+                g.logger.debug(f"{lp} parsed JSON detection data from the multipart response")
+                data = json.loads(part.content.decode('utf-8'))
+
+        if img is not None and len(img.shape) <= 3:
+            # check if the image is already resized to the configured 'resize' value
+            if options.get("resize", 'no') != "no" and options.get('resize') != img.shape[1]:
+                img = resize_image(img, options.get("resize"))
+            data["matched_data"]["image"] = img
+        else:
+            g.logger.fatal(f"{lp} mlapi replied with an image. "
+                           f"ZMES was unable to reconstruct the image. FATAL, exiting...")
         return data
+
+
+def get_es_version(globs: pyzm.helpers.new_yaml.GlobalConfig) -> str:
+    # Get zmeventnotification.pl VERSION
+    es_version: str = '(?)'
+    g = globs
+    try:
+        from shutil import which
+        es_version = subprocess.check_output(
+            [which("zmeventnotification.pl"), "--version"]
+        ).decode("ascii")
+    except Exception as all_ex:
+        g.logger.error(f"{lp} while grabbing zmeventnotification.pl VERSION -> {all_ex}")
+        es_version = "Unknown"
+        pass
+    return es_version.rstrip()
 
 
 def _parse_args():
@@ -479,28 +678,6 @@ def _parse_args():
 
     args, u = ap.parse_known_args()
     args = vars(args)
-    return args
-
-
-def main_handler():
-    global final_msg, g, start_of_local_detection, start_of_local_fallback_detection, \
-        start_of_after_detection, start_of_remote_detection, start_of_script
-    global bg_pushover_jpg, bg_pushover_gif, bg_animations, bg_mqtt
-    # -------------- vars -------------------
-    bg_api_thread: Optional[Thread] = None
-    bg_logger: Optional[Thread] = None
-    objdetect_jpeg_image: Optional[np.ndarray] = None
-    (old_notes, notes_zone, notes_cause, prefix, pred, detections, seen) = ("", "", "", "", "", [], [],)
-    remote_sanitized, ml_options, stream_options, obj_json = {}, {}, {}, []
-    (m, matched_data, all_data, pushover, c_u,
-     c_pw, bio, past_event, es_version, _frame_id) = (None, None, None, None, False, "(?)", None, None, None, None)
-    # -------------- END vars -------------------
-    # She's ugly but she works
-    from pyzm.helpers.pyzm_utils import set_g
-    set_g(g)
-    # end of the disgusting
-    lp = "zmes:"
-    args = _parse_args()
     if not args:
         print(f"{lp} ERROR-FATAL -> no args!")
         exit(1)
@@ -531,80 +708,120 @@ def main_handler():
         if not args.get("file") and not args.get("eventid"):
             print("--eventid <Event ID #> or --file </path/to/file.(jpg/png/mp4)> REQUIRED")
             exit(1)
+    return args
 
-    # process the config
-    start_conf = datetime.now()
+
+def main_handler():
+    # perf counters
+    start_of_script: time.perf_counter = time.perf_counter()
+    start_of_after_detection: time.perf_counter
+    start_of_remote_detection: Optional[time.perf_counter] = None
+    start_of_local_detection: Optional[time.perf_counter] = None
+    start_of_local_fallback_detection: Optional[time.perf_counter] = None
+    # Threads
+    bg_animations: Optional[Thread] = None
+    bg_pushover_jpg: Optional[Thread] = None
+    bg_pushover_gif: Optional[Thread] = None
+    bg_mqtt: Optional[Thread] = None
+    # images
+    objdetect_jpeg_image: Optional[np.ndarray] = None
+    pushover_image: Optional[np.ndarray] = None
+    # vars
+    final_msg = ''
+    old_notes: str = ''
+    notes_zone: str = ''
+    notes_cause: str = ''
+    prefix: str = ''
+    pred: str = ''
+    detections: list = []
+    seen: list = []
+    remote_sanitized: dict = {}
+    ml_options: dict = {}
+    stream_options: dict = {}
+    matched_data: dict = {}
+    all_data: dict = {}
+    obj_json: dict = {}
+    m: pyzm.ml.detect_sequence.DetectSequence
+    matched_data: dict
+    pushover: pyzm.helpers.pyzm_utils.Pushover
+    c_u: str = ''
+    c_pw: str = ''
+    bio: BytesIO
+    past_event: bool = False
+    _frame_id: str = ''
+    lp: str = "zmes:"
+    # -------------- END vars -------------------
+    from pyzm.helpers.new_yaml import GlobalConfig
+    from pyzm.helpers.pyzm_utils import LogBuffer
+    g: GlobalConfig = GlobalConfig()
+    g.DEFAULT_CONFIG = DEFAULT_CONFIG
+    g.logger = LogBuffer()
+    # Process CLI arguments
+    args = _parse_args()
+    # process the config using the arguments
     g.eid = args.get("eventid", args.get("file"))
+    start_conf: time.perf_counter = time.perf_counter()
     from pyzm.helpers.new_yaml import process_config as proc_conf
     zmes_config, g = proc_conf(args=args, conf_globals=g, type_='zmes')
-    g.logger.debug(f"perf:{lp} building the intial config took {(datetime.now()-start_conf).total_seconds()} ")
+    # fixme: ugly!
+    from pyzm.helpers.pyzm_utils import set_g
+    set_g(g)
+    g.logger.debug(f"perf:{lp} building the initial config took {time.perf_counter() - start_conf}")
 
-    bg_api_thread = Thread(target=create_api, kwargs={'args': args})
-    start_api_create = datetime.now()
+    start_api_create = time.perf_counter()
+    bg_api_thread: Thread = Thread(name="ZMAPI", target=create_api, kwargs={'args': args})
     bg_api_thread.start()
+
     objdet_force = str2bool(g.config.get("force_debug"))
     et = args.get("event_type")
-    # Get zmeventnotification.pl VERSION
-    try:
-        from shutil import which
-        es_version = subprocess.check_output(
-            [which("zmeventnotification.pl"), "--version"]
-        ).decode("ascii")
-    except Exception as all_ex:
-        g.logger.error(f"{lp} while grabbing zmeventnotification.pl VERSION -> {all_ex}")
-        es_version = "Unknown"
-        pass
-    else:
-        es_version = es_version.rstrip()
     g.logger.info(
-        f"------|  FORKED NEO --- app->Hooks: {__app_version__} - pyzm: {pyzm_version} - ES: {es_version}"
+        f"------|  FORKED NEO --- app->Hooks: {__app_version__} - pyzm: {pyzm_version} - ES: {get_es_version(globs=g)}"
         f" - OpenCV:{cv2.__version__} |------"
     )
-    # misc came later, so lets be safe - Converted to Path()
-    Path(f"{g.config['base_data_path']}/misc/").mkdir(exist_ok=True)
-    # Monitor overrides (returns default config if there are no per monitor overrides)
     if args.get('live') and args.get('monitor_id'):
         g.logger.debug(f"{lp} Monitor ID provided by the ZMES Perl script, skipping monitor ID verification...")
         g.config['mid'] = g.mid = int(args["monitor_id"])
-    if not g.mid:
-        start_wait = datetime.now()
+    elif not g.mid:
+        start_wait = time.perf_counter()
         g.logger.debug(f"{lp} waiting for the monitor ID to be verified! This happens on "
-        f"PAST events because the api double checks to make sure its the correct monitor ID")
-        while not g.mid:
-            if (datetime.now() - start_wait).total_seconds() > 5.0:
-                break
-            time.sleep(0.033)
+                       f"PAST events because the api double checks to make sure its the correct monitor ID")
+        if bg_api_thread and bg_api_thread.is_alive():
+            bg_api_thread.join()
         if not g.mid:
-            g.logger.debug(f"{lp} g.mid not populated! waited {(datetime.now() - start_wait).total_seconds()} seconds "
-                           f"and nothing.... joining thread if its alive!")
-            if bg_api_thread and bg_api_thread.is_alive():
-                bg_api_thread.join()
             g.logger.debug(f"{lp} after waiting for g.mid and joining the api creation thread the total time for "
-                           f"api creation is {(datetime.now() - start_api_create).total_seconds()} seconds")
+                           f"api creation is {time.perf_counter() - start_api_create} seconds")
         else:
             g.logger.debug(
                 f"perf:{lp} Monitor ID ({g.mid}) verified! pausing to wait for verification took "
-                f"{(datetime.now() - start_wait).total_seconds()} seconds -=- api creation took "
-                f"{(datetime.now() - start_api_create).total_seconds()} seconds"
+                f"{time.perf_counter() - start_wait} seconds -=- api creation took "
+                f"{time.perf_counter() - start_api_create} seconds"
             )
     if not g.mid and not args.get('file'):
-        msg = f"{lp} SOMETHING is very WRONG! EXITING"
+        msg = (f"{lp} SOMETHING is very WRONG! g.mid is not populated after waiting for the API object to be created "
+               f"in background EXITING")
         g.logger.debug(msg)
         print(msg)
         g.logger.log_close()
         exit(1)
-    if g.mid and g.mid in zmes_config.monitors:
+    if g.mid in zmes_config.monitors:
+        g.logger.debug(f"{lp} Monitor ID ({g.mid}) has an overrode config, switching to it!")
         # only need to build 1 override
         zmes_config.monitor_override(g.mid)
         # override the global config with the overrode per monitor config
         g.config = zmes_config.monitor_overrides[g.mid]
     else:
+        g.logger.debug(f"{lp} Monitor ID ({g.mid}) does not have an overrode config, using the base config!")
         g.config = zmes_config.config
 
-    from pyzm.ZMLog import sig_intr, sig_log_rot
-    g.logger.info(f"{lp} Setting up signal handlers for log 'rotation' and log 'interrupt'")
-    signal.signal(signal.SIGHUP, sig_log_rot)
-    signal.signal(signal.SIGINT, sig_intr)
+
+    try:
+        from pyzm.ZMLog import sig_intr, sig_log_rot
+        g.logger.info(f"{lp} Setting up signal handlers for log 'rotation' and 'interrupt'")
+        signal.signal(signal.SIGHUP, sig_log_rot)
+        signal.signal(signal.SIGINT, sig_intr)
+    except Exception as e:
+        g.logger.error(f'{lp} Error setting up log rotate and interrupt signal handlers -> \n{e}\n')
+        raise e
     # async_result = pool.apply_async(
     #     start_logs,
     #     {
@@ -617,7 +834,9 @@ def main_handler():
     #
     # # do some other stuff in the main process
     # g.logger = async_result.get()  # get the return value from your function.
-    bg_logger = Thread(target=start_logs, kwargs={'config': g.config, 'args': args, '_type': 'zmes', 'no_signal': True}).start()
+    bg_logger = Thread(name="ZMLog", target=start_logs,
+                       kwargs={'config': g.config, 'args': args, '_type': 'zmes', 'no_signal': True})
+    bg_logger.start()
     if str2bool(g.config["only_triggered_zm_zones"]):
         g.config["import_zm_zones"] = "yes"
     if args.get("file"):
@@ -631,10 +850,10 @@ def main_handler():
         g.config["write_debug_image"] = "yes"
     # see if we need to skip doing any detections, this is a more configurable option as no need to restart the ES
     # zmeventnotification.pl to update this list, objectconfig.yml is reevaluated every event
-    skip = g.config.get("skip_mons")
-    skip = skip.split(",") if skip and isinstance(skip, str) else None
+    skip: Union[str, list] = g.config.get("skip_mons")
+    skip = skip.split(",") if skip and isinstance(skip, str) else []
     if (
-            skip and str(g.mid) in skip and args.get("live")
+            str(g.mid) in skip and args.get("live")
     ):  # Only skip if configured and its a live event
         g.logger.info(
             f"{lp} event {g.eid} from monitor: '{g.config['mon_name']}' ID: {g.mid}"
@@ -658,64 +877,25 @@ def main_handler():
             f"{stream_options.get('PAST_EVENT')=} {past_event=}"
         )
     if str2bool(g.config["ml_enable"]):  # send to mlapi host
-        remote_response = {}
-        tries = 0
-        max_tries = len(weighted_routes) + 2 if weighted_routes else 2
-        start_of_remote_detection = datetime.now()
-        while True and tries < max_tries:
+        mlapi_success: bool = False
+        remote_response: dict = {}
+        tries: int = 0
+        ml_routes: Optional[Union[list, str]] = g.config.get('ml_routes')
+        if isinstance(ml_routes, str):
+            ml_routes = literal_eval(ml_routes)
+        weighted_routes = sorted(ml_routes, key=lambda _route: _route['weight'])
+        start_of_remote_detection = time.perf_counter()
+        while weighted_routes:
             tries += 1
-            if remote_response or matched_data:
+            route = weighted_routes.pop(0)
+            if remote_response:
                 break
             try:
                 if tries > 1:
-                    if weighted_routes and len(weighted_routes) > 1:
-                        g.logger.debug(f"{lp} there was an error, using the next weighted route")
-                        weighted_routes.pop(0)
-                        g.config['ml_routes'] = weighted_routes
-                    elif str2bool(g.config.get('ml_fallback_local')):
-                        start_of_local_fallback_detection = datetime.now()
-                        g.logger.error(f"{lp} mlapi error, falling back to local detection")
-                        stream_options["polygons"] = zmes_config.polygons.get(g.mid)
-                        from pyzm.ml.detect_sequence import DetectSequence
-                        m = DetectSequence(options=ml_options, globs=g)
-                        sub_options = {
-                            "push_errors": g.config.get("push_errors"),
-                            "push_options": {
-                                "token": g.config.get("push_err_token", g.config.get("push_token")),
-                                "user": g.config.get("push_err_key", g.config.get("push_key")),
-                                "sound": g.config.get("push_sound"),
-                                # 'url': po_opts.get('url'),
-                                # 'url_title': g.config.get('url_title'),
-                                # 'priority': po_opts.get('priority'),
-                                # 'device': po_opts.get('device'),
-                            },
-                        }
-                        show_sub_option = {
-                            "push_errors": g.config.get("push_errors"),
-                            "push_options": {
-                                "token": f"{g.config['sanitize_str']}",
-                                "user": f"{g.config['sanitize_str']}",
-                                "sound": g.config.get("push_error_sound"),
-                            },
-                        }
-                        if bg_api_thread and bg_api_thread.is_alive():
-                            g.logger.debug(
-                                f"{lp} waiting for the ZM API Session to be created and authorized...")
-                            bg_api_thread.join()
-                        matched_data, all_data, all_frames = m.detect_stream(
-                            stream=g.eid,
-                            options=stream_options,
-                            sub_options=sub_options,
-                            in_file=True if args.get('file') else False
-                        )
-                        start_of_local_fallback_detection = (datetime.now()
-                                                             - start_of_local_fallback_detection).total_seconds()
-                        break
-                    else:
-                        break
-                remote_response = remote_detect(options=stream_options, args=args)
+                    g.logger.debug(f"{lp} there was an error, using the next route '{route['name']}'")
+                remote_response = remote_detect(options=stream_options, args=args, globs=g, route=route)
             except requests.exceptions.HTTPError as http_ex:
-                start_of_remote_detection = (datetime.now() - start_of_remote_detection).total_seconds()
+                start_of_remote_detection = time.perf_counter() - start_of_remote_detection
                 if http_ex.response.status_code == 400:
                     if args.get('file'):
                         g.logger.error(
@@ -739,7 +919,7 @@ def main_handler():
                         f"HTTP ERROR --> {http_ex.response.json()}"
                     )
             except ValueError as exc:
-                start_of_remote_detection = (datetime.now() - start_of_remote_detection).total_seconds()
+                start_of_remote_detection = time.perf_counter() - start_of_remote_detection
                 if str(exc) == 'MLAPI remote detection error!':
                     # todo: pushover error
                     print(f"MLAPI remote detection error!")
@@ -747,27 +927,41 @@ def main_handler():
                     print(exc)
                     raise exc
             except Exception as all_ex:
-                start_of_remote_detection = (datetime.now() - start_of_remote_detection).total_seconds()
+                start_of_remote_detection = time.perf_counter() - start_of_remote_detection
                 print(f"{lp} there was an error during the remote detection! -> {all_ex}")
                 print(format_exc())
             # Successful mlapi post
             else:
-                start_of_remote_detection = (datetime.now() - start_of_remote_detection).total_seconds()
+                mlapi_success = True
                 if remote_response is not None:
                     matched_data = remote_response.get("matched_data")
-                    all_data = remote_response["all_matches"]
                     remote_sanitized: dict = copy.deepcopy(remote_response)
                     remote_sanitized["matched_data"]["image"] = "<uint-8 encoded jpg>" if matched_data.get(
                         'image') is not None else "<No Image Returned>"
                 mon_name = f"Monitor: {g.config.get('mon_name')} ({g.mid})->'Event': "
                 g.logger.debug(
                     f"perf:{lp}mlapi: {f'{mon_name}' if not args.get('file') else ''}{g.eid}"
-                    f" mlapi detection took: {start_of_remote_detection}"
+                    f" mlapi detection took: {time.perf_counter() - start_of_remote_detection}"
                 )
                 break
+        if str2bool(g.config.get('ml_fallback_local')) and not mlapi_success:
+            print('doing local FALLBACK detection')
+
+            start_of_local_fallback_detection = time.perf_counter()
+            g.logger.error(f"{lp} mlapi error, falling back to local detection")
+            stream_options["polygons"] = zmes_config.polygons.get(g.mid)
+            from pyzm.ml.detect_sequence import DetectSequence
+            m = DetectSequence(options=ml_options, globs=g)
+            matched_data, all_data, all_frames = m.detect_stream(
+                stream=g.eid,
+                options=stream_options,
+                sub_options=None,
+                in_file=True if args.get('file') else False
+            )
+            start_of_local_fallback_detection = time.perf_counter() - start_of_local_fallback_detection
 
     else:  # mlapi not configured, local detection
-        start_of_local_detection = datetime.now()
+        start_of_local_detection = time.perf_counter()
         if not args.get("file") and float(g.config.get("wait", 0)) > 0.0:
             g.logger.info(
                 f"{lp}local: sleeping for {g.config['wait']} seconds before running models"
@@ -776,60 +970,34 @@ def main_handler():
         try:
             from pyzm.ml.detect_sequence import DetectSequence
             m = DetectSequence(options=g.config['ml_sequence'], globs=g)
-            sub_options = {
-                "push_errors": g.config.get("push_errors"),
-                "push_options": {
-                    "token": g.config.get("push_err_token", g.config.get("push_token")),
-                    "user": g.config.get("push_err_key", g.config.get("push_key")),
-                    "sound": g.config.get("push_sound"),
-                    # 'url': po_opts.get('url'),
-                    # 'url_title': g.config.get('url_title'),
-                    # 'priority': po_opts.get('priority'),
-                    # 'device': po_opts.get('device'),
-                },
-            }
-            show_sub_option = {
-                "push_errors": g.config.get("push_errors"),
-                "push_options": {
-                    "token": f"{g.config['sanitize_str']}",
-                    "user": f"{g.config['sanitize_str']}",
-                    "sound": g.config.get("push_error_sound"),
-                },
-            }
-            if bg_api_thread and bg_api_thread.is_alive():
-                g.logger.debug(f"{lp}local: waiting for the ZM API Session to be created and authorized...")
-                bg_api_thread.join()
+            print('doing local detection')
             matched_data, all_data, all_frames = m.detect_stream(
-                stream=g.eid, options=stream_options, sub_options=sub_options,
+                stream=g.eid, options=stream_options, sub_options=None,
                 in_file=True if args.get('file') else False
             )
         except Exception as all_ex:
             # todo: pushover error
             g.logger.debug(f"{lp}local: TPU and GPU in ZM DETECT? --> {all_ex}")
         else:
-            start_of_local_detection = (datetime.now() - start_of_local_detection).total_seconds()
-            g.logger.debug(f"perf:{lp}local: detection took: {start_of_local_detection}")
+            g.logger.debug(f"perf:{lp}local: detection took: {time.perf_counter() - start_of_local_detection}")
     # Format the frame ID (if it contains s- for snapshot conversion)
-    start_of_after_detection = datetime.now()
+
+    start_of_after_detection = time.perf_counter()
+
     if matched_data is not None:
         _frame_id = grab_frameid(matched_data.get("frame_id"))
         obj_json = {
             "frame_id": _frame_id,
-            "labels": matched_data["labels"],
-            "confidences": matched_data["confidences"],
-            "boxes": matched_data["boxes"],
-            "image_dimensions": matched_data["image_dimensions"],
+            "labels": matched_data.get("labels"),
+            "confidences": matched_data.get("confidences"),
+            "boxes": matched_data.get("boxes"),
+            "image_dimensions": matched_data.get("image_dimensions"),
         }
         # Print returned data nicely if there are any detections returned
         if len(matched_data.get("labels")):
             pretty_print(matched_data=matched_data, remote_sanitized=remote_sanitized)
 
-        if matched_data["frame_id"] == "snapshot":
-            prefix = "[s] "
-        elif matched_data["frame_id"] == "alarm":
-            prefix = "[a] "
-        else:
-            prefix = f"[{str(matched_data.get('frame_id', 'x')).strip('-')}] "
+        prefix = f"[{str(matched_data.get('frame_id', 'x')).strip('-')}] "
 
         for idx, l in enumerate(
                 matched_data.get("labels")
@@ -850,6 +1018,7 @@ def main_handler():
                     )
                 pred = f"{pred}{label_txt}"
                 seen.append(l)
+
     if pred != '' and matched_data['image'] is not None:
         wrote_objdetect = None
         send_push = False
@@ -960,24 +1129,23 @@ def main_handler():
                     not args.get('file') and
                     str2bool(g.config.get("create_animation"))
                     and (
-                        (not past_event)
-                         or (past_event and str2bool(g.config.get("force_animation")))
-                         or (past_event and objdet_force)
+                    (not past_event)
+                    or (past_event and str2bool(g.config.get("force_animation")))
+                    or (past_event and objdet_force)
             )
             ):
                 g.logger.debug(
                     f"{lp}animation: gathering data to start animation creation in background...",
                 )
                 # grab event data if we don't already have it
-                if not g.api:
-                    print(f"{lp} creating the api object, it isnt initialized yet")
-                    create_api(args)
+                if bg_api_thread and bg_api_thread.is_alive():
+                    bg_api_thread.join(5)
                 if not g.api_event_response:
                     g.Event, g.Monitor, g.Frame = g.api.get_all_event_data()
                 try:
                     from pyzm.helpers.pyzm_utils import createAnimation
                     # how long it takes to create the animations
-                    g.animation_seconds = datetime.now()
+                    animation_seconds = time.perf_counter()
                     opts = {
                         'fid': _frame_id,
                         'file name': f"{args.get('eventpath')}/objdetect",
@@ -989,6 +1157,7 @@ def main_handler():
                         kwargs={
                             "image": objdetect_jpeg_image.copy(),
                             "options": opts,
+                            "perf": animation_seconds
                         },
                     )
                 except Exception as all_ex:
@@ -1146,31 +1315,24 @@ def main_handler():
                     display_param_dict["url"] = display_url
 
                     if matched_data.get("labels"):
-                        # todo: polish this
+
                         vehicles = ('truck', 'car', 'motorbike', 'bus')
                         # priority is in descending order
                         labels = tuple(matched_data.get("labels"))
                         if 'person' in labels and g.config.get('push_sound_person'):
                             param_dict['sound'] = g.config['push_sound_person']
-                            display_param_dict['sound'] = g.config['push_sound_person']
                         elif any(w in vehicles for w in labels) and g.config.get('push_sound_vehicle'):
                             param_dict['sound'] = g.config['push_sound_vehicle']
-                            display_param_dict['sound'] = g.config['push_sound_vehicle']
                         elif 'car' in labels:
-                            param_dict['sound'] = g.config['push_sound_car']
-                            display_param_dict['sound'] = g.config['push_sound_car']
+                            pass
                         elif 'truck' in labels:
-                            param_dict['sound'] = g.config['push_sound_truck']
-                            display_param_dict['sound'] = g.config['push_sound_truck']
+                            pass
                         elif 'motorbike' in labels:
-                            param_dict['sound'] = g.config['push_sound_motorbike']
-                            display_param_dict['sound'] = g.config['push_sound_motorbike']
+                            pass
                         elif 'dog' in labels:
-                            param_dict['sound'] = g.config['push_sound_dog']
-                            display_param_dict['sound'] = g.config['push_sound_dog']
+                            pass
                         elif 'cat' in labels:
-                            param_dict['sound'] = g.config['push_sound_cat']
-                            display_param_dict['sound'] = g.config['push_sound_cat']
+                            pass
 
                     files = {
                         "attachment": (
@@ -1326,7 +1488,7 @@ def main_handler():
                                    f"{g.config.get('custom_push_script')} -> \n{all_ex}")
                 else:
                     # g.logger.debug(f"{lp} response from gotify -> {resp.status_code} - {resp.json()}")
-                   # g.logger.debug(f"{lp} custom shell script returned -> {custom_success}")
+                    # g.logger.debug(f"{lp} custom shell script returned -> {custom_success}")
                     if str(custom_success).strip() == '0':
                         g.logger.debug(f"{lp} custom push script returned SUCCESS")
                     else:
@@ -1533,12 +1695,8 @@ def main_handler():
             bg_mqtt.start()
 
     else:
-        if bg_logger and bg_logger.is_alive():
-            bg_logger.join(3)
         g.logger.debug(f"{lp} no predictions returned from detections")
-    start_of_after_detection = (datetime.now() - start_of_after_detection).total_seconds()
-    start_of_script = (datetime.now() - start_of_script).total_seconds()
-    detection_time: Optional[datetime] = None
+    detection_time: Optional[time.perf_counter] = None
     if start_of_remote_detection and start_of_local_fallback_detection:
         detection_time = start_of_local_fallback_detection
     elif start_of_remote_detection and not start_of_local_fallback_detection:
@@ -1555,7 +1713,7 @@ def main_handler():
         s=g.eid,
         f_id="{}{}".format(fid_str_ if _frame_id and not args.get('file') else '',
                            f'{_frame_id if _frame_id and not args.get("file") else ""}'),
-        tot=f"[total:{start_of_script}] " if start_of_script else "",
+        tot=f"[total:{time.perf_counter() - start_of_script}] " if start_of_script else "",
         det=f"[detection:{detection_time}] " if detection_time else "",
         ani_gif="{}".format(
             "[processing {}".format(
@@ -1566,7 +1724,7 @@ def main_handler():
         )
         if g.animation_seconds
         else "",
-        extras=f"[after core detection: {start_of_after_detection}] "
+        extras=f"[after core detection: {time.perf_counter() - start_of_after_detection}] "
         if start_of_after_detection
         else "",
     )
@@ -1585,25 +1743,18 @@ def main_handler():
 
     if bg_mqtt and bg_mqtt.is_alive():
         bg_mqtt.join()
+    return final_msg, g
 
 
 if __name__ == "__main__":
-    start_of_script = datetime.now()
     try:
-        from pyzm.helpers.pyzm_utils import LogBuffer
-
-        g.logger = LogBuffer()
-        main_handler()
+        output_message, g = main_handler()
     except Exception as e:
-        if sys.stdout == sys.__stdout__:  # if stdout is set to system then print to console
-            print(f"zmes: err_msg->{e}")
-            print(f"zmes: traceback: {format_exc()}")
-        else:  # otherwise stdout is outputting to the logger, print is hijacked
-            g.logger.error(f"zmes: MAIN_HANDLER LOOP : err_msg->{e}")
-            g.logger.debug(f"zmes: traceback: {format_exc()}")
-
+        sys.stdout = sys.__stdout__
+        print(f"zmes: err_msg->{e}")
+        print(f"zmes: traceback: {format_exc()}")
     else:
-        g.logger.debug(final_msg) if final_msg else None
+        g.logger.debug(output_message) if output_message else None
         g.logger.log_close()
     finally:  # always hand it back to the system
         sys.stderr = sys.__stderr__
