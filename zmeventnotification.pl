@@ -35,6 +35,9 @@
 # ==========================================================================
 
 use strict;
+use warnings;
+# Switch zmeventnotification.ini to YAML eventually
+# use YAML::XS 'LoadFile';
 use bytes;
 use POSIX ':sys_wait_h';
 #use POSIX ':sys_wait_h';
