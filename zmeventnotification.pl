@@ -635,7 +635,7 @@ sub loadEsConfigSettings {
   if ($es_rules_file) {
     my $hr;
     my $fh;
-    printDebug("rules: Loading es rules json: $es_rules_file");
+    printDebug("rules: Loading es rules json: $es_rules_file", 2);
     if ( open( $fh, "<", $es_rules_file ) ) {
       my $data = do { local $/ = undef; <$fh> };
       eval { $hr = decode_json($data); };
@@ -820,6 +820,7 @@ Include picture....................... ${\(yes_or_no($include_picture))}
 Picture username ..................... ${\(value_or_undefined($picture_portal_username))}
 Picture password ..................... ${\(present_or_not($picture_portal_password))}
 
+Docker environment.................... ${\(present_or_not($docker_env))}
 EOF
   );
 }
@@ -842,7 +843,7 @@ if ($use_fcm) {
   }
   else {
     printInfo('Push enabled via FCM');
-    printDebug("fcmv1: --> FCM V1 APIs: $use_fcmv1");
+    printDebug("fcmv1: --> FCM V1 APIs: $use_fcmv1", 2);
   }
 
 }
@@ -1009,7 +1010,7 @@ sub printDebug {
   $str = $prefix . ' ' . $str;
   if ($es_debug_level >= $level) {
     print( "DBG-$level:", $now, " ", $str, "\n" ) if $console_logs;
-    Debug($str) ;
+    Debug($level, $str) ;
   }
 
 
