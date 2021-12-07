@@ -35,9 +35,9 @@
 # ==========================================================================
 
 use strict;
-use warnings;
-# Switch zmeventnotification.ini to YAML eventually
+# Switch zmeventnotification.ini to YAML eventually, Tiny requires all strinf to be quoted. Testing XS
 # use YAML::XS 'LoadFile';
+# use YAML::Tiny;
 use bytes;
 use POSIX ':sys_wait_h';
 #use POSIX ':sys_wait_h';
