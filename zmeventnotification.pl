@@ -35,9 +35,7 @@
 # ==========================================================================
 
 use strict;
-# Switch zmeventnotification.ini to YAML eventually, Tiny requires all strinf to be quoted. Testing XS
 # use YAML::XS 'LoadFile';
-# use YAML::Tiny;
 use bytes;
 use POSIX ':sys_wait_h';
 #use POSIX ':sys_wait_h';
@@ -152,8 +150,9 @@ use constant {
   DEFAULT_EVENT_END_NOTIFY_ON_HOOK_FAIL      => 'none',
   DEFAULT_EVENT_END_NOTIFY_ON_HOOK_SUCCESS   => 'none',
   DEFAULT_EVENT_END_NOTIFY_IF_START_SUCCESS  => 'yes',
-  DEFAULT_SEND_EVENT_START_NOTIFICATION        => 'yes',
+  DEFAULT_SEND_EVENT_START_NOTIFICATION      => 'yes',
   DEFAULT_SEND_EVENT_END_NOTIFICATION        => 'no',
+  DEFAULT_DOCKER_ENV                         => 'no',
 
   DEFAULT_USE_ESCONTROL_INTERFACE            => 'no',
   DEFAULT_ESCONTROL_INTERFACE_FILE =>
@@ -232,6 +231,9 @@ my $mqtt_last_tick_time = time();
 my $use_fcm;
 my $use_fcmv1;
 my $replace_push_messages;
+
+my $docker_env=0;
+my $docker_cmd = "";
 
 my $use_api_push;
 my $api_push_script;
@@ -345,6 +347,8 @@ Usage: zmeventnotification.pl [OPTION]...
   --config=FILE                       Read options from configuration file (default: /etc/zm/zmeventnotification.ini).
                                       Any CLI options used below will override config settings.
 
+  --docker                            The ES is running inside of a docker container.
+
   --check-config                      Print configuration and exit.
 
 USAGE
@@ -354,7 +358,8 @@ GetOptions(
   'version'      => \$version,
   'config=s'     => \$config_file,
   'check-config' => \$check_config,
-  'debug'        => \$console_logs
+  'debug'        => \$console_logs,
+  'docker'       => \$docker_env,
 );
 
 if ($version) {
@@ -467,10 +472,13 @@ sub config_get_val {
   my $final_val = defined($val) ? $val : $def;
 
   my $fc = substr( $final_val, 0, 1 );
+  # my $fc = substr( $final_val, 0, 2 );
 
   #printInfo ("Parsing $final_val with X${fc}X");
+  # if ( $fc eq '{[' ) {
   if ( $fc eq '!' ) {
     my $token = substr( $final_val, 1 );
+    # my $token = substr( $final_val, 2, -2 );
     printDebug( 'Got secret token !' . $token, 2 );
     Fatal('No secret file found') if ( !$secrets );
     my $secret_val = $secrets->val( 'secrets', $token );
@@ -3873,22 +3881,24 @@ sub processNewAlarmsInFork {
         $hookResult = 0;
       }
       else {    # not a blocked monitor
-
-        if ( $event_start_hook && $use_hooks ) {
-
           # invoke hook start script
           # $1 = eventId that triggered an alarm
           # $2 = monitor ID of monitor that triggered an alarm
           # $3 = monitor Name of monitor that triggered an alarm
           # $4 = cause of alarm
-          # $5 = 'live' = LIVE event
+          # $5 = 'live'  (LIVE event)
           # $6 = path to event store (if store_frame_in_zm is 1)
+          # $7 = $docker_env (Docker environment)
+        if ( $event_start_hook && $use_hooks ) {
+          if ($docker_env) { $docker_cmd = " --docker" ; }
           my $cmd =
               $event_start_hook . ' '
             . $eid . ' '
             . $mid . ' "'
             . $alarm->{MonitorName} . '" "'
-            . $alarm->{Start}->{Cause} . '" live';
+            . $alarm->{Start}->{Cause} . '" '
+            . '--live'
+            . $docker_cmd;
 
           if ($hook_pass_image_path) {
             my $event = new ZoneMinder::Event($eid);
@@ -4109,14 +4119,17 @@ sub processNewAlarmsInFork {
         }
 
         if ( $event_end_hook && $use_hooks ) {
+          if ($docker_env) { $docker_cmd = " --docker" ; }
 
           # invoke end hook script
-          my $cmd =
+           my $cmd =
               $event_end_hook . ' '
             . $eid . ' '
             . $mid . ' "'
             . $alarm->{MonitorName} . '" "'
-            . $notes . '" live';
+            . $alarm->{Start}->{Cause} . '" '
+            . '--live'
+            . $docker_cmd;
 
           if ($hook_pass_image_path) {
             my $event = new ZoneMinder::Event($eid);

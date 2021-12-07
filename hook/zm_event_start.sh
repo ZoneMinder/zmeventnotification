@@ -14,8 +14,8 @@ cleanup() {
 # $2 = monitor ID of monitor that triggered an alarm
 # $3 = monitor Name of monitor that triggered an alarm
 # $4 = cause of alarm
-# $5 = 'live' - means a LIVE event for logic
-# $6 = path to event store (if store_frame_in_zm is 1)
+# $5 = '--live' - means a LIVE event for logic
+# $6 = Could be --docker or path to event store (if store_frame_in_zm is 1)
 
 
 
@@ -29,8 +29,14 @@ cleanup() {
 CONFIG_FILE="/etc/zm/objectconfig.yml"
 ZMES_DIR="/var/lib/zmeventnotification"
 LIVE=''
-[[ "$5" == 'live' ]] && LIVE='--live'
-EVENT_PATH="$6"
+[[ -n "$5" ]] && [[ "$5" == '--live' ]] && LIVE='--live'
+DOCKER=''
+if [[ -n "$6" ]] && [[ "$6" == '--docker' ]]; then
+  DOCKER='--docker'
+  EVENT_PATH="$7"
+  else
+    EVENT_PATH="$6"
+fi
 REASON="$4"
 
 # Pass the monitor ID so the api creation can be created in its own Thread - if no monitor ID is passed the system will
@@ -39,9 +45,9 @@ REASON="$4"
 # THE MONITOR ID HAS BEEN VERIFIED BEFOREHAND
 # use arrays instead of strings to avoid quote hell
 if [[ -n "${2}" ]]; then
-   DETECTION_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --monitor-id "$2" --eventid "$1" --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}" --event-type "start" "$LIVE")
+   DETECTION_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --monitor-id "$2" --eventid "$1" --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}" --event-type "start" "$LIVE" "$DOCKER")
 elif [[ -n "${1}" ]]; then
-   DETECTION_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --eventid "$1" --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}" --event-type "start" "$LIVE")
+   DETECTION_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --eventid "$1" --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}" --event-type "start" "$LIVE" "$DOCKER")
 fi
 # this is why the python script prints out the detection with 'detected:' in the string somewhere
 RESULTS=$("${DETECTION_SCRIPT[@]}" | grep "detected:")

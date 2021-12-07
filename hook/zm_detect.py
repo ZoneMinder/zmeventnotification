@@ -405,7 +405,7 @@ def remote_detect(options=None, args=None):
 def _parse_args():
     ap = ArgumentParser()
     ap.add_argument(
-        "--from-docker",
+        "--docker",
         action="store_true",
         default=False
     )
