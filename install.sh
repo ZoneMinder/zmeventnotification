@@ -221,6 +221,7 @@ install_hook() {
     mkdir -p "${TARGET_DATA}/misc" 2>/dev/null
     echo "everything that does not fit anywhere else :-)" > "${TARGET_DATA}/misc/README.txt" 2>/dev/null
 
+
     if [ "${DOWNLOAD_MODELS}" == "yes" ]
     then
 
@@ -381,6 +382,7 @@ install_hook() {
      install -m 755 -o "${WEB_OWNER}" tools/zmes_gotify.sh "${TARGET_BIN_HOOK}"
 
 
+
     echo "*** Installing detection scripts ***"
     install -m 755 -o "${WEB_OWNER}" hook/zm_event_start.sh "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_event_end.sh "${TARGET_BIN_HOOK}"
@@ -446,7 +448,12 @@ install_hook_config() {
     echo "====> Remember to fill in the right values in the YAML config files, or your system won't work! <============="
     echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN_HOOK}/zm_event_start.sh! <========"
     echo
+    [[ -a "${TARGET_CONFIG}/zm.conf" ]] && chgrp "${WEB_GROUP}" "${TARGET_CONFIG}/zm.conf" && \
+    chmod g+w "${TARGET_CONFIG}/zm.conf" && echo "Changed ${TARGET_CONFIG}/zm.conf to allow GROUP: ${WEB_GROUP} "\
+    "access to read/write"
+
 }
+
 install_pyzm() {
 
     echo
