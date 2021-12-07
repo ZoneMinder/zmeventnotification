@@ -1010,7 +1010,7 @@ sub printDebug {
   $str = $prefix . ' ' . $str;
   if ($es_debug_level >= $level) {
     print( "DBG-$level:", $now, " ", $str, "\n" ) if $console_logs;
-    Debug($level, $str) ;
+    Debug("DEBUG$level", $str);
   }
 
 
