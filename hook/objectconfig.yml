@@ -130,15 +130,15 @@ gpu_max_lock_wait: 100
 # and using the aliases that are piped out to bat to view the logs in color coded and themed output.
 pyzm_overrides:
   # levels
-  log_level_syslog: 5
-  log_level_file: 5
-  log_level_debug: 5
-  # dont log to the DB (-5)
-  log_level_db: -5
+#  log_level_syslog: 5
+#  log_level_file: 5
+#  log_level_debug: 5
+  # don't log to the DB (-5)
+#  log_level_db: -5
   # log levels -> 1 dbg/print/blank 0 info, -1 warn, -2 err, -3 fatal, -4 panic, -5 off (only for log_debug_file)
-  log_debug_file: 1
-  log_debug: True
-  log_debug_target: _zmes
+#  log_debug_file: 1
+#  log_debug: True
+#  log_debug_target: _zm_mlapi|_zmes|current
 
 # api portal is needed if you plan to use tokens to get images
 # requires ZM 1.33 or above
@@ -183,7 +183,6 @@ past_det_max_diff_area: 5%
 # This is pretty useful to eliminate bogus detection. In my case, depending on shadows and other lighting conditions,
 # I sometimes see "car" or "person" detected that covers most of my driveway view. That is practically impossible
 # and therefore I set mine to 70% because I know any valid detected objected cannot be larger than 70% of the image.
-
 #max_detection_size: 90%
 
 # How much area the detected object must take up inside the polygon/zone, also per object settings
@@ -548,19 +547,27 @@ yolo4_object_processor: gpu
 
 
 # Yolo v3 on GPU (falls back to CPU if no GPU)
-yolo3_object_weights: '{{base_data_path}}/models/yolov3/yolov3.weights'
-yolo3_object_labels: '{{base_data_path}}/models/yolov3/coco.names'
-yolo3_object_config: '{{base_data_path}}/models/yolov3/yolov3.cfg'
+yolo3_models: '{{base_data_path}}/models/yolov3'
+# Yolo v4 on GPU (falls back to CPU if no GPU)
+yolo3_object_weights: '{{yolo3_models}}/yolov3.weights'
+yolo3_object_labels: '{{yolo3_models}}/coco.names'
+yolo3_object_config: '{{yolo3_models}}/yolov3.cfg'
 yolo3_object_framework: opencv
 yolo3_object_processor: gpu
 
+tinyyolo_models: '{{base_data_path}}/models/tinyyolov'
 # Tiny Yolo V4 on GPU (falls back to CPU if no GPU)
-tinyyolo_object_config: '{{base_data_path}}/models/tinyyolov4/yolov4-tiny.cfg'
-tinyyolo_object_weights: '{{base_data_path}}/models/tinyyolov4/yolov4-tiny.weights'
-tinyyolo_object_labels: '{{base_data_path}}/models/tinyyolov4/coco.names'
+tinyyolo_object_config: '{{tinyyolo_models}}4/yolov4-tiny.cfg'
+tinyyolo_object_weights: '{{tinyyolo_models}}4/yolov4-tiny.weights'
+tinyyolo_object_labels: '{{tinyyolo_models}}4/coco.names'
 tinyyolo_object_framework: opencv
 tinyyolo_object_processor: gpu
-
+# Tiny Yolo V3 on GPU (falls back to CPU if no GPU)
+#tinyyolo_object_config: '{{tinyyolo_models}}3/yolov3-tiny.cfg'
+#tinyyolo_object_weights: '{{tinyyolo_models}}3/yolov3-tiny.weights'
+#tinyyolo_object_labels: '{{tinyyolo_models}}3/coco.names'
+#tinyyolo_object_framework: opencv
+#tinyyolo_object_processor: gpu
 ###########################################
 #    ------ [ FACE MODEL SECTION ] ------
 ###########################################

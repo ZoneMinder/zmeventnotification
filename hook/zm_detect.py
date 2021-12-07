@@ -605,6 +605,11 @@ def get_es_version(globs: pyzm.helpers.new_yaml.GlobalConfig) -> str:
 def _parse_args():
     ap = ArgumentParser()
     ap.add_argument(
+        "--from-docker",
+        action="store_true",
+        default=False
+    )
+    ap.add_argument(
         "-et",
         "--event-type",
         help="event type-> start or end",
