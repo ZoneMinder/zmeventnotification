@@ -25,6 +25,7 @@ cleanup() {
 
 
 # change this to the path of the object detection config"
+# 481 1 "Monitor-1" "All, Motion" --live --docker "/data/events/1/2021-12-07/481" --debug
 
 CONFIG_FILE="/etc/zm/objectconfig.yml"
 ZMES_DIR="/var/lib/zmeventnotification"
@@ -38,16 +39,18 @@ if [[ -n "$6" ]] && [[ "$6" == '--docker' ]]; then
     EVENT_PATH="$6"
 fi
 REASON="$4"
-
+dbg=''
+[[ $(echo "$*" | grep "\(\s\?--debug\b\)" ]] && dbg='--debug'
+[[ $(echo "$*" | grep "\(\s\?-d\b\)" ]] && dbg='--debug'
 # Pass the monitor ID so the api creation can be created in its own Thread - if no monitor ID is passed the system will
 # create the api object, login and ask for the monitor ID based on the event ID (adds an extra 1-2 seconds to the
 # response time) PASSING THE MONITOR ID SPEEDS THINGS UP!  SINCE MONITOR id AND --LIVE ARE PASSED WE CAN BE SURE THAT
 # THE MONITOR ID HAS BEEN VERIFIED BEFOREHAND
 # use arrays instead of strings to avoid quote hell
 if [[ -n "${2}" ]]; then
-   DETECTION_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --monitor-id "$2" --eventid "$1" --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}" --event-type "start" "$LIVE" "$DOCKER")
+   DETECTION_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --monitor-id "$2" --eventid "$1" --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}" --event-type "start" "$LIVE" "$DOCKER" "$dbg")
 elif [[ -n "${1}" ]]; then
-   DETECTION_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --eventid "$1" --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}" --event-type "start" "$LIVE" "$DOCKER")
+   DETECTION_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --eventid "$1" --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}" --event-type "start" "$LIVE" "$DOCKER" "$dbg")
 fi
 # this is why the python script prints out the detection with 'detected:' in the string somewhere
 RESULTS=$("${DETECTION_SCRIPT[@]}" | grep "detected:")
