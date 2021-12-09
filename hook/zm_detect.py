@@ -60,7 +60,7 @@ bg_pushover_jpg: Optional[Thread] = None
 bg_pushover_gif: Optional[Thread] = None
 bg_mqtt: Optional[Thread] = None
 
-__app_version__: str = "0.0.1"
+__app_version__: str = "0.0.2"
 
 
 def remote_login(user, password, ml_api_url: str, name: str = None):

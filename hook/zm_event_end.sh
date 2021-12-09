@@ -21,7 +21,7 @@ cleanup() {
 
 # Only tested with ZM 1.32.3+. May or may not work with older versions
 # Logic:
-# This script is invoked by zmeventnotification if you've specified its location in the hook= variable of zmeventnotification.ini
+# This script is invoked by zmeventnotification if you've specified its location in the hook= variable of zmeventnotification.yml
 
 
 # change this to the path of the object detection config"

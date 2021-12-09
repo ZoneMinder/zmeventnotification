@@ -1,8 +1,8 @@
 #!/usr/bin/perl  -T
-#
+
 # ==========================================================================
 #
-# THIS SCRIPT MUST BE RUN WITH SUDO OR STARTED VIA ZMDC.PL
+# THIS SCRIPT MUST BE RUN WITH SUDO (or equivalent) OR STARTED VIA ZMDC.PL
 #
 # ZoneMinder Realtime Notification System
 #
@@ -33,9 +33,8 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 # ==========================================================================
-
+# use warnings;
 use strict;
-# use YAML::XS 'LoadFile';
 use bytes;
 use POSIX ':sys_wait_h';
 #use POSIX ':sys_wait_h';
@@ -44,12 +43,23 @@ use Time::Seconds;
 use Symbol qw(qualify_to_ref);
 use IO::Select;
 
+use ZoneMinder;
+use POSIX;
+use DBI;
+use version;
+
+
+$ENV{PATH} = '/bin:/usr/bin';
+$ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
+delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
+
+
 ####################################
-my $app_version = '0.0.1';
+my $app_version = '0.0.2';
 ####################################
 
 # do this before any log init etc.
-my $first_arg = @ARGV[0];
+my $first_arg = $ARGV[0];
 if ($first_arg eq '--version') {
   print ($app_version);
   exit(0);
@@ -82,28 +92,12 @@ if ( !try_use('JSON') ) {
 
 # debugging only.
 #use Data::Dumper;
-
-# ==========================================================================
-#
-# Starting v1.0, configuration has moved to a separate file, please make sure
-# you see README
-#
-# Starting v0.95, I've moved to FCM which means I no longer need to maintain
-# my own push server. Plus this uses HTTP which is the new recommended
-# way. Note that 0.95 will only work with zmNinja 1.2.510 and beyond
-# Conversely, old versions of the event server will NOT work with zmNinja
-# 1.2.510 and beyond, so make sure you upgrade both
-#
-# ==========================================================================
-
-
-
 # ==========================================================================
 #
 # These are app defaults
 # Note that you  really should not have to to change these values.
 # It is better you change them inside the ini file.
-# These values are used ONLY if the server cannot find its ini file
+# These values are used ONLY if the server cannot find its yml file
 # The only one you may want to change is DEFAULT_CONFIG_FILE to point
 # to your custom ini file if you don't use --config. The rest should
 # go into that config file.
@@ -111,7 +105,9 @@ if ( !try_use('JSON') ) {
 
 # configuration constants
 use constant {
-  DEFAULT_CONFIG_FILE        => '/etc/zm/zmeventnotification.ini',
+  # DEFAULT_CONFIG_FILE        => '/etc/zm/zmeventnotification.yml',
+  DEFAULT_CONFIG_PATH        => '/etc/zm',
+  DEFAULT_CONFIG_FILE        => '/etc/zm/zmeventnotification.yml',
   DEFAULT_PORT               => 9000,
   DEFAULT_ADDRESS            => '[::]',
   DEFAULT_AUTH_ENABLE        => 'yes',
@@ -204,6 +200,7 @@ my $version;
 my $config_file;
 my $config_file_present;
 my $check_config;
+my $config_path;
 
 my $use_escontrol_interface;
 my $escontrol_interface_password;
@@ -307,6 +304,9 @@ my %fcm_tokens_map;
 
 my %escontrol_interface_settings = ( notifications => {} );
 
+my $sec_regex = '^\b|\s*\"?|\'?(\{\[(\s*\w.*\s*)\]\})\"?|\'?';
+my $svar_regex = '^\b|\s*\"?|\'?(\{\{\s*(\w.*)\s*}})\"?|\'?';
+
 my $dummyEventTest = 0
   ; # if on, will generate dummy events. Not in config for a reason. Only dev testing
 my $dummyEventInterval     = 20;       # timespan to generate events in seconds
@@ -320,7 +320,8 @@ if ( !try_use('Net::WebSocket::Server') ) {
   Fatal('Net::WebSocket::Server missing');
 }
 if ( !try_use('IO::Socket::SSL') )  { Fatal('IO::Socket::SSL missing'); }
-if ( !try_use('IO::Handle') )       { Fatal('IO::Handle'); }
+if ( !try_use('IO::Handle') )       { Fatal('IO::Handle missing'); }
+if ( !try_use('YAML::XS') )         { Fatal('YAML::XS missing'); }
 if ( !try_use('Config::IniFiles') ) { Fatal('Config::Inifiles missing'); }
 if ( !try_use('Getopt::Long') )     { Fatal('Getopt::Long missing'); }
 if ( !try_use('File::Basename') )   { Fatal('File::Basename missing'); }
@@ -344,7 +345,7 @@ Usage: zmeventnotification.pl [OPTION]...
 
   --help                              Print this page.
   --version                           Print version.
-  --config=FILE                       Read options from configuration file (default: /etc/zm/zmeventnotification.ini).
+  --config=FILE                       Read options from configuration file (default: /etc/zm/zmeventnotification.yml).
                                       Any CLI options used below will override config settings.
 
   --docker                            The ES is running inside of a docker container.
@@ -372,8 +373,11 @@ exit( print(USAGE) ) if $help;
 # read it and fail if it can't be read.  Otherwise, try the default
 # configuration path, and if it doesn't exist, take all the default values by
 # loading a blank Config::IniFiles object.
+if ( !defined $config_path) {
+  $config_path = DEFAULT_CONFIG_PATH;
+}
 
-if ( !$config_file ) {
+if ( !defined $config_file) {
   $config_file         = DEFAULT_CONFIG_FILE;
   $config_file_present = -e $config_file;
 }
@@ -388,25 +392,42 @@ my $config;
 
 if ($config_file_present) {
   printInfo("using config file: $config_file");
-  $config = Config::IniFiles->new( -file => $config_file );
+  # $config = Config::IniFiles->new( -file => $config_file );
+  $config = YAML::XS::LoadFile( $config_file );
 
   unless ($config) {
     Fatal( "Encountered errors while reading $config_file:\n"
-        . join( "\n", @Config::IniFiles::errors ) );
+        . join( "\n", @YAML::XS::errors ) );
+        # . join( "\n", @Config::IniFiles::errors ) );
   }
 }
 else {
-  $config = Config::IniFiles->new;
+  # $config = Config::IniFiles->new;
+  $config = YAML::XS::Load('{}');
   printInfo('No config file found, using inbuilt defaults');
 }
-
-$secrets_filename = config_get_val( $config, 'general', 'secrets' );
-if ($secrets_filename) {
+$config_path = config_get_val( $config, 'general', 'config_path', DEFAULT_CONFIG_PATH );
+# Allow for secret: or secrets: as 'section' key in secrets.yml
+$secrets_filename = config_get_val( $config, 'general', 'secrets', $config_path . '/secrets.yml' );
+if (defined $secrets_filename) {
   printInfo("using secrets file: $secrets_filename");
-  $secrets = Config::IniFiles->new( -file => $secrets_filename );
-  unless ($secrets) {
+  $secrets = YAML::XS::LoadFile( $secrets_filename );
+  # $secrets = Config::IniFiles->new( -file => $secrets_filename );
+  unless (defined $secrets) {
     Fatal( "Encountered errors while reading $secrets_filename:\n"
-        . join( "\n", @Config::IniFiles::errors ) );
+        . join( "\n", @YAML::XS::errors ) );
+  }
+}
+my $secrets_key;
+if (defined $secrets) {
+  if ( $secrets->{'secret'} ) {
+  $secrets_key = 'secret';
+  }
+  elsif ( $secrets->{'secrets'} ) {
+    $secrets_key = 'secrets';
+  }
+  else {
+    Fatal('The secrets file must have secret: or secrets: as its base (section) key!');
   }
 }
 
@@ -421,11 +442,37 @@ $escontrol_interface_password =
   config_get_val( $config, 'general', 'escontrol_interface_password' )
   if ($use_escontrol_interface);
 
+sub loadEsControlSettings() {
+
+  if ( !$use_escontrol_interface ) {
+    printDebug( 'ESCONTROL_INTERFACE is disabled. Not loading control data',
+      1 );
+    return;
+  }
+  printDebug(
+    "ESCONTROL_INTERFACE: Loading persistent admin interface settings from $escontrol_interface_file",
+    1
+  );
+  if ( !-f $escontrol_interface_file ) {
+    printDebug(
+      'ESCONTROL_INTERFACE: admin interface file does not exist, creating...',
+      1 );
+    saveEsControlSettings();
+
+  }
+  else {
+    %escontrol_interface_settings = %{ retrieve($escontrol_interface_file) };
+    my $json = encode_json( \%escontrol_interface_settings );
+    printDebug( "ESCONTROL_INTERFACE: Loaded parameters: $json", 2 );
+  }
+
+}
+
 # secrets need to be loaded before admin
 # Do this BEFORE any config_get_val
 loadEsControlSettings();
 
-# This will not load parameters in the .ini files
+# This will not load parameters in the .yml files
 loadEsConfigSettings();
 
 my %ssl_push_opts = ();
@@ -465,67 +512,162 @@ sub chld_sig_handler {
 
 # this is just a wrapper around Config::IniFiles val
 # older versions don't support a default parameter
+# sub config_get_val {
+#   my ( $config, $sect, $parm, $def ) = @_;
+#   my $val = $config->val( $sect, $parm );
+#
+#   my $final_val = defined($val) ? $val : $def;
+#
+#   my $fc = substr( $final_val, 0, 1 );
+#   # my $fc = substr( $final_val, 0, 2 );
+#
+#   #printInfo ("Parsing $final_val with X${fc}X");
+#   # if ( $fc eq '{[' ) {
+#   if ( $fc eq '!' ) {
+#     my $token = substr( $final_val, 1 );
+#     # $token =~ s/^\s+//;
+#     # my $token = substr( $final_val, 2, -2 );
+#     printDebug( 'Got secret token !' . $token, 2 );
+#     Fatal('No secret file found') if ( !$secrets );
+#     my $secret_val = $secrets->val( 'secrets', $token );
+#     Fatal( 'Token:' . $token . ' not found in secret file' )
+#       if ( !$secret_val );
+#
+#     #printInfo ('replacing with:'.$secret_val);
+#     $final_val = $secret_val;
+#   }
+#
+#   #printInfo("ESCONTROL_INTERFACE checking override for $parm");
+#   if ( exists $escontrol_interface_settings{$parm} ) {
+#     printDebug(
+#       "ESCONTROL_INTERFACE overrides key: $parm with "
+#         . $escontrol_interface_settings{$parm},
+#       2
+#     );
+#     $final_val = $escontrol_interface_settings{$parm};
+#   }
+#
+#   # compatibility hack, lets use yes/no in config to maintain
+#   # parity with hook config
+#   if    ( lc($final_val) eq 'yes' ) { $final_val = 1; }
+#   elsif ( lc($final_val) eq 'no' )  { $final_val = 0; }
+#
+#   # now search for substitutions
+#   my @matches = ( $final_val =~ /\{\{(.*?)\}\}/g );
+#
+#   foreach (@matches) {
+#
+#     my $token = $_;
+#
+#     # check if token exists in either general or its own section
+#     # other-section substitution not supported
+#
+#     my $val = $config->val( 'general', $token );
+#     $val = $config->val( $sect, $token ) if !$val;
+#     printDebug( "config string substitution: {{$token}} is '$val'", 3 );
+#     $final_val =~ s/\{\{$token\}\}/$val/g;
+#
+#   }
+#
+#   return trim($final_val);
+# }
+
+# Loads all the ini file settings and populates variables
+
+
+
+
+
+
+
+
+
+
 sub config_get_val {
+
   my ( $config, $sect, $parm, $def ) = @_;
-  my $val = $config->val( $sect, $parm );
-
-  my $final_val = defined($val) ? $val : $def;
-
-  my $fc = substr( $final_val, 0, 1 );
-  # my $fc = substr( $final_val, 0, 2 );
-
-  #printInfo ("Parsing $final_val with X${fc}X");
-  # if ( $fc eq '{[' ) {
-  if ( $fc eq '!' ) {
-    my $token = substr( $final_val, 1 );
-    # my $token = substr( $final_val, 2, -2 );
-    printDebug( 'Got secret token !' . $token, 2 );
-    Fatal('No secret file found') if ( !$secrets );
-    my $secret_val = $secrets->val( 'secrets', $token );
-    Fatal( 'Token:' . $token . ' not found in secret file' )
-      if ( !$secret_val );
-
-    #printInfo ('replacing with:'.$secret_val);
-    $final_val = $secret_val;
-  }
-
-  #printInfo("ESCONTROL_INTERFACE checking override for $parm");
-  if ( exists $escontrol_interface_settings{$parm} ) {
-    printDebug(
-      "ESCONTROL_INTERFACE overrides key: $parm with "
-        . $escontrol_interface_settings{$parm},
-      2
-    );
-    $final_val = $escontrol_interface_settings{$parm};
-  }
-
-  # compatibility hack, lets use yes/no in config to maintain
+  my $val = $config->{$sect}->{$parm};
+    # print("val: $val\n");
+    # if not found, make it the supplied default
+    my $final_val = defined($val) ? $val : $def;
+    my $replace_val;
+    my $i = 0;
+    # print("Looking for {[SECRETS]} in $sect->$parm -- Searching in this string -> $final_val\n");
+    my @matches = ( $final_val =~ /$sec_regex/g );
+      # print(Dumper(@matches));
+    foreach (@matches) {
+        my $token = $_;
+        if (defined $token) {
+            Fatal('No secret file found') if ( !defined $secrets);
+            $i ++;
+            if ($i == 1) {
+                $replace_val = $token;
+                # print("replace_val: $replace_val\n");
+            }
+            elsif ($i == 2) {
+                $token = trim($token);
+                # print("val: xx${val}xx\n");
+                $val = $secrets->{ $secrets_key }->{ $token };
+                # $val = $secrets->{ 'secret' }->{ $token } if !defined $val;
+                if (defined $val) {
+                    printDebug( "SECRET found! replacing: $replace_val with '$val'\n", 2 );
+                    # print("Looking in this string -> $final_val\n");
+                    $replace_val = quotemeta($replace_val);
+                    $final_val =~ s/$replace_val/$val/g;
+                }
+                else {
+                    printDebug( 'Secret: ' . $replace_val . ' not found in secret file', 2 );
+                }
+            }
+        }
+    }
+  # printInfo("ESCONTROL_INTERFACE checking override for $parm");
+    if ( exists $escontrol_interface_settings{$parm} ) {
+      printDebug(
+        "ESCONTROL_INTERFACE overrides key: $parm with "
+          . $escontrol_interface_settings{$parm},
+        2
+      );
+      $final_val = $escontrol_interface_settings{$parm};
+    }
+    # compatibility hack, lets use yes/no in config to maintain
   # parity with hook config
-  if    ( lc($final_val) eq 'yes' ) { $final_val = 1; }
-  elsif ( lc($final_val) eq 'no' )  { $final_val = 0; }
-
-  # now search for substitutions
-  my @matches = ( $final_val =~ /\{\{(.*?)\}\}/g );
-
-  foreach (@matches) {
-
-    my $token = $_;
-
-    # check if token exists in either general or its own section
-    # other-section substitution not supported
-
-    my $val = $config->val( 'general', $token );
-    $val = $config->val( $sect, $token ) if !$val;
-    printDebug( "config string substitution: {{$token}} is '$val'", 3 );
-    $final_val =~ s/\{\{$token\}\}/$val/g;
-
-  }
+    if    ( lc($final_val) eq 'yes' ) { $final_val = 1; }
+    elsif ( lc($final_val) eq 'no' )  { $final_val = 0; }
+    # Start {{sub var}} replacement
+    @matches = [];
+    $replace_val = undef;
+    $i = 0;
+    @matches = ( $final_val =~ /$svar_regex/g );
+      # print(Dumper(@matches));
+    foreach (@matches) {
+        my $token = $_;
+        if (defined $token) {
+            $i ++;
+            if ($i == 1) {
+                $replace_val = $token;
+                # print("SUB-VAR replace_val: $replace_val\n");
+            }
+            elsif ($i == 2) {
+                $token = trim($token);
+                # print("val: xx${val}xx\n");
+                $val = $config->{ $sect }->{ $token };
+                $val = $config->{ 'general' }->{ $token } if !$val;
+                if ($val) {
+                    printDebug( "SUB-VAR found! replacing: $replace_val with '$val'\n", 2 );
+                    # print("Looking in this string -> $final_val\n");
+                    $replace_val = quotemeta($replace_val);
+                    $final_val =~ s/$replace_val/$val/g;
+                }
+            }
+        }
+    }
 
   return trim($final_val);
 }
 
-# Loads all the ini file settings and populates variables
 sub loadEsConfigSettings {
+  my $fh;
   $restart_interval = config_get_val( $config, 'general', 'restart_interval',
     DEFAULT_RESTART_INTERVAL );
   if ( !$restart_interval ) {
@@ -634,8 +776,7 @@ sub loadEsConfigSettings {
   $es_rules_file = config_get_val( $config, 'customize', 'es_rules' );
   if ($es_rules_file) {
     my $hr;
-    my $fh;
-    printDebug("rules: Loading es rules json: $es_rules_file", 2);
+    printDebug("rules: Loading es rules json: $es_rules_file");
     if ( open( $fh, "<", $es_rules_file ) ) {
       my $data = do { local $/ = undef; <$fh> };
       eval { $hr = decode_json($data); };
@@ -743,7 +884,7 @@ ${\(
   "Configuration (read $abs_config_file)" :
   "Default configuration ($abs_config_file doesn't exist)"
 )}:
-
+Config path........................... ${\(value_or_undefined($config_path))}
 Secrets file.......................... ${\(value_or_undefined($secrets_filename))}
 Base data path........................ ${\(value_or_undefined($base_data_path))}
 Restart interval (secs)............... ${\(value_or_undefined($restart_interval))}
@@ -780,10 +921,10 @@ MQTT Username ........................ ${\(value_or_undefined($mqtt_username))}
 MQTT Password ........................ ${\(present_or_not($mqtt_password))}
 MQTT Retain .......................... ${\(yes_or_no($mqtt_retain))}
 MQTT Tick Interval ................... ${\(value_or_undefined($mqtt_tick_interval))}
-MQTT TLS CA ........................ ${\(value_or_undefined($mqtt_tls_ca))}
+MQTT TLS CA .......................... ${\(value_or_undefined($mqtt_tls_ca))}
 MQTT TLS Cert ........................ ${\(value_or_undefined($mqtt_tls_cert))}
-MQTT TLS Key ........................ ${\(value_or_undefined($mqtt_tls_key))}
-MQTT TLS Insecure ........................ ${\(yes_or_no($mqtt_tls_insecure))}
+MQTT TLS Key ......................... ${\(value_or_undefined($mqtt_tls_key))}
+MQTT TLS Insecure .................... ${\(yes_or_no($mqtt_tls_insecure))}
 
 SSL enabled .......................... ${\(yes_or_no($ssl_enabled))}
 SSL cert file ........................ ${\(value_or_undefined($ssl_cert_file))}
@@ -800,9 +941,9 @@ Monitor rules JSON file................${\(value_or_undefined($es_rules_file))}
 
 Use Hooks............................. ${\(yes_or_no($use_hooks))}
 Hook Script on Event Start ........... ${\(value_or_undefined($event_start_hook))}
-User Script on Event Start.............${\(value_or_undefined($event_start_hook_notify_userscript))}
+User Script on Event Start............ ${\(value_or_undefined($event_start_hook_notify_userscript))}
 Hook Script on Event End.............. ${\(value_or_undefined($event_end_hook))}
-User Script on Event End.............${\(value_or_undefined($event_end_hook_notify_userscript))}
+User Script on Event End.............. ${\(value_or_undefined($event_end_hook_notify_userscript))}
 Hook Skipped monitors................. ${\(value_or_undefined($hook_skip_monitors))}
 
 Notify on Event Start (hook success).. ${\(value_or_undefined($event_start_notify_on_hook_success))}
@@ -820,7 +961,8 @@ Include picture....................... ${\(yes_or_no($include_picture))}
 Picture username ..................... ${\(value_or_undefined($picture_portal_username))}
 Picture password ..................... ${\(present_or_not($picture_portal_password))}
 
-Docker environment.................... ${\(present_or_not($docker_env))}
+Running inside of Docker.............. ${\(yes_or_no($docker_env))}
+
 EOF
   );
 }
@@ -843,7 +985,7 @@ if ($use_fcm) {
   }
   else {
     printInfo('Push enabled via FCM');
-    printDebug("fcmv1: --> FCM V1 APIs: $use_fcmv1", 2);
+    printDebug("fcmv1: --> FCM V1 APIs: $use_fcmv1");
   }
 
 }
@@ -943,7 +1085,6 @@ my $proxy_reach_time    = 0;
 my $wss;
 my @events             = ();
 my @active_connections = ();
-my $wss;
 my $zmdc_active = 0;
 
 # Main entry point
@@ -1010,7 +1151,7 @@ sub printDebug {
   $str = $prefix . ' ' . $str;
   if ($es_debug_level >= $level) {
     print( "DBG-$level:", $now, " ", $str, "\n" ) if $console_logs;
-    Debug($str);
+    Debug($str) ;
   }
 
 
@@ -1065,31 +1206,6 @@ sub saveEsControlSettings() {
     or Fatal("Error writing to $escontrol_interface_file: $!");
 }
 
-sub loadEsControlSettings() {
-
-  if ( !$use_escontrol_interface ) {
-    printDebug( 'ESCONTROL_INTERFACE is disabled. Not loading control data',
-      1 );
-    return;
-  }
-  printDebug(
-    "ESCONTROL_INTERFACE: Loading persistent admin interface settings from $escontrol_interface_file",
-    1
-  );
-  if ( !-f $escontrol_interface_file ) {
-    printDebug(
-      'ESCONTROL_INTERFACE: admin interface file does not exist, creating...',
-      1 );
-    saveEsControlSettings();
-
-  }
-  else {
-    %escontrol_interface_settings = %{ retrieve($escontrol_interface_file) };
-    my $json = encode_json( \%escontrol_interface_settings );
-    printDebug( "ESCONTROL_INTERFACE: Loaded parameters: $json", 2 );
-  }
-
-}
 
 # checks to see if notifications are muted or enabled for this monitor
 sub getNotificationStatusEsControl {
@@ -1355,7 +1471,7 @@ sub processEsControlCommand {
 # c) A CONCATENATED list of monitor IDs in $alarm_mid
 
 sub checkNewEvents() {
-
+  my $fh;
   my $eventFound = 0;
   my @newEvents  = ();
 
@@ -1366,7 +1482,7 @@ sub checkNewEvents() {
     my $update_tokens = 0;
     my %tokens_data;
     if ($use_fcm) {
-      open( my $fh, '<', $token_file )
+      open( $fh, '<', $token_file )
       || Error( 'Cannot open to update token counts ' . $token_file );
       my $hr;
       my $data = do { local $/ = undef; <$fh> };
@@ -1416,7 +1532,13 @@ sub checkNewEvents() {
     }
 
     if ($update_tokens && $use_fcm) {
-      open( my $fh, '>', $token_file )
+      my ($safe_token_file) = $token_file =~ /(^[\w\-.\/]+[\w\-. \/]+$)/;
+        print("old token file: $token_file\n");
+        print("safe token file: $safe_token_file\n");
+      if ( !$safe_token_file ) {
+        Fatal("Tainted: Could not create 'safe' token file name: $token_file");
+      }
+      open( $fh, '>', $safe_token_file )
       or printError("Error writing tokens file during count update: $!");
       my $json = encode_json( \%tokens_data );
       #print Dumper(\%tokens_data);
@@ -1706,10 +1828,11 @@ sub validateAuth {
 
 # deletes a token - invoked if FCM responds with an incorrect token error
 sub deleteFCMToken {
+  my $fh;
   my $dtoken = shift;
   printDebug( 'DeleteToken called with ...' . substr( $dtoken, -10 ), 2 );
   return if ( !-f $token_file );
-  open( my $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
+  open( $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
   my %tokens_data;
   my $hr;
   my $data = do { local $/ = undef; <$fh> };
@@ -1725,7 +1848,7 @@ sub deleteFCMToken {
     %tokens_data = %$hr;
     delete $tokens_data{tokens}->{$dtoken}
       if exists( $tokens_data{tokens}->{$dtoken} );
-    open( my $fh, '>', $token_file )
+    open( $fh, '>', $token_file )
       or printError("Error writing tokens file: $!");
     my $json = encode_json( \%tokens_data );
     print $fh $json;
@@ -1734,8 +1857,8 @@ sub deleteFCMToken {
 
   # now remove from active connection list
   foreach (@active_connections) {
-    next if ( $_ eq '' || $_->{token} ne $dtoken );
-    $_->{state} => INVALID_CONNECTION;
+    next if ( $_ eq '' // $_->{token} ne $dtoken );
+    $_->{state} = INVALID_CONNECTION;
   }
 }
 
@@ -3090,9 +3213,10 @@ sub initMQTT {
 }
 
 sub migrateTokens {
+  my $fh;
   my %tokens;
   $tokens{tokens} = {};
-  open( my $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
+  open( $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
   chomp( my @lines = <$fh> );
   close($fh);
   my @uniquetokens = uniq(@lines);
@@ -3113,7 +3237,7 @@ sub migrateTokens {
   }
   my $json = encode_json( \%tokens );
 
-  open( my $fh, '>', $token_file )
+  open( $fh, '>', $token_file )
     or Fatal("Error creating new migrated file: $!");
   print $fh $json;
   close($fh);
@@ -3121,6 +3245,7 @@ sub migrateTokens {
 
 # loads FCM tokens from file
 sub initFCMTokens {
+  my $fh;
   printDebug( 'Initializing FCM tokens...', 1 );
   if ( !-f $token_file ) {
     open( my $foh, '>', $token_file ) or Fatal("Error opening $token_file: $!");
@@ -3129,7 +3254,7 @@ sub initFCMTokens {
     close($foh);
   }
 
-  open( my $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
+  open( $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
   my %tokens_data;
   my $hr;
   my $data = do { local $/ = undef; <$fh> };
@@ -3138,7 +3263,7 @@ sub initFCMTokens {
   if ($@) {
     printInfo("tokens is not JSON, migrating format...");
     migrateTokens();
-    open( my $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
+    open( $fh, '<', $token_file ) or Fatal("Error opening $token_file: $!");
     my $data = do { local $/ = undef; <$fh> };
     close ($fh);
     eval { $hr = decode_json($data); };
@@ -3204,6 +3329,7 @@ sub initFCMTokens {
 # id is received from apple, so we handle that situation
 
 sub saveFCMTokens {
+  my $fh;
   return if ( !$use_fcm );
   my $stoken     = shift;
   my $smonlist   = shift;
@@ -3234,7 +3360,7 @@ sub saveFCMTokens {
     "SaveTokens called with:monlist=$smonlist, intlist=$sintlist, platform=$splatform, push=$spushstate",
     2
   );
-  open( my $fh, '<', $token_file )
+  open( $fh, '<', $token_file )
     || Fatal( 'Cannot open for read ' . $token_file );
 
   my %tokens_data;
@@ -3257,7 +3383,7 @@ sub saveFCMTokens {
     $tokens_data{tokens}->{$stoken}->{invocations} = $invocations;
     $tokens_data{tokens}->{$stoken}->{appversion} = $appversion;
 
-    open( my $fh, '>', $token_file )
+    open( $fh, '>', $token_file )
       or printError("Error writing tokens file: $!");
     my $json = encode_json( \%tokens_data );
     print $fh $json;
@@ -3897,8 +4023,7 @@ sub processNewAlarmsInFork {
             . $eid . ' '
             . $mid . ' "'
             . $alarm->{MonitorName} . '" "'
-            . $alarm->{Start}->{Cause} . '" '
-            . '--live'
+            . $alarm->{Start}->{Cause} . '" --live'
             . $docker_cmd;
 
           if ($hook_pass_image_path) {
@@ -3917,6 +4042,7 @@ sub processNewAlarmsInFork {
           if ( $cmd =~ /^(.*)$/ ) {
             $cmd = $1;
           }
+          printInfo("DEBUG -> REGEX for -Tainted -> \$cmd = $cmd");
           my $res = `$cmd`;
           chomp($res);
           my ( $resTxt, $resJsonString ) = parseDetectResults($res);
@@ -4128,8 +4254,7 @@ sub processNewAlarmsInFork {
             . $eid . ' '
             . $mid . ' "'
             . $alarm->{MonitorName} . '" "'
-            . $alarm->{Start}->{Cause} . '" '
-            . '--live'
+            . $alarm->{Start}->{Cause} . '" --live'
             . $docker_cmd;
 
           if ($hook_pass_image_path) {
@@ -4441,26 +4566,41 @@ sub initSocketServer {
   my $ssl_server;
   if ($ssl_enabled) {
     printDebug( 'About to start listening to socket', 2 );
+    # Perl -T
+    my ($safe_ssl_key) = $ssl_key_file =~ /(^[\w\-.\/]+[\w\-. \/]+$)/g;
+    if (!$safe_ssl_key) {
+      printError("Tainted: Invalid SSL key file: $ssl_key_file");
+      exit(1);
+    }
+
+    my ($safe_ssl_cert) = $ssl_cert_file =~ /(^[\w\-.\/]+[\w\-. \/]+$)/g;
+    if (!$safe_ssl_cert) {
+      printError("Tainted: Invalid SSL cert file: $ssl_cert_file");
+      exit(1);
+    }
+
+      my ($safe_port) = $port =~ /^([0-9][0-9][0-9][0-9][0-9])$/g;
+      my ($safe_address) = $address =~ /^((http(s?):\/\/)?(((www\.)?+[a-zA-Z0-9\.\-\_]+(\.[a-zA-Z]{2,3})+)|(\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b))|^(\w*)\W*(\/[a-zA-Z0-9\_\-\s\.\/\?\%\#\&\=]*)?$|^(\w*)\W*)/g;
     eval {
       $ssl_server = IO::Socket::SSL->new(
         Listen        => 10,
-        LocalPort     => $port,
-        LocalAddr     => $address,
+        LocalPort     => $safe_port,
+        LocalAddr     => $safe_address,
         Proto         => 'tcp',
         Reuse         => 1,
         ReuseAddr     => 1,
-        SSL_cert_file => $ssl_cert_file,
-        SSL_key_file  => $ssl_key_file
+        SSL_cert_file => $safe_ssl_cert,
+        SSL_key_file  => $safe_ssl_key
       );
     };
     if ($@) {
       printError("Failed starting server: $@");
       exit(-1);
     }
-    printInfo('Secure WS(WSS) is enabled...');
+    printInfo('Secure WebSocket (WSS) is enabled...');
   }
   else {
-    printInfo('Secure WS is disabled...');
+    printInfo('Secure WebSocket is disabled...');
   }
   printInfo( 'Web Socket Event Server listening on port ' . $port );
 

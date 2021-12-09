@@ -4,7 +4,7 @@ version = 0.1
 
 # This is a sample python script for sending notifications over pushover
 # Write your own script to add a new push service, and modify 
-# api_push_script in zmeventnotification.ini to invoke that script
+# api_push_script in zmeventnotification.yml to invoke that script
 
 # Example taken from https://support.pushover.net/i44-example-code-and-pushover-libraries#python
 
@@ -65,7 +65,7 @@ def get_image(path, cause):
         return path+'/snapshot.jpg'
 
 # Simple function to read variables from secret file
-def read_secrets(config='/etc/zm/secrets.ini'):
+def read_secrets(config='/etc/zm/secrets.yml'):
     from configparser import ConfigParser
     secrets_object = ConfigParser(interpolation=None, inline_comment_prefixes='#')
     secrets_object.optionxform=str

@@ -5,18 +5,19 @@ Configuration Guide
 
 There are two parts to the configuration of this system:
 
-* The Event Notification Server configuration - typically ``/etc/zm/zmeventnotification.ini``
+* The Event Notification Server configuration - typically ``/etc/zm/zmeventnotification.yml``
 * The Machine Learning Hooks configuration -  typically ``/etc/zm/objdetect.yml`` and/or
   ``/var/lib/zmeventnofication/mlapi/mlapiconfig.yml``
 
-The ES comes with a `sample ES config file <https://github.com/baudneo/zmeventnotification/blob/master/zmeventnotification.ini>`__
+The ES comes with a `sample ES config file <https://github.com/baudneo/zmeventnotification/blob/master/zmeventnotification.yml>`__
 which you should customize as you see fit. The sample config file is well annotated, so you really should read the comments to get an
 understanding of what each parameter does. Similarly, the ES also comes with a `sample objdetect.yml file <https://github.com/baudneo/blob/zmeventnotification/master/hook/objectconfig.yml>`__
 which you should read as well if you are using hooks. If you are using mlapi, read `its config <https://github.com/baudneo/mlapi/blob/master/mlapiconfig.yml>`__.
 
-Secret Tokens - MODIFIED BY NEO ZMES
+Secret Tokens
 -------------
-**See the .ini files for their example of secrets**
+**secrets.yml has a slightly different structure than zm_secrets.yml**
+The secrets are nested into the ``secrets`` key in secrets.yml.
 
 This allows you to easily share your config files without inadvertently sharing your secrets.
 
@@ -37,7 +38,7 @@ For example, let's suppose we add this to ``/etc/zm/objectconfig.yml``:
   user: '{[ZM_USER]}'
   password: '{[ZM_PASSWORD]}'
 
-And ``/etc/zm/secrets.yml`` contains:
+And ``/etc/zm/zm_secrets.yml`` contains:
 
 ::
 
@@ -50,4 +51,4 @@ And ``/etc/zm/secrets.yml`` contains:
 
 Then, while parsing the config file, the parser looks for these {[Secrets]} and replaces them with their configured values.
 
-The same concept applies to ``/etc/zm/zmeventnotification.ini`` and ``/var/lib/zmeventnofication/mlapi/mlapiconfig.yml``
+The same concept applies to ``/etc/zm/zmeventnotification.yml`` and ``/var/lib/zmeventnofication/mlapi/mlapiconfig.yml``

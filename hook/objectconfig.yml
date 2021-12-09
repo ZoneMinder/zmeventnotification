@@ -1,6 +1,6 @@
 ---
 # Configuration file for object detection
-# *** NOTE: zmeventnotification.ini and secrets.ini are for configuring the ZMEventnotification.pl (Perl) daemon
+# *** NOTE: zmeventnotification.yml and secrets.yml are for configuring the ZMEventnotification.pl (Perl) daemon
 # that reads the shared memory to find new events that are happening in ZM. objectconfig.yml and its secrets.yml
 # are strictly for the object detection part of ZMES.
 
@@ -298,7 +298,7 @@ hass_token :  '{[HA_TOKEN]}'
 #    ------ [ PUSHOVER ADD-ON SECTION ] ------
 ###########################################
 # Enable the PushOver python add-on? (Default: no)
-# Remember to turn off the api_push in zmeventnotification.ini or you will receive 2 different messages
+# Remember to turn off the api_push in zmeventnotification.yml or you will receive 2 different messages
 push_enable: no
 # Force sending a pushover notification when debugging a PAST event
 push_force: no
@@ -870,7 +870,7 @@ ml_sequence:
         object_min_confidence: '0.7'
         #      AWS region unless configured otherwise, e.g. in ~www-data/.aws/config
         aws_region: 'us-east-1'
-        #      AWS credentials from /etc/zm/secrets.ini
+        #      AWS credentials from /etc/zm/secrets.yml
         #      unless running on EC2 instance with instance IAM role (which is preferable)
         aws_access_key_id: '{[AWS_ACCESS_KEY_ID]}'
         aws_secret_access_key: '{[AWS_SECRET_ACCESS_KEY]}'
