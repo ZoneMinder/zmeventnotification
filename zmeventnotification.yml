@@ -218,7 +218,7 @@ hook:
   # where your motion sensitivity in ZM is not set properly, you may land up
   # triggering hundreds of child processes of zm_detect that may potentially
   # crash your system. Note that there are global locks around the ML code which
-  # are controlled by xxx_max_processes in the objectconfig/mlapiconfig.files
+  # are controlled by xxx_max_processes in the objectconfig/mlapiconfig files
   # which will avoid parallel running of models. But this is if you are facing issues
   # by the simple fact that too many zm_detect processes are forked (which will apply
   # whether you use mlapi or not). While I do feel the core issue is that you need

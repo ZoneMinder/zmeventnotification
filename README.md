@@ -10,16 +10,25 @@ Please be aware that the 'neo' versions are NOT compatible with the source repos
 
 **I am actively taking enhancement requests for new features and improvements.**
 
+Docker Images 
+------------------
+I have released working docker images for the following:
+
+- [zoneminder-base](https://ghcr.io/baudneo/zoneminder-base) - ZM without ES
+- [eventserver-mlapi](https://ghcr.io/baudneo/eventserver-mlapi) - ZM with ES configured to communicate with the GPU/TPU accelerated MLAPI image
+- [mlapi_cudnn-base](https://ghcr.io/baudneo/mlapi_cudnn-base) - MLAPI with CUDA/cuDNN and TPU support (ALL MODELS WORK)
+Ongoing work is happening to allow zoneminder-* or eventserver-* images to run on an unprivileged LXC host. Currently only the mlapi_cudnn-* images work inside of unprivileged LXC (Docker running inside an LXC)
+
 MAJOR CHANGES
 ---
-- The 'hook' (object detection) part of ZMEventnotification is now configured using YAML syntax (be aware zmeventnotification.ini and secrets.ini are still needed to configure the ES Perl daemon script! the object detection is technically an addition to the ES)
+- ZMEventnotification is now configured using YAML syntax (be aware zmeventnotification.yml and secrets.yml are still needed to configure the ES Perl daemon script! the object detection is technically an addition to the ES)
 - The way the config is processed as a whole, it was designed with [MLAPI](https://github.com/baudneo/mlapi) more in mind. It hashes the config and secrets file and based on if the config file has changed, MLAPI will use the cached config or rebuild. This is for performance. I am trying to design something equivalent for ZMES but ZMES has to load the config file every detection regardless, MLAPI is persistent.
 - !SECRETS are now {[secrets]} - allows embedding secrets into a substring or nested data structures inside the configuration files.
 - (see note) - MLAPI and ZMES now communicate dynamically using weighted 'routes'. ZM API credentials are encrypted by Python cryptography.Fernet symmetrical key encryption to be transported to MLAPI (Many ZMES instances can request detections from 1 MLAPI instance)
 - PERFORMANCE - I made many, many changes based on becoming more performant. There is logic for live and past events, the frame buffer is smarter and tries to handle out of bound frame calls or errors gracefully to recover instead of erring. Many tasks are now Threaded.
 - Animations (see GIF below)- The first few frames of the animation is now the labeled image that is objdetect.jpg, they are faster, there is an option to add a timestamp onto the animation frames (useful if you save events as mp4)
 - Pushover python add-on - I was trying to make notifications as fast as possible and settled on pushover, GOTIFY is faster but has less features. I use both as gotify is basically instant but pushover has a viewable image in the android drop down notifications.
-- custom push script - Added a gotify example of a shell script that ZMES runs with some arguments. You can build any notification service message you want if you follow the example and swap out the pertinent parts for your provider
+- Custom push script - Added a gotify example of a shell script that ZMES runs with some arguments. You can build any notification service message you want if you follow the example and swap out the pertinent parts for your provider
 - MQTT python add-on - Send MQTT data to a MQTT broker (has the ability to send the objdetect.jpg .gif using MQTT - Home Assistant MQTT Camera)
 - Home Assistant sensors to control pushover notifications - You can create a 'Toggle Helper' which is an on/off switch and a 'Input Text Helper' which you can use to set a 'cool down' period between pushover notifications (configurable per monitor). If you do not use HA, there is a configurable option 'push_cooldown' for cooldowns between notifications.
 
@@ -70,14 +79,11 @@ Documentation
 - Documentation, including installation, FAQ etc.are [here for the latest stable release](https://zmeventnotification.readthedocs.io/en/stable/) and [here for the master branch](https://zmeventnotification.readthedocs.io/en/latest/)
 - Always refer to the [Breaking Changes](https://zmeventnotification.readthedocs.io/en/latest/guides/breaking.html) document before you upgrade.
 
-3rd party dockers 
-------------------
-If you are using a docker container then be aware I do not have the knowledge of the container to properly help support any issues, I will try and help but the container author is the appropriate place for contact.
 
 Requirements
 -------------
 - Python 3.6 or above
-- OpenCV 4.2.0 or above
+- OpenCV 4.2.0 or above (4.3.x+ for YOLO v4) [4.5.4+ recommended]
 - ZoneMinder 1.34+ that is using JWT auth tokens (basic auth not recommended and may not be supported properly, basically its untested ATM)
 
 Screenshots

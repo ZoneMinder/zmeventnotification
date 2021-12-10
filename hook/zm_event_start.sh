@@ -43,15 +43,18 @@ if [[ -n "$5" ]]; then
   if [[ -n "$6" ]]; then
     if [[ "$6" == '--docker' ]]; then
     DOCKER='--docker'
-    if "${7[1]}" == '/'; then EVENT_PATH="$7" fi
-    elif [[ "${6[1]}" == '/' ]]; then
-    EVENT_PATH="$6"
+      if [[ "${7[1]}" == '/' ]]; then
+        EVENT_PATH="$7"
+      elif [[ "${6[1]}" == '/' ]]; then
+        EVENT_PATH="$6"
+      fi
     fi
   fi
 fi
+
 dbg=''
-[[ $(echo "$*" | grep "\(\s\?--debug\b\)" ]] && dbg='--debug'
-[[ $(echo "$*" | grep "\(\s\?-d\b\)" ]] && dbg='--debug'
+[[ -n $(echo "$*" | grep "\(\s\?--debug\b\)") ]] && dbg='--debug'
+[[ -n $(echo "$*" | grep "\(\s\?-d\b\)") ]] && dbg='--debug'
 
 # Pass the monitor ID so the api creation can be created in its own Thread - if no monitor ID is passed the system will
 # create the api object, login and ask for the monitor ID based on the event ID (adds an extra 1-2 seconds to the
