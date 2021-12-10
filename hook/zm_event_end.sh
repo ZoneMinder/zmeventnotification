@@ -43,11 +43,11 @@ REASON="$4"
 #then
 #  echo "2 arguments"
 #   echo "1 = $1, 2 = $2, 3 = $3, 4 = $4, 5 = $5, 6= $6"
-#   DETECTION_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --monitor-id "$2" --eventid "$1" --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}" --event-type "end" "$LIVE")
+#   DETECTION_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --monitor-id "$2" --event-id "$1" --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}" --event-type "end" "$LIVE")
 #else
 #  echo "1 argument"
 #   echo "1 = $1, 2 = $2, 3 = $3, 4 = $4, 5 = $5, 6= $6"
-#   DETECTION_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --eventid "$1" --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}" --event-type "end" "$LIVE")
+#   DETECTION_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --event-id "$1" --config "${CONFIG_FILE}" --eventpath "${EVENT_PATH}" --reason "${REASON}" --event-type "end" "$LIVE")
 #fi
 ## this is why the python script prints out the detection with 'detected:' in the string somewhere
 #RESULTS=$("${DETECTION_SCRIPT[@]}" | grep "detected:")

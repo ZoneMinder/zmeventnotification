@@ -1,5 +1,6 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 import copy
+import glob
 import json
 import os
 import signal
@@ -9,6 +10,7 @@ import time
 import urllib.parse
 from argparse import ArgumentParser
 from ast import literal_eval
+from configparser import ConfigParser
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -18,6 +20,11 @@ from traceback import format_exc
 from typing import Optional, Union
 
 import cv2
+# Pycharm hack for intellisense
+# from cv2 import cv2
+from sqlalchemy import create_engine, MetaData, Table, select
+from sqlalchemy.engine import ResultProxy
+from sqlalchemy.exc import SQLAlchemyError
 import numpy as np
 import requests
 import urllib3
@@ -26,6 +33,8 @@ from PIL import Image
 from yaml import safe_load
 
 import pyzm.helpers.new_yaml
+import pyzm.helpers.pyzm_utils
+import pyzm.interface
 from pyzm import __version__ as pyzm_version
 from pyzm.helpers.new_yaml import create_api, start_logs
 from pyzm.helpers.pyzm_utils import (
@@ -40,9 +49,10 @@ from pyzm.helpers.pyzm_utils import (
     do_mqtt,
     do_hass
 )
+from pyzm.interface import GlobalConfig
 
 lp: str = 'zmes:'
-__app_version__: str = "7.0.4"
+__app_version__: str = "0.0.2"
 DEFAULT_CONFIG: dict = safe_load('''
     custom_push: no
     custom_push_script: ''
@@ -275,18 +285,20 @@ DEFAULT_CONFIG: dict = safe_load('''
 
           sequence: []
     ''')
-
-
-def remote_login(user, password, ml_api_url: str, globs=None):
-    g: pyzm.helpers.new_yaml.GlobalConfig = globs
-    access_token: Optional[str] = None
-    lp = "zmes:mlapi:login:"
-    ml_login_url = f"{ml_api_url}/login"
+def _get_jwt_filename(ml_api_url):
     _file_name = ml_api_url.lstrip('http://').lstrip('https://')
     # If there is a :port
     _file_name = _file_name.split(':')
     if len(_file_name) > 1:
         _file_name = _file_name[0]
+    return _file_name
+
+def remote_login(user, password, ml_api_url: str, globs=None):
+    g: pyzm.interface.GlobalConfig = globs
+    access_token: Optional[str] = None
+    lp = "zmes:mlapi:login:"
+    ml_login_url = f"{ml_api_url}/login"
+    _file_name = _get_jwt_filename(ml_api_url)
     # todo: add to a cron cleanup job or something
     jwt_file = f"{g.config['base_data_path']}/{_file_name}_login.json"  # mlapi access_token
     if Path(jwt_file).is_file():
@@ -359,7 +371,7 @@ def remote_detect(options=None, args=None, globs=None, route=None):
     """Sends an http request to mlapi host with data needed for inference"""
     # This uses mlapi (https://github.com/baudneo/mlapi) to run inference with the sent data and converts format to
     # what is required by the rest of the code.
-    g: pyzm.helpers.new_yaml.GlobalConfig = globs
+    g: pyzm.interface.GlobalConfig = globs
     lp: str = "zmes:mlapi:"
     # print(f"{g.eid = } {options = } {g.api = } {args =}")
     model: str = "object"  # default to object
@@ -383,11 +395,16 @@ def remote_detect(options=None, args=None, globs=None, route=None):
         g.logger.log_close()
         exit(1)
     if not access_token:
-        access_token = remote_login(route['user'], route['pass'], route['gateway'], globs=g)
-        if not access_token:  # add a re login loop?
-            raise ValueError("Can't obtain MLAPI AUTH JWT")
-        auth_header = {"Authorization": f"Bearer {access_token}"}
-        show_header = {"Authorization": f"{auth_header.get('Authorization')[:30]}......"}
+        try:
+            access_token = remote_login(route['user'], route['pass'], route['gateway'], globs=g)
+        except Exception as ex:
+            g.logger.error(f"{lp} ERROR getting remote API token -> {ex}")
+            raise ValueError(f"error getting remote API token")
+        else:
+            if not access_token:  # add a re login loop?
+                raise ValueError(f"error getting remote API token")
+            auth_header = {"Authorization": f"Bearer {access_token}"}
+            show_header = {"Authorization": f"{auth_header.get('Authorization')[:30]}......"}
 
     params = {"delete": True, "response_format": "zm_detect"}
 
@@ -538,6 +555,20 @@ def remote_detect(options=None, args=None, globs=None, route=None):
                 g.logger.error(f"{http_ex.response.json()}")
         elif http_ex.response.status_code == 500:
             g.logger.error(f"There seems to be an Internal Error with the mlapi host, check mlapi logs!")
+        elif http_ex.response.status_code == 422:
+            if http_ex.response.content == b'{"message": "Invalid token"}':
+                g.logger.error(f"Invalid JWT AUTH token, trying to delete and re create...")
+                _file_name = _get_jwt_filename(route['gateway'])
+                jwt_file = f"{g.config['base_data_path']}/{_file_name}_login.json"  # mlapi access_token
+                if Path(jwt_file).is_file():
+                    try:
+                        os.remove(jwt_file)
+                    except Exception as e:
+                        g.logger.error(f"{lp} error removing {jwt_file} -> {e}")
+                    else:
+                        g.logger.debug(f"{lp} Removed JWT file: {jwt_file}")
+            else:
+                g.logger.error(f"There seems to be an Authentication Error with the mlapi host, check mlapi logs!")
         else:
             g.logger.error(f"ERR CODE={http_ex.response.status_code}  {http_ex.response.content=}")
     except urllib3.exceptions.NewConnectionError as urllib3_ex:
@@ -580,13 +611,10 @@ def remote_detect(options=None, args=None, globs=None, route=None):
             if options.get("resize", 'no') != "no" and options.get('resize') != img.shape[1]:
                 img = resize_image(img, options.get("resize"))
             data["matched_data"]["image"] = img
-        else:
-            g.logger.fatal(f"{lp} mlapi replied with an image. "
-                           f"ZMES was unable to reconstruct the image. FATAL, exiting...")
         return data
 
 
-def get_es_version(globs: pyzm.helpers.new_yaml.GlobalConfig) -> str:
+def get_es_version(globs: pyzm.interface.GlobalConfig) -> str:
     # Get zmeventnotification.pl VERSION
     es_version: str = '(?)'
     g = globs
@@ -596,7 +624,7 @@ def get_es_version(globs: pyzm.helpers.new_yaml.GlobalConfig) -> str:
             [which("zmeventnotification.pl"), "--version"]
         ).decode("ascii")
     except Exception as all_ex:
-        g.logger.error(f"{lp} while grabbing zmeventnotification.pl VERSION -> {all_ex}")
+        g.logger.error(f"{lp} ERROR while grabbing zmeventnotification.pl VERSION -> {all_ex}")
         es_version = "Unknown"
         pass
     return es_version.rstrip()
@@ -604,11 +632,8 @@ def get_es_version(globs: pyzm.helpers.new_yaml.GlobalConfig) -> str:
 
 def _parse_args():
     ap = ArgumentParser()
-    ap.add_argument(
-        "--from-docker",
-        action="store_true",
-        default=False
-    )
+    ap.add_argument("--docker", action="store_true", help="verbose output")
+    ap.add_argument('--new', help="a flag to indicate the new (1.35.7) Event<Start/End>Command system", action='store_true')
     ap.add_argument(
         "-et",
         "--event-type",
@@ -622,7 +647,9 @@ def _parse_args():
         default="/etc/zm/objectconfig.yml",
     )
     ap.add_argument("-e",
+                    "--event-id",
                     "--eventid",
+                    dest='eventid',
                     help="event ID to retrieve (Required)"
                     )
     ap.add_argument(
@@ -641,9 +668,6 @@ def _parse_args():
     )
     ap.add_argument(
         "--bareversion", help="print only app version and quit", action="store_true"
-    )
-    ap.add_argument(
-        "--pdb", help="activate Python DeBugger breakpoints, beware this breaks autonomy", action="store_true"
     )
     ap.add_argument(
         "-o",
@@ -717,8 +741,84 @@ def _parse_args():
 
 
 def main_handler():
+    def _zmes_db():
+        start_db = time.perf_counter()
+        db_config = {
+            'conf_path': os.getenv('PYZM_CONFPATH', '/etc/zm'),  # we need this to get started
+            'dbuser': os.getenv('PYZM_DBUSER'),
+            'dbpassword': os.getenv('PYZM_DBPASSWORD'),
+            'dbhost': os.getenv('PYZM_DBHOST'),
+            'dbname': os.getenv('PYZM_DBNAME'),
+            'driver': os.getenv('PYZM_DBDRIVER', 'mysql+mysqlconnector')
+        }
+        # read all config files in order
+        files = []
+        # Pythonic?
+        # map(files.append, glob.glob(f'{db_config["conf_path"]}/conf.d/*.conf'))
+        for f in glob.glob(f'{db_config["conf_path"]}/conf.d/*.conf'):
+            files.append(f)
+        files.sort()
+        files.insert(0, f"{db_config['conf_path']}/zm.conf")
+        config_file = ConfigParser(interpolation=None, inline_comment_prefixes='#')
+        f = None
+        try:
+            for f in files:
+                with open(f, 'r') as s:
+                    # print(f'reading {f}')
+                    # This adds [zm_root] section to the head of each zm .conf.d config file,
+                    # not physically only in memory
+                    config_file.read_string(f'[zm_root]\n{s.read()}')
+        except Exception as exc:
+            g.logger.error(f"Error opening {f if f else files} -> {exc}")
+            g.logger.error(f"{format_exc()}")
+            print(f"Error opening {f if f else files} -> {exc}")
+            print(f"{format_exc()}")
+            g.logger.log_close(exit=1)
+            exit(1)
+        else:
+            conf_data = config_file['zm_root']
+            if not db_config.get('dbuser'):
+                db_config['dbuser'] = conf_data.get('ZM_DB_USER')
+            if not db_config.get('dbpassword'):
+                db_config['dbpassword'] = conf_data.get('ZM_DB_PASS')
+            if not db_config.get('dbhost'):
+                db_config['dbhost'] = conf_data.get('ZM_DB_HOST')
+            if not db_config.get('dbname'):
+                db_config['dbname'] = conf_data.get('ZM_DB_NAME')
+
+        cstr = f"{db_config['driver']}://{db_config['dbuser']}:{db_config['dbpassword']}@" \
+               f"{db_config['dbhost']}/{db_config['dbname']}"
+        try:
+            engine = create_engine(cstr, pool_recycle=3600)
+            conn = engine.connect()
+        except SQLAlchemyError as e:
+            conn = None
+            engine = None
+            g.logger.error(f"DB configs - {cstr}")
+            g.logger.error(f"Could not connect to DB, message was: {e}")
+        else:
+            meta = MetaData(engine)
+            # New reflection
+            meta.reflect()
+            e_select = select([meta.tables['Events'].c.MonitorId]).where(meta.tables['Events'].c.Id == g.eid)
+            select_result: ResultProxy = conn.execute(e_select)
+            mid: Optional[Union[str, int]] = None
+            for row in select_result:
+                mid = row[0]
+            if mid:
+                g.mid = int(mid)
+                g.logger.debug(f"{lp} ZM DB SET GLOBAL MONITOR ID!")
+            select_result.close()
+            conn.close()
+            engine.dispose()
+            g.logger.debug(f"perf:ZM DB: time to grab Monitor ID ({g.mid}): {time.perf_counter() - start_db:.4f}")
+    bg_db: Thread = Thread(name='db_thread', target=_zmes_db, daemon=True)
+    # Hack to get the VERIFIED monitor ID, until the monitor ID is passed along with the EventID for EventCommandStart
+    bg_db.start()
+
     # perf counters
     start_of_script: time.perf_counter = time.perf_counter()
+    total_time_start_to_detect: time.perf_counter
     start_of_after_detection: time.perf_counter
     start_of_remote_detection: Optional[time.perf_counter] = None
     start_of_local_detection: Optional[time.perf_counter] = None
@@ -732,7 +832,7 @@ def main_handler():
     objdetect_jpeg_image: Optional[np.ndarray] = None
     pushover_image: Optional[np.ndarray] = None
     # vars
-    final_msg = ''
+    final_msg: str = ''
     old_notes: str = ''
     notes_zone: str = ''
     notes_cause: str = ''
@@ -756,7 +856,6 @@ def main_handler():
     _frame_id: str = ''
     lp: str = "zmes:"
     # -------------- END vars -------------------
-    from pyzm.helpers.new_yaml import GlobalConfig
     from pyzm.helpers.pyzm_utils import LogBuffer
     g: GlobalConfig = GlobalConfig()
     g.DEFAULT_CONFIG = DEFAULT_CONFIG
@@ -768,13 +867,12 @@ def main_handler():
     start_conf: time.perf_counter = time.perf_counter()
     from pyzm.helpers.new_yaml import process_config as proc_conf
     zmes_config, g = proc_conf(args=args, conf_globals=g, type_='zmes')
-    # fixme: ugly!
+    g.logger.debug(f"perf:{lp} building the initial config took {time.perf_counter() - start_conf}")
+    # fixme: set_g is ugly, but she works.
     from pyzm.helpers.pyzm_utils import set_g
     set_g(g)
-    g.logger.debug(f"perf:{lp} building the initial config took {time.perf_counter() - start_conf}")
 
-    start_api_create = time.perf_counter()
-    bg_api_thread: Thread = Thread(name="ZMAPI", target=create_api, kwargs={'args': args})
+    bg_api_thread: Thread = Thread(name="ZM API", target=create_api, kwargs={'args': args})
     bg_api_thread.start()
 
     objdet_force = str2bool(g.config.get("force_debug"))
@@ -783,27 +881,25 @@ def main_handler():
         f"------|  FORKED NEO --- app->Hooks: {__app_version__} - pyzm: {pyzm_version} - ES: {get_es_version(globs=g)}"
         f" - OpenCV:{cv2.__version__} |------"
     )
-    if args.get('live') and args.get('monitor_id'):
-        g.logger.debug(f"{lp} Monitor ID provided by the ZMES Perl script, skipping monitor ID verification...")
-        g.config['mid'] = g.mid = int(args["monitor_id"])
-    elif not g.mid:
+    if args.get('monitor_id') and (args.get('live') or args.get('new')):
+        # live is from the perl daemon, new is from the EventCommandStart which will hopefully have the mid in it
+        g.logger.debug(f"{lp} Monitor ID provided by a trusted source, skipping monitor ID verification...")
+        if args.get('monitor_id'):
+            g.config['mid'] = g.mid = int(args["monitor_id"])
+    if not g.mid:
         start_wait = time.perf_counter()
-        g.logger.debug(f"{lp} waiting for the monitor ID to be verified! This happens on "
-                       f"PAST events because the api double checks to make sure its the correct monitor ID")
-        if bg_api_thread and bg_api_thread.is_alive():
-            bg_api_thread.join()
-        if not g.mid:
-            g.logger.debug(f"{lp} after waiting for g.mid and joining the api creation thread the total time for "
-                           f"api creation is {time.perf_counter() - start_api_create} seconds")
-        else:
+        g.logger.debug(f"{lp} waiting for the monitor ID to be verified!")
+        if bg_db and bg_db.is_alive():
+            g.logger.debug(f"{lp} waiting for the ZM DB thread to finish...")
+            bg_db.join()
+        if g.mid:
             g.logger.debug(
                 f"perf:{lp} Monitor ID ({g.mid}) verified! pausing to wait for verification took "
-                f"{time.perf_counter() - start_wait} seconds -=- api creation took "
-                f"{time.perf_counter() - start_api_create} seconds"
+                f"{time.perf_counter() - start_wait} seconds"
             )
     if not g.mid and not args.get('file'):
-        msg = (f"{lp} SOMETHING is very WRONG! g.mid is not populated after waiting for the API object to be created "
-               f"in background EXITING")
+        msg = (f"{lp} SOMETHING is very WRONG! g.mid is not populated after waiting for the API object and ZM DB to "
+               f"be created in background EXITING")
         g.logger.debug(msg)
         print(msg)
         g.logger.log_close()
@@ -818,7 +914,7 @@ def main_handler():
         g.logger.debug(f"{lp} Monitor ID ({g.mid}) does not have an overrode config, using the base config!")
         g.config = zmes_config.config
 
-
+    # Main thread needs to handle the signals
     try:
         from pyzm.ZMLog import sig_intr, sig_log_rot
         g.logger.info(f"{lp} Setting up signal handlers for log 'rotation' and 'interrupt'")
@@ -827,23 +923,10 @@ def main_handler():
     except Exception as e:
         g.logger.error(f'{lp} Error setting up log rotate and interrupt signal handlers -> \n{e}\n')
         raise e
-    # async_result = pool.apply_async(
-    #     start_logs,
-    #     {
-    #         'config': g.config,
-    #         'args': args,
-    #         '_type': 'zmes',
-    #         'no_signal': True,
-    #     }
-    # )  # tuple of args for foo, dict for kwargs
-    #
-    # # do some other stuff in the main process
-    # g.logger = async_result.get()  # get the return value from your function.
+
     bg_logger = Thread(name="ZMLog", target=start_logs,
-                       kwargs={'config': g.config, 'args': args, '_type': 'zmes', 'no_signal': True})
+                       kwargs={'config': g.config, 'args': args, 'type_': 'zmes', 'no_signal': True})
     bg_logger.start()
-    if str2bool(g.config["only_triggered_zm_zones"]):
-        g.config["import_zm_zones"] = "yes"
     if args.get("file"):
         g.config["wait"] = 0
         g.config["write_image_to_zm"] = "no"
@@ -890,14 +973,15 @@ def main_handler():
             ml_routes = literal_eval(ml_routes)
         weighted_routes = sorted(ml_routes, key=lambda _route: _route['weight'])
         start_of_remote_detection = time.perf_counter()
-        while weighted_routes:
+        total_time_start_to_detect = start_of_remote_detection - start_of_script
+        for x in range(len(weighted_routes)):
             tries += 1
             route = weighted_routes.pop(0)
             if remote_response:
                 break
             try:
                 if tries > 1:
-                    g.logger.debug(f"{lp} there was an error, using the next route '{route['name']}'")
+                    g.logger.debug(f"{lp} there was an error, switching to the next route '{route['name']}'")
                 remote_response = remote_detect(options=stream_options, args=args, globs=g, route=route)
             except requests.exceptions.HTTPError as http_ex:
                 start_of_remote_detection = time.perf_counter() - start_of_remote_detection
@@ -925,34 +1009,32 @@ def main_handler():
                     )
             except ValueError as exc:
                 start_of_remote_detection = time.perf_counter() - start_of_remote_detection
-                if str(exc) == 'MLAPI remote detection error!':
-                    # todo: pushover error
-                    print(f"MLAPI remote detection error!")
-                else:
-                    print(exc)
-                    raise exc
+                print(exc)
             except Exception as all_ex:
                 start_of_remote_detection = time.perf_counter() - start_of_remote_detection
                 print(f"{lp} there was an error during the remote detection! -> {all_ex}")
                 print(format_exc())
             # Successful mlapi post
             else:
+                start_of_remote_detection = time.perf_counter() - start_of_remote_detection
                 mlapi_success = True
                 if remote_response is not None:
                     matched_data = remote_response.get("matched_data")
                     remote_sanitized: dict = copy.deepcopy(remote_response)
                     remote_sanitized["matched_data"]["image"] = "<uint-8 encoded jpg>" if matched_data.get(
                         'image') is not None else "<No Image Returned>"
-                mon_name = f"Monitor: {g.config.get('mon_name')} ({g.mid})->'Event': "
+                mon_name = f"'Monitor': {g.config.get('mon_name')} ({g.mid})->'Event': "
                 g.logger.debug(
                     f"perf:{lp}mlapi: {f'{mon_name}' if not args.get('file') else ''}{g.eid}"
-                    f" mlapi detection took: {time.perf_counter() - start_of_remote_detection}"
+                    f" mlapi detection took: {start_of_remote_detection}"
                 )
                 break
         if str2bool(g.config.get('ml_fallback_local')) and not mlapi_success:
             print('doing local FALLBACK detection')
 
             start_of_local_fallback_detection = time.perf_counter()
+            total_time_start_to_detect = start_of_local_fallback_detection - start_of_script
+
             g.logger.error(f"{lp} mlapi error, falling back to local detection")
             stream_options["polygons"] = zmes_config.polygons.get(g.mid)
             from pyzm.ml.detect_sequence import DetectSequence
@@ -960,13 +1042,14 @@ def main_handler():
             matched_data, all_data, all_frames = m.detect_stream(
                 stream=g.eid,
                 options=stream_options,
-                sub_options=None,
                 in_file=True if args.get('file') else False
             )
             start_of_local_fallback_detection = time.perf_counter() - start_of_local_fallback_detection
 
     else:  # mlapi not configured, local detection
         start_of_local_detection = time.perf_counter()
+        total_time_start_to_detect = start_of_local_detection - start_of_script
+
         if not args.get("file") and float(g.config.get("wait", 0)) > 0.0:
             g.logger.info(
                 f"{lp}local: sleeping for {g.config['wait']} seconds before running models"
@@ -977,7 +1060,7 @@ def main_handler():
             m = DetectSequence(options=g.config['ml_sequence'], globs=g)
             print('doing local detection')
             matched_data, all_data, all_frames = m.detect_stream(
-                stream=g.eid, options=stream_options, sub_options=None,
+                stream=g.eid, options=stream_options,
                 in_file=True if args.get('file') else False
             )
         except Exception as all_ex:
@@ -985,11 +1068,12 @@ def main_handler():
             g.logger.debug(f"{lp}local: TPU and GPU in ZM DETECT? --> {all_ex}")
         else:
             g.logger.debug(f"perf:{lp}local: detection took: {time.perf_counter() - start_of_local_detection}")
-    # Format the frame ID (if it contains s- for snapshot conversion)
 
+    # This is everything after a detection has been ran
     start_of_after_detection = time.perf_counter()
 
     if matched_data is not None:
+        # Format the frame ID (if it contains s- for snapshot conversion)
         _frame_id = grab_frameid(matched_data.get("frame_id"))
         obj_json = {
             "frame_id": _frame_id,
@@ -1047,6 +1131,7 @@ def main_handler():
             sys.stdout = my_stdout()
 
         if not g.api_event_response and not args.get('file'):
+            g.logger.debug(f"{lp} in the after detection - API event data not populated, retrieving now")
             g.Event, g.Monitor, g.Frame = g.api.get_all_event_data()
 
         if not args.get('file') and g.Event.get("Notes"):
@@ -1709,9 +1794,9 @@ def main_handler():
     elif start_of_local_detection:
         detection_time = start_of_local_detection
     fid_str_ = "-->'Frame ID':"
-    fid_evtype = "PAST event" if past_event else "LIVE event"
+    fid_evtype = "'PAST' event" if past_event else "'LIVE' event"
     _mon_name = f"'Monitor': {g.config.get('mon_name')} ({g.mid})->'Event': "
-    final_msg = "perf:{lp}FINAL: {mid}{s}{f_id} [{match}] {tot}{det}{ani_gif}{extras}".format(
+    final_msg = "perf:{lp}FINAL: {mid}{s}{f_id} [{match}] {tot}{before}{det}{ani_gif}{extras}".format(
         lp=lp,
         match="{}".format(fid_evtype if not args.get('file') else "INPUT FILE"),
         mid="{}".format(_mon_name) if not args.get("file") else "",
@@ -1719,6 +1804,7 @@ def main_handler():
         f_id="{}{}".format(fid_str_ if _frame_id and not args.get('file') else '',
                            f'{_frame_id if _frame_id and not args.get("file") else ""}'),
         tot=f"[total:{time.perf_counter() - start_of_script}] " if start_of_script else "",
+        before=f"[pre detection:{total_time_start_to_detect}]" if total_time_start_to_detect else "",
         det=f"[detection:{detection_time}] " if detection_time else "",
         ani_gif="{}".format(
             "[processing {}".format(
@@ -1729,7 +1815,7 @@ def main_handler():
         )
         if g.animation_seconds
         else "",
-        extras=f"[after core detection: {time.perf_counter() - start_of_after_detection}] "
+        extras=f"[after detection: {time.perf_counter() - start_of_after_detection}] "
         if start_of_after_detection
         else "",
     )
@@ -1754,6 +1840,7 @@ def main_handler():
 if __name__ == "__main__":
     try:
         output_message, g = main_handler()
+        g: GlobalConfig
     except Exception as e:
         sys.stdout = sys.__stdout__
         print(f"zmes: err_msg->{e}")

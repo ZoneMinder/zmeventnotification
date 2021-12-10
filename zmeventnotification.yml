@@ -1,0 +1,307 @@
+#---
+# Configuration file for zmeventnotification.pl
+general:
+  # BASE DATA PATH and CONF PATH have to be absolute paths, no {[secrets]} or {{sub vars}}
+  base_data_path: /var/lib/zmeventnotification
+  conf_path: /etc/zm
+  # Secrets file, if you are using secrets, you need to set this. (Could merge with zm_secrets.yml)
+  secrets: '{{conf_path}}/secrets.yml'
+
+  # The ES now supports a means for a special kind of
+  # websocket connection which can dynamically control ES
+  # behaviour
+  # [Default: no]
+  use_escontrol_interface: no
+  # this is where all EScontrol admin overrides
+  # will be stored.
+  escontrol_interface_file: /var/lib/zmeventnotification/misc/escontrol_interface.dat
+  # the password for accepting control interfaces
+  escontrol_interface_password: '{[ESCONTROL_INTERFACE_PASSWORD]}'
+
+  # If you see the ES getting 'stuck' after several hours
+  # see https://rt.cpan.org/Public/Bug/Display.html?id=131058
+  # You can use restart_interval to have it automatically restart
+  # every  X seconds. Set to 0 to disable this. [Default is 7200 = 2 hours]
+  # restart_interval: 432000
+  restart_interval: 108000
+
+  # list of monitors which ES will ignore
+  # Note that there is an attribute later that does
+  # not process hooks for specific monitors. This one is different
+  # It can be used to completely skip ES processing for the
+  # monitors defined
+  skip_monitors: 6
+
+network:
+  # Port for Websockets connection [Default: 9000]
+  port: 9000
+
+  # Address for Websockets server (Default: [::])
+  # If you are facing connection issues or SSL issues, put in your IP here
+  # If you want to listen to multiple interfaces try 0.0.0.0
+  #address: 1.2.3.4
+
+auth:
+  # Check username/password against ZoneMinder 'Users' [Default: yes]
+  enable: yes
+
+  # Authentication timeout, in seconds [Default: 20]
+  timeout: 20
+
+push:
+  # This is to enable sending push notifications via any 3rd party service.
+  # Typically, if you enable this, you might want to turn off fcm
+  # Note that zmNinja will only receive notifications via FCM, other 3rd
+  # party services have their own apps to get notifications [Default: no]
+  use_api_push: no
+
+  # This is the script that will send the notification
+  # Some sample scripts are provided, write your own
+  # Each script gets:
+  # arg1 - event ID
+  # arg2 - Monitor ID
+  # arg3 - Monitor Name
+  # arg4 - alarm cause
+  # arg5 - Type of event (event_start or event_end)
+  # arg6 (optional) - image path
+
+  api_push_script: '{{base_data_path}}bin/pushapi_pushover.py'
+
+fcm:
+  # Use FCM for messaging [Default: yes]
+  enable: no
+
+  # Use the new FCM V1 protocol (recommended)
+  use_fcmv1: yes
+
+  # if yes, will replace notifications with the latest one
+  # [Default: no]
+  replace_push_messages: no
+
+  # Custom FCM API key. Uncomment if you are using
+  # your own API key (most people will not need to uncomment)
+  # api_key :
+
+  # Auth token store location [Default: /var/lib/zmeventnotification/push/tokens.txt]
+  token_file: '{{base_data_path}}/push/tokens.txt'
+
+  # Date format to use when sending notification
+  # over push (FCM)
+  # See https://metacpan.org/pod/POSIX::strftime::GNU
+  # For example, a 24 hr format would be
+  #date_format: %H:%M, %d-%b
+
+  date_format: '%I:%M %p, %d-%b'
+
+  # Set priority for android push.
+  # You can set it to high or normal.
+  # There is weird foo going on here. If you set it to high,
+  # and don't interact with push, users report after a while they
+  # get delayed by Google. I haven't quite figured out what is the precise
+  # value to put here to make sure it always reaches you. Also make sure
+  # you read the zmES faq on delayed push [Default: high]
+  fcm_android_priority: high
+
+  # If you see messages not being delivered in doze mode for android
+  # Even AFTER you disable battery optimization for the app, try making this 0
+  # otherwise leave it unspecified. The value here is in seconds
+  # it specifies how long the message will be valid before it is discarded
+  # Some reports say if you set this to 0, android will try and deliver it immediately
+  # while others say it won't. YMMV.
+  # fcm_android_ttl: 0
+
+
+mqtt:
+  # Use MQTT for messaging [Default: no]
+  enable: no
+  # Allow you to set a custom MQTT topic name
+  # [Default: zoneminder]
+  #topic: my topic name
+
+  # MQTT server [Default: 127.0.0.1]
+  server: 127.0.0.1
+
+  # Authenticate to MQTT server as user
+  username: '{[MQTT_USERNAME]}'
+  # Password
+  password: '{[MQTT_PASSWORD]}'
+
+  # Set retain flag on MQTT messages [Default: no]
+  retain: no
+
+  # MQTT over TLS
+  # Location to MQTT broker CA certificate. Uncomment this line will enable MQTT over TLS.
+  # tls_ca: /etc/ssl/certs/mqtt/local-CA.crt
+
+  # To enable 2-ways TLS, add client certificate and private key
+  # Location to client certificate and private key
+  # tls_cert: /etc/ssl/certs/mqtt/zm.crt
+  # tls_key: /etc/ssl/certs/mqtt/zm.key
+
+  # To allow insecure TLS (disable peer verifier), [Default: no]
+  # tls_insecure: yes
+
+ssl:
+  # Enable SSL [Default: yes]
+  enable: yes
+
+  # Location to SSL cert [Default: none]
+  # cert: /etc/apache2/ssl/your_portal/zoneminder.crt
+  cert: '{[ES_CERT_FILE]}'
+  # Location to SSL key [Default: none]
+  # key: /etc/apache2/ssl/your_portal/zoneminder.key
+  key: '{[ES_KEY_FILE]}'
+
+customize:
+  # Link to json file that has rules which can be customized
+  # es_rules: /etc/zm/es_rules.json
+
+  # Display messages to console
+  # Note that you can keep this to no and just
+  # use --debug when running from CLI too [Default: no]
+  console_logs: no
+  # debug level for ES messages. Note that this is
+  # not controllable by ZM LOG_DEBUG_LEVEL as in Perl, ZM doesn't
+  # support debug levels [Default: 4]
+  es_debug_level: 5
+
+  # Interval, in seconds, after which we will check for new events [Default: 5]
+  event_check_interval: 3
+
+  # Interval, in seconds, to reload known monitors [Default: 300]
+  monitor_reload_interval: 300
+
+  # Read monitor alarm cause (Requires ZoneMinder >= 1.31.2)
+  # Enabling this to 1 for lower versions of ZM will result in a crash [Default: no]
+  read_alarm_cause: yes
+
+  # Tag event IDs with the alarm [Default: no]
+  tag_alarm_event_id: yes
+
+  # Use custom notification sound [Default: no]
+  use_custom_notification_sound: no
+
+  # include picture in alarm [Default: no]
+  include_picture: yes
+
+
+  # send event start notifications (default: yes)
+  # If no, starting notifications will not be sent out [Default: yes]
+  send_event_start_notification: yes
+
+  # send event end notifications
+  # Note that if you are using hooks for end notifications, they may change
+  # the final decision. This needs to be yes if you want end notifications with
+  # or without hooks [Default: no]
+  send_event_end_notification: no
+
+  # URL to access the event image
+  # This URL can be anything you want
+
+  picture_url: '{[ZMES_PICTURE_URL]}'
+  picture_portal_username: '{[ZM_USER]}'
+  picture_portal_password: '{[ZM_PASSWORD]}'
+
+  # This is a master on/off setting for hooks. If it is set to no
+  # hooks will not be used no matter what is set in the [hook] section
+  # This makes it easy for folks not using hooks to just turn this off
+  # [Default: no]
+
+  # AKA - use object detection
+  use_hooks: yes
+
+hook:
+
+  # NOTE: This entire section is only valid if use_hooks is yes above
+
+  # When a hook is invoked, the ES forks a child. If you are in a situation
+  # where your motion sensitivity in ZM is not set properly, you may land up
+  # triggering hundreds of child processes of zm_detect that may potentially
+  # crash your system. Note that there are global locks around the ML code which
+  # are controlled by xxx_max_processes in the objectconfig/mlapiconfig.files
+  # which will avoid parallel running of models. But this is if you are facing issues
+  # by the simple fact that too many zm_detect processes are forked (which will apply
+  # whether you use mlapi or not). While I do feel the core issue is that you need
+  # to fix your ZM sensitivity, this parameter helps control.
+
+  # NOTE: When you put in value for this, any hooks that attempt to kick off
+  # beyond this limit will simply be ignored. There is no queueing.
+
+  # A value of 0 means there are no limits [Default: 0]
+  max_parallel_hooks: 0
+
+
+  # Shell scripts to be called every time an alarm is detected
+  # the script will get passed $1=alarmEventID,  $2=alarmMonitorId
+  # $3=monitorName, $4=alarmCause [$5, $6, $7 - --docker, --live, Path to event on disk]
+  # script needs to return 0 to send alarm
+
+  # This script is called when an event first starts. If the script returns "0"
+  # (success), then a notification is sent to channels specified in
+  # event_start_notify_on_hook_success. If the script returns "1" (fail)
+  # then a notification is sent to channels specified in
+  # event_start_notify_on_hook_fail [Default: none]
+  event_start_hook: '{{base_data_path}}/bin/zm_event_start.sh'
+
+  #This script is called after event_start_hook completes. You can do
+  # your housekeeping work here
+  #event_start_hook_notify_userscript: '{{base_data_path}}/contrib/example.py'
+
+
+  # This script is called when an event ends. If the script returns "0"
+  # (success), then a notification is sent to channel' specified in
+  # event_end_notify_on_hook_success. If the script returns "1" (fail)
+  # then a notification is sent to channel' specified in
+  # event_end_notify_on_hook_fail
+  # event_end_hook: '{{base_data_path}}/bin/zm_event_end.sh'
+
+  #This script is called after event_end_hook completes. You can do
+  # your housekeeping work here
+  #event_end_hook_notify_userscript: '{{base_data_path}}/contrib/example.py'
+
+
+  # Possible channels: web,fcm,mqtt,api
+  # all is short for web,fcm,mqtt,api
+  # use none for no notifications, or comment out the attribute
+
+  # When an event starts and hook returns 0, send notification to all. [Default: none]
+  event_start_notify_on_hook_success: all
+
+  # When an event starts and hook returns 1, send notification only to desktop. [Default: none]
+  event_start_notify_on_hook_fail: none
+
+  # When an event ends and hook returns 0, send notification to fcm,web,api. [Default: none]
+  event_end_notify_on_hook_success: fcm,web,api
+
+  # When an event ends and hook returns 1, don't send notifications. [Default: none]
+  event_end_notify_on_hook_fail: none
+  #event_end_notify_on_hook_fail: web
+
+  # Since event_end and event_start are two different hooks, it is entirely possible
+  # that you can get an end notification but not a start notification. This can happen
+  # if your start script returns 1 but the end script returns 0, for example. To avoid
+  # this, set this to yes [Default: yes]
+  event_end_notify_if_start_success: yes
+
+  # If yes, the text returned by the script
+  # overwrites the alarm header
+  # useful if your script is detecting people and
+  # you want that to be shown in your notification [Default: yes]
+  use_hook_description: yes
+
+  # If yes, will append an [aXXX] for alarmed frame match (XXX = Frame ID)
+  # [sXXX] for snapshot match or [XXX] if it isn't a snapshot or alarm frame
+  # really only a debugging feature but useful to know
+  # where object detection is working or failing
+  keep_frame_match_type: yes
+
+  # list of monitors for which hooks will not run
+  # Meaning a notification is sent out on every Alarm
+  #hook_skip_monitors:
+
+
+  # if enabled, will pass the current Event' directory to the object detection script
+  # this allows the objdetect.jpg to be displayed in the ZM Console (Web UI)
+  # Requires ZM >=1.33. Don't enable this if you are running an older version
+  # [Default: no]
+  hook_pass_image_path: yes
