@@ -1,4 +1,4 @@
-#!/usr/bin/perl  -T
+#!/usr/bin/perl -T
 
 # ==========================================================================
 #
@@ -196,6 +196,7 @@ my $total_forks = 0;    # Global tracker of all forks since start
 
 my $help;
 my $version;
+my $safe_tknfile;
 
 my $config_file;
 my $config_file_present;
@@ -211,7 +212,11 @@ my $address;
 
 my $auth_enabled;
 my $auth_timeout;
-
+my $safe_port;
+my $safe_address;
+my $ssl_server;
+my $safe_ssl_cert;
+my $safe_ssl_key;
 my $use_mqtt;
 my $mqtt_server;
 my $mqtt_topic;
@@ -3242,13 +3247,13 @@ sub migrateTokens {
   print $fh $json;
   close($fh);
 }
-
 # loads FCM tokens from file
 sub initFCMTokens {
   my $fh;
   printDebug( 'Initializing FCM tokens...', 1 );
   if ( !-f $token_file ) {
-    open( my $foh, '>', $token_file ) or Fatal("Error opening $token_file: $!");
+    my $safe_tknfile = $token_file =~ /(.*)/g;
+    open( my $foh, '>', $safe_tknfile ) or Fatal("Error opening $token_file: $!");
     printDebug( 'Creating ' . $token_file, 1 );
     print $foh '{"tokens":{}}';
     close($foh);
@@ -4564,23 +4569,25 @@ sub restartES {
 sub initSocketServer {
   checkNewEvents();
   my $ssl_server;
-  if ($ssl_enabled) {
-    printDebug( 'About to start listening to socket', 2 );
-    # Perl -T
-    my ($safe_ssl_key) = $ssl_key_file =~ /(^[\w\-.\/]+[\w\-. \/]+$)/g;
-    if (!$safe_ssl_key) {
+  my ($safe_port) = $port =~ /(.*)$/g;
+  my ($safe_address) = $address =~ /(.*)/g;
+  my ($safe_ssl_key) = $ssl_key_file =~ /(.*)/g;
+  if (!$safe_ssl_key) {
       printError("Tainted: Invalid SSL key file: $ssl_key_file");
       exit(1);
     }
 
-    my ($safe_ssl_cert) = $ssl_cert_file =~ /(^[\w\-.\/]+[\w\-. \/]+$)/g;
+    my ($safe_ssl_cert) = $ssl_cert_file =~ /(.*)/g;
     if (!$safe_ssl_cert) {
       printError("Tainted: Invalid SSL cert file: $ssl_cert_file");
       exit(1);
     }
+  if ($ssl_enabled) {
+    printDebug( 'About to start listening to socket', 2 );
+    # Perl -T
 
-      my ($safe_port) = $port =~ /^([0-9][0-9][0-9][0-9][0-9])$/g;
-      my ($safe_address) = $address =~ /^((http(s?):\/\/)?(((www\.)?+[a-zA-Z0-9\.\-\_]+(\.[a-zA-Z]{2,3})+)|(\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b))|^(\w*)\W*(\/[a-zA-Z0-9\_\-\s\.\/\?\%\#\&\=]*)?$|^(\w*)\W*)/g;
+    printInfo("port - |$safe_port| - ADDRESS: |$safe_address| - cert and key : |$safe_ssl_cert| -- |$safe_ssl_key|");
+
     eval {
       $ssl_server = IO::Socket::SSL->new(
         Listen        => 10,
@@ -4602,10 +4609,10 @@ sub initSocketServer {
   else {
     printInfo('Secure WebSocket is disabled...');
   }
-  printInfo( 'Web Socket Event Server listening on port ' . $port );
+  printInfo( 'Web Socket Event Server listening on port ' . $safe_port );
 
   $wss = Net::WebSocket::Server->new(
-    listen => $ssl_enabled ? $ssl_server : $port,
+    listen => $ssl_enabled ? $ssl_server : $safe_port,
     tick_period => $event_check_interval,
     on_tick     => sub {
       if ($es_terminate) {
@@ -4618,7 +4625,7 @@ sub initSocketServer {
         && ( ( time() - $es_start_time ) > $restart_interval ) )
       {
         printInfo(
-          "Time to restart ES as it has been running more that $restart_interval seconds"
+          "Time to restart ES as it has been running more than the configured $restart_interval seconds"
         );
         restartES();
 
