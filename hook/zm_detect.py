@@ -12,6 +12,7 @@ from argparse import ArgumentParser
 from ast import literal_eval
 from configparser import ConfigParser
 from datetime import datetime
+from functools import partial
 from io import BytesIO
 from pathlib import Path
 from re import findall
@@ -42,7 +43,6 @@ from pyzm.helpers.pyzm_utils import (
     write_text,
     pretty_print,
     draw_bbox,
-    my_stdout,
     verify_vals,
     grab_frameid,
     str2bool,
@@ -286,6 +286,7 @@ DEFAULT_CONFIG: dict = safe_load('''
           sequence: []
     ''')
 def _get_jwt_filename(ml_api_url):
+    """Takes the 'gateway' from ml_routes and returns the filename for the jwt token disk cache"""
     _file_name = ml_api_url.lstrip('http://').lstrip('https://')
     # If there is a :port
     _file_name = _file_name.split(':')
@@ -317,7 +318,7 @@ def remote_login(user, password, ml_api_url: str, globs=None):
             access_token = data["token"]
             # epoch timestamp
             now = time.time()
-            # lets make sure there is at least 30 secs left
+            # let's make sure there is at least 30 secs left
             if int(now + 30 - generated) >= expires:
                 g.logger.debug(
                     f"{lp} found access token, but it has or is about to expire. Need to login to MLAPI host..."
@@ -345,7 +346,7 @@ def remote_login(user, password, ml_api_url: str, globs=None):
             r.raise_for_status()
         except Exception as ex:
             g.logger.error(f"{lp} ERROR request post -> \n{ex}")
-            raise ValueError(f"NO_GATEWAY")
+            raise ValueError(f"NO_GATEWAY_AUTH_TOKEN")
         else:
             data = r.json()
             access_token = data.get("access_token")
@@ -423,7 +424,7 @@ def remote_detect(options=None, args=None, globs=None, route=None):
             _succ, jpeg = cv2.imencode(".jpg", image)
             if not _succ:
                 g.logger.error(f"{lp} ERROR: cv2.imencode('.jpg', <FILE IMAGE>)")
-                raise ValueError("--file Can't encode image on disk into jpeg")
+                raise ValueError("--file Encoding image to JPEG failed")
             files = {
                 "image": ("image.jpg", jpeg.tobytes(), 'application/octet')
             }
@@ -799,7 +800,7 @@ def main_handler():
         else:
             meta = MetaData(engine)
             # New reflection
-            meta.reflect()
+            meta.reflect(only=['Events'])
             e_select = select([meta.tables['Events'].c.MonitorId]).where(meta.tables['Events'].c.Id == g.eid)
             select_result: ResultProxy = conn.execute(e_select)
             mid: Optional[Union[str, int]] = None
@@ -862,6 +863,9 @@ def main_handler():
     g.logger = LogBuffer()
     # Process CLI arguments
     args = _parse_args()
+    if args.get('new'):
+        from pyzm.helpers.pyzm_utils import time_format
+        print(f"ZONEMINDER: EventStartCommand was called -> {time_format(datetime.now())}")
     # process the config using the arguments
     g.eid = args.get("eventid", args.get("file"))
     start_conf: time.perf_counter = time.perf_counter()
@@ -918,8 +922,8 @@ def main_handler():
     try:
         from pyzm.ZMLog import sig_intr, sig_log_rot
         g.logger.info(f"{lp} Setting up signal handlers for log 'rotation' and 'interrupt'")
-        signal.signal(signal.SIGHUP, sig_log_rot)
-        signal.signal(signal.SIGINT, sig_intr)
+        signal.signal(signal.SIGHUP, partial(sig_log_rot, g))
+        signal.signal(signal.SIGINT, partial(sig_intr, g))
     except Exception as e:
         g.logger.error(f'{lp} Error setting up log rotate and interrupt signal handlers -> \n{e}\n')
         raise e
@@ -1121,14 +1125,8 @@ def main_handler():
         jos = json.dumps(obj_json)
         g.logger.debug(f"{lp}prediction:JSON: {jos}")
         # this is what sends the detection back to the perl script, --SPLIT-- is what splits the data structures
-        # switch stdout back to console so we can send the detection back to the perl script and the event wrapper
-        # shell script
-        if not args.get("debug"):
-            sys.stdout = sys.__stdout__
         if not args.get('file') and not past_event:
             print(f"\n{pred_out.rstrip()}--SPLIT--{jos}\n")
-        if not args.get("debug"):
-            sys.stdout = my_stdout()
 
         if not g.api_event_response and not args.get('file'):
             g.logger.debug(f"{lp} in the after detection - API event data not populated, retrieving now")
@@ -1842,12 +1840,8 @@ if __name__ == "__main__":
         output_message, g = main_handler()
         g: GlobalConfig
     except Exception as e:
-        sys.stdout = sys.__stdout__
         print(f"zmes: err_msg->{e}")
         print(f"zmes: traceback: {format_exc()}")
     else:
         g.logger.debug(output_message) if output_message else None
         g.logger.log_close()
-    finally:  # always hand it back to the system
-        sys.stderr = sys.__stderr__
-        sys.stdout = sys.__stdout__

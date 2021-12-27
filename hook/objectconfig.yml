@@ -1,6 +1,6 @@
 ---
 # Configuration file for object detection
-# *** NOTE: zmeventnotification.ini and secrets.ini are for configuring the ZMEventnotification.pl (Perl) daemon
+# *** NOTE: zmeventnotification.yml and secrets.yml are for configuring the ZMEventnotification.pl (Perl) daemon
 # that reads the shared memory to find new events that are happening in ZM. objectconfig.yml and its secrets.yml
 # are strictly for the object detection part of ZMES.
 
@@ -23,195 +23,11 @@
 
 #  2:
 #    my_thing :  Hello
-#    NOTICE that the {{var}} is quoted even though it is all by itself
 #    my_other_thing :  '{{my_thing}}, World!'
 
 ###########################################
 #    ------ [ General SECTION ] ------
 ###########################################
-# base data path for various files the Event Server + Object Detection 'hooks' need
-# ** IMPORTANT: Use absolute paths for base_data_path - you can build all the other paths using base_data_path if you want.
-base_data_path: /var/lib/zmeventnotification
-
-# This is an optional file
-# If specified, you can specify tokens with secret values in that file
-# and only refer to the tokens in your main config file ** !SECRETS are now {[SECRETS]} **
-secrets: /etc/zm/zm_secrets.yml
-
-# Push notification customized script. See the provided gotify_zmes.sh for an example and what ARGS are passed.
-# When install.sh was run it installed this example gotify script to the {{base_data_path}}/bin directory (you can modify install.sh to install to a different dir).
-# THIS IS a working example, you can make your own shell script and use the ARGS however you like. If you want the logger to record that
-# your custom script was a success you need to echo out a 0 for success or anything else for failure.
-# (Default: no)
-custom_push: no
-custom_push_script: '{{base_data_path}}/bin/gotify_zmes.sh'
-# ***** DO NOT UNCOMMENT THESE 2 LINES, THESE ARE SET-UP IN THE PUSHOVER SECTION, this is just a reminder that it exists *****
-# The username and password of the ZM API user that the clickable URL link will be authorized with. Make an API user with VIEW privs of EVENT and STREAM.
-############_____push_user: '{[my_secret_user]}'
-############_____push_pass: '{[my_secret_pass]}'
-
-#  comma split list of monitor IDs to skip processing hooks on.
-#  I put it here, so you don't have to restart zmeventnotification.pl to have the changes take effect, you can change these every detection at the moment
-#  If it is a PAST event it will not skip the monitor, this only applies to LIVE events
-#skip_mons :  1,6,9
-
-# FOR DEBUGGING -- force LIVE EVENT logic
-# force_live: yes
-
-
-# If yes, it will attempt to hide all traces of your PORTAl url in logs as well as hide/obfuscate tokens and passwords
-# With this you can copy and paste logs without having to comb through and sanitize sensitive information.
-# (Default: no)
-sanitize_logs: no
-
-# The string to show when the logs are sanitized instead of the sensitive info (Default: <sanitized>)
-#sanitize_str: <obfuscated>
-
-# This is a useful debugging trick. If you are chaining models and want to know which
-# model detected an object, make this yes. When yes, it will prefix the model name before the
-# detected object. Example: Instead of 'person', it will say 'person(yolo[gpu])' or 'person(tpu)'
-show_models: no
-
-# save 2 images to disk, the 'training' frame is the bare frame that ZM sends. You can then Label the image and use it to train a custom model.
-# the other frame is objdetect.jpg so you can 'compare' what the current model found and what you want it/not want it to find.
-# format is <event ID>-training-<frame ID>.jpg and <event ID>-compare-<frame ID>.jpg
-# Default path is base_data_path/images make sure the user www-data or apache has write permissions to the directory.
-save_image_train: no
-save_image_train_dir: /nas/images/yolo_train
-
-
-# The logic has been re-written to be performant, things are skipped for speed if possible. This tells the script to evaluate all the logic even
-# if the script finds that there is already a previous detection (and if it is the exact same results as before).
-# This allows the script to consider overwriting objdetect.jpg. For animations and pushover notifications to be forced
-# you need to go to their specific section and enable the 'force_animation" or "force_xxxx" options.
-#  (Default: no)
-force_debug: no
-
-#  add the object with the highest confidence in same_model_sequence_strategy to the detections (Default: no)
-# *** NOTE: EXPERIMENTAL!
-#same_model_high_conf :  yes
-
-# sequence of models to run for detection, the sequence follows the order you specify.
-model_sequence :  object
-#model_sequence :  object, face, alpr
-#model_sequence :  face, object
-
-# Frames to run detections on. Default is snapshot, alarm, snapshot
-frame_set :  snapshot, alarm, snapshot
-#frame_set :  snapshot, 70, snapshot, 120, 150, alarm
-
-### STRATEGIES ###
-# first - stop after finding a detection that makes it through filtering
-# most - whichever frame/sequence has the most labels detected
-# most_unique - whichever frame/sequence has more unique matches (a dog and a person would beat 3 persons detected)
-# most_models (frame only) - whichever frame has more than 1 model detected in it
-# ---- an object and a face detection beats just an object detection even if the object detection has 6 matches
-# union (frame only) - chain together the matches from one frame to the next
-
-# Frame strategy -> first, most, most_models, most_unique, union
-frame_strategy: first
-# When running the same model, and you have more than 1 sequence in that model, this is the strategy
-# first, most, most_unique
-same_model_sequence_strategy: most
-
-
-# You can now limit the # of detection process
-# per target processor. If not specified, default is 1
-# Other detection processes will wait to acquire lock
-# Be careful as this can use up a lot of memory on your GPU (watch -n .5 nvidia-smi)
-cpu_max_processes: 3
-tpu_max_processes: 3
-gpu_max_processes: 3
-
-# Time to wait in seconds per processor to be free, before
-# erring out. Default is 120 (2 minutes)
-cpu_max_lock_wait: 100
-tpu_max_lock_wait: 100
-gpu_max_lock_wait: 100
-
-# This set up will keep debug logging on for now, explore the TERM helpers.txt file in the 'tools' dir and the shell
-# functions 'es.debug.objdet' and 'es.baredebug.objdet' to see how to use them. I Also reccomend installing 'bat' for linux
-# and using the aliases that are piped out to bat to view the logs in color coded and themed output.
-pyzm_overrides:
-  # levels
-#  log_level_syslog: 5
-#  log_level_file: 5
-#  log_level_debug: 5
-  # don't log to the DB (-5)
-#  log_level_db: -5
-  # log levels -> 1 dbg/print/blank 0 info, -1 warn, -2 err, -3 fatal, -4 panic, -5 off (only for log_debug_file)
-#  log_debug_file: 1
-#  log_debug: True
-#  log_debug_target: _zm_mlapi|_zmes|current
-
-# api portal is needed if you plan to use tokens to get images
-# requires ZM 1.33 or above
-api_portal: '{[ZM_API_PORTAL]}'
-# portal/user/password are needed if you plan on using ZM's legacy
-# auth mechanism to get images
-portal: '{[ZM_PORTAL]}'
-user: '{[ZM_USER]}'
-password: '{[ZM_PASSWORD]}'
-# If you need basic auth to access ZM
-#basic_user: user
-#basic_password: password
-
-# Self-signed HTTPS certs
-allow_self_signed: yes
-
-
-# Instead of specifying _polygonzone in the per monitor overrides you can import the zones you already created in ZM
-import_zm_zones: no
-# This only works when you import ZM Zones, by activating this it will, by default, import ZM zones.
-# the detected object is only a match if the object is inside the zone that raised the alarm.
-only_triggered_zm_zones: no
-
-# This saves the previous detection results and compares the new detection to it. You can specify how much
-# an object has to of moved from its previously detected position to not be filtered out. This helps if you have a car
-# in the driveway and you keep being notified about a car in the driveway. ** The new logix IS EXPERIMENTAL **
-# when the new logic is polished it will work much better.
-match_past_detections: no
-# The max difference in area between the previously detected object if match_past_detection is on
-# can also be specified in px like 300px. Default is 5%. Basically, bounding boxes of the same
-# object can differ ever so slightly between detections. Contributor @neillbell put in this PR
-# to calculate the difference in areas and based on his tests, 5% worked well. YMMV. Change it if needed.
-# so if the script detects a car in the same spot but the bounding boxes are not in the exact same position, if its
-# within %5 of its previously detected position it will be considered 'in the same spot' and you won't be notified.
-# Note: You can specify label/object specific max_diff_areas as well. If present, they override this value
-# example:
-# person_past_det_max_diff_area: 5%
-# car_past_det_max_diff_area: 5000px
-past_det_max_diff_area: 5%
-
-# this is the maximum size a detected object can have compared to whole image. You can specify it in px or %
-# This is pretty useful to eliminate bogus detection. In my case, depending on shadows and other lighting conditions,
-# I sometimes see "car" or "person" detected that covers most of my driveway view. That is practically impossible
-# and therefore I set mine to 70% because I know any valid detected objected cannot be larger than 70% of the image.
-#max_detection_size: 90%
-
-# How much area the detected object must take up inside the polygon/zone, also per object settings
-# person_contained_area: 50% means person must have 50% of its bounding boxes area inside the polygon or zone
-# 1 pixel will behave like the source repos version, any part of the detected object inside of the polygon/zone is a match
-contained_area: 1px
-#contained_area: 10%
-
-# this is the Width to resize the image before analysis is done, aspect ratio is preserved.
-# play around if you want, I have personally seen different results using resize. Remember that before the image is
-#  handed to the model to process, it is resized based on 'model_width' and 'model_height'. So resizing before hand
-#  can bring interesting results. A whole number or 'no' allowed, 123 is ok, 123.xx is not.
-resize: no
-
-# place a timestamp on objdetect.jpg
-# this is helpful when storing events as mp4 and the frames do not have timestamps from ZM
-picture_timestamp:
-  enabled: no
-  date format: '%Y-%m-%d %H:%M:%S'
-  # appends the monitor name and ID to the timestamp
-  monitor name: yes
-  text color: (255,255,255)  # BGR not RGB - Default: (255,255,255) aka white
-  # background is the solid, colored rectangle that the timestamp text is printed on
-  background: yes
-  bg color: (0,0,0)  # Default: (0,0,0) aka black
 
 ########################### REIMPLEMENT THESE
 # set to yes, if you want to remove images after analysis
@@ -301,7 +117,7 @@ hass_token :  '{[HA_TOKEN]}'
 #    ------ [ PUSHOVER ADD-ON SECTION ] ------
 ###########################################
 # Enable the PushOver python add-on? (Default: no)
-# Remember to turn off the api_push in zmeventnotification.ini or you will receive 2 different messages
+# Remember to turn off the api_push in zmeventnotification.yml or you will receive 2 different messages
 push_enable: no
 # Force sending a pushover notification when debugging a PAST event
 push_force: no
@@ -881,7 +697,7 @@ ml_sequence:
         object_min_confidence: '0.7'
         #      AWS region unless configured otherwise, e.g. in ~www-data/.aws/config
         aws_region: 'us-east-1'
-        #      AWS credentials from /etc/zm/secrets.ini
+        #      AWS credentials from /etc/zm/secrets.yml
         #      unless running on EC2 instance with instance IAM role (which is preferable)
         aws_access_key_id: '{[AWS_ACCESS_KEY_ID]}'
         aws_secret_access_key: '{[AWS_SECRET_ACCESS_KEY]}'

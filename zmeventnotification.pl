@@ -1,4 +1,4 @@
-#!/usr/bin/perl  -T
+#!/usr/bin/perl
 
 # ==========================================================================
 #
@@ -196,6 +196,7 @@ my $total_forks = 0;    # Global tracker of all forks since start
 
 my $help;
 my $version;
+my $safe_tknfile;
 
 my $config_file;
 my $config_file_present;
@@ -211,7 +212,11 @@ my $address;
 
 my $auth_enabled;
 my $auth_timeout;
-
+my $safe_port;
+my $safe_address;
+my $ssl_server;
+my $safe_ssl_cert;
+my $safe_ssl_key;
 my $use_mqtt;
 my $mqtt_server;
 my $mqtt_topic;
@@ -510,6 +515,79 @@ sub chld_sig_handler {
   $! = $saved_status;
 }
 
+# this is just a wrapper around Config::IniFiles val
+# older versions don't support a default parameter
+# sub config_get_val {
+#   my ( $config, $sect, $parm, $def ) = @_;
+#   my $val = $config->val( $sect, $parm );
+#
+#   my $final_val = defined($val) ? $val : $def;
+#
+#   my $fc = substr( $final_val, 0, 1 );
+#   # my $fc = substr( $final_val, 0, 2 );
+#
+#   #printInfo ("Parsing $final_val with X${fc}X");
+#   # if ( $fc eq '{[' ) {
+#   if ( $fc eq '!' ) {
+#     my $token = substr( $final_val, 1 );
+#     # $token =~ s/^\s+//;
+#     # my $token = substr( $final_val, 2, -2 );
+#     printDebug( 'Got secret token !' . $token, 2 );
+#     Fatal('No secret file found') if ( !$secrets );
+#     my $secret_val = $secrets->val( 'secrets', $token );
+#     Fatal( 'Token:' . $token . ' not found in secret file' )
+#       if ( !$secret_val );
+#
+#     #printInfo ('replacing with:'.$secret_val);
+#     $final_val = $secret_val;
+#   }
+#
+#   #printInfo("ESCONTROL_INTERFACE checking override for $parm");
+#   if ( exists $escontrol_interface_settings{$parm} ) {
+#     printDebug(
+#       "ESCONTROL_INTERFACE overrides key: $parm with "
+#         . $escontrol_interface_settings{$parm},
+#       2
+#     );
+#     $final_val = $escontrol_interface_settings{$parm};
+#   }
+#
+#   # compatibility hack, lets use yes/no in config to maintain
+#   # parity with hook config
+#   if    ( lc($final_val) eq 'yes' ) { $final_val = 1; }
+#   elsif ( lc($final_val) eq 'no' )  { $final_val = 0; }
+#
+#   # now search for substitutions
+#   my @matches = ( $final_val =~ /\{\{(.*?)\}\}/g );
+#
+#   foreach (@matches) {
+#
+#     my $token = $_;
+#
+#     # check if token exists in either general or its own section
+#     # other-section substitution not supported
+#
+#     my $val = $config->val( 'general', $token );
+#     $val = $config->val( $sect, $token ) if !$val;
+#     printDebug( "config string substitution: {{$token}} is '$val'", 3 );
+#     $final_val =~ s/\{\{$token\}\}/$val/g;
+#
+#   }
+#
+#   return trim($final_val);
+# }
+
+# Loads all the ini file settings and populates variables
+
+
+
+
+
+
+
+
+
+
 sub config_get_val {
 
   my ( $config, $sect, $parm, $def ) = @_;
@@ -520,8 +598,6 @@ sub config_get_val {
     my $replace_val;
     my $i = 0;
     # print("Looking for {[SECRETS]} in $sect->$parm -- Searching in this string -> $final_val\n");
-    # {[Secrets]} first, then {{sub vars}}
-    # This makes {[secrets]} embeddable in substrings -> 'I have a {[secret]}'
     my @matches = ( $final_val =~ /$sec_regex/g );
       # print(Dumper(@matches));
     foreach (@matches) {
@@ -530,19 +606,17 @@ sub config_get_val {
             Fatal('No secret file found') if ( !defined $secrets);
             $i ++;
             if ($i == 1) {
-              # First match has '{[secret]}'
                 $replace_val = $token;
                 # print("replace_val: $replace_val\n");
             }
             elsif ($i == 2) {
-                # Second match has 'secret', remove whitespace to use the token to search for the secret
                 $token = trim($token);
                 # print("val: xx${val}xx\n");
                 $val = $secrets->{ $secrets_key }->{ $token };
+                # $val = $secrets->{ 'secret' }->{ $token } if !defined $val;
                 if (defined $val) {
-                    printDebug( "SECRET found! replacing: $replace_val", 2 );
-                    # replace_val is used because it could be '{[     secret   ]}' '{{$token}}' wouldn't match
-                    # quotemeta escapes the {[ ]} chars
+                    printDebug( "SECRET found! replacing: $replace_val with '$val'\n", 2 );
+                    # print("Looking in this string -> $final_val\n");
                     $replace_val = quotemeta($replace_val);
                     $final_val =~ s/$replace_val/$val/g;
                 }
@@ -585,7 +659,7 @@ sub config_get_val {
                 $val = $config->{ $sect }->{ $token };
                 $val = $config->{ 'general' }->{ $token } if !$val;
                 if ($val) {
-                    printDebug( "SUB-VAR found! replacing: $replace_val with '$val'", 2 );
+                    printDebug( "SUB-VAR found! replacing: $replace_val with '$val'\n", 2 );
                     # print("Looking in this string -> $final_val\n");
                     $replace_val = quotemeta($replace_val);
                     $final_val =~ s/$replace_val/$val/g;
@@ -887,7 +961,7 @@ Use Hook Description.................. ${\(yes_or_no($use_hook_description))}
 Keep frame match type................. ${\(yes_or_no($keep_frame_match_type))}
 Store Frame in ZM......................${\(yes_or_no($hook_pass_image_path))}
 
-zmNinja picture URL .................. ${\(value_or_undefined($picture_url))}
+Picture URL .......................... ${\(value_or_undefined($picture_url))}
 Include picture....................... ${\(yes_or_no($include_picture))}
 Picture username ..................... ${\(value_or_undefined($picture_portal_username))}
 Picture password ..................... ${\(present_or_not($picture_portal_password))}
@@ -903,6 +977,8 @@ print_config() if $console_logs;
 
 # Lets now load all the optional dependent libraries in a failsafe way
 
+# Fetch whatever options are available from CLI arguments.
+
 if ($use_fcm) {
   if ( !try_use('LWP::UserAgent')
     || !try_use('URI::URL')
@@ -913,17 +989,17 @@ if ($use_fcm) {
     );
   }
   else {
-    printInfo('zmNinja push notifications enabled via FCM');
+    printInfo('Push enabled via FCM');
     printDebug("fcmv1: --> FCM V1 APIs: $use_fcmv1");
   }
 
 }
 else {
-  printInfo('zmNinja push notifications via FCM are disabled.');
+  printInfo('FCM disabled.');
 }
 
 if ($use_api_push) {
-  printInfo("External services for push notifications (PushOver, Gotify, etc.) will use $api_push_script");
+  printInfo("Pushes will be sent through APIs and will use $api_push_script");
 }
 
 if ($use_mqtt) {
@@ -948,6 +1024,14 @@ else {
 #
 # ==========================================================================
 
+
+use ZoneMinder;
+use POSIX;
+use DBI;
+
+$ENV{PATH} = '/bin:/usr/bin';
+$ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
+delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
 
 sub Usage {
   print("This daemon is not meant to be invoked from command line\n");
@@ -1454,6 +1538,8 @@ sub checkNewEvents() {
 
     if ($update_tokens && $use_fcm) {
       my ($safe_token_file) = $token_file =~ /(^[\w\-.\/]+[\w\-. \/]+$)/;
+        print("old token file: $token_file\n");
+        print("safe token file: $safe_token_file\n");
       if ( !$safe_token_file ) {
         Fatal("Tainted: Could not create 'safe' token file name: $token_file");
       }
@@ -3161,13 +3247,13 @@ sub migrateTokens {
   print $fh $json;
   close($fh);
 }
-
 # loads FCM tokens from file
 sub initFCMTokens {
   my $fh;
   printDebug( 'Initializing FCM tokens...', 1 );
   if ( !-f $token_file ) {
-    open( my $foh, '>', $token_file ) or Fatal("Error opening $token_file: $!");
+    my $safe_tknfile = $token_file =~ /(.*)/g;
+    open( my $foh, '>', $safe_tknfile ) or Fatal("Error opening $token_file: $!");
     printDebug( 'Creating ' . $token_file, 1 );
     print $foh '{"tokens":{}}';
     close($foh);
@@ -4483,23 +4569,25 @@ sub restartES {
 sub initSocketServer {
   checkNewEvents();
   my $ssl_server;
-  if ($ssl_enabled) {
-    printDebug( 'About to start listening to socket', 2 );
-    # Perl -T
-    my ($safe_ssl_key) = $ssl_key_file =~ /(^[\w\-.\/]+[\w\-. \/]+$)/g;
-    if (!$safe_ssl_key) {
+  my ($safe_port) = $port =~ /(.*)$/g;
+  my ($safe_address) = $address =~ /(.*)/g;
+  my ($safe_ssl_key) = $ssl_key_file =~ /(.*)/g;
+  if (!$safe_ssl_key) {
       printError("Tainted: Invalid SSL key file: $ssl_key_file");
       exit(1);
     }
 
-    my ($safe_ssl_cert) = $ssl_cert_file =~ /(^[\w\-.\/]+[\w\-. \/]+$)/g;
+    my ($safe_ssl_cert) = $ssl_cert_file =~ /(.*)/g;
     if (!$safe_ssl_cert) {
       printError("Tainted: Invalid SSL cert file: $ssl_cert_file");
       exit(1);
     }
+  if ($ssl_enabled) {
+    printDebug( 'About to start listening to socket', 2 );
+    # Perl -T
 
-      my ($safe_port) = $port =~ /^([0-9][0-9][0-9][0-9][0-9])$/g;
-      my ($safe_address) = $address =~ /^((http(s?):\/\/)?(((www\.)?+[a-zA-Z0-9\.\-\_]+(\.[a-zA-Z]{2,3})+)|(\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b))|^(\w*)\W*(\/[a-zA-Z0-9\_\-\s\.\/\?\%\#\&\=]*)?$|^(\w*)\W*)/g;
+    printInfo("port - |$safe_port| - ADDRESS: |$safe_address| - cert and key : |$safe_ssl_cert| -- |$safe_ssl_key|");
+
     eval {
       $ssl_server = IO::Socket::SSL->new(
         Listen        => 10,
@@ -4521,10 +4609,10 @@ sub initSocketServer {
   else {
     printInfo('Secure WebSocket is disabled...');
   }
-  printInfo( 'Web Socket Event Server listening on port ' . $port );
+  printInfo( 'Web Socket Event Server listening on port ' . $safe_port );
 
   $wss = Net::WebSocket::Server->new(
-    listen => $ssl_enabled ? $ssl_server : $port,
+    listen => $ssl_enabled ? $ssl_server : $safe_port,
     tick_period => $event_check_interval,
     on_tick     => sub {
       if ($es_terminate) {
@@ -4537,7 +4625,7 @@ sub initSocketServer {
         && ( ( time() - $es_start_time ) > $restart_interval ) )
       {
         printInfo(
-          "Time to restart ES as it has been running more that $restart_interval seconds"
+          "Time to restart ES as it has been running more than the configured $restart_interval seconds"
         );
         restartES();
 
