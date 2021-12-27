@@ -1,4 +1,4 @@
-#!/usr/bin/perl -T
+#!/usr/bin/perl
 
 # ==========================================================================
 #
@@ -55,7 +55,7 @@ delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
 
 
 ####################################
-my $app_version = '0.0.2';
+my $app_version = '10.0.2';
 ####################################
 
 # do this before any log init etc.
@@ -3388,7 +3388,9 @@ sub saveFCMTokens {
     $tokens_data{tokens}->{$stoken}->{invocations} = $invocations;
     $tokens_data{tokens}->{$stoken}->{appversion} = $appversion;
 
-    open( $fh, '>', $token_file )
+    my ($safe_tkn_file) = $token_file =~ /^(.*)$/;
+
+    open( $fh, '>', $safe_tkn_file )
       or printError("Error writing tokens file: $!");
     my $json = encode_json( \%tokens_data );
     print $fh $json;
