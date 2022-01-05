@@ -4035,7 +4035,7 @@ sub processNewAlarmsInFork {
 
           if ($hook_pass_image_path) {
             my $event = new ZoneMinder::Event($eid);
-            $cmd = $cmd . ' "' . $event->Path() . '"';
+            $cmd = $cmd . ' --eventpath "' . $event->Path() . '"';
             printDebug(
               'Adding event path:'
                 . $event->Path()
@@ -4049,7 +4049,7 @@ sub processNewAlarmsInFork {
           if ( $cmd =~ /^(.*)$/ ) {
             $cmd = $1;
           }
-          printInfo("DEBUG -> REGEX for -Tainted -> \$cmd = $cmd");
+          # printInfo("DEBUG -> REGEX for -Tainted -> \$cmd = $cmd");
           my $res = `$cmd`;
           chomp($res);
           my ( $resTxt, $resJsonString ) = parseDetectResults($res);
@@ -4073,7 +4073,7 @@ sub processNewAlarmsInFork {
 
             if ($hook_pass_image_path) {
               my $event = new ZoneMinder::Event($eid);
-              $user_cmd = $user_cmd . ' "' . $event->Path() . '"';
+              $user_cmd = $user_cmd . ' --eventpath "' . $event->Path() . '"';
               printDebug(
                 'Adding event path:'
                   . $event->Path()
@@ -4180,7 +4180,7 @@ sub processNewAlarmsInFork {
 
             if ($hook_pass_image_path) {
               my $event = new ZoneMinder::Event($eid);
-              $api_cmd = $api_cmd . ' "' . $event->Path() . '"';
+              $api_cmd = $api_cmd . ' --eventpath "' . $event->Path() . '"';
               printDebug(
                 'Adding event path:'
                   . $event->Path()
@@ -4266,7 +4266,7 @@ sub processNewAlarmsInFork {
 
           if ($hook_pass_image_path) {
             my $event = new ZoneMinder::Event($eid);
-            $cmd = $cmd . ' "' . $event->Path() . '"';
+            $cmd = $cmd . ' --eventpath "' . $event->Path() . '"';
             printDebug(
               'Adding event path:'
                 . $event->Path()

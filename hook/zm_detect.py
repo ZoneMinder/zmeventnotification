@@ -35,7 +35,7 @@ from yaml import safe_load
 
 import pyzm.helpers.new_yaml
 import pyzm.helpers.pyzm_utils
-import pyzm.interface
+from pyzm.interface import GlobalConfig
 from pyzm import __version__ as pyzm_version
 from pyzm.helpers.new_yaml import create_api, start_logs
 from pyzm.helpers.pyzm_utils import (
@@ -49,7 +49,6 @@ from pyzm.helpers.pyzm_utils import (
     do_mqtt,
     do_hass
 )
-from pyzm.interface import GlobalConfig
 
 lp: str = 'zmes:'
 __app_version__: str = "0.0.2"
@@ -285,8 +284,10 @@ DEFAULT_CONFIG: dict = safe_load('''
 
           sequence: []
     ''')
+g: GlobalConfig
+
+
 def _get_jwt_filename(ml_api_url):
-    """Takes the 'gateway' from ml_routes and returns the filename for the jwt token disk cache"""
     _file_name = ml_api_url.lstrip('http://').lstrip('https://')
     # If there is a :port
     _file_name = _file_name.split(':')
@@ -294,8 +295,7 @@ def _get_jwt_filename(ml_api_url):
         _file_name = _file_name[0]
     return _file_name
 
-def remote_login(user, password, ml_api_url: str, globs=None):
-    g: pyzm.interface.GlobalConfig = globs
+def remote_login(user, password, ml_api_url: str):
     access_token: Optional[str] = None
     lp = "zmes:mlapi:login:"
     ml_login_url = f"{ml_api_url}/login"
@@ -318,7 +318,7 @@ def remote_login(user, password, ml_api_url: str, globs=None):
             access_token = data["token"]
             # epoch timestamp
             now = time.time()
-            # let's make sure there is at least 30 secs left
+            # lets make sure there is at least 30 secs left
             if int(now + 30 - generated) >= expires:
                 g.logger.debug(
                     f"{lp} found access token, but it has or is about to expire. Need to login to MLAPI host..."
@@ -346,7 +346,7 @@ def remote_login(user, password, ml_api_url: str, globs=None):
             r.raise_for_status()
         except Exception as ex:
             g.logger.error(f"{lp} ERROR request post -> \n{ex}")
-            raise ValueError(f"NO_GATEWAY_AUTH_TOKEN")
+            raise ValueError(f"NO_GATEWAY")
         else:
             data = r.json()
             access_token = data.get("access_token")
@@ -368,11 +368,10 @@ def remote_login(user, password, ml_api_url: str, globs=None):
     return access_token
 
 
-def remote_detect(options=None, args=None, globs=None, route=None):
+def remote_detect(options=None, args=None, route=None):
     """Sends an http request to mlapi host with data needed for inference"""
     # This uses mlapi (https://github.com/baudneo/mlapi) to run inference with the sent data and converts format to
     # what is required by the rest of the code.
-    g: pyzm.interface.GlobalConfig = globs
     lp: str = "zmes:mlapi:"
     # print(f"{g.eid = } {options = } {g.api = } {args =}")
     model: str = "object"  # default to object
@@ -397,7 +396,7 @@ def remote_detect(options=None, args=None, globs=None, route=None):
         exit(1)
     if not access_token:
         try:
-            access_token = remote_login(route['user'], route['pass'], route['gateway'], globs=g)
+            access_token = remote_login(route['user'], route['pass'], route['gateway'])
         except Exception as ex:
             g.logger.error(f"{lp} ERROR getting remote API token -> {ex}")
             raise ValueError(f"error getting remote API token")
@@ -424,7 +423,7 @@ def remote_detect(options=None, args=None, globs=None, route=None):
             _succ, jpeg = cv2.imencode(".jpg", image)
             if not _succ:
                 g.logger.error(f"{lp} ERROR: cv2.imencode('.jpg', <FILE IMAGE>)")
-                raise ValueError("--file Encoding image to JPEG failed")
+                raise ValueError("--file Can't encode image on disk into jpeg")
             files = {
                 "image": ("image.jpg", jpeg.tobytes(), 'application/octet')
             }
@@ -615,10 +614,9 @@ def remote_detect(options=None, args=None, globs=None, route=None):
         return data
 
 
-def get_es_version(globs: pyzm.interface.GlobalConfig) -> str:
+def get_es_version() -> str:
     # Get zmeventnotification.pl VERSION
     es_version: str = '(?)'
-    g = globs
     try:
         from shutil import which
         es_version = subprocess.check_output(
@@ -744,6 +742,7 @@ def _parse_args():
 def main_handler():
     def _zmes_db():
         start_db = time.perf_counter()
+        # From @pliablepixels work
         db_config = {
             'conf_path': os.getenv('PYZM_CONFPATH', '/etc/zm'),  # we need this to get started
             'dbuser': os.getenv('PYZM_DBUSER'),
@@ -858,7 +857,9 @@ def main_handler():
     lp: str = "zmes:"
     # -------------- END vars -------------------
     from pyzm.helpers.pyzm_utils import LogBuffer
-    g: GlobalConfig = GlobalConfig()
+    # first time instantiating the GlobalConfig Object
+    global g
+    g = GlobalConfig()
     g.DEFAULT_CONFIG = DEFAULT_CONFIG
     g.logger = LogBuffer()
     # Process CLI arguments
@@ -866,23 +867,20 @@ def main_handler():
     if args.get('new'):
         from pyzm.helpers.pyzm_utils import time_format
         print(f"ZONEMINDER: EventStartCommand was called -> {time_format(datetime.now())}")
+        exit(0)
     # process the config using the arguments
     g.eid = args.get("eventid", args.get("file"))
     start_conf: time.perf_counter = time.perf_counter()
     from pyzm.helpers.new_yaml import process_config as proc_conf
-    zmes_config, g = proc_conf(args=args, conf_globals=g, type_='zmes')
+    zmes_config, g = proc_conf(args=args, type_='zmes')
     g.logger.debug(f"perf:{lp} building the initial config took {time.perf_counter() - start_conf}")
-    # fixme: set_g is ugly, but she works.
-    from pyzm.helpers.pyzm_utils import set_g
-    set_g(g)
-
     bg_api_thread: Thread = Thread(name="ZM API", target=create_api, kwargs={'args': args})
     bg_api_thread.start()
 
     objdet_force = str2bool(g.config.get("force_debug"))
     et = args.get("event_type")
     g.logger.info(
-        f"------|  FORKED NEO --- app->Hooks: {__app_version__} - pyzm: {pyzm_version} - ES: {get_es_version(globs=g)}"
+        f"------|  FORKED NEO --- app->Hooks: {__app_version__} - pyzm: {pyzm_version} - ES: {get_es_version()}"
         f" - OpenCV:{cv2.__version__} |------"
     )
     if args.get('monitor_id') and (args.get('live') or args.get('new')):
@@ -983,44 +981,50 @@ def main_handler():
             route = weighted_routes.pop(0)
             if remote_response:
                 break
+            if not str2bool(route.get('enabled')):
+                g.logger.debug(f"{lp} route #{tries} ({route['name']}) is disabled, skipping")
+                continue
             try:
                 if tries > 1:
-                    g.logger.debug(f"{lp} there was an error, switching to the next route '{route['name']}'")
-                remote_response = remote_detect(options=stream_options, args=args, globs=g, route=route)
+                    g.logger.debug(f"{lp} switching to the next route '{route['name']}'")
+                remote_response = remote_detect(options=stream_options, args=args, route=route)
             except requests.exceptions.HTTPError as http_ex:
-                start_of_remote_detection = time.perf_counter() - start_of_remote_detection
+                if not weighted_routes:
+                    start_of_remote_detection = time.perf_counter() - start_of_remote_detection
                 if http_ex.response.status_code == 400:
                     if args.get('file'):
-                        g.logger.error(
+                        g.logger.warning(
                             f"{lp} ERR 400 -> there seems to be an error trying to send an image from "
                             f"zm_detect to mlapi, looking into it -> {http_ex.response.json()}"
                         )
                     else:
                         # todo: pushover error
-                        g.logger.error(
+                        g.logger.warning(
                             f"{lp} ERR 400 -> {http_ex.response.json()}"
                         )
                 if http_ex.response.status_code == 500:
                     # todo: pushover error
-                    g.logger.error(
+                    g.logger.warning(
                         f"{lp} ERR 500 -> there seems to be an Internal Error with the mlapi host, check"
                         f" mlapi logs! -> {http_ex.response.json()}"
                     )
                 else:
-                    g.logger.debug(
+                    g.logger.warning(
                         f"{lp} ERR {http_ex.response.status_code} -> "
                         f"HTTP ERROR --> {http_ex.response.json()}"
                     )
             except ValueError as exc:
-                start_of_remote_detection = time.perf_counter() - start_of_remote_detection
-                print(exc)
+                if not weighted_routes:
+                    start_of_remote_detection = time.perf_counter() - start_of_remote_detection
             except Exception as all_ex:
-                start_of_remote_detection = time.perf_counter() - start_of_remote_detection
-                print(f"{lp} there was an error during the remote detection! -> {all_ex}")
-                print(format_exc())
+                if not weighted_routes:
+                    start_of_remote_detection = time.perf_counter() - start_of_remote_detection
+                g.logger.warning(f"{lp} there was an error during the remote detection! -> {all_ex}")
+                g.logger.debug(format_exc())
             # Successful mlapi post
             else:
                 start_of_remote_detection = time.perf_counter() - start_of_remote_detection
+
                 mlapi_success = True
                 if remote_response is not None:
                     matched_data = remote_response.get("matched_data")
@@ -1034,7 +1038,6 @@ def main_handler():
                 )
                 break
         if str2bool(g.config.get('ml_fallback_local')) and not mlapi_success:
-            print('doing local FALLBACK detection')
 
             start_of_local_fallback_detection = time.perf_counter()
             total_time_start_to_detect = start_of_local_fallback_detection - start_of_script
@@ -1042,7 +1045,7 @@ def main_handler():
             g.logger.error(f"{lp} mlapi error, falling back to local detection")
             stream_options["polygons"] = zmes_config.polygons.get(g.mid)
             from pyzm.ml.detect_sequence import DetectSequence
-            m = DetectSequence(options=ml_options, globs=g)
+            m = DetectSequence(options=ml_options)
             matched_data, all_data, all_frames = m.detect_stream(
                 stream=g.eid,
                 options=stream_options,
@@ -1061,7 +1064,7 @@ def main_handler():
             time.sleep(float(g.config["wait"]))
         try:
             from pyzm.ml.detect_sequence import DetectSequence
-            m = DetectSequence(options=g.config['ml_sequence'], globs=g)
+            m = DetectSequence(options=g.config['ml_sequence'])
             print('doing local detection')
             matched_data, all_data, all_frames = m.detect_stream(
                 stream=g.eid, options=stream_options,
@@ -1340,7 +1343,72 @@ def main_handler():
                 # ---------------------------------
                 resp = None
                 ha_verified = verify_vals(g.config, {"hass_enable", "hass_server", "hass_token"})
-                if ha_verified and str2bool(g.config.get("hass_enable")):
+                if (str2bool(g.config.get('push_emergency')) and (not past_event or (past_event and str2bool(g.config.get("push_emerg_force"))))):
+                    g.logger.debug(f"{lp} pushover EMERGENCY notification enabled...")
+                    emerg_mons: Union[str, set] = g.config.get('push_emerg_mons')
+                    if emerg_mons:
+                        proceed = True
+                        emerg_labels = g.config.get('push_emerg_labels')
+                        if emerg_labels:
+                            emerg_labels = set(str(emerg_labels).strip().split(','))
+                            if not any(w in emerg_labels for w in matched_data.get("labels")):
+                                g.logger.debug(
+                                    f"You have specified emergency labels that are not in the detected objects, "
+                                    f"not sending an emergency alert...")
+                                proceed = False
+
+                        if proceed:
+                            def time_in_range(start, end, current_):
+                                """Returns whether current is in the range [start, end]"""
+                                return start <= current_ <= end
+                            # strip whitespace and convert the str into a list using a comma as the delimiter
+                            # convert to a set to remove duplicates and then use set comprehension to ensure all int
+                            emerg_mons = set(str(emerg_mons).strip().split(','))
+                            emerg_mons = {int(x) for x in emerg_mons}
+                            emerg_retry = int(g.config.get('push_emerg_retry', 120))
+                            emerg_expire = int(g.config.get('push_emerg_expire', 3600))
+                            emerg_time_start = g.config.get('push_emerg_time_start')
+                            emerg_time_end = g.config.get('push_emerg_time_end')
+                            import dateparser
+                            current = datetime.now().timestamp()
+                            tz = g.config.get('push_emerg_tz', {})
+                            if tz:
+                                tz = {'TIMEZONE': tz}
+                                g.logger.debug(f'{lp} Converting to TimeZone: {tz}')
+                            doit_ = False
+                            if emerg_time_start and emerg_time_end:
+                                emerg_time_start = dateparser.parse(emerg_time_start, settings=tz).timestamp()
+                                emerg_time_end = dateparser.parse(emerg_time_end, settings=tz).timestamp()
+
+                                doit_ = True
+                            elif emerg_time_end:
+                                emerg_time_start = dateparser.parse('midnight', settings=tz).timestamp()
+                                emerg_time_end = dateparser.parse(emerg_time_end, settings=tz).timestamp()
+                                doit_ = True
+                            elif emerg_time_start:
+                                emerg_time_end = dateparser.parse('23:59:59', settings=tz).timestamp()
+                                emerg_time_start = dateparser.parse(emerg_time_start, settings=tz).timestamp()
+                                doit_ = True
+                            if g.mid in emerg_mons:
+                                _doit = True
+                                if doit_:
+                                    g.logger.debug(f"{current = } -- {emerg_time_start = } -- {emerg_time_end = }")
+
+                                    g.logger.debug(f"{lp} Checking current time to supplied timerange...")
+
+                                    emerg_in_time = time_in_range(emerg_time_start, emerg_time_end, current)
+                                    if not emerg_in_time:
+                                        g.logger.debug(f"{lp} it is currently not within the specified time range for "
+                                                       f"sending an emergency notification")
+                                        _doit = False
+                                if _doit:
+                                    g.logger.debug(f"{lp} sending pushover emergency notification...")
+                                    param_dict['priority'] = 2
+                                    param_dict['retry'] = emerg_retry
+                                    param_dict['expire'] = emerg_expire
+                                    # Emergency notifications will bypass cooldown and off switch
+                                    send_push = True
+                if not send_push and ha_verified and str2bool(g.config.get("hass_enable")):
                     send_push = do_hass(g)
                     do_hast_micht = 'gefragt 🤘'
 
@@ -1692,7 +1760,7 @@ def main_handler():
                         param_dict[
                             "message"
                         ] = (
-                            f"{pred_out.strip()} Sending to pushover servers @ "
+                            f"{pred_out.strip()} Sent to pushover servers @ "
                             f"{datetime.now().strftime('%H:%M:%S.%f')[:-3]}"
                         )
                         display_param_dict = param_dict.copy()
@@ -1740,7 +1808,6 @@ def main_handler():
                             f"monitor={g.mid}&event={g.eid}&{display_auth}"
                         )
                         display_param_dict["url"] = display_url
-
                         files = {
                             "attachment": (
                                 f"objdetect-{g.mid}.gif",
@@ -1793,7 +1860,7 @@ def main_handler():
         detection_time = start_of_local_detection
     fid_str_ = "-->'Frame ID':"
     fid_evtype = "'PAST' event" if past_event else "'LIVE' event"
-    _mon_name = f"'Monitor': {g.config.get('mon_name')} ({g.mid})->'Event': "
+    _mon_name = f"'Monitor': {g.Monitor.get('Name')} ({g.mid})->'Event': "
     final_msg = "perf:{lp}FINAL: {mid}{s}{f_id} [{match}] {tot}{before}{det}{ani_gif}{extras}".format(
         lp=lp,
         match="{}".format(fid_evtype if not args.get('file') else "INPUT FILE"),
@@ -1838,7 +1905,6 @@ def main_handler():
 if __name__ == "__main__":
     try:
         output_message, g = main_handler()
-        g: GlobalConfig
     except Exception as e:
         print(f"zmes: err_msg->{e}")
         print(f"zmes: traceback: {format_exc()}")
