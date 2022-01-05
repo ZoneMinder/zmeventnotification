@@ -139,7 +139,15 @@ DEFAULT_CONFIG: dict = safe_load('''
 
     push_debug_device: '' 
     push_cooldown: ''
-
+    
+    push_emergency: no
+    #push_emerg_mons: ''
+    push_emerg_expire: 3600
+    push_emerg_retry: 60
+    push_emerg_time_start: '00:00'
+    push_emerg_time_end: '23:59'
+    push_emerg_force: no
+    
     mqtt_enable: no
     mqtt_force: no
     mqtt_topic: ''

@@ -173,6 +173,25 @@ push_error_sound:
 
 #push_cooldown: 120
 
+# Set up a pushover alert that requires you to acknowledge you have received the notification
+# otherwise it will keep reminding you every X seconds for a duration of Y seconds.
+# If you configure the pushover app to use the Alarm channel, and set the alarm channel volume to max
+# and allow PushOver to ignore Do Not Disturb, the notification will be LOUD and guaranteed to play even if you have
+# everything silent and Do Not Disturb enabled
+# See https://pushover.net/api#priority for more info, specifically the emergency priority (2). I may add options
+# for receipts and the POST that pushover servers can send to ane external webserver to confirm that someone received
+# and acknowledged the notification.
+push_emergency: no   # master switch
+#push_emerg_mons: 2,3  # comma seperated monitor ID's Example: 1,3,6,9 OR 2
+push_emerg_expire: 3600  # length in seconds that the notification will stop reminding, MAX is 10800 (3 hours) Default: 3600 (1 Hour)
+push_emerg_retry: 60  # replay the notification every X seconds Default: 120
+# If the current time is within this time range, then the notification will be sent.
+# Uses a dateparser that accepts human-readable input like "yesterday at 9PM"
+push_emerg_time_start: 'yesterday 10 PM'  # Default 'midnight' - TESTING! unexpected things may happen regarding timerange!
+push_emerg_time_end: '8 AM'  # default: '23:59'
+push_emerg_force: no  # force sending an emergency pushover notification even if it is not a LIVE event
+# NOTE: The notification will be processed normally if the emergency priority is stripped from it.
+
 ###########################################
 #    ------ [ MQTT ADD-ON SECTION ] ------
 ###########################################
