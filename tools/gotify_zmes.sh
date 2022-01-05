@@ -13,15 +13,16 @@
 # ARG6 is the AUTH token (the token starts with 'token=', so dont put token= before ${ZM_TOKEN})
 # ARG7 is the path to the image (Optional)
 
+ZM_TOKEN=${6}
+# **** NOTE ****
 # If you configured push_user and push_pass in objectconfig then the token will be for that user.
-# If you did not configure push_user it will pass you the token that ZMES is using (not recommended).
+# If you comment out push_user it will pass you the token that ZMES is using (not recommended).
 # I recommend making a ZM API user with VIEW privileges and using that for push_user and push_pass.
 
-ZM_TOKEN=${6}
 EVENT_ID=${1}
 #EVENT_ID=`echo ${6} | awk -F'/' '{ print $8 }'`
 #MESSAGE=`echo ${4} | sed -e 's/.*] \(.*\)Motion.*/\1/'`
-CAMERA=$3
+CAMERA="$3"
 MESSAGE="$4"
 GOTI_HOST='http://localhost:8080'
 GOTI_TKN=''

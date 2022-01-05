@@ -1,12 +1,13 @@
 #!/usr/bin/python3
 import argparse
+from typing import Optional
 
-from pyzm.helpers.pyzm_utils import LogBuffer, set_g
+from pyzm.helpers.pyzm_utils import LogBuffer
+from pyzm.interface import GlobalConfig
 import pyzm.ml.face_train_dlib as train
 from pyzm.helpers.new_yaml import process_config as proc_conf, start_logs
-import pyzm.helpers.globals as g
 
-set_g(g)
+g: GlobalConfig
 g.logger = LogBuffer()
 
 if __name__ == "__main__":
@@ -29,13 +30,9 @@ if __name__ == "__main__":
         args['debug'] = True
     args['from_face_train'] = True
 
-    zmesc, g = proc_conf(args=args, conf_globals=g, type_='zmes')
+    zmes, g = proc_conf(args=args, type_='zmes')
     # Monitor overrides (returns default config if there are no per monitor overrides)
-    g.config = zmesc.config
+    g.config = zmes.config
     # start the logger (you can Thread this if you want)
-    start_logs(config=g.config, args=args, _type='zmes')
-    train.FaceTrain(globs=g).train(size=args['size'])
-
-
-
-
+    start_logs(config=g.config, args=args, type_='zmes')
+    train.FaceTrain().train(size=args['size'])

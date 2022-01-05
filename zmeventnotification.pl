@@ -251,6 +251,7 @@ my $ssl_cert_file;
 my $ssl_key_file;
 
 my $console_logs;
+my $bd_logs;
 my $es_debug_level;
 my $event_check_interval;
 my $monitor_reload_interval;
@@ -327,7 +328,6 @@ if ( !try_use('Net::WebSocket::Server') ) {
 if ( !try_use('IO::Socket::SSL') )  { Fatal('IO::Socket::SSL missing'); }
 if ( !try_use('IO::Handle') )       { Fatal('IO::Handle missing'); }
 if ( !try_use('YAML::XS') )         { Fatal('YAML::XS missing'); }
-if ( !try_use('Config::IniFiles') ) { Fatal('Config::Inifiles missing'); }
 if ( !try_use('Getopt::Long') )     { Fatal('Getopt::Long missing'); }
 if ( !try_use('File::Basename') )   { Fatal('File::Basename missing'); }
 if ( !try_use('File::Spec') )       { Fatal('File::Spec missing'); }
@@ -348,6 +348,8 @@ use constant USAGE => <<'USAGE';
 
 Usage: zmeventnotification.pl [OPTION]...
 
+  --debug                             Print Debug output to console.
+  --baredebug                         No console output, Debug is logged to file.
   --help                              Print this page.
   --version                           Print version.
   --config=FILE                       Read options from configuration file (default: /etc/zm/zmeventnotification.yml).
@@ -365,6 +367,7 @@ GetOptions(
   'config=s'     => \$config_file,
   'check-config' => \$check_config,
   'debug'        => \$console_logs,
+  'baredebug'    => \$bd_logs,
   'docker'       => \$docker_env,
 );
 
@@ -936,6 +939,7 @@ SSL cert file ........................ ${\(value_or_undefined($ssl_cert_file))}
 SSL key file ......................... ${\(value_or_undefined($ssl_key_file))}
 
 Verbose .............................. ${\(yes_or_no($console_logs))}
+Bare Debug ........................... ${\(yes_or_no($bd_logs))}
 ES Debug level.........................${\(value_or_undefined($es_debug_level))}
 Read alarm cause ..................... ${\(yes_or_no($read_alarm_cause))}
 Tag alarm event id ................... ${\(yes_or_no($tag_alarm_event_id))}
@@ -4024,18 +4028,17 @@ sub processNewAlarmsInFork {
           # $6 = path to event store (if store_frame_in_zm is 1)
           # $7 = $docker_env (Docker environment)
         if ( $event_start_hook && $use_hooks ) {
-          if ($docker_env) { $docker_cmd = " --docker" ; }
+          if ($docker_env) { $docker_cmd = " -D" ; }
           my $cmd =
-              $event_start_hook . ' '
-            . $eid . ' '
-            . $mid . ' "'
-            . $alarm->{MonitorName} . '" "'
-            . $alarm->{Start}->{Cause} . '" --live'
+              $event_start_hook . ' -e '
+            . $eid . ' -m '
+            . $mid . ' -n "'
+            . $alarm->{MonitorName} . '" -r "'
+            . $alarm->{Start}->{Cause} . '" -l'
             . $docker_cmd;
-
           if ($hook_pass_image_path) {
             my $event = new ZoneMinder::Event($eid);
-            $cmd = $cmd . ' "' . $event->Path() . '"';
+            $cmd = $cmd . ' -p "' . $event->Path() . '"';
             printDebug(
               'Adding event path:'
                 . $event->Path()
@@ -4046,10 +4049,9 @@ sub processNewAlarmsInFork {
           }
           printDebug( 'Invoking hook on event start:' . $cmd, 1 );
 
-          if ( $cmd =~ /^(.*)$/ ) {
-            $cmd = $1;
-          }
-          printInfo("DEBUG -> REGEX for -Tainted -> \$cmd = $cmd");
+          # if ( $cmd =~ /^(.*)$/ ) {
+          #   $cmd = $1;
+          # }
           my $res = `$cmd`;
           chomp($res);
           my ( $resTxt, $resJsonString ) = parseDetectResults($res);
@@ -4253,20 +4255,17 @@ sub processNewAlarmsInFork {
         }
 
         if ( $event_end_hook && $use_hooks ) {
-          if ($docker_env) { $docker_cmd = " --docker" ; }
-
-          # invoke end hook script
-           my $cmd =
-              $event_end_hook . ' '
-            . $eid . ' '
-            . $mid . ' "'
-            . $alarm->{MonitorName} . '" "'
-            . $alarm->{Start}->{Cause} . '" --live'
+          if ($docker_env) { $docker_cmd = " -D" ; }
+          my $cmd =
+              $event_start_hook . ' -e '
+            . $eid . ' -m '
+            . $mid . ' -n "'
+            . $alarm->{MonitorName} . '" -r "'
+            . $alarm->{Start}->{Cause} . '" -l'
             . $docker_cmd;
-
           if ($hook_pass_image_path) {
             my $event = new ZoneMinder::Event($eid);
-            $cmd = $cmd . ' "' . $event->Path() . '"';
+            $cmd = $cmd . ' -p "' . $event->Path() . '"';
             printDebug(
               'Adding event path:'
                 . $event->Path()
@@ -4588,7 +4587,6 @@ sub initSocketServer {
     printDebug( 'About to start listening to socket', 2 );
     # Perl -T
 
-    printInfo("port - |$safe_port| - ADDRESS: |$safe_address| - cert and key : |$safe_ssl_cert| -- |$safe_ssl_key|");
 
     eval {
       $ssl_server = IO::Socket::SSL->new(

@@ -28,8 +28,8 @@ INSTALL_TINYYOLOV3=${INSTALL_TINYYOLOV3:-yes}
 INSTALL_YOLOV4=${INSTALL_YOLOV4:-yes}
 INSTALL_TINYYOLOV4=${INSTALL_TINYYOLOV4:-yes}
 INSTALL_CORAL_EDGETPU=${INSTALL_CORAL_EDGETPU:-no}
-
-
+# Convert existing .ini to .yml (only works for zmeventnotification.ini and secrets.ini)
+INI_2_YAML=${INI_2_YAML:-yes}
 TARGET_CONFIG=${TARGET_CONFIG:-'/etc/zm'}
 TARGET_DATA=${TARGET_DATA:-'/var/lib/zmeventnotification'}
 TARGET_BIN_ES=${TARGET_BIN_ES:-'/usr/bin'}
@@ -221,6 +221,7 @@ install_hook() {
     mkdir -p "${TARGET_DATA}/misc" 2>/dev/null
     echo "everything that does not fit anywhere else :-)" > "${TARGET_DATA}/misc/README.txt" 2>/dev/null
 
+
     if [ "${DOWNLOAD_MODELS}" == "yes" ]
     then
 
@@ -381,6 +382,7 @@ install_hook() {
      install -m 755 -o "${WEB_OWNER}" tools/zmes_gotify.sh "${TARGET_BIN_HOOK}"
 
 
+
     echo "*** Installing detection scripts ***"
     install -m 755 -o "${WEB_OWNER}" hook/zm_event_start.sh "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_event_end.sh "${TARGET_BIN_HOOK}"
@@ -439,14 +441,20 @@ install_es_config() {
 
 # move Hook config files
 install_hook_config() {
-    echo 'Replacing Object Detection Hook config file'
+    echo 'Replacing Object Detection Hook config file (includes the default config)'
     install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.yml "${TARGET_CONFIG}" &&
-        install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/zm_secrets.yml "${TARGET_CONFIG}" &&
+      install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/zm_secrets.yml "${TARGET_CONFIG}" &&
+       install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" hook/.zmes_default_config.yml "${TARGET_DATA}/misc" &&
         print_success "YAML config and secrets copied" || print_error "could not copy YAML config or secrets"
     echo "====> Remember to fill in the right values in the YAML config files, or your system won't work! <============="
     echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN_HOOK}/zm_event_start.sh! <========"
     echo
+    [[ -a "${TARGET_CONFIG}/zm.conf" ]] && chgrp "${WEB_GROUP}" "${TARGET_CONFIG}/zm.conf" && \
+    chmod g+w "${TARGET_CONFIG}/zm.conf" && echo "Changed ${TARGET_CONFIG}/zm.conf to allow GROUP: ${WEB_GROUP} "\
+    "access to read/write"
+
 }
+
 install_pyzm() {
 
     echo
@@ -507,6 +515,9 @@ display_help() {
 
         -h: This help
 
+        --ini-to-yaml: Search in TARGET_CONFIG for Perl daemon config and secrets (zmeventnotification.ini and secrets.ini) to convert them to a .yml file
+        --no-ini-to-yaml: Do not convert Perl daemon .ini's to .yml
+
         --install-es: installs Event Server without prompting
         --no-install-es: skips Event Server install without prompting
 
@@ -562,6 +573,7 @@ check_args() {
     INSTALL_HOOK='prompt'
     INSTALL_ES_CONFIG='prompt'
     INSTALL_HOOK_CONFIG='prompt'
+    INI_2
     INTERACTIVE='yes'
     PY_SUDO='sudo -H'
     DOWNLOAD_MODELS='yes'
@@ -629,6 +641,14 @@ check_args() {
             INSTALL_HOOK_CONFIG='no'
             shift
             ;;
+        --no-ini-to-yaml)
+          INI_2_YAML='no'
+          shift
+          ;;
+        --ini-to-yaml)
+          INI_2_YAML='yes'
+          shift
+          ;;
         *)  # unknown option
             shift
             ;;
@@ -644,7 +664,6 @@ check_args() {
     # same logic as above
     [[ ${INSTALL_HOOK} == 'no' ]] && INSTALL_HOOK_CONFIG='no'
     [[ ${INSTALL_HOOK} == 'prompt' && ${INSTALL_HOOK_CONFIG} == 'yes' ]] && INSTALL_HOOK_CONFIG='prompt'
-
 
 }
 ###################################################
@@ -728,8 +747,8 @@ then
 
     If you don't, things will break. Further, you also need to make sure
     your web user (${WEB_OWNER}) has access to the coral device.
-    On my ubuntu system, I needed to do:
-        sudo usermod -a -G plugdev www-data
+    On an ubuntu system, this can be done by running:
+        sudo usermod -aG plugdev ${WEB_OWNER}
     --------------------------------------------------------------------
 EOF
 fi

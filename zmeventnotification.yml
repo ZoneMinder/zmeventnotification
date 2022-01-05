@@ -14,7 +14,7 @@ general:
   use_escontrol_interface: no
   # this is where all EScontrol admin overrides
   # will be stored.
-  escontrol_interface_file: '{{base_data_path}}/misc/escontrol_interface.dat'
+  escontrol_interface_file: /var/lib/zmeventnotification/misc/escontrol_interface.dat
   # the password for accepting control interfaces
   escontrol_interface_password: '{[ESCONTROL_INTERFACE_PASSWORD]}'
 
@@ -23,14 +23,14 @@ general:
   # You can use restart_interval to have it automatically restart
   # every  X seconds. Set to 0 to disable this. [Default is 7200 = 2 hours]
   # restart_interval: 432000
-#  restart_interval: 108000
+  restart_interval: 108000
 
   # list of monitors which ES will ignore
   # Note that there is an attribute later that does
   # not process hooks for specific monitors. This one is different
   # It can be used to completely skip ES processing for the
   # monitors defined
-#  skip_monitors:
+  skip_monitors: 6
 
 network:
   # Port for Websockets connection [Default: 9000]
@@ -69,7 +69,7 @@ push:
 
 fcm:
   # Use FCM for messaging [Default: yes]
-  enable: yes
+  enable: no
 
   # Use the new FCM V1 protocol (recommended)
   use_fcmv1: yes
@@ -154,7 +154,7 @@ ssl:
 
 customize:
   # Link to json file that has rules which can be customized
-   es_rules: '{{conf_path}}/es_rules.json'
+  # es_rules: /etc/zm/es_rules.json
 
   # Display messages to console
   # Note that you can keep this to no and just
@@ -166,7 +166,7 @@ customize:
   es_debug_level: 5
 
   # Interval, in seconds, after which we will check for new events [Default: 5]
-  event_check_interval: 5
+  event_check_interval: 3
 
   # Interval, in seconds, to reload known monitors [Default: 300]
   monitor_reload_interval: 300
@@ -218,7 +218,7 @@ hook:
   # where your motion sensitivity in ZM is not set properly, you may land up
   # triggering hundreds of child processes of zm_detect that may potentially
   # crash your system. Note that there are global locks around the ML code which
-  # are controlled by xxx_max_processes in the objectconfig/mlapiconfig files
+  # are controlled by xxx_max_processes in the objectconfig/mlapiconfig.files
   # which will avoid parallel running of models. But this is if you are facing issues
   # by the simple fact that too many zm_detect processes are forked (which will apply
   # whether you use mlapi or not). While I do feel the core issue is that you need
