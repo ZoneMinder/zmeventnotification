@@ -24,6 +24,7 @@
 #  2:
 #    my_thing :  Hello
 #    my_other_thing :  '{{my_thing}}, World!'
+
 # You can now use 'sections', Enable by adding ZMES: 1 as the first key in the config file
 ZMES: 1
 # You can add as many sections as you want. You can not nest sections or have the keys more than 1 level deep.
@@ -31,7 +32,169 @@ ZMES: 1
 # You can name the sections whatever you want, but they must be unique.
 # Once processed the sections are stripped and all the keys are once again spread out on the base level.
 # Sections is more for readability/organization. Think Pycharm and want to collapse a section from the structure tab
+
 general:
+#  base data path for various files the ES+OD needs, this is the path where ZMES was installed
+#  [Default: /var/lib/zmeventnotification]
+  base_data_path: /var/lib/zmeventnotification
+
+  # If configured, you can specify tokens with secret values in that file
+  # and only refer to the tokens in your main config file
+  secrets : /shared/zm_secrets.yml
+
+
+  # You can now limit the # of detection process
+  # per target processor. If not specified, default is 1
+  # Other detection processes will wait to acquire lock
+  cpu_max_processes: 3
+  tpu_max_processes: 2
+  gpu_max_processes: 3
+
+  # Time to wait in seconds per processor to be free, before
+  # erring out. Default is 120 (2 min)
+  cpu_max_lock_wait: 100
+  tpu_max_lock_wait: 100
+  gpu_max_lock_wait: 100
+
+  # If yes, will import the ZoneMinder zones instead of needing to manually configure polygons in monitors section.
+#  [Default: no]
+  import_zm_zones: no
+
+  # If enabled, will only filter zone names that match the alarm cause
+  # This is useful if you only want to report detections where motion
+  # was detected by ZM.
+#  [Default: no]
+  only_triggered_zm_zones: no
+
+
+  # Keep debug logging on for now
+  pyzm_overrides:
+    console_logs: yes
+    # levels
+#    log_level_syslog: 5
+#    log_level_file: 5
+#    log_level_debug: 5
+#    log_level_db: -5
+    # log levels -> 1 dbg/print/blank 0 info, -1 warn, -2 err, -3 fatal, -4 panic, -5 off
+#    log_debug_file: 1
+#    log_debug: True
+#    log_debug_target: _zmesdetect|_zmes_file|_zmes|_zmesdetect|_zmes|_zmes_detect
+
+  #  comma split list of monitor IDs to skip processing hooks on.
+  #  I put it here, so you don't have to restart zmeventnotification.pl to skip processing
+  #  If it is a PAST event it will not skip the monitor, this only applies to LIVE events
+  # [Default: None]
+  skip_mons:
+
+  # remove your <portal> from the logs, passwords are already sanitized. If <portal> is not supplied
+  # but <api_portal> is, we will slice the /api off of it and use the base URL as portal -> x.y.z/zm/api becomes x.y.z/zm
+  # [Default: no]
+  sanitize_logs: no
+
+  # The string to show when the logs are sanitized instead of the sensitive info
+  # [Default: <sanitized>]
+  sanitize_str: <obfuscated>
+
+  # Delay before running any frames at all
+  # [Default: 0]
+  #delay: 0.0
+
+  # Place a timestamp on objdetect.jpg - Useful if saving events as mp4.
+  picture_timestamp:
+    enabled: no
+    date format: '%Y-%m-%d %H:%M:%S'
+    monitor name: yes
+    text color: '(255,255,255)'  # Default: (255,255,255) aka white
+    # background is the solid colored rectangle that the timestamp text is printed on
+    background: yes
+    bg color: '(0,0,0)'  # Default: (0,0,0) aka black
+    # Override the scaling factor for the timestamp text (EXPERIMENTAL)
+
+login:
+  # portal/user/password are needed if you plan on using ZM's legacy
+  # auth mechanism to get images
+  portal: '{[ZM_PORTAL]}'
+  user: '{[ZM_USER]}'
+  password: '{[ZM_PASSWORD]}'
+
+  # api portal is needed if you plan to use tokens to get images
+  # requires ZM 1.33 or above
+  api_portal: '{[ZM_API_PORTAL]}'
+
+  # Allow self-signed SSl (HTTPS) certificates
+  allow_self_signed: yes
+
+  # If you need basic auth to access ZM
+  #basic_user: user
+  #basic_password: password
+
+
+debug:
+  # force creation of objdetect.jpg even if its a past event or we already have a detection
+  # etc if its a past event or an event that already has its detection and it is the exact same
+  # [Default: no]
+  force_debug: yes
+  # FOR DEBUGGING -- force LIVE EVENT logic
+  # [Default: no]
+  force_live: no
+
+control_and_strategy:
+  # What frames to run detections on
+  frame_set: alarm,snapshot,snapshot,120
+
+
+  frame_strategy: first
+  same_model_sequence_strategy: most
+
+  # sequence of models to run for detection
+  model_sequence: object,face,alpr
+
+  # This is the Width to resize the image before analysis is done, aspect ratio is preserved.
+  # Setting it here will activate resizing in MLAPI as well (setting resize in mlapiconfig has no effect)
+  #  resize: 800
+  resize: no
+
+
+model_options:
+  # Show which model returned the prediction (useful when mixing models -> object + face/alpr)
+  # [Default: no] - This only sets the value, to enable you must add this in the sequence or general options of the model
+  show_models: yes
+
+  #  add the object with the highest confidence in same_model_sequence_strategy to the detections
+  # [Default: no]
+  same_model_high_conf: no
+
+  # Images to train ML models with!
+  # save 2 images to disk, 1 frame has nothing drawn on top of it, you can use it to label and train models
+  # the other frame is the objdetect.jpg frame basically, you can 'compare' what the current model found and what you want it/not want it to find
+  # format is <event ID>-training-<frame ID>.jpg and <event ID>-compare-<frame ID>.jpg
+  # [Default: {{base_data_path}}/images]
+  save_image_train: no
+  save_image_train_dir: /nas/yolo_train
+
+  # if yes, last detection will be stored for monitors
+  # and bounding boxes that match, along with labels
+  # will be discarded for new detections. This may be helpful
+  # in getting rid of static objects that get detected
+  # due to some motion.
+  match_past_detections: no
+
+  # The max difference in area between the objects if match_past_detection is on
+  # can also be specified in px like 300px. Default is 5%. Basically, bounding boxes of the same
+  # object can slightly differ ever so slightly between detection. Contributor @neillbell put in this PR
+  # to calculate the difference in areas and based on his tests, 5% worked well. YMMV. Change it if needed.
+  # Note: You can specify label/object specific max_diff_areas as well. If present, they override this value
+  # example:
+  # person_past_det_max_diff_area: 5%
+  # car_past_det_max_diff_area: 5000px
+  past_det_max_diff_area: 5%
+
+  # this is the maximum size a detected object can have. You can specify it in px or % just like past_det_max_diff_area
+  # This is pretty useful to eliminate bogus detection. In my case, depending on shadows and other lighting conditions,
+  # I sometimes see "car" or "person" detected that covers most of my driveway view. That is practically impossible
+  # and therefore I set mine to 70% because I know any valid detected objected cannot be larger than that area
+
+  #max_detection_size: 90%
 
   # Adds confidence percentage to the labels drawn onto the matching frame
   # (person) becomes (person 97%)
@@ -52,6 +215,7 @@ general:
   # it configurable. This could be helpful if you are testing your own trained models.
   show_conf_filtered: no
 
+hass_options:
   ###########################################
   #    ------ [ HOME ASSISTANT ADD-ON SECTION ] ------
   ###########################################
@@ -85,7 +249,13 @@ general:
   # hass_cooldown: input_number.pushover_cooldown_driveway
 
 
+push_notification_options:
+  # custom push script - example is for gotify - see example for usage of the passed arguments
+  custom_push: yes
+  custom_push_script: '{{base_data_path}}/bin/gotify_zmes.sh'
 
+
+  # PUSHOVER
   # BE AWARE GOTIFY IS FASTER, albeit with less features. You could use gotify as the 'first message' to be alerted quickly
   # Pushover but integrated directly into the detection script so it can be sent as fast as possible, by default it will
   # look for a GIF first then objdetect.jpg. If it doesnt find either then it goes for snapshot then alarm. If you arent
@@ -97,9 +267,7 @@ general:
   # ZMES or you can override that user and pass by setting push_user and push_pass
   # I recommend making an API user named 'pushover_url' or 'pushover_viewonly' and only giving it 'View' permission for
   # Events and Stream. The credentials/token are inside the notification payload and it is sent over https to pushover.
-  ###########################################
-  #    ------ [ PUSHOVER ADD-ON SECTION ] ------
-  ###########################################
+
   # Enable the PushOver python add-on? (Default: no)
   # Remember to turn off the api_push in zmeventnotification.yml or you will receive 2 different messages
   push_enable: no
@@ -172,10 +340,12 @@ general:
   # If the current time is within this time range, then the notification will be sent.
   # Uses a dateparser that accepts human-readable input like "yesterday at 9PM"
   push_emerg_time_start: 'yesterday 10 PM'  # Default 'midnight' - TESTING! unexpected things may happen regarding timerange!
+  # If event happens after midnight it works as expected but before midnight it does not - working on a solution.
   push_emerg_time_end: '8 AM'  # default: '23:59'
   push_emerg_force: no  # force sending an emergency pushover notification even if it is not a LIVE event
   # NOTE: The notification will be processed normally if the emergency priority is stripped from it.
 
+mqtt_options:
   ###########################################
   #    ------ [ MQTT ADD-ON SECTION ] ------
   ###########################################
@@ -228,7 +398,7 @@ general:
   #tls_cert :  /path_to/mqtt_certs/client-zm.crt
   #tls_key :  /path_to/mqtt_certs/client-zm.key
 
-
+animation_options:
   ###########################################
   #    ------ [ ANIMATION SECTION ] ------
   ###########################################
@@ -298,6 +468,7 @@ general:
   animation_retry_sleep: 3
   animation_max_tries: 8
 
+mlapi_options:
   ###########################################
   #    ------ [ MLAPI / REMOTE SECTION ] ------
   ###########################################
