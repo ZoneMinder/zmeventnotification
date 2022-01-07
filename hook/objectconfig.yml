@@ -496,13 +496,13 @@ openalpr_cmdline_min_confidence: 0.3
 
 monitors:
   6942069:
-    #Front Main Stream
     # TO IDENTIFY POLYGONS make sure they end with _polygonzone or _polygon_zone
+    # NOTE: THIS I STHE LEGACY WAY TO DEFINE ZONES
     # 1080p polygon
     #  front_yard_polygonzone: 0,427 1085,261 1075,200 1912,448 1912,1071 0,1079
     # 4K polygon
-    front_yard_polygonzone: 0,877 2170,553 3822,1131 3822,2141 0,2159
-    front_yard_zone_detection_pattern: (person|dog|cat)
+#    front_yard_polygonzone: 0,877 2170,553 3822,1131 3822,2141 0,2159
+#    front_yard_zone_detection_pattern: (person|dog|cat)
     object_detection_pattern: (person|dog|cat)
     frame_set: snapshot,70,snapshot,140,210,alarm,280,350,430
     model_sequence: object
@@ -545,253 +545,263 @@ monitors:
     push_sound_dog:
     push_sound_cat:
 
-# FUTURE DATA STRUCTURE FOR DEFINED ZONES AKA POLYGONS AKA ZONES
-    defined zones:
-      # specify the polygon points in clockwise order
-      front_walkway:
-        pattern: (person|dog|cat)
-        polygon_hw: h,w  # or w,h
-        3840x2160: 0,877 2170,553 3822,1131 3822,2141 0,2159  # AKA 4K
-        1920x1080: 0,427 1085,261 1075,200 1912,448 1912,1071 0,1079
-        #1080x1920: 0,427 1085,261 1075,200 1912,448 1912,1071 0,1079  # depending on your polygon_hw
-        1280x720:
-        480:
-        320:
-      front_porch:
-        1080:
-        720:
-        320:
+    # NEW way to define zones
+    zones:
+      parking_area:
+        # Polygon points
+        coords: 805,200 1897,125 1910,562 7,594
+        # detection pattern REGEX
+        pattern: (person)
+        # These filters will take precedence over individual per-sequence options AND blanket model options (car_min_confidence)
+        # These are known as ZONE FILTERS
+        contains:
+          # 85% of car bounding box must be contained within this zones area
+          car: 85%
+          # 1 pixel of the person bounding box must be contained in this zones area
+          person: 1px
+        max_size:
+          # max size of the detected object
+          person: 60%
+        min_conf:
+          # min confidence of the detected object
+          person: 0.60
+
+        past_area_diff:
+          # match_past_detections
+          # difference in area between the detected object and the saved bounding box
+          person: 0.10
 
 
-###########################################
-#    ------ [ MACHINE LEARNING SEQUENCES SECTION ] ------
-###########################################
-# 'smart_fps_thresh' -> if you have a frame_set of 'alarm,snapshot,120,180,240,320,380,440,snapshot' and it is a LIVE
-# event. If the event is going to end up being 45 seconds long and frame_set calls a frame ID that is 'out of bounds'
-# i.e. event frame buffer is only @ 275 and frame_set requested 320, that's an overage of 45 frames. if your fps is 10 that's
-# 4.5 seconds over. if smart_fps_thresh is set to 8 (4.5 seconds is inside the 'threshold') it will wait around and
-# attempt to keep grabbing the frame up to 3 attempts later with a wait time calculated to be roughly the 8 seconds.
-# The default action is to set the frame ID to the last available frame and process that frame instead. That is what
-# will happen if the frame ID called is 8+ seconds worth of frames later (FPS is calculated in the script)
-# I think 4-8 is a good compromise for speed and being able to process a large spaced out frame set like the example above
-smart_fps_thresh: 5
+sequences:
+  ###########################################
+  #    ------ [ MACHINE LEARNING SEQUENCES SECTION ] ------
+  ###########################################
+  # 'smart_fps_thresh' -> if you have a frame_set of 'alarm,snapshot,120,180,240,320,380,440,snapshot' and it is a LIVE
+  # event. If the event is going to end up being 45 seconds long and frame_set calls a frame ID that is 'out of bounds'
+  # i.e. event frame buffer is only @ 275 and frame_set requested 320, that's an overage of 45 frames. if your fps is 10 that's
+  # 4.5 seconds over. if smart_fps_thresh is set to 8 (4.5 seconds is inside the 'threshold') it will wait around and
+  # attempt to keep grabbing the frame up to 3 attempts later with a wait time calculated to be roughly the 8 seconds.
+  # The default action is to set the frame ID to the last available frame and process that frame instead. That is what
+  # will happen if the frame ID called is 8+ seconds worth of frames later (FPS is calculated in the script)
+  # I think 4-8 is a good compromise for speed and being able to process a large spaced out frame set like the example above
+  smart_fps_thresh: 5
 
-# if enabled, will not grab exclusive locks before inferring
-# locking seems to cause issues on some unique file systems
-disable_locks: no
-stream_sequence:
-  # 'most_models' (object+face+alpr), 'most', 'most_unique', 'first' #TYLER ADD 'union' for multiple frame detections per event!
-  frame_strategy: '{{frame_strategy}}'
-  frame_set: '{{frame_set}}'
-  # ANY of the delay options can be set as xx or xx.yy
-  # contig attempts and sleep
-  contig_frames_before_error: 2
-  delay_between_attempts: 2.143256
-  max_attempts: 3  # attempts per frame (this is a 'batch' for above setting)
-#  delay_between_frames: 0.4 # delay between every frame in frame_set
-#  delay_between_snapshots takes precedence over the delay_between_frames if there will be a delay from both
-  delay_between_snapshots: 1  # between snapshot frames, so previous frame has to be a snapshot and so does current
-  smart_fps_thresh: '{{smart_fps_thresh}}'
+  # if enabled, will not grab exclusive locks before inferring
+  # locking seems to cause issues on some unique file systems
+  disable_locks: no
+  stream_sequence:
+    # 'most_models' (object+face+alpr), 'most', 'most_unique', 'first' #TYLER ADD 'union' for multiple frame detections per event!
+    frame_strategy: '{{frame_strategy}}'
+    frame_set: '{{frame_set}}'
+    # ANY of the delay options can be set as xx or xx.yy
+    # contig attempts and sleep
+    contig_frames_before_error: 2
+    delay_between_attempts: 2.143256
+    max_attempts: 3  # attempts per frame (this is a 'batch' for above setting)
+  #  delay_between_frames: 0.4 # delay between every frame in frame_set
+  #  delay_between_snapshots takes precedence over the delay_between_frames if there will be a delay from both
+    delay_between_snapshots: 1  # between snapshot frames, so previous frame has to be a snapshot and so does current
+    smart_fps_thresh: '{{smart_fps_thresh}}'
 
-  # save every frame that is sent to the detection models. If you are processing a video or are getting weird results
-  # turn this on and review the frames in the 'save_frames_dir' directory.
-  # For thew time being it is your responsibility to clean up the directory after you are done (Script to do daily clean ups coming)
-  save_frames: 'no'  # (Default: no)
-  save_frames_dir:  # (Default: /tmp) - directory to save the 'save_frames' to
+    # save every frame that is sent to the detection models. If you are processing a video or are getting weird results
+    # turn this on and review the frames in the 'save_frames_dir' directory.
+    # For thew time being it is your responsibility to clean up the directory after you are done (Script to do daily clean ups coming)
+    save_frames: 'no'  # (Default: no)
+    save_frames_dir:  # (Default: /tmp) - directory to save the 'save_frames' to
 
-  # When controlling a video file
-#  start_frame: 1
-#  frame_skip: 1
-#  max_frames: 0
+    # When controlling a video file
+  #  start_frame: 1
+  #  frame_skip: 1
+  #  max_frames: 0
 
-#  If it is an event download mp4 file for the event and process the mp4 file instead of requesting frame by frame
-#  from the API *** NOTE: You must have 'H264 Passthrough' Video Writer enabled in the monitor settings for this to work
-#  pre_download: true
-#  pre_download_dir:   # (Default: /tmp) - directory to save the frames into
+  #  If it is an event download mp4 file for the event and process the mp4 file instead of requesting frame by frame
+  #  from the API *** NOTE: You must have 'H264 Passthrough' Video Writer enabled in the monitor settings for this to work
+  #  pre_download: true
+  #  pre_download_dir:   # (Default: /tmp) - directory to save the frames into
 
-ml_sequence:
-  general:
-    model_sequence: '{{model_sequence}}'
-    disable_locks: '{{disable_locks}}'
-    match_past_detections: '{{match_past_detections}}'
-    past_det_max_diff_area: '{{past_det_max_diff_area}}'
-#     ignore_past_detection_labels: ['dog', 'cat']
-#     when matching past detections, names in a group are treated the same
-#     also adding <alias>_min_confidence <alias>_past_det_max_diff_size
-#     example -> vehicles_min_confidence :  0.66
-    aliases:
-      vehicles: [ 'car', 'bus', 'truck', 'boat', 'motorcycle' ]
-      plants: [ 'broccoli', 'pottedplant', 'potted_plant' ]
-      animals: [ 'dog','cat','mouse','horse' ]
-  #          NOTE! per label overrides go here in 'general'
-#      person_min_confidence: '{{person_min_confidence}}'
-#      car_min_confidence: '{{car_min_confidence}}'
-#      dog_min_confidence: '{{dog_min_confidence}}'
-#      person_contained_area: '{{person_contained_area}}'
-#      car_contained_area: '{{car_contained_area}}'
-#      dog_contained_area: '{{dog_contained_area}}'
-#      person_past_det_max_diff_area: '{{person_past_det_max_diff_area}}'
-#      car_past_det_max_diff_area: '{{car_past_det_max_diff_area}}'
-#      dog_past_det_max_diff_area: '{{dog_past_det_max_diff_area}}'
-#      car_max_detection_size: '{{car_max_detection_size}}'
-#      dog_max_detection_size: '{{dog_max_detection_size}}'
-#      person_max_detection_size: '{{person_max_detection_size}}'
-  object:
+  ml_sequence:
     general:
-      object_detection_pattern: '{{object_detection_pattern}}'
-#       'first', 'most', 'most_unique', ****** 'union'
-      same_model_sequence_strategy: '{{same_model_sequence_strategy}}'
-#       HAS to be inside object->general as it only applies to object detection
-      contained_area: '{{contained_area}}'
-    sequence:
-#         First run on TPU with higher confidence
-      - name: 'coral::SSD-Lite MobileDet 312x312'
-        enabled: 'no'
-        object_weights: '{{tpu_object_weights_mobiledet}}'
-        object_labels: '{{tpu_object_labels}}'
-        object_min_confidence: '{{tpu_min_confidence}}'
-        object_framework: '{{tpu_object_framework}}'
-        tpu_max_processes: '{{tpu_max_processes}}'
-        tpu_max_lock_wait: '{{tpu_max_lock_wait}}'
-        max_detection_size: '{{max_detection_size}}'
-      #      Second try MobileNetv2 object detection to compare to MobileDet results
-      - name: 'coral::MobileNETv2-SSD 300x300'
-        enabled: 'no'
-        object_weights: '{{tpu_object_weights_mobilenetv2}}'
-        object_labels: '{{tpu_object_labels}}'
-        object_min_confidence: '{{tpu_min_confidence}}'
-        object_framework: '{{tpu_object_framework}}'
-        tpu_max_processes: '{{tpu_max_processes}}'
-        tpu_max_lock_wait: '{{tpu_max_lock_wait}}'
-        max_detection_size: '{{max_detection_size}}'
-        model_height: 300
-        model_width: 300
-      # New models
-      - name: 'coral::MobileNETv2-SSD TensorFlow 2.0 300x300'
-        enabled: 'no'
-        object_weights: '{{tpu_tf2_mobilenetv2}}'
-        object_labels: '{{tpu_object_labels}}'
-        object_min_confidence: '{{tpu_min_confidence}}'
-        object_framework: '{{tpu_object_framework}}'
-        tpu_max_processes: '{{tpu_max_processes}}'
-        tpu_max_lock_wait: '{{tpu_max_lock_wait}}'
-        max_detection_size: '{{max_detection_size}}'
-        model_height: 300
-        model_width: 300
+      model_sequence: '{{model_sequence}}'
+      disable_locks: '{{disable_locks}}'
+      match_past_detections: '{{match_past_detections}}'
+      past_det_max_diff_area: '{{past_det_max_diff_area}}'
+  #     ignore_past_detection_labels: ['dog', 'cat']
+  #     when matching past detections, names in a group are treated the same
+  #     also adding <alias>_min_confidence <alias>_past_det_max_diff_size
+  #     example -> vehicles_min_confidence :  0.66
+      aliases:
+        vehicles: [ 'car', 'bus', 'truck', 'boat', 'motorcycle' ]
+        plants: [ 'broccoli', 'pottedplant', 'potted_plant' ]
+        animals: [ 'dog','cat','mouse','horse' ]
+    #          NOTE! per label overrides go here in 'general'
+  #      person_min_confidence: '{{person_min_confidence}}'
+  #      car_min_confidence: '{{car_min_confidence}}'
+  #      dog_min_confidence: '{{dog_min_confidence}}'
+  #      person_contained_area: '{{person_contained_area}}'
+  #      car_contained_area: '{{car_contained_area}}'
+  #      dog_contained_area: '{{dog_contained_area}}'
+  #      person_past_det_max_diff_area: '{{person_past_det_max_diff_area}}'
+  #      car_past_det_max_diff_area: '{{car_past_det_max_diff_area}}'
+  #      dog_past_det_max_diff_area: '{{dog_past_det_max_diff_area}}'
+  #      car_max_detection_size: '{{car_max_detection_size}}'
+  #      dog_max_detection_size: '{{dog_max_detection_size}}'
+  #      person_max_detection_size: '{{person_max_detection_size}}'
+    object:
+      general:
+        object_detection_pattern: '{{object_detection_pattern}}'
+  #       'first', 'most', 'most_unique', ****** 'union'
+        same_model_sequence_strategy: '{{same_model_sequence_strategy}}'
+  #       HAS to be inside object->general as it only applies to object detection
+        contained_area: '{{contained_area}}'
+      sequence:
+  #         First run on TPU with higher confidence
+        - name: 'coral::SSD-Lite MobileDet 312x312'
+          enabled: 'no'
+          object_weights: '{{tpu_object_weights_mobiledet}}'
+          object_labels: '{{tpu_object_labels}}'
+          object_min_confidence: '{{tpu_min_confidence}}'
+          object_framework: '{{tpu_object_framework}}'
+          tpu_max_processes: '{{tpu_max_processes}}'
+          tpu_max_lock_wait: '{{tpu_max_lock_wait}}'
+          max_detection_size: '{{max_detection_size}}'
+        #      Second try MobileNetv2 object detection to compare to MobileDet results
+        - name: 'coral::MobileNETv2-SSD 300x300'
+          enabled: 'no'
+          object_weights: '{{tpu_object_weights_mobilenetv2}}'
+          object_labels: '{{tpu_object_labels}}'
+          object_min_confidence: '{{tpu_min_confidence}}'
+          object_framework: '{{tpu_object_framework}}'
+          tpu_max_processes: '{{tpu_max_processes}}'
+          tpu_max_lock_wait: '{{tpu_max_lock_wait}}'
+          max_detection_size: '{{max_detection_size}}'
+          model_height: 300
+          model_width: 300
+        # New models
+        - name: 'coral::MobileNETv2-SSD TensorFlow 2.0 300x300'
+          enabled: 'no'
+          object_weights: '{{tpu_tf2_mobilenetv2}}'
+          object_labels: '{{tpu_object_labels}}'
+          object_min_confidence: '{{tpu_min_confidence}}'
+          object_framework: '{{tpu_object_framework}}'
+          tpu_max_processes: '{{tpu_max_processes}}'
+          tpu_max_lock_wait: '{{tpu_max_lock_wait}}'
+          max_detection_size: '{{max_detection_size}}'
+          model_height: 300
+          model_width: 300
 
-      - name: 'coral::EfficientDet-Lite 3 512x512'
-        enabled: 'no'
-        object_weights: '{{tpu_efficientdet_lite3}}'
-        object_labels: '{{tpu_object_labels}}'
-        object_min_confidence: '{{tpu_min_confidence}}'
-        object_framework: '{{tpu_object_framework}}'
-        tpu_max_processes: '{{tpu_max_processes}}'
-        tpu_max_lock_wait: '{{tpu_max_lock_wait}}'
-        max_detection_size: '{{max_detection_size}}'
-        model_height: 512
-        model_width: 512
+        - name: 'coral::EfficientDet-Lite 3 512x512'
+          enabled: 'no'
+          object_weights: '{{tpu_efficientdet_lite3}}'
+          object_labels: '{{tpu_object_labels}}'
+          object_min_confidence: '{{tpu_min_confidence}}'
+          object_framework: '{{tpu_object_framework}}'
+          tpu_max_processes: '{{tpu_max_processes}}'
+          tpu_max_lock_wait: '{{tpu_max_lock_wait}}'
+          max_detection_size: '{{max_detection_size}}'
+          model_height: 512
+          model_width: 512
 
-      - name: 'DarkNet::v4 Pre-Trained'
-#        enabled: 'no'
-        object_config: '{{yolo4_object_config}}'
-        object_weights: '{{yolo4_object_weights}}'
-        object_labels: '{{yolo4_object_labels}}'
-        object_min_confidence: '{{object_min_confidence}}'
-        object_framework: '{{yolo4_object_framework}}'
-        object_processor: '{{yolo4_object_processor}}'
-        gpu_max_processes: '{{gpu_max_processes}}'
-        gpu_max_lock_wait: '{{gpu_max_lock_wait}}'
-        cpu_max_processes: '{{cpu_max_processes}}'
-        cpu_max_lock_wait: '{{cpu_max_lock_wait}}'
-        #      only applies to GPU, default is FP32; *** EXPERIMENTAL ***
-#        fp16_target: '{{fp16_target}}'
-        #      at current moment this is a global setting turned on by just setting it to : yes
-        show_models: '{{show_models}}'
+        - name: 'DarkNet::v4 Pre-Trained'
+  #        enabled: 'no'
+          object_config: '{{yolo4_object_config}}'
+          object_weights: '{{yolo4_object_weights}}'
+          object_labels: '{{yolo4_object_labels}}'
+          object_min_confidence: '{{object_min_confidence}}'
+          object_framework: '{{yolo4_object_framework}}'
+          object_processor: '{{yolo4_object_processor}}'
+          gpu_max_processes: '{{gpu_max_processes}}'
+          gpu_max_lock_wait: '{{gpu_max_lock_wait}}'
+          cpu_max_processes: '{{cpu_max_processes}}'
+          cpu_max_lock_wait: '{{cpu_max_lock_wait}}'
+          #      only applies to GPU, default is FP32; *** EXPERIMENTAL ***
+  #        fp16_target: '{{fp16_target}}'
+          #      at current moment this is a global setting turned on by just setting it to : yes
+          show_models: '{{show_models}}'
 
-      #      AWS Rekognition object detection
-      #      More info: https://medium.com/@michael-ludvig/aws-rekognition-support-for-zoneminder-object-detection-40b71f926a80
-      - name: 'AWS rekognition (PAID)'
-        enabled: 'no'
-        object_framework: 'aws_rekognition'
-        object_min_confidence: '0.7'
-        #      AWS region unless configured otherwise, e.g. in ~www-data/.aws/config
-        aws_region: 'us-east-1'
-        #      AWS credentials from /etc/zm/secrets.yml
-        #      unless running on EC2 instance with instance IAM role (which is preferable)
-        aws_access_key_id: '{[AWS_ACCESS_KEY_ID]}'
-        aws_secret_access_key: '{[AWS_SECRET_ACCESS_KEY]}'
-  #       no other parameters are required
+        #      AWS Rekognition object detection
+        #      More info: https://medium.com/@michael-ludvig/aws-rekognition-support-for-zoneminder-object-detection-40b71f926a80
+        - name: 'AWS rekognition (PAID)'
+          enabled: 'no'
+          object_framework: 'aws_rekognition'
+          object_min_confidence: '0.7'
+          #      AWS region unless configured otherwise, e.g. in ~www-data/.aws/config
+          aws_region: 'us-east-1'
+          #      AWS credentials from /etc/zm/secrets.yml
+          #      unless running on EC2 instance with instance IAM role (which is preferable)
+          aws_access_key_id: '{[AWS_ACCESS_KEY_ID]}'
+          aws_secret_access_key: '{[AWS_SECRET_ACCESS_KEY]}'
+    #       no other parameters are required
 
-  alpr:
-    general:
-      #        every frame you send is counted as an API hit if using the cloud API
-      same_model_sequence_strategy: 'first'
-      #        pre_existing_labels: ['car', 'motorbike', 'bus', 'truck', 'boat']
-      #        can make it a reg-ex for certain license plate numbers
-      alpr_detection_pattern: '{{alpr_detection_pattern}}'
-    sequence:
-      #       Try openALPR locally first (tweak with per camera openalpr.conf files, pre-warp and calibration, etc.)
-      #       also remember masks for timestamps etc. per camera config files are powerful though
-      - name: 'openALPR Command Line'
-#        enabled: 'no'
-        alpr_service: 'open_alpr_cmdline'
-        openalpr_cmdline_binary: '{{openalpr_cmdline_binary}}'
-        openalpr_cmdline_params: '{{openalpr_cmdline_params}}'
-        openalpr_cmdline_min_confidence: '{{openalpr_cmdline_min_confidence}}'
-        max_size: '1600'
+    alpr:
+      general:
+        #        every frame you send is counted as an API hit if using the cloud API
+        same_model_sequence_strategy: 'first'
+        #        pre_existing_labels: ['car', 'motorbike', 'bus', 'truck', 'boat']
+        #        can make it a reg-ex for certain license plate numbers
+        alpr_detection_pattern: '{{alpr_detection_pattern}}'
+      sequence:
+        #       Try openALPR locally first (tweak with per camera openalpr.conf files, pre-warp and calibration, etc.)
+        #       also remember masks for timestamps etc. per camera config files are powerful though
+        - name: 'openALPR Command Line'
+  #        enabled: 'no'
+          alpr_service: 'open_alpr_cmdline'
+          openalpr_cmdline_binary: '{{openalpr_cmdline_binary}}'
+          openalpr_cmdline_params: '{{openalpr_cmdline_params}}'
+          openalpr_cmdline_min_confidence: '{{openalpr_cmdline_min_confidence}}'
+          max_size: '1600'
 
-      - name: 'Platerecognizer Cloud Service'
-        enabled: 'no'
-        #           pel_any means as long as there are any detections, pel_none means only if there are no detections yet
-        #           pre_existing_labels: 'pel_any'
-        #           pre_existing_labels: ['car', 'motorbike', 'bus', 'truck', 'boat']
-        alpr_api_type: 'cloud'
-        alpr_service: 'plate_recognizer'
-        alpr_key: '{{alpr_key}}'
-        platrec_stats: '{{platerec_stats}}'
-        platerec_min_dscore: '{{platerec_min_dscore}}'
-        platerec_min_score: '{{platerec_min_score}}'
-#         max_size: '1600'
-        platerec_payload:
-          regions: [ 'ca' ]
-  #       camera_id: 12
-  #     platerec_config:
-  #       region: 'strict'
-  #       mode: 'fast'
+        - name: 'Platerecognizer Cloud Service'
+          enabled: 'no'
+          #           pel_any means as long as there are any detections, pel_none means only if there are no detections yet
+          #           pre_existing_labels: 'pel_any'
+          #           pre_existing_labels: ['car', 'motorbike', 'bus', 'truck', 'boat']
+          alpr_api_type: 'cloud'
+          alpr_service: 'plate_recognizer'
+          alpr_key: '{{alpr_key}}'
+          platrec_stats: '{{platerec_stats}}'
+          platerec_min_dscore: '{{platerec_min_dscore}}'
+          platerec_min_score: '{{platerec_min_score}}'
+  #         max_size: '1600'
+          platerec_payload:
+            regions: [ 'ca' ]
+    #       camera_id: 12
+    #     platerec_config:
+    #       region: 'strict'
+    #       mode: 'fast'
 
-  face:
-    general:
-      face_detection_pattern: '{{face_detection_pattern}}'
-      # combine results below
-      same_model_sequence_strategy: 'union'
-    sequence:
-      - name: 'Face Detection -> coral::MobileNETv2-SSD 320x320'
-        enabled: 'no'
-        face_detection_framework: 'tpu'
-        face_weights: '{{tpu_face_weights_mobilenetv2}}'
-        face_min_confidence: 0.3
-        model_height: 320
-        model_width: 320
+    face:
+      general:
+        face_detection_pattern: '{{face_detection_pattern}}'
+        # combine results below
+        same_model_sequence_strategy: 'union'
+      sequence:
+        - name: 'Face Detection -> coral::MobileNETv2-SSD 320x320'
+          enabled: 'no'
+          face_detection_framework: 'tpu'
+          face_weights: '{{tpu_face_weights_mobilenetv2}}'
+          face_min_confidence: 0.3
+          model_height: 320
+          model_width: 320
 
-      - name: 'DLib::Face Detection/Recognition'
-#        enabled: 'no'
-        # Force CPU detection if you have a GPU (Before dlib used GPU if it was compiled with CUDA support regardless)
-#        face_dlib_processor: cpu
+        - name: 'DLib::Face Detection/Recognition'
+  #        enabled: 'no'
+          # Force CPU detection if you have a GPU (Before dlib used GPU if it was compiled with CUDA support regardless)
+  #        face_dlib_processor: cpu
 
-        # If you use TPU detection first, we can run this ONLY if TPU detects a face first
-#        pre_existing_labels: [ 'face' ]
-        save_unknown_faces: '{{save_unknown_faces}}'
-        save_unknown_faces_leeway_pixels: '{{save_unknown_faces_leeway_pixels}}'
-        face_detection_framework: '{{face_detection_framework}}'
-        known_images_path: '{{known_images_path}}'
-        unknown_images_path: '{{unknown_images_path}}'
-        face_model: '{{face_model}}'
-        face_train_model: '{{face_train_model}}'
-        face_recog_dist_threshold: '{{face_recog_dist_threshold}}'
-        face_num_jitters: '{{face_num_jitters}}'
-        face_upsample_times: '{{face_upsample_times}}'
-        gpu_max_processes: '{{gpu_max_processes}}'
-        gpu_max_lock_wait: '{{gpu_max_lock_wait}}'
-        cpu_max_processes: '{{cpu_max_processes}}'
-        cpu_max_lock_wait: '{{cpu_max_lock_wait}}'
-        max_size: 800
+          # If you use TPU detection first, we can run this ONLY if TPU detects a face first
+  #        pre_existing_labels: [ 'face' ]
+          save_unknown_faces: '{{save_unknown_faces}}'
+          save_unknown_faces_leeway_pixels: '{{save_unknown_faces_leeway_pixels}}'
+          face_detection_framework: '{{face_detection_framework}}'
+          known_images_path: '{{known_images_path}}'
+          unknown_images_path: '{{unknown_images_path}}'
+          face_model: '{{face_model}}'
+          face_train_model: '{{face_train_model}}'
+          face_recog_dist_threshold: '{{face_recog_dist_threshold}}'
+          face_num_jitters: '{{face_num_jitters}}'
+          face_upsample_times: '{{face_upsample_times}}'
+          gpu_max_processes: '{{gpu_max_processes}}'
+          gpu_max_lock_wait: '{{gpu_max_lock_wait}}'
+          cpu_max_processes: '{{cpu_max_processes}}'
+          cpu_max_lock_wait: '{{cpu_max_lock_wait}}'
+          max_size: 800
