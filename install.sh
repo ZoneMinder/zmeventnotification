@@ -195,6 +195,7 @@ verify_config() {
 install_es() {
     echo '*** Installing ES ***'
     mkdir -p "${TARGET_DATA}/push" 2>/dev/null
+    install -m 755 -o ${WEB_OWNER} -g ${WEB_GROUP} tools/tokens.txt "${TARGET_DATA}/push"
     install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN_ES}" &&
             print_success "Completed, but you will still have to install ES dependencies as per https://zmeventnotification.readthedocs.io/en/latest/guides/install.html#install-dependencies"  || print_error "failed"
     #echo "Done, but you will still have to manually install all ES dependencies as per https://github.com/pliablepixels/zmeventnotification#how-do-i-install-it"
@@ -379,7 +380,7 @@ install_hook() {
 
     echo "*** Installing push api plugins and new custom push script shell script option ***"
      install -m 755 -o "${WEB_OWNER}" pushapi_plugins/pushapi_pushover.py "${TARGET_BIN_HOOK}"
-     install -m 755 -o "${WEB_OWNER}" tools/zmes_gotify.sh "${TARGET_BIN_HOOK}"
+     install -m 755 -o "${WEB_OWNER}" tools/gotify_zmes.sh "${TARGET_BIN_HOOK}"
 
 
 
@@ -406,7 +407,7 @@ install_hook() {
 
     echo "Removing old source version of pyzm (from ZM repos). baudneo fork and ZoneMinder repo zmes, pyzm or mlapi are not compatible."
     echo "Only baudneo pyzm, zmeventnotification and mlapi or the source ZM repos pyzm, zmeventnotification and mlapi."
-    ${PY_SUDO} ${PIP} uninstall -y pyzm # >/dev/null 2>&1
+    ${PY_SUDO} ${PIP} uninstall -y pyzm >/dev/null 2>&1
 
 #    ZM_DETECT_VERSION=`./hook/zm_detect.py --bareversion`
 #    echo "__version__ = \"${ZM_DETECT_VERSION}\"" > hook/zmes_hook_helpers/__init__.py
@@ -444,11 +445,10 @@ install_hook_config() {
     echo 'Replacing Object Detection Hook config file (includes the default config)'
     install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.yml "${TARGET_CONFIG}" &&
       install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/zm_secrets.yml "${TARGET_CONFIG}" &&
-       install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" hook/.zmes_default_config.yml "${TARGET_DATA}/misc" &&
         print_success "YAML config and secrets copied" || print_error "could not copy YAML config or secrets"
     echo "====> Remember to fill in the right values in the YAML config files, or your system won't work! <============="
     echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN_HOOK}/zm_event_start.sh! <========"
-    echo
+    echo ''
     [[ -a "${TARGET_CONFIG}/zm.conf" ]] && chgrp "${WEB_GROUP}" "${TARGET_CONFIG}/zm.conf" && \
     chmod g+w "${TARGET_CONFIG}/zm.conf" && echo "Changed ${TARGET_CONFIG}/zm.conf to allow GROUP: ${WEB_GROUP} "\
     "access to read/write"
