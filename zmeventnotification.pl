@@ -1440,12 +1440,14 @@ sub checkNewEvents() {
     
 
     if ($update_tokens && $use_fcm) {
-      open( my $fh, '>', $token_file )
-      or printError("Error writing tokens file during count update: $!");
-      my $json = encode_json( \%tokens_data );
-      #print Dumper(\%tokens_data);
-      print $fh $json;
-      close($fh);
+      if (open(my $fh, '>', $token_file)) {
+        my $json = encode_json(\%tokens_data);
+        #print Dumper(\%tokens_data);
+        print $fh $json;
+        close($fh);
+      } else {
+        printError("Error writing tokens file $token_file during count update: $!");
+      }
     }
 
     foreach my $monitor ( values(%monitors) ) {
