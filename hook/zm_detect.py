@@ -139,7 +139,7 @@ DEFAULT_CONFIG: dict = safe_load('''
 
     push_debug_device: '' 
     push_cooldown: ''
-    
+
     push_emergency: no
     #push_emerg_mons: ''
     push_emerg_expire: 3600
@@ -147,7 +147,7 @@ DEFAULT_CONFIG: dict = safe_load('''
     push_emerg_time_start: '00:00'
     push_emerg_time_end: '23:59'
     push_emerg_force: no
-    
+
     mqtt_enable: no
     mqtt_force: no
     mqtt_topic: ''
@@ -303,13 +303,14 @@ def _get_jwt_filename(ml_api_url):
         _file_name = _file_name[0]
     return _file_name
 
+
 def remote_login(user, password, ml_api_url: str):
     access_token: Optional[str] = None
     lp = "zmes:mlapi:login:"
     ml_login_url = f"{ml_api_url}/login"
     _file_name = _get_jwt_filename(ml_api_url)
     # todo: add to a cron cleanup job or something
-    jwt_file = f"{g.config['base_data_path']}/{_file_name}_login.json"  # mlapi access_token
+    jwt_file = f"{g.config['base_data_path']}/misc/{_file_name}_login.json"  # mlapi access_token
     if Path(jwt_file).is_file():
         try:
             with open(jwt_file) as json_file:
@@ -326,7 +327,7 @@ def remote_login(user, password, ml_api_url: str):
             access_token = data["token"]
             # epoch timestamp
             now = time.time()
-            # lets make sure there is at least 30 secs left
+            # let's make sure there is at least 30 secs left
             if int(now + 30 - generated) >= expires:
                 g.logger.debug(
                     f"{lp} found access token, but it has or is about to expire. Need to login to MLAPI host..."
@@ -640,7 +641,8 @@ def get_es_version() -> str:
 def _parse_args():
     ap = ArgumentParser()
     ap.add_argument("--docker", action="store_true", help="verbose output")
-    ap.add_argument('--new', help="a flag to indicate the new (1.35.7) Event<Start/End>Command system", action='store_true')
+    ap.add_argument('--new', help="a flag to indicate the new (1.35.7) Event<Start/End>Command system",
+                    action='store_true')
     ap.add_argument(
         "-et",
         "--event-type",
@@ -820,6 +822,7 @@ def main_handler():
             conn.close()
             engine.dispose()
             g.logger.debug(f"perf:ZM DB: time to grab Monitor ID ({g.mid}): {time.perf_counter() - start_db:.4f}")
+
     bg_db: Thread = Thread(name='db_thread', target=_zmes_db, daemon=True)
     # Hack to get the VERIFIED monitor ID, until the monitor ID is passed along with the EventID for EventCommandStart
     bg_db.start()
@@ -877,7 +880,11 @@ def main_handler():
         print(f"ZONEMINDER: EventStartCommand was called -> {time_format(datetime.now())}")
         exit(0)
     # process the config using the arguments
-    g.eid = args.get("eventid", args.get("file"))
+    if args.get('eventid'):
+        g.eid = int(args.get('eventid'))
+    elif args.get('file'):
+        g.eid = args.get('file')
+
     start_conf: time.perf_counter = time.perf_counter()
     from pyzm.helpers.new_yaml import process_config as proc_conf
     zmes_config, g = proc_conf(args=args, type_='zmes')
@@ -902,6 +909,9 @@ def main_handler():
         if bg_db and bg_db.is_alive():
             g.logger.debug(f"{lp} waiting for the ZM DB thread to finish...")
             bg_db.join()
+        elif bg_api_thread and bg_api_thread.is_alive():
+            g.logger.debug(f"{lp} waiting for the ZM API thread to finish...")
+            bg_api_thread.join()
         if g.mid:
             g.logger.debug(
                 f"perf:{lp} Monitor ID ({g.mid}) verified! pausing to wait for verification took "
@@ -963,6 +973,7 @@ def main_handler():
     if zmes_config.polygons.get(g.mid):
         stream_options['polygons'] = zmes_config.polygons[g.mid]
     ml_options = g.config.get('ml_sequence')
+    g.api.get_all_event_data()
     # perl script (zmeventnotification.pl) modified to send 'live' flag for event start/end`
     if not args.get('file') and (not args.get("live") and not str2bool(g.config.get("force_live"))):
         stream_options["PAST_EVENT"] = g.config["PAST_EVENT"] = past_event = True
@@ -1046,7 +1057,6 @@ def main_handler():
                 )
                 break
         if str2bool(g.config.get('ml_fallback_local')) and not mlapi_success:
-
             start_of_local_fallback_detection = time.perf_counter()
             total_time_start_to_detect = start_of_local_fallback_detection - start_of_script
 
@@ -1351,7 +1361,8 @@ def main_handler():
                 # ---------------------------------
                 resp = None
                 ha_verified = verify_vals(g.config, {"hass_enable", "hass_server", "hass_token"})
-                if (str2bool(g.config.get('push_emergency')) and (not past_event or (past_event and str2bool(g.config.get("push_emerg_force"))))):
+                if (str2bool(g.config.get('push_emergency')) and (
+                        not past_event or (past_event and str2bool(g.config.get("push_emerg_force"))))):
                     g.logger.debug(f"{lp} pushover EMERGENCY notification enabled...")
                     emerg_mons: Union[str, set] = g.config.get('push_emerg_mons')
                     if emerg_mons:
@@ -1361,55 +1372,54 @@ def main_handler():
                             emerg_labels = set(str(emerg_labels).strip().split(','))
                             if not any(w in emerg_labels for w in matched_data.get("labels")):
                                 g.logger.debug(
-                                    f"You have specified emergency labels that are not in the detected objects, "
-                                    f"not sending an emergency alert...")
+                                    f"You have specified emergency labels ({emerg_labels}) that are not in the "
+                                    f"detected objects, not sending an emergency alert...")
                                 proceed = False
+                                send_push = True
 
                         if proceed:
+                            import dateparser
                             def time_in_range(start, end, current_):
                                 """Returns whether current is in the range [start, end]"""
                                 return start <= current_ <= end
+
                             # strip whitespace and convert the str into a list using a comma as the delimiter
                             # convert to a set to remove duplicates and then use set comprehension to ensure all int
                             emerg_mons = set(str(emerg_mons).strip().split(','))
                             emerg_mons = {int(x) for x in emerg_mons}
                             emerg_retry = int(g.config.get('push_emerg_retry', 120))
                             emerg_expire = int(g.config.get('push_emerg_expire', 3600))
-                            emerg_time_start = g.config.get('push_emerg_time_start')
-                            emerg_time_end = g.config.get('push_emerg_time_end')
-                            import dateparser
+                            emerg_time_start = g.config.get('push_emerg_time_start', '00:00:00')
+                            emerg_time_end = g.config.get('push_emerg_time_end', '23:59:59')
                             current = datetime.now().timestamp()
                             tz = g.config.get('push_emerg_tz', {})
                             if tz:
                                 tz = {'TIMEZONE': tz}
                                 g.logger.debug(f'{lp} Converting to TimeZone: {tz}')
-                            doit_ = False
-                            if emerg_time_start and emerg_time_end:
-                                emerg_time_start = dateparser.parse(emerg_time_start, settings=tz).timestamp()
-                                emerg_time_end = dateparser.parse(emerg_time_end, settings=tz).timestamp()
+                            # For logging purposes
+                            show_time_start = dateparser.parse(emerg_time_start, settings=tz)
+                            show_time_end = dateparser.parse(emerg_time_end, settings=tz)
+                            show_current = datetime.now()
 
-                                doit_ = True
-                            elif emerg_time_end:
-                                emerg_time_start = dateparser.parse('midnight', settings=tz).timestamp()
-                                emerg_time_end = dateparser.parse(emerg_time_end, settings=tz).timestamp()
-                                doit_ = True
-                            elif emerg_time_start:
-                                emerg_time_end = dateparser.parse('23:59:59', settings=tz).timestamp()
-                                emerg_time_start = dateparser.parse(emerg_time_start, settings=tz).timestamp()
-                                doit_ = True
-                            if g.mid in emerg_mons:
-                                _doit = True
-                                if doit_:
-                                    g.logger.debug(f"{current = } -- {emerg_time_start = } -- {emerg_time_end = }")
-
-                                    g.logger.debug(f"{lp} Checking current time to supplied timerange...")
-
-                                    emerg_in_time = time_in_range(emerg_time_start, emerg_time_end, current)
-                                    if not emerg_in_time:
-                                        g.logger.debug(f"{lp} it is currently not within the specified time range for "
-                                                       f"sending an emergency notification")
-                                        _doit = False
-                                if _doit:
+                            emerg_time_start = dateparser.parse(emerg_time_start, settings=tz).timestamp()
+                            emerg_time_end = dateparser.parse(emerg_time_end, settings=tz).timestamp()
+                            _doit = False
+                            if (
+                                    (
+                                            emerg_mons
+                                            and (g.mid in emerg_mons)
+                                    )
+                                    or not emerg_mons
+                            ):
+                                send_push = True
+                                g.logger.debug(f"{lp} Checking CURRENT: {show_current} to supplied "
+                                               f"timerange START: {show_time_start} - END: {show_time_end}")
+                                emerg_in_time = time_in_range(emerg_time_start, emerg_time_end, current)
+                                if not emerg_in_time:
+                                    g.logger.debug(f"{lp} it is currently not within the specified time range for "
+                                                   f"sending an emergency notification")
+                                    # send a regular priority notification
+                                else:
                                     g.logger.debug(f"{lp} sending pushover emergency notification...")
                                     param_dict['priority'] = 2
                                     param_dict['retry'] = emerg_retry
@@ -1430,8 +1440,8 @@ def main_handler():
                         )
                 ):
                     # TODO: use cv2.imencode and cv2.BGR2RGB instead of PIL Image, cv2 already imported.
-                    # convert image to a format that can be written to file, tried just cv2 but it's BGR
-                    # cv2.imencode can take cv2.BGR2RGB apparently so ill try that instead of using PIL import
+                    #  convert image to a format that can be written to file, tried just cv2 but it's BGR
+                    #   cv2.imencode can take cv2.BGR2RGB apparently so ill try that instead of using PIL import
                     pushover_image = objdetect_jpeg_image.copy()
                     pushover_image = cv2.cvtColor(pushover_image, cv2.COLOR_BGR2RGB)
                     pushover_image = Image.fromarray(pushover_image)
@@ -1479,7 +1489,6 @@ def main_handler():
                     display_param_dict["url"] = display_url
 
                     if matched_data.get("labels"):
-
                         vehicles = ('truck', 'car', 'motorbike', 'bus')
                         # priority is in descending order
                         labels = tuple(matched_data.get("labels"))
@@ -1907,12 +1916,12 @@ def main_handler():
 
     if bg_mqtt and bg_mqtt.is_alive():
         bg_mqtt.join()
-    return final_msg, g
+    return final_msg
 
 
 if __name__ == "__main__":
     try:
-        output_message, g = main_handler()
+        output_message = main_handler()
     except Exception as e:
         print(f"zmes: err_msg->{e}")
         print(f"zmes: traceback: {format_exc()}")
