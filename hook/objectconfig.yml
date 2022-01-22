@@ -486,7 +486,7 @@ mlapi_options:
   ###########################################
   # You can now run the machine learning code on a different server
   # This frees up your ZM server for other things
-  # To do this, you need to setup https://github.com/baudneo/mlapi
+  # To do this, you need to setup https://github.com/zoneminder/mlapi
   # on your desired server and configure it with a DB user (python3 mlapi_dbuser.py). See its instructions
 
   # This is the MASTER on/off switch for enabling communication to MLAPI, it must be yes/on/1/true to be enabled
@@ -505,7 +505,7 @@ mlapi_options:
       enabled: true
 
       gateway: 'http://localhost:5000/api/v1'
-      # The user to login to mlapi (one of the MLAPI DB user' created using mlapi_dbuser.py)
+      # The user to log in to mlapi (one of the MLAPI DB user' created using mlapi_dbuser.py)
       user: '{[ML_USER]}'
       pass: '{[ML_PASSWORD]}'
       # The key to use for encryption
