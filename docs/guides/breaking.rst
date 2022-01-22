@@ -1,6 +1,6 @@
 Breaking Changes
 ----------------
-'neo-ZMES' is starting out at version 0.0.1
+'neo-ZMES' is starting out at version 7.0.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 - ZMES is now configured using YAML syntax/structure (zmeventnotification.yml and secrets.yml are for the ES, objectconfig and zm_secrets are for the object detection hooks).
 - !SECRETS are now {[SECRETS]} - This allows for embedding in substrings and nested data structures.
