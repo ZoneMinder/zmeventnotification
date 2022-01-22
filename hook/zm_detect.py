@@ -51,7 +51,7 @@ from pyzm.helpers.pyzm_utils import (
 )
 
 lp: str = 'zmes:'
-__app_version__: str = "0.0.2"
+__app_version__: str = "7.0.0"
 DEFAULT_CONFIG: dict = safe_load('''
     custom_push: no
     custom_push_script: ''
