@@ -1425,7 +1425,6 @@ def main_handler():
                                     param_dict['retry'] = emerg_retry
                                     param_dict['expire'] = emerg_expire
                                     # Emergency notifications will bypass cooldown and off switch
-                                    send_push = True
                 if not send_push and ha_verified and str2bool(g.config.get("hass_enable")):
                     send_push = do_hass(g)
                     do_hast_micht = 'gefragt 🤘'

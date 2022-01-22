@@ -55,7 +55,7 @@ delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
 
 
 ####################################
-my $app_version = '7.0.0';
+my $app_version = '7.0.4';
 ####################################
 
 # do this before any log init etc.
