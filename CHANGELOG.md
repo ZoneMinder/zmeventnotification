@@ -5,7 +5,7 @@
 # Please be aware that 7.0.x will be the new development version.
 - Things may break or unexpected results may occur. **Please report any issues you find.**
 - I have tried to have users test my code base without much success, be aware that the testing so far is only my personal testing.
-## 7.0.3
+## 7.0.4
 ### The way that the config files are processed has been changed
 - To allow reevaluation of keys that were not in the base config. If you do not have `car_past_det_max_diff_size` configured in the BASE keys but have it inside a per monitor override, the key will be added to the base config and updated across the per-monitor cached configs! 
 

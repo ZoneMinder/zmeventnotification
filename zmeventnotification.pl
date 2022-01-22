@@ -33,7 +33,8 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 # ==========================================================================
-# use warnings;
+
+use warnings;
 use strict;
 use bytes;
 use POSIX ':sys_wait_h';
@@ -2534,9 +2535,9 @@ sub processJobs {
           "Job: Update active_event eid:$eid, mid:$mid, type:$type, field:$key to: $val",
           2
         );
-        $active_events{$mid}->{$eid}->{$type}->{State} = $val
-          if ( $key eq 'State' );
-        if ( $key eq 'Cause' ) {
+        if ( $key eq 'State' ) {
+          $active_events{$mid}->{$eid}->{$type}->{State} = $val;
+        } elsif ( $key eq 'Cause' ) {
           my ( $causeTxt, $causeJson ) = split( '--JSON--', $val );
           $active_events{$mid}->{$eid}->{$type}->{Cause} = $causeTxt;
 
@@ -3073,24 +3074,16 @@ sub processIncomingMessage {
         # && ( $_->{state} == PENDING_AUTH ) ) # lets allow multiple auths
       {
         if ( !validateAuth( $uname, $pwd, $category ) ) {
-
-          my $reason = 'BADAUTH';
-          $reason = 'ESCONTROLDISABLED'
-            if ( $category eq 'escontrol' && !$use_escontrol_interface );
-          # TYLER auth for escontrol? esadmin? es WS?
           # bad username or password, so reject and mark for deletion
           my $str = encode_json(
             { event  => 'auth',
               type   => '',
               status => 'Fail',
-              reason => $reason
+              reason => (( $category eq 'escontrol' && !$use_escontrol_interface ) ? 'ESCONTROLDISABLED' : 'BADAUTH')
             }
           );
           eval { $_->{conn}->send_utf8($str); };
-          if ($@) {
-            Error("Error sending BADAUTH: $@");
-
-          }
+          Error("Error sending BADAUTH: $@") if $@;
           #printInfo( "UNAUTHORIZED login attempted by " . $_->{conn}->ip() );
           printDebug(
             'marking for deletion - bad authentication provided by '
@@ -3430,7 +3423,7 @@ sub uniq {
 
     # not interested in monlist & intlist
     if ( !$seen{$token}++ ) {
-      push @farray, "$token:$monlist:$intlist:$platform:$pushstate";
+      push @farray, join(':',$token,$monlist,$intlist,$platform,$pushstate);
     }
 
   }

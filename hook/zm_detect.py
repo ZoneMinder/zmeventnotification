@@ -18,7 +18,7 @@ from pathlib import Path
 from re import findall
 from threading import Thread
 from traceback import format_exc
-from typing import Optional, Union
+from typing import Optional, Union, Set
 
 import cv2
 # Pycharm hack for intellisense
@@ -1359,59 +1359,53 @@ def main_handler():
                 # ---------------------------------
                 #           HASS ADD ON
                 # ---------------------------------
-                resp = None
-                ha_verified = verify_vals(g.config, {"hass_enable", "hass_server", "hass_token"})
-                if (str2bool(g.config.get('push_emergency')) and (
-                        not past_event or (past_event and str2bool(g.config.get("push_emerg_force"))))):
-                    g.logger.debug(f"{lp} pushover EMERGENCY notification enabled...")
+                if (
+                        str2bool(g.config.get('push_emergency'))
+                        and (
+                            not past_event
+                            or (past_event and str2bool(g.config.get("push_emerg_force")))
+                        )
+                ):
+                    g.logger.debug(f"{lp} pushover EMERGENCY notification enabled, evaluating conditions...")
                     emerg_mons: Union[str, set] = g.config.get('push_emerg_mons')
                     if emerg_mons:
-                        proceed = True
-                        emerg_labels = g.config.get('push_emerg_labels')
-                        if emerg_labels:
-                            emerg_labels = set(str(emerg_labels).strip().split(','))
-                            if not any(w in emerg_labels for w in matched_data.get("labels")):
-                                g.logger.debug(
-                                    f"You have specified emergency labels ({emerg_labels}) that are not in the "
-                                    f"detected objects, not sending an emergency alert...")
-                                proceed = False
-                                send_push = True
+                        emerg_mons = set(str(emerg_mons).strip().split(','))
+                        emerg_mons = {int(x) for x in emerg_mons}
+                        if g.mid in emerg_mons:
+                            proceed = True
+                            emerg_labels = g.config.get('push_emerg_labels')
+                            if emerg_labels:
+                                emerg_labels = set(str(emerg_labels).strip().split(','))
+                                if not any(w in emerg_labels for w in matched_data.get("labels")):
+                                    g.logger.debug(
+                                        f"You have specified emergency labels ({emerg_labels}) that are not in the "
+                                        f"detected objects, not sending an emergency alert...")
+                                    proceed = False
+                            if proceed:
+                                g.logger.debug(f"DEBUG!>>> EVALUATING DATEPARSER for emergency notification")
+                                import dateparser
+                                def time_in_range(start, end, current_):
+                                    """Returns whether current is in the range [start, end]"""
+                                    return start <= current_ <= end
 
-                        if proceed:
-                            import dateparser
-                            def time_in_range(start, end, current_):
-                                """Returns whether current is in the range [start, end]"""
-                                return start <= current_ <= end
+                                # strip whitespace and convert the str into a list using a comma as the delimiter
+                                # convert to a set to remove duplicates and then use set comprehension to ensure all int
+                                emerg_retry = int(g.config.get('push_emerg_retry', 120))
+                                emerg_expire = int(g.config.get('push_emerg_expire', 3600))
+                                emerg_time_start = g.config.get('push_emerg_time_start', '00:00:00')
+                                emerg_time_end = g.config.get('push_emerg_time_end', '23:59:59')
+                                current = datetime.now().timestamp()
+                                tz = g.config.get('push_emerg_tz', {})
+                                if tz:
+                                    tz = {'TIMEZONE': tz}
+                                    g.logger.debug(f'{lp} Converting to TimeZone: {tz}')
+                                # For logging purposes
+                                show_time_start = dateparser.parse(emerg_time_start, settings=tz)
+                                show_time_end = dateparser.parse(emerg_time_end, settings=tz)
+                                show_current = datetime.now()
 
-                            # strip whitespace and convert the str into a list using a comma as the delimiter
-                            # convert to a set to remove duplicates and then use set comprehension to ensure all int
-                            emerg_mons = set(str(emerg_mons).strip().split(','))
-                            emerg_mons = {int(x) for x in emerg_mons}
-                            emerg_retry = int(g.config.get('push_emerg_retry', 120))
-                            emerg_expire = int(g.config.get('push_emerg_expire', 3600))
-                            emerg_time_start = g.config.get('push_emerg_time_start', '00:00:00')
-                            emerg_time_end = g.config.get('push_emerg_time_end', '23:59:59')
-                            current = datetime.now().timestamp()
-                            tz = g.config.get('push_emerg_tz', {})
-                            if tz:
-                                tz = {'TIMEZONE': tz}
-                                g.logger.debug(f'{lp} Converting to TimeZone: {tz}')
-                            # For logging purposes
-                            show_time_start = dateparser.parse(emerg_time_start, settings=tz)
-                            show_time_end = dateparser.parse(emerg_time_end, settings=tz)
-                            show_current = datetime.now()
-
-                            emerg_time_start = dateparser.parse(emerg_time_start, settings=tz).timestamp()
-                            emerg_time_end = dateparser.parse(emerg_time_end, settings=tz).timestamp()
-                            _doit = False
-                            if (
-                                    (
-                                            emerg_mons
-                                            and (g.mid in emerg_mons)
-                                    )
-                                    or not emerg_mons
-                            ):
-                                send_push = True
+                                emerg_time_start = dateparser.parse(emerg_time_start, settings=tz).timestamp()
+                                emerg_time_end = dateparser.parse(emerg_time_end, settings=tz).timestamp()
                                 g.logger.debug(f"{lp} Checking CURRENT: {show_current} to supplied "
                                                f"timerange START: {show_time_start} - END: {show_time_end}")
                                 emerg_in_time = time_in_range(emerg_time_start, emerg_time_end, current)
@@ -1421,16 +1415,55 @@ def main_handler():
                                     # send a regular priority notification
                                 else:
                                     g.logger.debug(f"{lp} sending pushover emergency notification...")
+                                    send_push = True
                                     param_dict['priority'] = 2
                                     param_dict['retry'] = emerg_retry
                                     param_dict['expire'] = emerg_expire
-                                    # Emergency notifications will bypass cooldown and off switch
+                        else:
+                            g.logger.debug(f'{lp} the current monitor {g.mid} is not in the list of monitors that '
+                                           f'receive emergency alerts ({emerg_mons})')
+
+                ha_verified = verify_vals(g.config, {"hass_enable", "hass_server", "hass_token"})
                 if not send_push and ha_verified and str2bool(g.config.get("hass_enable")):
                     send_push = do_hass(g)
                     do_hast_micht = 'gefragt 🤘'
-
-                # ---------------------------------
-                # -- Send jpg image if not creating an animation or if creating animation and push_jpg is configured
+                elif not send_push and not str2bool(g.config.get("hass_enable")):
+                    if g.config.get("push_cooldown"):
+                        g.logger.debug(
+                            f"{lp} push_cooldown found -> {g.config.get('push_cooldown')}"
+                        )
+                        try:
+                            cooldown = float(g.config.get("push_cooldown"))
+                        except TypeError as ex:
+                            g.logger.error(
+                                f"{lp} 'push_cooldown' malformed, sending push..."
+                            )
+                            send_push = True
+                        else:
+                            from pyzm.helpers.pyzm_utils import pkl_pushover
+                            time_since_last_push = pkl_pushover(
+                                "load", mid=g.mid
+                            )
+                            if time_since_last_push:
+                                now = datetime.now()
+                                differ = (
+                                        now - time_since_last_push
+                                ).total_seconds()
+                                if differ < cooldown:
+                                    g.logger.debug(
+                                        f"{lp} COOLDOWN elapsed-> {differ} / {cooldown} "
+                                        f"skipping notification..."
+                                    )
+                                    send_push = False
+                                else:
+                                    g.logger.debug(
+                                        f"{lp} COOLDOWN elapsed-> {differ} / {cooldown} "
+                                        f"sending notification..."
+                                    )
+                                del cooldown
+                    else:
+                        send_push = True
+                # JPEG pushover logic
                 if send_push and (
                         not str2bool(g.config.get("create_animation"))
                         or (
@@ -1761,7 +1794,7 @@ def main_handler():
                         )
                         # wait for the bg animations thread to create, optimize and save animations to disk.
                         bg_animations.join()
-
+                    # Pushover for GIF logic
                     if (
                             send_push
                             and str2bool(g.config.get("push_enable"))
