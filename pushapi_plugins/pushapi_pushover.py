@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+
+# I highly recommend using the pushover python option
+
 version = 0.1
 
 # This is a sample python script for sending notifications over pushover

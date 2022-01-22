@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Make these executable and put them somewhere in your $PATH so you can call them like shell aliases
-# USAGE: es.baredebug.objdet <EVENT ID> <MONITOR ID>
-# Monitor ID is optional, the script double checks on user input anyways
+# USAGE: es.baredebug.objdet <EVENT ID> <MONITOR ID - OPTIONAL>
+# Monitor ID is optional, the script double checks on user input anyway
 files=''
 zm_user='www-data'
 config='/etc/zm/objectconfig.yml'
@@ -13,3 +13,4 @@ objdet() {
   sudo -u "$zm_user" "$detect_script" --config "$config" --monitor-id "$2" --eventid "$1" --baredebug  "$f_flag";
 }
 objdet "$@"
+

@@ -379,7 +379,7 @@ def remote_login(user, password, ml_api_url: str):
 
 def remote_detect(options=None, args=None, route=None):
     """Sends an http request to mlapi host with data needed for inference"""
-    # This uses mlapi (https://github.com/baudneo/mlapi) to run inference with the sent data and converts format to
+    # This uses mlapi (https://github.com/zoneminder/mlapi) to run inference with the sent data and converts format to
     # what is required by the rest of the code.
     lp: str = "zmes:mlapi:"
     # print(f"{g.eid = } {options = } {g.api = } {args =}")
