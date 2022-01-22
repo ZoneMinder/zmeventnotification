@@ -465,7 +465,8 @@ install_pyzm() {
     fi
     echo
     echo "Installing forked neo-pyzm..."
-    ${PY_SUDO} ${PIP} install git+https://github.com/baudneo/pyzm # >/dev/null 2>&1
+    # pull pyzm from pull_req branch
+    ${PY_SUDO} ${PIP} install git+https://github.com/baudneo/pyzm@pull_req # >/dev/null 2>&1
 }
 # returns 'ok' if openCV version >= version passed
 check_opencv_version() {
