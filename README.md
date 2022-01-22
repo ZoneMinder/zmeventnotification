@@ -12,9 +12,11 @@ Please be aware that the 'neo' versions are NOT compatible with the source repos
 
 Docker Images 
 ------------------
+###EXPERIMENTAL!!
+
 I have released working docker images for the following:
 
-- [zoneminder-base](https://ghcr.io/baudneo/zoneminder-base) - ZM without ES
+- [zoneminder-base](https://ghcr.io/baudneo/zoneminder-base) - ZM without ES - forked from zoneminder-containers with the intention to add LXC support as host.
 - [eventserver-mlapi](https://ghcr.io/baudneo/eventserver-mlapi) - ZM with ES configured to communicate with the GPU/TPU accelerated MLAPI image
 - [mlapi_cudnn-base](https://ghcr.io/baudneo/mlapi_cudnn-base) - MLAPI with CUDA/cuDNN and TPU support (ALL MODELS WORK)
 Ongoing work is happening to allow zoneminder-* or eventserver-* images to run on an unprivileged LXC host. Currently only the mlapi_cudnn-* images work inside of unprivileged LXC (Docker running inside an LXC)
@@ -33,7 +35,7 @@ MAJOR CHANGES
 - Home Assistant sensors to control pushover notifications - You can create a 'Toggle Helper' which is an on/off switch and a 'Input Text Helper' which you can use to set a 'cool down' period between pushover notifications (configurable per monitor). If you do not use HA, there is a configurable option 'push_cooldown' for cooldowns between notifications.
 
 ** NOTE: The way a MLAPI detection works now is the requesting ZMES instance will dump its creds into a dictionary which is then encrypted (key and value). The name of the current route is the only data in the credential dump that is not encrypted (this is so MLAPI 
-can look in its config to find a matching encryption key based on the route name). ZMES sends MLAPI the detection request along with its already logged in and verified JWT Auth token, this saves MLAPI from having to log into the API to ask for it's own JWT. MLAPI will work through the detections and at the end it will send the detection data back as well as the matching image (when ZMES receives the resposnse from mlapi it does not need to ask the API for the matching frame! more time saved!)
+can look in its config to find a matching encryption key based on the route name). ZMES sends MLAPI the detection request along with its already logged in and verified JWT Auth token, this saves MLAPI from having to log into the API to ask for it's own JWT. MLAPI will work through the detections and at the end it will send the detection data back as well as the matching image (when ZMES receives the response from mlapi it does not need to ask the API for the matching frame! more time saved!)
 
 Example GIF - objdetect.jpg has polygon zone, labels, confidence and model names drawn on top. The timestamp is from ZM as I am using 'frames' (jpeg) storage instead of video passthrough that creates mp4s.
 
