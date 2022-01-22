@@ -501,7 +501,7 @@ mlapi_options:
     - weight: 0
       # NAME and KEY must be the same here and in the mlapi zmes_keys option for decryption to know what key to grab
       name: 'mlapi_one'
-  #    enabled: true  # Adding support for this next push
+      enabled: true
 
       gateway: 'http://localhost:5000/api/v1'
       # The user to login to mlapi (one of the MLAPI DB user' created using mlapi_dbuser.py)
