@@ -7,7 +7,7 @@ There are two parts to the configuration of this system:
 
 * The Event Notification Server configuration - typically ``/etc/zm/zmeventnotification.yml``
 * The Machine Learning Hooks configuration -  typically ``/etc/zm/objdetect.yml`` and/or
-  ``/var/lib/zmeventnofication/mlapi/mlapiconfig.yml``
+  ``/var/lib/zmeventnotification/mlapi/mlapiconfig.yml``
 
 The ES comes with a `sample ES config file <https://github.com/baudneo/zmeventnotification/blob/master/zmeventnotification.yml>`__
 which you should customize as you see fit. The sample config file is well annotated, so you really should read the comments to get an

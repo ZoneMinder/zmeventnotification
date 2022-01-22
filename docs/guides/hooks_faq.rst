@@ -39,14 +39,14 @@ I am trying to use YoloV4 and I see errors in OpenCV
   
 Necessary Reading - Sample Config Files
 ----------------------------------------
-The sample configuration files, `zmeventnotification.ini <https://github.com/baudneo/zmeventnotification/blob/master/zmeventnotification.ini>`__ and `objectconfig.yml <https://github.com/baudneo/zmeventnotification/blob/master/hook/objectconfig.yml>`__  come with extensive commentary about each attribute and what they do. Please go through them to get a better understanding. Note that most of the configuration attributes in `zmeventnotification.ini` are not related to machine learning, except for the `[hook]` section.
+The sample configuration files, `zmeventnotification.yml <https://github.com/zoneminder/zmeventnotification/blob/master/zmeventnotification.yml>`__ and `objectconfig.yml <https://github.com/zoneminder/zmeventnotification/blob/master/hook/objectconfig.yml>`__  come with extensive commentary about each attribute and what they do. Please go through them to get a better understanding. Note that most of the configuration attributes in `zmeventnotification.yml` are not related to machine learning, except for the `[hook]` section.
 
 How do the hooks actually invoke object detection?
 -----------------------------------------------------
 
-* When the Event Notification Server detects an event, it invokes the script specified in ``event_start_hook``  in your ``zmeventnotification.ini``. This is typically ``/var/lib/zmeventnotification/bin/zm_event_start.sh``
+* When the Event Notification Server detects an event, it invokes the script specified in ``event_start_hook``  in your ``zmeventnotification.yml``. This is typically ``/var/lib/zmeventnotification/bin/zm_event_start.sh``
 
-* ``zm_event_start.sh`` in turn invokes ``zm_detect.py`` that does the actual machine learning. Upon exit, it either returns a ``1`` that means object found, or a ``0`` which means nothing found. Based on how you have configured your settings, this information is then stored in ZM and/or pushed to your mobile device as a notification.
+* ``zm_event_start.sh`` in turn invokes ``zm_detect.py`` that does the actual machine learning. Upon exit, it either returns a ``0`` that means object found, or a ``1`` which means nothing found. Based on how you have configured your settings, this information is then stored in ZM and/or pushed to your mobile device as a notification.
 
 
 How To Debug Issues
@@ -74,7 +74,6 @@ However, when you run it manually later, your snapshot image has likely changed.
 
 How do I make sure this is what is happening?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Enable ``write_debug_image`` in ``objectconfig.yml``. This will create a debug image inside the event path where your event recording is. Take a look at the debug images it creates. Is it the same as the images you see at a later date? If not, you know this is exactly what is happening
 - When you run the detection script manually, see if its printing an ``[a]`` or an ``[s]`` before the detected text. The latter means ``snapshot`` and if that is so, the chances are very high this is exactly what the issue is. Incase it prints ``[a]`` it also means the same thing, but the occurrence of this is less than snapshot.
 
 How do I solve this issue?
@@ -87,7 +86,7 @@ How do I solve this issue?
 
 I'm having issues with accuracy of Face Recognition
 -----------------------------------------------------
-- Use ``cnn`` mode in face recognition. Much slower, but far more accurage than ``hog``
+- Use ``cnn`` mode in face recognition. Much slower, but far more accurate than ``hog``
 -  Look at debug logs.
 
    -  If it says "no faces loaded" that means your known images don't
@@ -102,7 +101,7 @@ I'm having issues with accuracy of Face Recognition
 
 I am using a Coral TPU and while it works fine, at times it fails loading 
 --------------------------------------------------------------------------
-If you have configured the TPU properly, and on occassion you see an error like:
+If you have configured the TPU properly, and on occasion you see an error like:
 
 ::
 
@@ -112,7 +111,7 @@ then it is likely that you either need to replace your USB cable or need to rese
 USB device. In my case, after I set it up correctly, it would often show the error above 
 during runs. I realized that replacing the USB cable that Google provided solved it for 
 a majority of cases. See `this comment <https://github.com/tensorflow/tensorflow/issues/32743#issuecomment-766084239>`__
-for my experience on the cable. After buying the cable, I still saw it on occassion, but
+for my experience on the cable. After buying the cable, I still saw it on occasion, but
 not frequently at all. In those cases, resetting USB works fine and you don't have to reboot.
 See `this comment <https://github.com/tensorflow/tensorflow/issues/32743#issuecomment-808912638>`__.
 
@@ -121,14 +120,13 @@ See `this comment <https://github.com/tensorflow/tensorflow/issues/32743#issueco
 Local vs. Remote server for Machine Learning
 ---------------------------------------------
 As of version 5.0.0, you can now configure an API gateway for remote 
-machine learning by installing `my mlapi server <https://github.com/baudneo/mlapi>`__ on a remote server. 
-Once setup, simply point your ``ml_gateway`` inside ``objectconfig.yml`` to the IP/port of your gateway and make sure 
-``ml_user`` and ``ml_password`` are the user/password you set up on the API gateway. That's all.
+machine learning by installing `my mlapi server <https://github.com/zoneminder/mlapi>`__ on a remote server.
+Once setup, simply point your ``ml_routes`` ``gateway`` inside ``objectconfig.yml`` to the IP/port of your gateway.
 
 The advantage of this is that you don't need to install any ML libraries within
 zoneminder if you are running mlapi on a different server. Further, mlapi loads the model
 only once so it is much faster. In older versions this was kludgy because you still
-had to install ML libraries locally in ZM, but no longer. Infact, I've completely 
+had to install ML libraries locally in ZM, but no longer. In fact, I've completely
 switched to mlapi now for my own use. Note that when you use remote detection, you will
-still need opencv in the host machine (opencv is used for other functions)
+still need opencv installed on the host machine (opencv is used for other functions like manipulating and sending images)
 

@@ -23,7 +23,7 @@ Key Features
 
    - CPU (object, face detection, face recognition, ALPR), 
    - GPU (object, face detection, face recognition, ALPR), 
-   - EdgeTPU (object, face detection, ALPR)
+   - EdgeTPU (object, face detection, ALPR?)
 
 - Machine learning can be installed locally with ZM, or remotely via mlapi 
 
@@ -43,7 +43,7 @@ notification server to invoke a custom script on the event before it
 generates an alarm. I currently support object detection, face detection/recognition and ALPR (Automatic License Plate Recognition).
 
 Please don't ask me questions on how to use them. Please read the
-extensive documentation and ini/yml file configs
+extensive documentation and yml file configs
 
 
 .. _hooks_install:
@@ -61,7 +61,7 @@ Automatic install
 
 .. code:: bash
 
-    git clone https://github.com/baudneo/zmeventnotification # if you don't already have it downloaded
+    git clone https://github.com/zoneminder/zmeventnotification # if you don't already have it downloaded
 
     cd zmeventnotification
 
@@ -90,7 +90,7 @@ you'll have to invoke the script using:
 
    sudo -H INSTALL_CORAL_EDGETPU=yes ./install.sh # and follow the prompts
 
-EdgeTPU models/underlying libraries are not downloaded automatically. (EfficeintDet lite v3 and MobileNetv2 TF2 models added Nov 2021)
+EdgeTPU models/underlying libraries are not downloaded automatically. (EfficientDet lite v3 and MobileNetV2 TF2 models added Nov 2021)
 
 For EdgeTPU, the expectation is  that you have followed all the instructions 
 at `the coral site <https://coral.ai/docs/accelerator/get-started/>`__ first. 
@@ -211,8 +211,7 @@ Post install steps
 ~~~~~~~~~~~~~~~~~~
 
 -  Make sure you edit your installed ``objectconfig.yml`` to the right
-   settings. You MUST change the ``[general]`` section for your own
-   portal.
+   settings.
 -  Make sure the ``CONFIG_FILE`` variable in ``zm_event_start.sh`` is
    correct
 
@@ -222,14 +221,12 @@ Test operation
 
 ::
 
-    sudo -u www-data /var/lib/zmeventnotification/bin/zm_event_start.sh <eid> <mid> # replace www-data with apache if needed
+    sudo -u www-data /var/lib/zmeventnotification/bin/zm_event_start.sh -e <eid> # replace www-data with apache if needed
 
 Replace with your own ``eid`` (Example 123456). This will be an event id for an event that you want to test. Typically,
 open up the ZM console, look for an event you want to run analysis on and select the ID of the event. That is the ``eid``.
-The ``mid`` is the monitor ID for the event. This is optional. If you specify it, any monitor specific settings (such as 
-zones, hook customizations, etc. in ``objectconfig/mlapiconfig.ini`` will be used).
 
-The above command will  try and run detection.
+The above command will try and run detection.
 
 If it doesn't work, go back and figure out where you have a problem
 
@@ -271,6 +268,7 @@ Which models should I use?
 
 Understanding detection configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Starting 7.0, ml_sequence and stream_sequence are the default ways to implement the machine learning pipeline.** ``use_sequence`` has been removed
 
 Starting v6.1.0, you can chain arbitrary detection types (object, face, alpr)
 and multiple models within them. In older versions, you were only allowed one model type 
@@ -284,6 +282,9 @@ This section will describe the key constructs around two important structures:
 
 6.1.0+ vs previous versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. note::
+    ``use_sequence`` is deprecated in 7.0.0+
+
 When you update to 6.1.0, you may be confused with objectconfig.
 Specifically, which attributes should you use and which ones are ignored?
 It's pretty simple, actually.
@@ -305,7 +306,7 @@ It's pretty simple, actually.
      Just know that what you specify in these sequence structures overrides the above attributes. 
      If you want to reuse them, you need to put them in as parameter substitutions like the same ini file has done 
    - If you are using the new ``use_sequence=yes`` please don't use old keywords as variables. They will likely fail.
-     
+
    Example, this will **NOT WORK**:
 
       ::
@@ -329,7 +330,7 @@ It's pretty simple, actually.
          }
 
    What you need to do is use a different variable name (as ``detect_sequence`` is a reserved keyword which is used if ``use_sequence=no``)
-      
+
    But this **WILL WORK**:
 
       ::
@@ -352,8 +353,8 @@ It's pretty simple, actually.
 
          }
 
-- When ``use_sequence`` is set to ``no``, zm_detect internally maps your old parameters 
-  to the new structures 
+- When ``use_sequence`` is set to ``no``, zm_detect internally maps your old parameters
+  to the new structures
 
 Internally, both options are mapped to ``ml_sequence``, but the difference is in the parameters that are processed.
 Specifically, before ES 6.1.0 came out, we had specific objectconfig fields that were used for various ML parameters
@@ -362,6 +363,8 @@ per type of detection.
 
 More details: What happens when you go with use_sequence=no?
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+.. note::
+    ``use_sequence`` is deprecated in 7.0.0+
 
 **NOTE**: Please use ``use_sequence=yes``. In the past, I've allowed a mode where legacy settings were converted
 to ``stream_sequence`` auto-magically when I changed formats. This caused a lot of issues and was a 
@@ -435,7 +438,7 @@ So in the new way, if you want to change ``ml_sequence`` or ``stream_sequence`` 
 
 Understanding ml_sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-The ``ml_sequence`` structure lies in the ``[ml]`` section of ``objectconfig.yml`` (or ``mlapiconfig.ini`` if using mlapi).
+The ``ml_sequence`` structure lies in the ``[ml]`` section of ``objectconfig.yml`` (or ``mlapiconfig.yml`` if using mlapi).
 At a high level, this is how it is structured (not all attributes have been described):
 
 ::
@@ -460,16 +463,16 @@ At a high level, this is how it is structured (not all attributes have been desc
 
 **Explanation:**
 
-- The ``general`` section at the top level specify characterstics that apply to all elements inside 
+- The ``general`` section at the top level specify characteristics that apply to all elements inside
   the structure. 
 
    - ``model_sequence`` dictates the detection types (comma separated). Example ``object,face,alpr`` will
      first run object detection, then face, then alpr
 
 - Now for each detection type in ``model_sequence``, you can specify the type of models you want to leading
-  along with other related paramters.
+  along with other related parameters.
 
-  **Note**: If you are using mlapi, there are certain parameters that get overriden by ``objectconfig.yml``
+  **Note**: If you are using mlapi, there are certain parameters that get overridden by ``objectconfig.yml``
   See :ref:`mlapi_overrides`
 
 Leveraging same_model_sequence_strategy and frame_strategy effectively
@@ -559,47 +562,39 @@ Like this:
 
 Exceptions when using mlapi
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If you are using the remote mlapi server, then most of these settings migrate to ``mlapiconfig.ini``
-Specifically, when ``zm_detect.py`` sees ``ml_gateway`` in its ``[remote]`` section, it passes on 
+If you are using the remote mlapi server, then most of these settings migrate to ``mlapiconfig.yml``
+Specifically, when ``zm_detect.py`` sees ``ml_enable`` is enabled, it passes on
 the detection work to mlapi. 
 
-**NOTE**: Please use ``use_sequence=yes``. In the past, I've allowed a mode where legacy settings were converted
-to ``stream_sequence`` auto-magically when I changed formats. This caused a lot of issues and was a 
-nightmare to maintain. So please migrate to the proper format. If you've been using ``use_sequence=no``
-it will likely break things, but please read the help and convert properly. ``use_sequence=no`` is no 
-longer maintained.
+.. note::
+    ``use_sequence`` is deprecated in 7.0.0+
 
 Here are a list of parameters that still need to be in ``objectconfig.yml`` when using mlapi.
-(A simple rule to remember is zm_detect.py uses ``objectconfig.yml`` while mlapi uses ``mlapiconfig.ini``)
+(A simple rule to remember is zm_detect.py uses ``objectconfig.yml`` while mlapi uses ``mlapiconfig.yml``)
 
-- ``ml_gateway`` (obviously, as the *ES* calls *zm_detect*, and zm_detect calls mlapi if this parameter is present in *objectconfig.yml*)
-- ``ml_fallback_local`` (if *mlapi* fails, or is not running, *zm_detect* will switch to local inferencing, so this needs to be in *objectconfig.yml*)
+- ``ml_routes`` (obviously, as the *ES* calls *zm_detect*, and zm_detect calls mlapi if this parameter is present in *objectconfig.yml*)
+- ``ml_fallback_local`` (if *mlapi* fails, or is not running, *zm_detect* will switch to local inference, so this needs to be in *objectconfig.yml*)
 - ``show_percent`` (*zm_detect* is the one that actually creates the text you see in your object detection (*detected:[s] person:90%*))
-- ``write_image_to_zm`` (zm_detect is the one that actually puts *objdetect.jpg* in the ZM events folder - *mlapi* can't because it can be remote)
-- ``write_debug_image`` (*zm_detect* is the one that creates a debug image to inspect)
 - ``poly_thickness`` (because *zm_detect* is the one that actually writes the image/debug image as described above, makes sense that *poly_thickness* needs to be here)
 - ``image_path`` (related to above - to know where to write the image )
 - ``create_animation`` (*zm_detect* has the code to put the animation of mp4/gif together)
 - ``animation_types`` (same as above)
 - ``show_models`` (if you want to show model names along with text)
 
-These need to be present in both mlapiconfig.ini and objectconfig.yml
+These need to be present in both mlapiconfig.yml and objectconfig.yml
 
 - ``secrets``
 - ``base_data_path``
-- ``api_portal``
-- ``portal``
-- ``user``
-- ``password``
 
 
-So when using mlapi, migrate configurations that you typically specify in ``objectconfig.yml`` to ``mlapiconfig.ini``. This includes:
+So when using mlapi, migrate configurations that you typically specify in ``objectconfig.yml`` to ``mlapiconfig.yml``. This includes:
 
 - Monitor specific sections 
 - ml_sequence and stream_sequence 
 - In general, if you see detection with mlapi missing something that worked when using 
-  objectconfig.yml, make sure you have not missed anything specific in mlapiconfig.ini 
-  with respect to related parameters 
+  objectconfig.yml, make sure you have not missed anything specific in mlapiconfig.yml
+  with respect to related parameters
+- **NOTE** ``resize`` is ONLY configured in ``objectconfig.yml``. If mlapi and ZMES are out of sync on the resize option then bounding boxes will be incorrect.
 
 Also note that if you are using ml_fallback, repeat the settings in both configs.
 
@@ -607,36 +602,25 @@ Here is a part of my config, for example:
 
 ::
 
-   import_zm_zones=yes
-   ## Monitor specific settings
-   [monitor-3]
-   # doorbell
-   model_sequence=object,face
-   object_detection_pattern=(person|monitor_doorbell)
-   valid_face_area=184,235 1475,307 1523,1940 146,1940
-
-   [monitor-7]
-   # Driveway
-   model_sequence=object,alpr
-   object_detection_pattern=(person|car|motorbike|bus|truck|boat)
-
-   [monitor-2]
-   # Front lawn 
-   model_sequence=object
-   object_detection_pattern=(person)
-
-   [monitor-4]
-   #deck
-   object_detection_pattern=(person|monitor_deck)
-   stream_sequence = {
-         'frame_strategy': 'most_models',
-         'frame_set': 'alarm',
-         'contig_frames_before_error': 5,
-         'max_attempts': 3,
-         'sleep_between_attempts': 4,
-         'resize':800
-
-      }
+  remote_detection:
+    ml_enable: yes  # [Default: no]
+    ml_fallback_local: no  # [Default: no]
+    # encrypted credentials setup
+    ml_routes :
+      - weight: 0
+        name: 'ZM_LXC'
+        enabled: no
+        gateway: http://10.0.0.2:5000/api/v1
+        user: '{[ML1]}'
+        pass: '{[ML1PASS]}'
+        enc_key: '{[mlapi_two_key]}'
+      - weight: 1
+        name: 'mlapi_one'
+        enabled: true
+        gateway: http://10.0.0.32:5000/api/v1
+        user: '{[ML_USER]}'
+        pass: '{[ML_PASSWORD]}'
+        enc_key: '{[mlapi_one_key]}'
 
 About specific detection types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -652,7 +636,7 @@ Three ALPR options are provided:
 
 ``alpr_service`` defined the service to be used.
 
-Face Dection & Recognition
+Face Detection & Recognition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 When it comes to faces, there are two aspects (that many often confuse):
 
@@ -763,8 +747,8 @@ Troubleshooting
    is not able to download the image to check. This may be because your
    ZM version is old or other errors. Some common issues:
 
-   -  Make sure your ``objectconfig.yml`` section for ``[general]`` are
-      correct (portal, user,admin)
+   -  Make sure your ``objectconfig.yml`` login options are
+      correct (portal, user, password, etc.)
    -  For object detection to work, the hooks expect to download images
       of events using
       ``https://yourportal/zm/?view=image&eid=<eid>&fid=snapshot`` and
@@ -845,7 +829,7 @@ wrapper around the TPU C++ libraries.
 You should also look at  Google's Coral `coral benchmark site <https://coral.ai/docs/edgetpu/benchmarks/>`__ for better numbers.
 Note that their performance figures are specific to their C++ code. Python will have 
 additional overheads (as noted on their site)
-Finally, if you are facing data transfter/delegate loading issues considering buying a good quality USB 3.1/10Gbps rated
+Finally, if you are facing data transfer/delegate loading issues considering buying a good quality USB 3.1/10Gbps rated
 cable. I faced intermittent issues with delegate load issues (not always) which seems to have gone away after I ditched 
 Google's cable with a good quality one (I bought `this one <https://www.amazon.com/Anker-Powerline-Certified-Samsung-MacBook/dp/B07213D35X/ref=sr_1_4?dchild=1&keywords=usb+3.1+anker+usb+c&qid=1611410490&sr=8-4>`__)
 
@@ -905,8 +889,8 @@ config)
 **STEP 2: run zmeventnotification in MANUAL mode** 
 
 - ``sudo zmdc.pl stop zmeventnotification.pl`` 
-- change console_logs to yes in ``zmeventnotification.ini``
--  ``sudo -u www-data ./zmeventnotification.pl  --config ./zmeventnotification.ini``
+- change console_logs to yes in ``zmeventnotification.yml``
+-  ``sudo -u www-data ./zmeventnotification.pl  --config ./zmeventnotification.yml``
 -  Force an alarm, look at logs
 
 **STEP 3: integrate with the actual daemon** 

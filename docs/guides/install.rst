@@ -6,9 +6,14 @@ Installation of the Event Server (ES)
 
 3rd party dockers 
 ~~~~~~~~~~~~~~~~~~
+@baudneo has created some zoneminder containers. There is a working GPU/TPU mlapi image as well as an event server image to communicate with the mlapi image.
 
-I don't maintain docker images, so please don't ask me any questions about docker environments. There are others who maintain docker images. 
-I have no affiliation with any of them. Feel free to explore the various options below, but please don't ask me about them. I've also not tried any of these 
+**NOTE** These are experimental at the moment as building the MLAPI image takes awhile due to the multiple Compute Capabilities it is built for.
+
+- ES - `Event Server enabled for mlapi <https://github.com/baudneo/neo-eventserver-mlapi>`__
+- mlapi - `TPU/GPU ALPR/FACE mlapi <https://github.com/baudneo/neo-mlapi_cudnn-base>`__
+
+Feel free to explore the various options below, but please don't ask me about them. I've also not tried any of these
 dockers.
 
 - Alex's repo (in progress): `Various ZM configurations, currently ZM and ZM+ES (no hooks) <https://github.com/zoneminder-containers>`__ 
@@ -30,7 +35,7 @@ To clone the latest stable release:
 
 ::
 
-  git clone https://github.com/baudneo/zmeventnotification.git
+  git clone https://github.com/zoneminder/zmeventnotification.git
   cd zmeventnotification
   # repeat these two steps each time you want to update to the latest stable
   git fetch --tags
@@ -41,21 +46,19 @@ To clone master:
 
 ::
 
-  git clone https://github.com/baudneo/zmeventnotification.git
+  git clone https://github.com/zoneminder/zmeventnotification.git
   # repeat these two steps each time you want to update
   git checkout master # only needed if you are on some other branch later
   git pull
 
 
-Configure the ini files
+Configure the yml files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
--  Edit ``zmeventnotification.ini`` to your liking. More details about
+-  Edit ``zmeventnotification.yml`` to your liking. More details about
    various parts of the configuration are explained later in this readme
 -  If you are behind a firewall, make sure you enable port ``9000``,
    TCP, bi-directional (unless you changed the port in the code)
--  If you are _not_ using machine learning hooks, make sure you comment out the
-   ``hook_script`` attribute in the ``[hook]`` section of the ini file or 
-   you will see errors and you will not receive push
+-  If you are _not_ using machine learning hooks, make sure ``use_hooks`` is disabled.
 -  We now need to install a bunch of dependencies (as described below)
 
 Install Dependencies
@@ -75,7 +78,7 @@ whilst inside the shell, ``install Module::Name``)
 
 -  ``Crypt::MySQL`` (if you have updated to ZM 1.34, this is no longer needed)
 -  ``Net::WebSocket::Server``
--  ``Config::IniFiles`` (you may already have this installed)
+-  ``YAML::XS`` (for parsing yaml config/secret files)
 -  ``Crypt::Eksblowfish::Bcrypt`` (if you have updated to ZM 1.34, you will already have this)
 - ``Time::Piece`` for parsing ES rules
 
@@ -104,9 +107,9 @@ If you face issues installing Crypt::Eksblowfish::Bcrypt, this this instead:
     sudo apt-get install libcrypt-eksblowfish-perl
 
 
-If there are issues installing Config::IniFiles and the errors are
+If there are issues installing YAML::XS and the errors are
 related to Module::Build missing, use following command to get this
-module in debian based systems and install Config::IniFiles again.
+module in debian based systems and install YAML::XS again.
 
 ::
 
@@ -146,17 +149,15 @@ If you are setting up MQTT:
  - If your ``MQTT:Simple`` library was installed a while ago, you may need to update it. A new ``login`` method was added
    to that library on Dec 2018 which is required (`ref <https://github.com/Juerd/Net-MQTT-Simple/blob/cf01b43c27893a07185d4b58ff87db183d08b0e9/Changes#L21>`__)
 
-Note that starting 1.0, we also use ``File::Spec``, ``Getopt::Long`` and
-``Config::IniFiles`` as additional libraries. My ubuntu installation
-seemed to include all of this by default (even though
-``Config::IniFiles`` is not part of base perl).
+Note that starting 1.0, we also use ``File::Spec`` and ``Getopt::Long`` as additional libraries. My ubuntu installation
+seemed to include all of this by default.
 
 If you get errors about missing libraries, you'll need to install the
 missing ones like so:
 
 ::
 
-    perl -MCPAN -e "install XXXX" # where XXX is Config::IniFiles, for example
+    perl -MCPAN -e "install XXXX" # where XXX is YAML::XS, for example
 
 If you are also planning on using the machine learning hooks, you will need to make sure you have Python3 and pip3 installed and working properly. Refer to your OS package documentation on how to get Python3 and pip3. 
 
@@ -191,9 +192,9 @@ to point to your SSL certs/keys:
 
 ::
 
-    [ssl]
-    cert = /etc/zm/apache2/ssl/zoneminder.crt
-    key = /etc/zm/apache2/ssl/zoneminder.key
+    ssl:
+      cert: /etc/zm/apache2/ssl/zoneminder.crt
+      key: /etc/zm/apache2/ssl/zoneminder.key
 
 IOS Users
 ^^^^^^^^^
@@ -203,7 +204,7 @@ zmNinja was not able to register with the event server when it was using
 WSS (SSL enabled) and self-signed certificates. To solve this, I had to
 email myself the zoneminder certificate (``zoneminder.crt``) file and
 install it in the phone. Why that is needed only for WSS and not for
-HTTPS is a mystery to me. The alternative is to run the eventserver in
+HTTPS is a mystery to me. The alternative is to run the event server in
 WS mode by disabling SSL.
 
 
@@ -227,12 +228,12 @@ Update the configuration files
 When you install the ES, it comes with default configuration files. They key files
 are:
 
-- ``/etc/zm/zmeventnotification.ini`` - various parameters that control the ES
+- ``/etc/zm/zmeventnotification.yml`` - various parameters that control the ES
 - ``/etc/zm/objectconfig.yml`` - various parameters that control the machine learning hooks
 - ``/etc/zm/zm_secrets.yml`` - secrets file for hooks.
-- ``/etc/zm/secrets.ini`` - a common key/value mapping file where you store your personal configurations
+- ``/etc/zm/secrets.yml`` - a common key/value mapping file where you store your personal configurations
 
-You **always** have to modify ``/etc/zm/secrets.ini`` and ``/etc/zm/zm_secrets.yml`` to your server settings. Please review
+You **always** have to modify ``/etc/zm/secrets.yml`` and ``/etc/zm/zm_secrets.yml`` to your server settings. Please review
 the keys and update them with your settings. At the least, you will need to modify:
 
 - ``ZM_USER`` - the username used to log into your ZM web console
@@ -249,7 +250,7 @@ Optional but Recommended: Making sure everything is running (in manual mode)
 -  Start the event server manually first using
    ``sudo -u www-data /usr/bin/zmeventnotification.pl --debug``
    (Note that if you omit ``--config`` it will look for
-   ``/etc/zm/zmeventnotification.ini`` and if that doesn't exist, it
+   ``/etc/zm/zmeventnotification.yml`` and if that doesn't exist, it
    will use default values) and make sure you check syslogs to ensure
    its loaded up and all dependencies are found. If you see errors, fix
    them. Then exit and follow the steps below to start it along with

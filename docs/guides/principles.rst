@@ -15,14 +15,14 @@ The ES is a perl process (typically ``/usr/bin/zmeventnotification.pl``) that ac
 
 .. sidebar:: Configuration files
     
-    This may be a good place to talk about configuration files. The ES has many customizations that are controlled by ``/etc/zm/zmeventnotification.ini``. If you are using hooks, they are controlled by ``/etc/zm/objectconfig.yml``. Both these files use ``/etc/zm/secrets.ini`` to move personal information away from config files. Study both these ini files well. They are heavily commented for your benefit.
+    This may be a good place to talk about configuration files. The ES has many customizations that are controlled by ``/etc/zm/zmeventnotification.yml``. If you are using hooks, they are controlled by ``/etc/zm/objectconfig.yml``. Both these files use ``/etc/zm/secrets.yml`` to move personal information away from config files. Study both these ini files well. They are heavily commented for your benefit.
 
 2: Detecting New Events
 -----------------------------
 Once the ES is up and running, it uses shared memory to know when new events are reported by ZM. Basically, ZM writes data to shared memory (SHM) whenever a new event is detected. The ES regularly polls this memory to detect new events. This has 2 important side effects:
 
 * The ES *must* run on the same server that ZM is running on. If you are using a multi-server system, you need an ES *per* server.
-* If an event starts and ends before the ES checks SHM, this event may be missed. If you are seeing that happening, reduce ``event_check_interval`` in ``zmeventnotification.ini``. By default this is set to 5 seconds, which means events that open and close in a span of 5 seconds have a potential of being missed, if they start immediately after the ES checks for new events.
+* If an event starts and ends before the ES checks SHM, this event may be missed. If you are seeing that happening, reduce ``event_check_interval`` in ``zmeventnotification.yml``. By default this is set to 5 seconds, which means events that open and close in a span of 5 seconds have a potential of being missed, if they start immediately after the ES checks for new events.
 
 .. _when_event_starts:
 
@@ -33,16 +33,16 @@ When the ES detects a new event, it forks a sub-process to handle that event and
 3.1: Hooks (Optional)
 ***************************
 
-If you are *not* using hooks, that is ``use_hooks=no`` in ``/etc/zm/zmeventnotification.ini`` then directly skip to the next section.
+If you are *not* using hooks, that is ``use_hooks=no`` in ``/etc/zm/zmeventnotification.yml`` then directly skip to the next section.
 
 The entire concept of hooks is to "influence" whether or not to actually send out a notification for a new event. If you are already using hooks, you are likely using the most popular hook that I wrote, which actually does object/person/face detection on the image(s) that constitute the event to make an intelligent decision on whether you really want to be notified of the event. If you recall, the initial reason why I wrote the ES was to send "push notifications" to zmNinja. You'd be inundated if you got a push for *every* new event ZM reports. 
 
-So when you have hooks enabled, the script that is invoked when a new event is detected by the ES is defined in ``event_start_hook`` inside ``zmeventnotification.ini``. I am going to assume you did not change that hook script, because the default script does the fancy image recognition that lot of people love. That script, which is usually ``/var/lib/zmeventnotification/bin/zm_event_start.sh`` does the following:
+So when you have hooks enabled, the script that is invoked when a new event is detected by the ES is defined in ``event_start_hook`` inside ``zmeventnotification.yml``. I am going to assume you did not change that hook script, because the default script does the fancy image recognition that lot of people love. That script, which is usually ``/var/lib/zmeventnotification/bin/zm_event_start.sh`` does the following:
 
 * It invokes `/var/lib/zmeventnotification/bin/zm_detect.py` that is the actual script that does the fancy detection and waits for a response. If this python file detects objects that meet the criteria in ``/etc/zm/objectconfig.yml`` it will return an exit code of ``0`` (success) with a text string describing the objects, else it will return an exit code of ``1`` (fail) 
 * It passes on the output and the return value of the script back to the ES
 
-* At this stage, if hooks were used and it returned a success (``0``) and ``use_hook_description=yes`` in ``zmeventnotification.ini`` then the detection text gets written to the ZM DB for the event
+* At this stage, if hooks were used and it returned a success (``0``) and ``use_hook_description=yes`` in ``zmeventnotification.yml`` then the detection text gets written to the ZM DB for the event
 
 The ES has no idea what the event start script does. All it cares about is the "return value". If it returns ``0`` that means the hook "succeeded" and if it returned any non ``0`` value, the script failed. This return code makes a difference on whether the final notification is sent out or not, as you will see later.
 
@@ -196,9 +196,9 @@ Note that you need to install ``Time::Pice`` in Perl.
 -----------------------------------------------------
 Everything above was when an event first starts. The ES also allows similar functions for when an event *ends*. It pretty much follows the flow defined in  :ref:`when_event_starts` with the following differences:
 
-* The hook, if enabled is defined by ``event_end_hook`` inside ``zmeventnotification.ini``
+* The hook, if enabled is defined by ``event_end_hook`` inside ``zmeventnotification.yml``
 * The default end script which is usually ``/var/lib/zmeventnotification/bin/zm_event_end.sh`` doesn't do anything. All the image recognition happens at the event start. Feel free to modify it to do anything you want. As of now, its just a "pass through" that returns a success (``0``) exit code
-* Sending notification rules are the same as the start section, except that ``event_end_notify_on_hook_success`` and ``event_end_notify_on_hook_fail`` are used for channel rules in ``zmeventnotification.ini``
+* Sending notification rules are the same as the start section, except that ``event_end_notify_on_hook_success`` and ``event_end_notify_on_hook_fail`` are used for channel rules in ``zmeventnotification.yml``
 * When the event ends, the ES will check the ZM DB to see if the detection text it wrote during start still exists. It may have been overwritten if ZM detect more motion after the detection. As of today, ZM keeps its notes in memory and doesn't know some other entity has updated the notes and overwrites it. 
 * At this stage, the fork that was started when the event started exits
 
@@ -215,14 +215,14 @@ So let's assume that all checks have passed above and we are now about to send t
   - If it is FCM, the message is sent using FCM API
   - If it is MQTT, we use  use ``MQTT::Simple`` (a perl package) to send the message
   - If it is Websockets, we use ``Net::WebSocket``, another perl package to send the message
-  - If it is a 3rd party push service, then we rely on ``api_push_script`` in `zmeventnotification.ini`` to send the message.
+  - If it is a 3rd party push service, then we rely on ``api_push_script`` in `zmeventnotification.yml`` to send the message.
 
 5.1 Notification Payload
 ***************************
 Irrespective of the protocol, the notification message typically consists of:
 
 * Alarm text
-* if you are using ``fcm`` or ``push_api``, you can also include an image of the alarm. That picture is typically a URL, specified in ``picture_url`` inside ``zmeventnotification.ini``
+* if you are using ``fcm`` or ``push_api``, you can also include an image of the alarm. That picture is typically a URL, specified in ``picture_url`` inside ``zmeventnotification.yml``
 * If you are sending over MQTT, there is additional data, including a JSON structure that provides the detection text in an easily parseable structure (``detection`` field)
 * There are some other fields included as well
 
@@ -260,7 +260,7 @@ Controlling the Event Server
 ++++++++++++++++++++++++++++
 There is both a static and dynamic way to control the ES.
 
-- You can change parameters in ``zmeventnotification.ini``. This will however require you to restart the ES (``sudo zmdc.pl restart  zmeventnotification.pl``). You can also change hook related parameters in ``objectconfig.yml`` and they will automatically take effect for the next detection (because the hook scripts restart with each invocation), if you are using local detections.
+- You can change parameters in ``zmeventnotification.yml``. This will however require you to restart the ES (``sudo zmdc.pl restart  zmeventnotification.pl``). You can also change hook related parameters in ``objectconfig.yml`` and they will automatically take effect for the next detection (because the hook scripts restart with each invocation), if you are using local detections.
 
 - So obviously, there was a need to allow for programmatic change to the ES and dynamically.
 
@@ -284,12 +284,12 @@ As described earlier, the entry point to all the machine learning goodness start
 
     If you ever wonder why detection did not work when the ES invoked it, but worked just fine when you ran the detection manually, this may be why: during detection the snapshot was different from the final value.
 
-* The detection scripts DO NOT analyze all frames recorded so far. That would take too long (well, not if you have a powerful GPU). It only analyzes two frames at most, depending on your ``frame_id`` value in ``objectconfig.yml``.  Those two frames are ``snapshot`` and ``alarm``, assuming you set ``frame_id=bestmatch``
+* The detection scripts DO NOT analyze all frames recorded so far. That would take too long (well, not if you have a powerful GPU). By default, it only analyzes three frames, depending on your ``frame_set`` value in ``objectconfig.yml``.  Those three frames are ``snapshot``, ``alarm`` and ``snapshot``
 * ``snapshot`` is the frame that has the highest score. It is very possible this frame changes *after* the detection is done, because it is entirely possible that another frame with a higher score is recorded by ZM as the event proceeds. 
 * There are various steps to detection:
 
   1. Match all the rules in ``objectconfig.yml`` (example type(s) of detection for that monitor, etc.) 
   2. Do the actual detection
-  3. Make sure the detections meet the rules in ``objectconfig.yml`` (example, it intersects  the polygon boundaries, category of detections, etc.)
-  4. Of these step 2. can either be done locally or remotely, depending on how you set up ``ml_gateway``. Everything else is done locally. See  :ref:`this FAQ entry <local_remote_ml>` for more details.
+  3. Make sure the detections meet the rules in ``objectconfig.yml`` (example, it intersects the polygon boundaries, category of detections, etc.)
+  4. Of these step 2. can either be done locally or remotely, depending on how you set up ``ml_enable`` and ``ml_routes``. Everything else is done locally. See  :ref:`this FAQ entry <local_remote_ml>` for more details.
 

@@ -521,6 +521,7 @@ mlapi_options:
 ###########################################
 object_options:
   object_detection_pattern: (person|car|motorbike|bus|truck|boat|dog|cat)
+  # Confidence can be expressed using 0.xx .xx,  xx or xx% - 0.34, .34, 34 and 34% are all equal
   object_min_confidence: 0.6
 
   # Google Coral
@@ -660,19 +661,20 @@ alpr_options:
 monitors:
   6942069:
     # TO IDENTIFY POLYGONS make sure they end with _polygonzone or _polygon_zone
-    # NOTE: THIS I STHE LEGACY WAY TO DEFINE ZONES
+    # NOTE: THIS IS THE LEGACY WAY TO DEFINE ZONES - see below and the 'zones' key for the new way of defining a zone and its filters
     # 1080p polygon
     #  front_yard_polygonzone: 0,427 1085,261 1075,200 1912,448 1912,1071 0,1079
     # 4K polygon
 #    front_yard_polygonzone: 0,877 2170,553 3822,1131 3822,2141 0,2159
 #    front_yard_zone_detection_pattern: (person|dog|cat)
+
     object_detection_pattern: (person|dog|cat)
     frame_set: snapshot,70,snapshot,140,210,alarm,280,350,430
     model_sequence: object
     # sometimes it detects a large 'person', this should stop that.
     person_max_detection_size: 65%
 
-    person_min_confidence: 0.4732
+    person_min_confidence: 47%
     #ignore_past_det_labels: ['dog' , 'cat']
     #match_past_detections: yes
     #past_det_max_diff_area: 10%
@@ -710,6 +712,7 @@ monitors:
 
     # NEW way to define zones
     zones:
+      # This is the name of the zone
       parking_area:
         # Polygon points
         coords: 805,200 1897,125 1910,562 7,594
@@ -732,6 +735,7 @@ monitors:
         past_area_diff:
           # match_past_detections
           # difference in area between the detected object and the saved bounding box
+          # NOTE: NOT IMPLEMENTED YET
           person: 0.10
 
 
