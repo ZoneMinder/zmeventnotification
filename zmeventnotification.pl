@@ -3502,7 +3502,7 @@ sub processNewAlarmsInFork {
 
   my $start_time = time();
 
-  while ( !$doneProcessing ) {
+  while (!$doneProcessing and !$es_terminate) {
 
     #print "FORK:".Dumper(\$alarm);
     my $now = time();
@@ -4011,7 +4011,7 @@ sub processNewAlarmsInFork {
       }
     }
     sleep(2);
-  }
+  } # end sub processNewAlarmsInFork
 
   printDebug( 'exiting', 1 );
   print WRITER 'active_event_delete--TYPE--' . $mid . '--SPLIT--' . $eid . "\n";
