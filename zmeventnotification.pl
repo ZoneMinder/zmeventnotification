@@ -1495,6 +1495,7 @@ sub loadMonitors {
   printInfo("Re-loading monitors");
   $monitor_reload_time = time();
 
+  %monitors = ();
   my $sql = 'SELECT * FROM `Monitors`
         WHERE find_in_set( `Function`, \'Modect,Mocord,Nodect\' )'
     . ( $Config{ZM_SERVER_ID} ? 'AND `ServerId`=?' : '' );
@@ -1503,7 +1504,6 @@ sub loadMonitors {
   my $res = $sth->execute( $Config{ZM_SERVER_ID} ? $Config{ZM_SERVER_ID} : () )
     or Fatal( "Can't execute: " . $sth->errstr() );
   while ( my $monitor = $sth->fetchrow_hashref() ) {
-
     if ( $skip_monitors{ $monitor->{Id} } ) {
       printDebug( "$$monitor{Id} is in skip list, not going to process", 1 );
       next;
@@ -1515,7 +1515,7 @@ sub loadMonitors {
       $monitors{ $monitor->{Id} } = $monitor;
     }
     $monitors{ $monitor->{Id} } = $monitor;
-    printDebug( "Loading " . $monitor->{Name}, 1 );
+    printDebug('Loading ' . $monitor->{Name}, 1);
   } # end while fetchrow
 
   populateEsControlNotification();
