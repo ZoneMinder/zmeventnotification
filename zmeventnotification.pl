@@ -2899,6 +2899,10 @@ sub migrateTokens {
 # loads FCM tokens from file
 sub initFCMTokens {
   printDebug( 'Initializing FCM tokens...', 1 );
+  # if tokens.txt does not exist the -T flag causes an error
+  if ($token_file =~ /^(.*)$/) {
+        $token_file = $1;
+            }
   if ( !-f $token_file ) {
     open( my $foh, '>', $token_file ) or Fatal("Error opening $token_file: $!");
     printDebug( 'Creating ' . $token_file, 1 );

@@ -447,7 +447,7 @@ install_hook_config() {
       install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/zm_secrets.yml "${TARGET_CONFIG}" &&
         print_success "YAML config and secrets copied" || print_error "could not copy YAML config or secrets"
     echo "====> Remember to fill in the right values in the YAML config files, or your system won't work! <============="
-    echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN_HOOK}/zm_event_start.sh! <========"
+    echo "====> If you changed $TARGET_CONFIG remember to fix ${TARGET_BIN_HOOK}/zm_event_start.sh! <========"
     echo ''
     [[ -a "${TARGET_CONFIG}/zm.conf" ]] && chgrp "${WEB_GROUP}" "${TARGET_CONFIG}/zm.conf" && \
     chmod g+w "${TARGET_CONFIG}/zm.conf" && echo "Changed ${TARGET_CONFIG}/zm.conf to allow GROUP: ${WEB_GROUP} "\
