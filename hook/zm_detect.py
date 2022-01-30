@@ -875,6 +875,12 @@ def main_handler():
     g.logger = LogBuffer()
     # Process CLI arguments
     args = _parse_args()
+    new_time: Optional[datetime] = None
+    from pyzm.helpers.pyzm_utils import time_format
+    if args.get('new'):
+        new_time = datetime.now()
+    else:
+        g.logger.debug(f"\n\n\nTHIS IS A ZMES SHM SCAN EVENT {time_format(datetime.now())}")
     # process the config using the arguments
     if args.get('eventid'):
         g.eid = int(args.get('eventid'))
@@ -894,7 +900,7 @@ def main_handler():
         f"------|  FORKED NEO --- app->Hooks: {__app_version__} - pyzm: {pyzm_version} - ES: {get_es_version()}"
         f" - OpenCV:{cv2.__version__} |------"
     )
-    if args.get('monitor_id') and (args.get('live') or args.get('new')):
+    if args.get('monitor_id') and (args.get('live')):
         # live is from the perl daemon, new is from the EventCommandStart which will hopefully have the mid in it
         g.logger.debug(f"{lp} Monitor ID provided by a trusted source, skipping monitor ID verification...")
         if args.get('monitor_id'):
@@ -941,7 +947,7 @@ def main_handler():
         raise exc
 
     bg_logger = Thread(name="ZMLog", target=start_logs,
-                       kwargs={'config': g.config, 'args': args, 'type_': 'zmes', 'no_signal': True})
+                       kwargs={'config': g.config, 'args': args, 'type_': 'zmes', 'no_signal': True, 'new_': new_time})
     bg_logger.start()
     if args.get("file"):
         g.config["wait"] = 0
@@ -982,11 +988,8 @@ def main_handler():
             f"{stream_options.get('PAST_EVENT')=} {past_event=}"
         )
     if args.get('new'):
-        from pyzm.helpers.pyzm_utils import time_format
-        print(f"ZONEMINDER: EventStartCommand was called -> {time_format(datetime.now())}")
-        g.logger.debug(f"ZONEMINDER: EventStartCommand was called -> {time_format(datetime.now())}")
-        g.logger.log_close(exit=0)
-        exit(0)
+        time.sleep(2)
+        exit(1)
     if str2bool(g.config["ml_enable"]):  # send to mlapi host
         mlapi_success: bool = False
         remote_response: dict = {}
