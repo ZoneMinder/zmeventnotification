@@ -878,6 +878,7 @@ def main_handler():
     if args.get('new'):
         from pyzm.helpers.pyzm_utils import time_format
         print(f"ZONEMINDER: EventStartCommand was called -> {time_format(datetime.now())}")
+        g.logger.log_close(exit=0)
         exit(0)
     # process the config using the arguments
     if args.get('eventid'):
