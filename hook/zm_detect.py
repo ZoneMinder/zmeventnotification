@@ -875,12 +875,6 @@ def main_handler():
     g.logger = LogBuffer()
     # Process CLI arguments
     args = _parse_args()
-    if args.get('new'):
-        from pyzm.helpers.pyzm_utils import time_format
-        print(f"ZONEMINDER: EventStartCommand was called -> {time_format(datetime.now())}")
-        g.logger.debug(f"ZONEMINDER: EventStartCommand was called -> {time_format(datetime.now())}")
-        g.logger.log_close(exit=0)
-        exit(0)
     # process the config using the arguments
     if args.get('eventid'):
         g.eid = int(args.get('eventid'))
@@ -942,9 +936,9 @@ def main_handler():
         g.logger.info(f"{lp} Setting up signal handlers for log 'rotation' and 'interrupt'")
         signal.signal(signal.SIGHUP, partial(sig_log_rot, g))
         signal.signal(signal.SIGINT, partial(sig_intr, g))
-    except Exception as e:
-        g.logger.error(f'{lp} Error setting up log rotate and interrupt signal handlers -> \n{e}\n')
-        raise e
+    except Exception as exc:
+        g.logger.error(f'{lp} Error setting up log rotate and interrupt signal handlers -> \n{exc}\n')
+        raise exc
 
     bg_logger = Thread(name="ZMLog", target=start_logs,
                        kwargs={'config': g.config, 'args': args, 'type_': 'zmes', 'no_signal': True})
@@ -987,6 +981,12 @@ def main_handler():
             f"{lp} --file INPUT so LIVE / PAST event logic untouched -> {g.config.get('PAST_EVENT')=} "
             f"{stream_options.get('PAST_EVENT')=} {past_event=}"
         )
+    if args.get('new'):
+        from pyzm.helpers.pyzm_utils import time_format
+        print(f"ZONEMINDER: EventStartCommand was called -> {time_format(datetime.now())}")
+        g.logger.debug(f"ZONEMINDER: EventStartCommand was called -> {time_format(datetime.now())}")
+        g.logger.log_close(exit=0)
+        exit(0)
     if str2bool(g.config["ml_enable"]):  # send to mlapi host
         mlapi_success: bool = False
         remote_response: dict = {}
