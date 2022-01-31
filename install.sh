@@ -389,6 +389,7 @@ install_hook() {
     install -m 755 -o "${WEB_OWNER}" hook/zm_event_end.sh "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_detect.py "${TARGET_BIN_HOOK}"
     install -m 755 -o "${WEB_OWNER}" hook/zm_train_faces.py "${TARGET_BIN_HOOK}"
+    install -m 755 -o "${WEB_OWNER}" hook/EventStartCommand.sh "${TARGET_BIN_HOOK}"
     #python setup.py install && print_success "Done" || print_error "python setup failed"
 
     echo

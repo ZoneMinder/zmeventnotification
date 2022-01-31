@@ -34,20 +34,19 @@ ZMES: 1
 # Sections is for readability/organization. Think Pycharm and want to collapse a section from the structure tab.
 
 general:
-#  base data path for various files the ES+OD needs, this is the path where ZMES was installed
-#  [Default: /var/lib/zmeventnotification]
+  # base data path for various files the ES+OD needs, this is the path where ZMES was installed
+  # [Default: /var/lib/zmeventnotification]
   base_data_path: /var/lib/zmeventnotification
 
   # If configured, you can specify tokens with secret values in that file
   # and only refer to the tokens in your main config file
   secrets : '{{base_data_path}}/zm_secrets.yml'
 
-
   # You can now limit the # of detection process
   # per target processor. If not specified, default is 1
   # Other detection processes will wait to acquire lock
   # NOTE: If you have multiple sequences and things just stall, increase this value for the processor
-#  (WORKING on feedback for timeouts attributed to BoundedSemaphore)
+  # (WORKING on feedback for timeouts attributed to BoundedSemaphore)
   cpu_max_processes: 3
   tpu_max_processes: 2
   gpu_max_processes: 3
@@ -62,19 +61,19 @@ general:
   gpu_max_lock_wait: 100
 
   # If yes, will import the ZoneMinder zones instead of needing to manually configure polygons in monitors section.
-#  [Default: no]
-  # NOTE: currently this imports all ZM ZOnes for every monitor, I may make this a per monitor option later for power users.
+  # NOTE: currently this imports all ZM Zones for every monitor, I may make this a per monitor option later for power users.
+  # [Default: no]
   import_zm_zones: no
 
   # If enabled, will only filter zone names that match the alarm cause
   # This is useful if you only want to report detections where motion
   # was detected by ZM.
-  # NOTE: This is assuming it is a monitor set to some sort of motion, what if its a linked monitor or a MOCORD situation?
-#  [Default: no]
+  # NOTE: This is assuming it is a monitor set to some sort of motion, what if it's a linked monitor or a MOCORD situation?
+  # [Default: no]
   only_triggered_zm_zones: no
 
 
-  # Keep debug logging on for now
+  # This is for logging overrides
   pyzm_overrides:
     console_logs: yes
     # levels
@@ -93,17 +92,18 @@ general:
   # [Default: None]
   skip_mons:
 
-  # remove your <portal> from the logs, passwords are already sanitized. If <portal> is not supplied
-  # but <api_portal> is, we will slice the /api off of it and use the base URL as portal -> x.y.z/zm/api becomes x.y.z/zm
+  # remove your <portal> from the logs, passwords are already sanitized. This is for easy copy and paste without having
+  # to manually sanitize.
   # [Default: no]
   sanitize_logs: no
 
   # The string to show when the logs are sanitized instead of the sensitive info
   # [Default: <sanitized>]
-  sanitize_str: <obfuscated>
+#  sanitize_str: <obfuscated>
 
-  # Delay before running any frames at all
-  # [Default: 0]
+  # Delay before running any frames at all - This may be beneficial when using EventStartCommand.sh and not running
+  # the Perl component
+  # [Default: 0 / None]
   #delay: 0.0
 
   # Place a timestamp on objdetect.jpg - Useful if saving events as mp4.
@@ -115,10 +115,9 @@ general:
     # background is the solid colored rectangle that the timestamp text is printed on
     background: yes
     bg color: '(0,0,0)'  # Default: (0,0,0) aka black
-    # Override the scaling factor for the timestamp text (EXPERIMENTAL)
 
 login:
-  # portal/user/password are needed if you plan on using ZM's legacy
+  # portal/user/password are needed if you plan on using ZM' legacy
   # auth mechanism to get images (basic_user basic_password)
   portal: '{[ZM_PORTAL]}'
   user: '{[ZM_USER]}'
@@ -131,14 +130,14 @@ login:
   # Allow self-signed SSl (HTTPS) certificates
   allow_self_signed: yes
 
-  # If you need basic auth to access ZM
+  # If you need basic auth to access ZM (WIP, have not tested)
   #basic_user: user
   #basic_password: password
 
 
 debug:
-  # force creation of objdetect.jpg even if its a past event or we already have a detection
-  # etc if its a past event or an event that already has its detection and it is the exact same
+  # force creation of objdetect.jpg even if it's a past event, or we already have a detection
+  # etc. If it's a past event or an event that already has its detection, and it is the exact same
   # [Default: no]
   force_debug: yes
   # FOR DEBUGGING -- force LIVE EVENT logic
@@ -153,18 +152,19 @@ control_and_strategy:
 
   # 'first' - When detecting objects, if there are multiple fallbacks, break out
   # the moment we get a match using any object detection library.
-  # 'most' - run through all libraries, select one that has most object matches
+  # 'most' - run through all libraries, select one that has most object matches - confidence_upper can short-circuit this
   # 'most_unique' - run all models, select one that has unique object matches (Removes duplicate labels, whichever label has the most matches is a match)
   # 'union' - sum all the detected objects together between models ** only for same_model_sequence_strategy
   frame_strategy: first
   same_model_sequence_strategy: most
 
-  # sequence of models to run for detection
+  # sequence of models to run for detection - These are in order if you want face and then object it would be 'face,object'
   model_sequence: object,face,alpr
 
   # This is the Width to resize the image before analysis is done, aspect ratio is preserved.
   # Setting it here will activate resizing in MLAPI as well (setting resize in mlapi' config has no effect)
   #  resize: 800
+  # [Default: no]
   resize: no
 
 
@@ -181,16 +181,15 @@ model_options:
   save_image_train: no
   save_image_train_dir: /nas/yolo_train
 
-  # if yes, last detection will be stored for monitors
-  # and bounding boxes that match, along with labels
-  # will be discarded for new detections. This may be helpful
-  # in getting rid of static objects that get detected
-  # due to some motion.
+  # If enabled ZMES will save the last objects detected and compare them to future detected objects.
+  # Example: There is a car parked in a driveway and 'car' is in the detection pattern. You will receive numerous notifications
+  # about the parked car. Enable this and play around with past_det_max_diff_area to have the car remembered and removed if it is in 'same area'
+  # [Default: no]
   match_past_detections: no
 
   # The max difference in area between the objects if match_past_detection is on
   # can also be specified in px like 300px. Default is 5%. Basically, bounding boxes of the same
-  # object can slightly differ ever so slightly between detection. Contributor @neillbell put in this PR
+  # object can differ ever so slightly between detections. Contributor @neillbell put in this PR
   # to calculate the difference in areas and based on his tests, 5% worked well. YMMV. Change it if needed.
   # Note: You can specify label/object specific max_diff_areas as well. If present, they override this value
   # example:
@@ -201,9 +200,8 @@ model_options:
   # this is the maximum size a detected object can have. You can specify it in px or % just like past_det_max_diff_area
   # This is pretty useful to eliminate bogus detection. In my case, depending on shadows and other lighting conditions,
   # I sometimes see "car" or "person" detected that covers most of my driveway view. That is practically impossible
-  # and therefore I set mine to 70% because I know any valid detected objected cannot be larger than that area
-
-  #max_detection_size: 90%
+  # therefore I set mine to 70% because I know any valid detected objected cannot be larger than that area
+  max_detection_size: 90%
 
   # Adds confidence percentage to the labels drawn onto the matching frame
   # (person) becomes (person 97%)
@@ -219,7 +217,7 @@ model_options:
   poly_thickness: 2
   # Draw red bounding boxes around objects that were filtered out (useful for debugging)
   show_filtered_detections: no
-  # If this is yes then objects that were filtered out due to be under the minimum confidence level will have red bounding
+  # If this is yes then objects that were filtered out due to under the minimum confidence level will have red bounding
   # boxes drawn around them IF you have show_filtered_detections enabled. I found this caused a lot of 'noise' so I made
   # it configurable. This could be helpful if you are testing your own trained models.
   show_conf_filtered: no
@@ -292,7 +290,7 @@ push_notification_options:
   # -------------------------------------------------------------
   # Show a clickable link to view the event in a browser, this is handy if the pushover notification goes out to
   # a device without zmNinja installed, they can just click the link and view the event in a regular browser.
-  # NOTE: Your ZM server must be accessible externally for this to work correctly, its super handy to just click the link
+  # NOTE: Your ZM server must be accessible externally for this to work correctly, it's super handy to just click the link
   # (Default: no)
   push_url: no
 
@@ -305,6 +303,7 @@ push_notification_options:
 
   #-- Send a pushover notification if TPU or GPU errors are detected, i.e. 'delegate' error for tpu or
   #-- 'cant convert float() infinite to int()' or '(GPU-API-217)' for yolo. (Default: no)
+  # NOTE: THIS IS NOT IMPLEMENTED YET
   push_errors :  no
   push_err_token: '{[PUSHOVER_ERR_TOKEN]}'
   push_err_key: '{[PUSHOVER_USER_KEY]}'
@@ -336,9 +335,9 @@ push_notification_options:
 
   # EXPERIMENTAL - PushOver 'emergency' priority notifications; acknowledge the notification or, it will repeatedly
   # remind you to acknowledge it for up to 3 hours, the time between reminders and the expiry length are configurable.
-  # If you configure the pushover app to use the Alarm channel, and set the alarm channel volume to max
+  # If you configure the pushover app to use the Alarm channel, set the alarm channel volume to max
   # and allow PushOver to ignore Do Not Disturb, the notification will be LOUD and guaranteed to play even if you have
-  # everything silent and Do Not Disturb enabled! Good if someone has been prowling around and you want your phone to scream at you!
+  # everything silent and Do Not Disturb enabled! Good if someone has been prowling around, and you want your phone to scream at you!
 
   # See https://pushover.net/api#priority for more info, specifically the emergency priority (2). I may add options
   # for receipts and the POST that pushover servers can send to ane external webserver to confirm that someone received
@@ -367,7 +366,7 @@ mqtt_options:
   # Default ports: for TCP: non-TLS: 1883  TLS:8883 .
   mqtt_enable: no
 
-  # Force mqtt to send pic and data even if its a PAST event
+  # Force mqtt to send pic and data even if it's a PAST event
   mqtt_force: no
 
   # Allow you to set a custom MQTT topic name, formats for topics are: name/sub-name/sub-sub-name
@@ -380,6 +379,7 @@ mqtt_options:
 
   # Only use this if not using standard tcp ports, it defaults to 1883 if no TLS and 8883 if TLS, this setting will override
   #mqtt_port :  1234
+
   # MQTT Credentials if enabled in broker
   mqtt_user :  '{[MQTT_USERNAME]}'
   mqtt_pass :  '{[MQTT_PASSWORD]}'
@@ -399,10 +399,10 @@ mqtt_options:
   # TLS CA (LetsEncrypt?)
   #tls_ca :  /etc/certs/fullchain.pem
 
-  # Here is a good guide on setting up a CA and signing server/client certificates for MQTT, even if your using mqtt over your LAN only,
+  # Here is a good guide on setting up a CA and signing server/client certificates for MQTT, even if you're using mqtt over your LAN only,
   # it is always good to enable encryption and learn about it -> http://www.steves-internet-guide.com/creating-and-using-client-certificates-with-mqtt-and-mosquitto/
-  # I DO NOT RECOMMEND using Home Assistant MQTT broker add-on as its a nightmare to get TLS working. (I am still unable to get the MQTT integration to connect to my broker using TLS)
-  # I run an MQTT mosquitto broker on my ZM host and hass connects to that over unencrypted connection.
+  # I DO NOT RECOMMEND using Home Assistant MQTT broker add-on as it's a nightmare to get TLS working. (I am still unable to get the MQTT integration to connect to my broker using TLS)
+  # I run an MQTT mosquitto broker on my ZM host and HASS connects to that over unencrypted connection.
   # To enable 2-ways TLS, add client certificate and private key, Meaning you had a CA sign your brokers server key/cert
   # and also had the CA sign the client key/cert that you are using here
   # Location to client certificate and private key
@@ -420,24 +420,23 @@ animation_options:
   # Animations are created only if an object is detected
   #
   # NOTE: This will DELAY the time taken to send you push notifications
-  # It will try to first create the animation, which may take upto a minute
+  # It will try to first create the animation, which may take up to a minute
   # depending on how soon it gets access to frames. See notes below
   # NOW INCLUDES, first bit of frames are annotated with bounding boxes and label and a TIMESTAMP - MONITOR_NAME
-  # overlay is included in top left corner. Also now a THREADED background process so sending notifications is faster{[]}
-  # If yes, object detection will attempt to create
-  # a short GIF file around the object detection frame
-  # that can be sent via push notifications for instant playback, Pushover size limit limit: 2.5MB
-  # (Default:no)
+  # overlay is included in top left corner if configured in animation_timestamp. Also, now a THREADED background process so sending notifications is faster
+  # Pushover size limit: 2.5MB - zmNinja FCM limit: 1MB
+  # [Default: no]
 
   # TO MAKE THINGS FAST! make sure the monitors are saving their events as JPEG in 'storage'. If using mp4 video passthrough
-  # detections and animations are WAY slower because ZM needs to build the MP4 and then send the frames from the MP4
+  # detections and animations are WAY slower because ZM needs to build the MP4 and then send the frames from the MP4.
   # JPEG storage will give us the frames in real time as ZM reads them, try it out, the performance increase is astounding.
   create_animation: no
 
-  # if animation already exists force write a new one (Default: no)
+  # if animation already exists force write a new one
+  # [Default: no]
   #force_animation: yes
 
-  # place a timestamp on the animations - Customizations are WIP (diff timestamp format, no monitor name)
+  # place a timestamp on the animations
   animation_timestamp:
     enabled: no  # Default: yes
     # Make sure to quote the timestamp string!
@@ -459,8 +458,8 @@ animation_options:
   animation_types: 'mp4,gif'
 
   # if animation_types is gif then when can generate a fast preview gif
-  # every second frame is skipped and the frame rate doubled
-  # so you end up with a longer timeframe sped up (Default: no)
+  # every second frame is skipped and the frame rate doubled.
+  # You end up with a longer timeframe sped up (Default: no)
   fast_gif: no
 
   # default width of animation image. Be cautious when you increase this
@@ -486,7 +485,7 @@ mlapi_options:
   ###########################################
   # You can now run the machine learning code on a different server
   # This frees up your ZM server for other things
-  # To do this, you need to setup https://github.com/zoneminder/mlapi
+  # To do this, you need to setup https://github.com/zoneminder/mlapi - NEO-MLAPI: https://github.com/baudneo/mlapi
   # on your desired server and configure it with a DB user (python3 mlapi_dbuser.py). See its instructions
 
   # This is the MASTER on/off switch for enabling communication to MLAPI, it must be yes/on/1/true to be enabled
@@ -549,7 +548,7 @@ object_options:
   # use half precision floating point as target backend for yolo, on newer cards this may decrease your inferring time
   # try without this enabled first a few times to get a baseline and then enable it to see if detections are faster.
   # THIS SETTING ONLY APPLIES TO GPU ACCELERATED OPENCV
-  # read up on 'half precision floating point' and 'CUDA TARGET FP 16
+  # read up on 'half precision floating point' and 'CUDA TARGET FP 16'
   # ** NOTE THIS IS EXPERIMENTAL **
   #fp16_target: no
 
@@ -576,10 +575,11 @@ object_options:
   #tinyyolo_object_labels: '{{tinyyolo_models}}3/coco.names'
   #tinyyolo_object_framework: opencv
   #tinyyolo_object_processor: gpu
+
 face_options:
   tpu_face_weights_mobilenetv2: '{{coral_models}}/ssd_mobilenet_v2_face_quant_postprocess_edgetpu.tflite'
   face_detection_pattern: .*
-  # cpu or gpu, if gpu isnt available it will default to cpu. You can force CPU usage
+  # cpu or gpu, if gpu isn't available it will default to cpu. You can force CPU usage
   face_dlib_processor: gpu
 
   face_detection_framework: dlib
@@ -657,7 +657,7 @@ alpr_options:
 ###########################################
 #    ------ [ PER MONITOR OVERRIDES SECTION ] ------
 ###########################################
-# You can override ALMOST any parameter on a per monitor basis, there are some illegal keys that would cause behaviour
+# You can override ALMOST any parameter on a per-monitor basis, there are some illegal keys that would cause behaviour
 # DO NOT NEST monitors into a section.... it is already a section!
 monitors:
   6942069:
@@ -722,9 +722,9 @@ monitors:
         # These filters will take precedence over individual per-sequence options AND blanket model options (car_min_confidence)
         # These are known as ZONE FILTERS
         contains:
-          # 85% of car bounding box must be contained within this zones area
+          # 85% of a car bounding box must be contained within this zones area
           car: 85%
-          # 1 pixel of the person bounding box must be contained in this zones area
+          # 1 pixel of a person bounding box must be contained in this zones area
           person: 1px
         max_size:
           # max size of the detected object
@@ -732,7 +732,6 @@ monitors:
         min_conf:
           # min confidence of the detected object
           person: 0.60
-
         past_area_diff:
           # match_past_detections
           # difference in area between the detected object and the saved bounding box
@@ -773,7 +772,7 @@ sequences:
 
     # save every frame that is sent to the detection models. If you are processing a video or are getting weird results
     # turn this on and review the frames in the 'save_frames_dir' directory.
-    # For thew time being it is your responsibility to clean up the directory after you are done (Script to do daily clean ups coming)
+    # For the time being it is your responsibility to clean up the directory after you are done (Script to do daily clean ups coming)
     save_frames: 'no'  # (Default: no)
     save_frames_dir:  # (Default: /tmp) - directory to save the 'save_frames' to
 
