@@ -13,7 +13,8 @@ ZMES_DIR="/var/lib/zmeventnotification"
 # I am hoping the ZM dev team adds Monitor ID as ARG2
 #MID=$2
 EID=$1
-DET_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --eventid "${EID}" --config "${CONFIG_FILE}" --live --debug --event-type "start" --new)# --monitor-id "${MID}")
+DET_SCRIPT=("${ZMES_DIR}/bin/zm_detect.py" --eventid "${EID}" --config "${CONFIG_FILE}" --live --debug --event-type "start" --new)
+# --monitor-id "${MID}")
 DET_OUTPUT=$("${DET_SCRIPT[@]}")
 echo "DET SCRIPT = ${DET_SCRIPT[*]}"
 echo "DET OUTPUT = $DET_OUTPUT"
