@@ -58,7 +58,7 @@ my $app_version = '6.1.28';
 ####################################
 
 # do this before any log init etc.
-my $first_arg = @ARGV[0];
+my $first_arg = $ARGV[0];
 if ($first_arg eq '--version') {
   print ("$app_version\n");
   exit(0);
@@ -1036,7 +1036,7 @@ sub parseDetectResults {
   return ($txt, $jsonstring);
 }
 
-sub saveEsControlSettings() {
+sub saveEsControlSettings {
   if (!$use_escontrol_interface) {
     printDebug('ESCONTROL_INTERFACE is disabled. Not saving control data', 2);
     return;
@@ -1049,7 +1049,7 @@ sub saveEsControlSettings() {
     or Fatal("Error writing to $escontrol_interface_file: $!");
 }
 
-sub loadEsControlSettings() {
+sub loadEsControlSettings {
   if ( !$use_escontrol_interface ) {
     printDebug( 'ESCONTROL_INTERFACE is disabled. Not loading control data',
       1 );
@@ -1350,12 +1350,14 @@ sub checkNewEvents() {
     }
 
     if ($update_tokens && $use_fcm) {
-      open( my $fh, '>', $token_file )
-      or printError("Error writing tokens file during count update: $!");
-      my $json = encode_json( \%tokens_data );
-      #print Dumper(\%tokens_data);
-      print $fh $json;
-      close($fh);
+      if (open(my $fh, '>', $token_file)) {
+        my $json = encode_json(\%tokens_data);
+        #print Dumper(\%tokens_data);
+        print $fh $json;
+        close($fh);
+      } else {
+        printError("Error writing tokens file $token_file during count update: $!");
+      }
     }
 
     foreach my $monitor ( values(%monitors) ) {
@@ -1495,6 +1497,7 @@ sub loadMonitors {
   printInfo("Re-loading monitors");
   $monitor_reload_time = time();
 
+  %monitors = ();
   my $sql = 'SELECT * FROM `Monitors`
         WHERE find_in_set( `Function`, \'Modect,Mocord,Nodect\' )'
     . ( $Config{ZM_SERVER_ID} ? 'AND `ServerId`=?' : '' );
@@ -1503,7 +1506,6 @@ sub loadMonitors {
   my $res = $sth->execute( $Config{ZM_SERVER_ID} ? $Config{ZM_SERVER_ID} : () )
     or Fatal( "Can't execute: " . $sth->errstr() );
   while ( my $monitor = $sth->fetchrow_hashref() ) {
-
     if ( $skip_monitors{ $monitor->{Id} } ) {
       printDebug( "$$monitor{Id} is in skip list, not going to process", 1 );
       next;
@@ -1515,7 +1517,7 @@ sub loadMonitors {
       $monitors{ $monitor->{Id} } = $monitor;
     }
     $monitors{ $monitor->{Id} } = $monitor;
-    printDebug( "Loading " . $monitor->{Name}, 1 );
+    printDebug('Loading ' . $monitor->{Name}, 1);
   } # end while fetchrow
 
   populateEsControlNotification();

@@ -21,7 +21,7 @@ Event NotificationServer Documentation
          
  
 
-`Github Repository <https://github.com/pliablepixels/zmeventnotification>`__        
+`Github Repository <https://github.com/zoneminder/zmeventnotification>`__        
 
 
 :doc:`guides/principles`

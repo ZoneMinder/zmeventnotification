@@ -30,7 +30,7 @@ To clone the latest stable release:
 
 ::
 
-  git clone https://github.com/pliablepixels/zmeventnotification.git
+  git clone https://github.com/zoneminder/zmeventnotification.git
   cd zmeventnotification
   # repeat these two steps each time you want to update to the latest stable
   git fetch --tags
@@ -41,7 +41,7 @@ To clone master:
 
 ::
 
-  git clone https://github.com/pliablepixels/zmeventnotification.git
+  git clone https://github.com/zoneminder/zmeventnotification.git
   # repeat these two steps each time you want to update
   git checkout master # only needed if you are on some other branch later
   git pull
