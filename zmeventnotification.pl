@@ -58,7 +58,7 @@ my $app_version = '6.1.28';
 ####################################
 
 # do this before any log init etc.
-my $first_arg = @ARGV[0];
+my $first_arg = $ARGV[0];
 if ($first_arg eq '--version') {
   print ("$app_version\n");
   exit(0);
@@ -1036,7 +1036,7 @@ sub parseDetectResults {
   return ($txt, $jsonstring);
 }
 
-sub saveEsControlSettings() {
+sub saveEsControlSettings {
   if (!$use_escontrol_interface) {
     printDebug('ESCONTROL_INTERFACE is disabled. Not saving control data', 2);
     return;
@@ -1049,7 +1049,7 @@ sub saveEsControlSettings() {
     or Fatal("Error writing to $escontrol_interface_file: $!");
 }
 
-sub loadEsControlSettings() {
+sub loadEsControlSettings {
   if ( !$use_escontrol_interface ) {
     printDebug( 'ESCONTROL_INTERFACE is disabled. Not loading control data',
       1 );
