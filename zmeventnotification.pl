@@ -1032,7 +1032,7 @@ sub parseDetectResults {
   return ($txt, $jsonstring);
 }
 
-sub saveEsControlSettings() {
+sub saveEsControlSettings {
   if (!$use_escontrol_interface) {
     printDebug('ESCONTROL_INTERFACE is disabled. Not saving control data', 2);
     return;
@@ -1045,7 +1045,7 @@ sub saveEsControlSettings() {
     or Fatal("Error writing to $escontrol_interface_file: $!");
 }
 
-sub loadEsControlSettings() {
+sub loadEsControlSettings {
   if (!$use_escontrol_interface) {
     printDebug('ESCONTROL_INTERFACE is disabled. Not loading control data', 1);
     return;
@@ -1343,12 +1343,14 @@ sub checkNewEvents() {
     }
 
     if ($update_tokens && $use_fcm) {
-      open( my $fh, '>', $token_file )
-      or printError("Error writing tokens file during count update: $!");
-      my $json = encode_json( \%tokens_data );
-      #print Dumper(\%tokens_data);
-      print $fh $json;
-      close($fh);
+      if (open(my $fh, '>', $token_file)) {
+        my $json = encode_json(\%tokens_data);
+        #print Dumper(\%tokens_data);
+        print $fh $json;
+        close($fh);
+      } else {
+        printError("Error writing tokens file $token_file during count update: $!");
+      }
     }
 
     foreach my $monitor ( values(%monitors) ) {

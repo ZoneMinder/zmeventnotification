@@ -131,6 +131,10 @@ Get HTTPS library for LWP:
 
 ::
 
+    sudo apt-get install liblwp-protocol-https-perl
+
+    or 
+
     perl -MCPAN -e "install LWP::Protocol::https"
 
 If you want to enable MQTT:
