@@ -1313,12 +1313,14 @@ sub checkNewEvents() {
       my $hr;
       my $data = do { local $/ = undef; <$fh> };
       close($fh);
-      eval { $hr = decode_json($data); };
-      if ($@) {
-        printError("Could not parse token file $token_file for token counts: $!");
-      } else {
-        %tokens_data = %$hr;
-        $update_tokens = 1;
+      if ($data) { # Could be empty
+        eval { $hr = decode_json($data); };
+        if ($@) {
+          printError("Could not parse token file $token_file for token counts: $!");
+        } else {
+          %tokens_data = %$hr;
+          $update_tokens = 1;
+        }
       }
     }
 
