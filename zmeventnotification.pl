@@ -2928,7 +2928,7 @@ sub saveFCMTokens {
   $$tokens_data{tokens}->{$stoken}->{invocations} = $invocations;
   $$tokens_data{tokens}->{$stoken}->{appversion} = $appversion;
 
-  open(my $fh, '>', $token_file)
+  open($fh, '>', $token_file)
     or printError("Error writing tokens file $token_file: $!");
   print $fh encode_json($tokens_data);
   close($fh);
