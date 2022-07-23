@@ -137,8 +137,8 @@ use constant {
   DEFAULT_FCM_LOG_RAW_MESSAGE=>'no',
   DEFAULT_FCM_LOG_MESSAGE_ID=>'NONE',
   DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN => 8000,
-  DEFAULT_FCM_V1_KEY => 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJnZW5lcmF0b3IiOiJwbGlhYmxlIHBpeGVscyIsImlhdCI6MTYwMTIwOTUyNSwiY2xpZW50Ijoiem1uaW5qYSJ9.mYgsZ84i3aUkYNv8j8iDsZVVOUIJmOWmiZSYf15O0zc',
-  DEFAULT_FCM_V1_URL => 'https://us-central1-ninja-1105.cloudfunctions.net/send_push',
+  DEFAULT_FCM_V1_KEY => 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJnZW5lcmF0b3IiOiJab25lTWluZGVyIEluYyIsImlhdCI6MTY0MTAxODg0OCwiY2xpZW50Ijoiem1uaW5qYSJ9.ThaCp6WOlAHWrNUcXLcMB3yMWUI16AR0nePjufXcWEA',
+  DEFAULT_FCM_V1_URL => 'https://us-central1-zoneminder-ninja.cloudfunctions.net/send_push',
   DEFAULT_MAX_PARALLEL_HOOKS => 0,
 };
 
