@@ -114,7 +114,7 @@ use constant {
   DEFAULT_CUSTOMIZE_TAG_ALARM_EVENT_ID            => 'no',
   DEFAULT_CUSTOMIZE_USE_CUSTOM_NOTIFICATION_SOUND => 'no',
   DEFAULT_CUSTOMIZE_INCLUDE_PICTURE               => 'no',
-  
+
 
   DEFAULT_USE_HOOKS                          => 'no',
   DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE         => 'yes',
@@ -292,7 +292,7 @@ my $es_start_time       = time();
 my $apns_feedback_time  = 0;
 my $proxy_reach_time    = 0;
 my @events             = ();
-my @active_connections = (); 
+my @active_connections = ();
 my $wss;
 my $zmdc_active = 0;
 
@@ -450,7 +450,7 @@ if ($hook_pass_image_path) {
 sub check_for_duplicate_token {
   my %token_duplicates = ();
   foreach (@active_connections) {
-    $token_duplicates{$_->{token}}++ if $_->{token}; 
+    $token_duplicates{$_->{token}}++ if $_->{token};
   }
   foreach (keys %token_duplicates) {
     printDebug('...'.substr($_,-10).' occurs: '.$token_duplicates{$_}.' times', 2) if $token_duplicates{$_} > 1;
@@ -569,7 +569,7 @@ sub loadEsConfigSettings {
   $use_fcm = config_get_val( $config, 'fcm', 'enable', DEFAULT_FCM_ENABLE );
   $use_fcmv1 = config_get_val( $config, 'fcm', 'use_fcmv1', DEFAULT_USE_FCMV1 );
   $replace_push_messages = config_get_val( $config, 'fcm', 'replace_push_messages', DEFAULT_REPLACE_PUSH_MSGS );
-  
+
 
   $fcm_date_format =
     config_get_val( $config, 'fcm', 'date_format', DEFAULT_FCM_DATE_FORMAT );
@@ -790,7 +790,7 @@ Log FCM message ID.................... ${\(value_or_undefined($fcm_log_message_i
 Log RAW FCM Messages.................. ${\(yes_or_no($fcm_log_raw_message))}
 FCM V1 URL............................ ${\(value_or_undefined($fcm_v1_url))}
 FCM V1 Key............................ ${\(default_or_custom($fcm_v1_key, DEFAULT_FCM_V1_KEY))}
- 
+
 Token file ........................... ${\(value_or_undefined($token_file))}
 
 Use MQTT ............................. ${\(yes_or_no($use_mqtt))}
@@ -1025,10 +1025,11 @@ sub printError {
 # splits JSON string from detection title string
 sub parseDetectResults {
   my $results = shift;
-  my ( $txt, $jsonstring ) = split( '--SPLIT--', $results );
-
+  my ($txt, $jsonstring) = $results ? split('--SPLIT--', $results) : ('','[]');
+  #ensure defined results so quiet warnings
+  $txt = '' if !$txt;
   $jsonstring = '[]' if !$jsonstring;
-  printDebug("parse of hook:$txt and $jsonstring", 2);
+  printDebug("parse of hook:$txt and $jsonstring from $results", 2);
   return ($txt, $jsonstring);
 }
 
@@ -1357,7 +1358,7 @@ sub checkNewEvents() {
 
     foreach my $monitor ( values(%monitors) ) {
       zmMemInvalidate($monitor);
-    } 
+    }
     loadMonitors();
   } # end if monitor reload time
 
@@ -1391,7 +1392,9 @@ sub checkNewEvents() {
     # that occur in < polling time of ES and then moves to ALERT
     if ($state == STATE_ALARM || $state == STATE_ALERT) {
       if (!$active_events{$mid}->{$current_event}) {
-        if ($active_events{$mid}->{last_event_processed} >= $current_event) {
+        if ($active_events{$mid}->{last_event_processed} and
+          ($active_events{$mid}->{last_event_processed} >= $current_event)
+        ) {
           printDebug(
             "Discarding new event id: $current_event as last processed eid for this monitor is: "
               . $active_events{$mid}->{last_event_processed},
@@ -1798,7 +1801,7 @@ sub sendOverFCMV1 {
   my $badge = $obj->{badge} + 1;
   my $count = defined($obj->{invocations})?$obj->{invocations}->{count}+1:0;
 
-  print WRITER 'fcm_notification--TYPE--' . $obj->{token} . '--SPLIT--' . $badge 
+  print WRITER 'fcm_notification--TYPE--' . $obj->{token} . '--SPLIT--' . $badge
                 .'--SPLIT--' . $count .'--SPLIT--'.(localtime)[4]. "\n";
 
   my $title = $mname . ' Alarm';
@@ -1843,8 +1846,8 @@ sub sendOverFCMV1 {
       #aps_custom_data=>{
       #
       #},
-      headers => { 
-        'apns-priority' => '10' , 
+      headers => {
+        'apns-priority' => '10' ,
         'apns-push-type'=>'alert',
         #'apns-expiration'=>'0'
         }
@@ -1896,7 +1899,7 @@ sub sendOverFCMV1 {
       deleteFCMToken($obj->{token});
     }
   }
-    
+
   # send supplementary event data over websocket, same SSL state issue
   # so use a parent pipe
   if ( ($obj->{state} == VALID_CONNECTION) && exists $obj->{conn} ) {
@@ -1990,7 +1993,7 @@ sub sendOverFCMLegacy {
   my $count = defined($obj->{invocations})?$obj->{invocations}->{count}+1:0;
   my $at = (localtime)[4];
 
-  print WRITER 'fcm_notification--TYPE--' . $obj->{token} . '--SPLIT--' . $badge 
+  print WRITER 'fcm_notification--TYPE--' . $obj->{token} . '--SPLIT--' . $badge
                 .'--SPLIT--' . $count .'--SPLIT--' . $at . "\n";
 
   # use zmNinja FCM key if the user did not override
@@ -2221,7 +2224,7 @@ sub processJobs {
           $parallel_hooks++;
         } elsif ($msg eq 'del') {
           $parallel_hooks--;
-        } else { 
+        } else {
           printError("Parallel hooks update: command not understood: $msg");
         }
       } elsif ( $job eq 'mqtt_publish' ) {
@@ -2329,8 +2332,9 @@ sub checkConnection {
 
   my $escontrol_conn =
     scalar
-    grep { $_->{state} == VALID_CONNECTION && $_->{category} == 'escontrol' }
-    @active_connections;
+    grep {
+      ($_->{state} == VALID_CONNECTION) and defined($_->{category}) and ($_->{category} == 'escontrol')
+    } @active_connections;
 
   printDebug(
     'After tick: TOTAL: '. @active_connections." ,  ES_CONTROL: $escontrol_conn, FCM+WEB: $fcm_conn, FCM: $fcm_no_conn, WEB: $web_conn, MQTT:$mqtt_conn, invalid WEB: $web_no_conn, PENDING: $pend_conn",
@@ -2470,10 +2474,10 @@ sub processIncomingMessage {
             my $new_token = substr( $data->{token}, -10 );
             my $existing_conn = $_->{conn} ? $_->{conn}->ip().':'.$_->{conn}->port() : 'undefined';
             my $new_conn = $conn ? $conn->ip().':'.$conn->port() : 'undefined';
-            
+
             printDebug("JOB: new token matched existing token: ($new_token <==> $existing_token) but connection did not ($new_conn <==> $existing_conn)", 2 );
             printDebug('JOB: Duplicate token found: marking ...' . substr( $_->{token}, -10 ) . ' to be deleted', 1);
-            
+
             $_->{state} = PENDING_DELETE;
             # make sure loaded invocations are not erased
             $stored_invocations = $_->{invocations};
@@ -2492,11 +2496,11 @@ sub processIncomingMessage {
             if ( isValidMonIntList( $data->{monlist} )) {
               $_->{monlist} = $data->{monlist};
             }
-           
+
             if ( isValidMonIntList( $data->{intlist} )) {
               $_->{intlist} = $data->{intlist};
             }
-          
+
             $_->{pushstate} = $data->{state};
             printDebug(
               'JOB: Storing token ...'
@@ -2529,11 +2533,11 @@ sub processIncomingMessage {
           my $new_token = substr( $data->{token}, -10 );
           my $existing_conn = $_->{conn} ? $_->{conn}->ip().':'.$_->{conn}->port() : 'undefined';
           my $new_conn = $conn ? $conn->ip().':'.$conn->port() : 'undefined';
-            
+
           printDebug(
             "JOB: connection matched ($new_conn <==> $existing_conn) but token did not ($new_token <==> $existing_token). first registration?",
             2 );
-        
+
           $_->{type}     = FCM;
           $_->{token}    = $data->{token};
           $_->{platform} = $data->{platform};
@@ -3068,8 +3072,8 @@ sub sendEvent {
 
   if ( $ac->{type} == FCM
     && $ac->{pushstate} ne 'disabled'
-    && $ac->{state} != PENDING_AUTH 
-    && $ac->{state} != PENDING_DELETE 
+    && $ac->{state} != PENDING_AUTH
+    && $ac->{state} != PENDING_DELETE
     )
   {
     # only send if fcm is an allowed channel
@@ -3193,7 +3197,7 @@ sub isAllowedInRules {
     } elsif (index($alarm->{Cause}, 'detected:') != -1)  {
       $cause = $alarm->{Cause};
     }
-  } 
+  }
 
   my $eid = $alarm->{EventId};
   my $now = Time::Piece->new;
@@ -3517,7 +3521,7 @@ sub processNewAlarmsInFork {
           chomp($res);
           my ( $resTxt, $resJsonString ) = parseDetectResults($res);
           # don't know why, but exit 1 from signal handler in shell script lands up as 0 here
-          $hookResult = 1 if (!$resTxt); 
+          $hookResult = 1 if !$resTxt;
           $startHookResult = $hookResult;
 
           printDebug(
@@ -3671,7 +3675,7 @@ sub processNewAlarmsInFork {
             printDebug(
               'token is unique, shouldSendEventToConn returned true, so calling sendEvent', 1 );
             sendEvent( $temp_alarm_obj, $_, 'event_start', $hookResult );
-            $fcm_token_duplicates{$_->{token}}++ if $_->{token}; 
+            $fcm_token_duplicates{$_->{token}}++ if $_->{token};
           }
         }    # foreach active_connections
       }    # isAllowed Alarm rules
@@ -3741,7 +3745,7 @@ sub processNewAlarmsInFork {
           my ( $resTxt, $resJsonString ) = parseDetectResults($res);
 
           # don't know why, but exit 1 from signal handler in shell script lands up as 0 here
-          $hookResult = 1 if (!$resTxt); 
+          $hookResult = 1 if (!$resTxt);
 
           $alarm->{End}->{State} = 'ready';
           printDebug(
@@ -3789,7 +3793,7 @@ sub processNewAlarmsInFork {
             my $user_res = `$user_cmd`;
           } # user notify script
 
-          if ($use_hook_description && 
+          if ($use_hook_description &&
               ($hookResult == 0) && (index($resTxt,'detected:') != -1)) {
             printDebug ("Event end: overwriting notes with $resTxt",1);
             $alarm->{End}->{Cause} = $resTxt . ' ' . $alarm->{End}->{Cause};
@@ -4093,7 +4097,7 @@ sub initSocketServer {
           # Child
           # do this to get a proper return value
           # $SIG{CHLD} = undef;
-          
+
           local $SIG{'CHLD'} = 'DEFAULT';
           #$wss->shutdown();
           close(READER);
@@ -4101,7 +4105,7 @@ sub initSocketServer {
           logTerm();
           logInit();
           logSetSignal();
-         
+
           printDebug(
             "Forked process:$$ to handle alarm eid:" . $_->{Alarm}->{EventId},
             1 );
