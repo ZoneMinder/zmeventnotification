@@ -138,7 +138,7 @@ use constant {
   DEFAULT_FCM_LOG_MESSAGE_ID=>'NONE',
   DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN => 8000,
   DEFAULT_FCM_V1_KEY => 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJnZW5lcmF0b3IiOiJwbGlhYmxlIHBpeGVscyIsImlhdCI6MTYwMTIwOTUyNSwiY2xpZW50Ijoiem1uaW5qYSJ9.mYgsZ84i3aUkYNv8j8iDsZVVOUIJmOWmiZSYf15O0zc',
-  DEFAULT_FCM_V1_URL => 'https://us-central1-ninja-1105.cloudfunctions.net/send_push',
+  DEFAULT_FCM_V1_URL => 'https://us-central1-zoneminder-ninja.cloudfunctions.net/send_push',
   DEFAULT_MAX_PARALLEL_HOOKS => 0,
 };
 
@@ -1302,7 +1302,7 @@ sub checkNewEvents() {
     my %tokens_data;
     if ($use_fcm) {
       open(my $fh, '<', $token_file)
-      || Error( 'Cannot open to update token counts ' . $token_file );
+      || Error('Cannot open to update token counts ' . $token_file);
       my $hr;
       my $data = do { local $/ = undef; <$fh> };
       close($fh);
@@ -1484,9 +1484,13 @@ sub loadMonitors {
   $monitor_reload_time = time();
 
   %monitors = ();
-  my $sql = 'SELECT * FROM `Monitors`
-        WHERE find_in_set( `Function`, \'Modect,Mocord,Nodect\' )'
-    . ( $Config{ZM_SERVER_ID} ? 'AND `ServerId`=?' : '' );
+  my $sql = 'SELECT * FROM `Monitors` WHERE';
+  if (version->parse(ZM_VERSION) >= version->parse('1.37.13')) {
+    $sql .= ' Capturing != \'None\'';
+  } else {
+    $sql .= ' find_in_set( `Function`, \'Modect,Mocord,Nodect\' )'
+  }
+  $sql .= ( $Config{ZM_SERVER_ID} ? 'AND `ServerId`=?' : '' );
   my $sth = $dbh->prepare_cached($sql)
     or Fatal("Can't prepare '$sql': " . $dbh->errstr());
   my $res = $sth->execute( $Config{ZM_SERVER_ID} ? $Config{ZM_SERVER_ID} : () )
@@ -1817,14 +1821,14 @@ sub sendOverFCMV1 {
       }
   };
 
-  if ( $obj->{platform} eq 'android' ) {
+  if ($obj->{platform} eq 'android') {
     $message_v2->{android} = {
       icon     => 'ic_stat_notification',
       priority => $fcm_android_priority
     };
-    $message_v2->{android}->{ttl} = $fcm_android_ttl if (defined($fcm_android_ttl));
-    $message_v2->{android}->{tag} = 'zmninjapush' if ($replace_push_messages);
-    if (defined ($obj->{appversion}) && ($obj->{appversion} ne "unknown")) {
+    $message_v2->{android}->{ttl} = $fcm_android_ttl if defined($fcm_android_ttl);
+    $message_v2->{android}->{tag} = 'zmninjapush' if $replace_push_messages;
+    if (defined ($obj->{appversion}) && ($obj->{appversion} ne 'unknown')) {
       printDebug('setting channel to zmninja', 2);
       $message_v2->{android}->{channel} = 'zmninja';
     } else {
@@ -1911,6 +1915,7 @@ sub sendOverFCMV1 {
 # Sends a push notification to FCM
 # called in a forked process
 sub sendOverFCMLegacy {
+  printDebug("Using Legacy");
   use constant NINJA_API_KEY =>
     'AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h';
 
@@ -3371,7 +3376,7 @@ sub shouldSendEventToConn {
 
   my $id     = getConnectionIdentity($ac);
   my $connId = $ac->{id};
-  printDebug( "Checking alarm conditions for $id", 1 );
+  printDebug('Checking alarm conditions for '.$id, 1);
 
   if ( isInList( $monlist, $alarm->{MonitorId} ) ) {
     my $mint = getInterval( $intlist, $monlist, $alarm->{MonitorId} );
