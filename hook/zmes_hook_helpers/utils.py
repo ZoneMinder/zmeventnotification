@@ -173,14 +173,14 @@ def import_zm_zones(mid, reason):
         match_reason = True if g.config['only_triggered_zm_zones']=='yes' else False
     g.logger.Debug(2,'import_zm_zones: match_reason={} and reason={}'.format(match_reason, reason))
 
-    url = g.config['portal'] + '/api/zones/forMonitor/' + mid + '.json'
+    url = g.config['api_portal'] + '/zones/forMonitor/' + mid + '.json'
     g.logger.Debug(2,'Getting ZM zones using {}?username=xxx&password=yyy&user=xxx&pass=yyy'.format(url))
     url = url + '?username=' + g.config['user']
     url = url + '&password=' + urllib.parse.quote(g.config['password'], safe='')
     url = url + '&user=' + g.config['user']
     url = url + '&pass=' + urllib.parse.quote(g.config['password'], safe='')
 
-    if g.config['portal'].lower().startswith('https://'):
+    if g.config['api_portal'].lower().startswith('https://'):
         main_handler = urllib.request.HTTPSHandler(context=g.ctx)
     else:
         main_handler = urllib.request.HTTPHandler()
@@ -188,7 +188,7 @@ def import_zm_zones(mid, reason):
     if g.config['basic_user']:
         g.logger.Debug(2,'Basic auth config found, associating handlers')
         password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
-        top_level_url = g.config['portal']
+        top_level_url = g.config['api_portal']
         password_mgr.add_password(None, top_level_url, g.config['basic_user'],
                                   g.config['basic_password'])
         handler = urllib.request.HTTPBasicAuthHandler(password_mgr)
@@ -210,7 +210,6 @@ def import_zm_zones(mid, reason):
 
     # Now lets look at reason to see if we need to
     # honor ZM motion zones
-
 
     #reason_zones = [x.strip() for x in rz.split(',')]
     #g.logger.Debug(1,'Found motion zones provided in alarm cause: {}'.format(reason_zones))
