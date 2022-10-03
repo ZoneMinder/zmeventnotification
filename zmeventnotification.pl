@@ -3840,8 +3840,7 @@ sub processNewAlarmsInFork {
 
  # note that this end_notify_if_start is default yes, even if you comment it out
  # so if you disable all hooks params, you won't get end notifs
- # # FIXME order of operations unclear
-      if ( $event_end_notify_if_start_success && $startHookResult != 0 ) {
+      if ( $event_end_notify_if_start_success && ($startHookResult != 0) ) {
         printInfo(
           'Not sending event end alarm, as we did not send a start alarm for this, or start hook processing failed'
         );
