@@ -3978,9 +3978,9 @@ sub processNewAlarmsInFork {
               . '--JSON--'
               . $resJsonString . "\n";
 
-  # This updates the ZM DB with the detected description
-  # we are writing resTxt not alarm cause which is only detection text
-  # when we write to DB, we will add the latest notes, which may have more zones
+        # This updates the ZM DB with the detected description
+        # we are writing resTxt not alarm cause which is only detection text
+        # when we write to DB, we will add the latest notes, which may have more zones
             print WRITER 'event_description--TYPE--'
               . $mid
               . '--SPLIT--'
@@ -4096,172 +4096,183 @@ sub processNewAlarmsInFork {
     # ---------- Event End processing ----------------------------------#
     elsif ( $alarm->{End}->{State} eq 'pending' ) {
 
-      # this means we need to invoke a hook
-      if ( $alarm->{Start}->{State} ne 'done' ) {
-        printDebug(
-          'Not yet sending out end notification as start hook/notify is not done',
-          2
-        );
+      # is this monitor blocked from hooks in config?
+      if ( $hook_skip_monitors{$mid} ) {
+        printInfo("$mid is in hook skip list, not using hooks");
+        $alarm->{End}->{State} = 'ready';
 
-        #$hookResult = 0; # why ? forgot.
+        # lets treat this like a hook success so it
+        # gets sent out
+        $hookResult = 0;
       }
-      else {    # start processing over, so end can be processed
-
-        my $notes = getNotesFromEventDB($eid);
-        if ($hookString) {
-          if ( index( $notes, 'detected:' ) == -1 ) {
-            printDebug(
-              "ZM overwrote detection DB, current notes: [$notes], adding detection notes back into DB [$hookString]",
-              1
-            );
-
-            # This will be prefixed, so no need to add old notes back
-            updateEventinZmDB( $eid, $hookString );
-            $notes = $hookString . " " . $notes;
-          }
-          else {
-            printDebug( "DB Event notes contain detection text, all good", 2 );
-          }
-        }
-
-        if ( $event_end_hook && $use_hooks ) {
-
-          # invoke end hook script
-          my $cmd =
-              $event_end_hook . ' '
-            . $eid . ' '
-            . $mid . ' "'
-            . $alarm->{MonitorName} . '" "'
-            . $notes . '"';
-
-          if ($hook_pass_image_path) {
-            my $event = new ZoneMinder::Event($eid);
-            $cmd = $cmd . ' "' . $event->Path() . '"';
-            printDebug(
-              'Adding event path:'
-                . $event->Path()
-                . ' to hook for image storage',
-              2
-            );
-
-          }
-          printDebug( 'Invoking hook on event end:' . $cmd, 1 );
-          if ( $cmd =~ /^(.*)$/ ) {
-            $cmd = $1;
-          }
-
-          print WRITER "update_parallel_hooks--TYPE--add\n";
-          my $res = `$cmd`;
-          $hookResult = $? >> 8; # make sure it is before pipe
-          
-
-          print WRITER "update_parallel_hooks--TYPE--del\n";
-
-          chomp($res);
-          my ( $resTxt, $resJsonString ) = parseDetectResults($res);
-
-          # don't know why, but exit 1 from signal handler in shell script lands up as 0 here
-          $hookResult = 1 if (!$resTxt); 
-
-          $alarm->{End}->{State} = 'ready';
+      else {
+        # this means we need to invoke a hook
+        if ( $alarm->{Start}->{State} ne 'done' ) {
           printDebug(
-            "hook end returned with text:$resTxt  json:$resJsonString exit:$hookResult",
-            1
+            'Not yet sending out end notification as start hook/notify is not done',
+            2
           );
 
-          #tbd  - was this a typo? Why ->{Cause}?
-          # kept it here for now
-          #$alarm->{Cause} = $resTxt . ' ' . $alarm->{Cause};
-          #$alarm->{End}->{Cause} = $resTxt;
+          #$hookResult = 0; # why ? forgot.
+        }
+        else {    # start processing over, so end can be processed
 
-          #I think this is what we need
+          my $notes = getNotesFromEventDB($eid);
+          if ($hookString) {
+            if ( index( $notes, 'detected:' ) == -1 ) {
+              printDebug(
+                "ZM overwrote detection DB, current notes: [$notes], adding detection notes back into DB [$hookString]",
+                1
+              );
 
-          #$alarm->{End}->{Cause}         = $resTxt . ' ' . $alarm->{Cause};
-          $alarm->{End}->{Cause}         = $resTxt;
-          $alarm->{End}->{DetectionJson} = decode_json($resJsonString);
+              # This will be prefixed, so no need to add old notes back
+              updateEventinZmDB( $eid, $hookString );
+              $notes = $hookString . " " . $notes;
+            }
+            else {
+              printDebug( "DB Event notes contain detection text, all good", 2 );
+            }
+          }
 
-          if ($event_end_hook_notify_userscript) {
-            my $user_cmd =
-                $event_end_hook_notify_userscript . ' '
-              . $hookResult . ' '
+          if ( $event_end_hook && $use_hooks ) {
+
+            # invoke end hook script
+            my $cmd =
+                $event_end_hook . ' '
               . $eid . ' '
-              . $mid . ' ' . '"'
-              . $alarm->{MonitorName} . '" ' . '"'
-              . $resTxt . '" ' . '"'
-              . $resJsonString . '" ';
+              . $mid . ' "'
+              . $alarm->{MonitorName} . '" "'
+              . $notes . '"';
 
             if ($hook_pass_image_path) {
               my $event = new ZoneMinder::Event($eid);
-              $user_cmd = $user_cmd . ' "' . $event->Path() . '"';
+              $cmd = $cmd . ' "' . $event->Path() . '"';
               printDebug(
                 'Adding event path:'
                   . $event->Path()
-                  . ' to $user_cmd for image location',
+                  . ' to hook for image storage',
                 2
               );
 
             }
-
-            if ( $user_cmd =~ /^(.*)$/ ) {
-              $user_cmd = $1;
+            printDebug( 'Invoking hook on event end:' . $cmd, 1 );
+            if ( $cmd =~ /^(.*)$/ ) {
+              $cmd = $1;
             }
-            printDebug( "invoking user end notification script $user_cmd", 1 );
-            my $user_res = `$user_cmd`;
-          }    # user notify script
 
-          if ($use_hook_description && 
-              ($hookResult == 0) && (index($resTxt,'detected:') != -1)) {
-            printDebug ("Event end: overwriting notes with $resTxt",1);
-            $alarm->{End}->{Cause} =
-              $resTxt . ' ' . $alarm->{End}->{Cause};
+            print WRITER "update_parallel_hooks--TYPE--add\n";
+            my $res = `$cmd`;
+            $hookResult = $? >> 8; # make sure it is before pipe
+            
+
+            print WRITER "update_parallel_hooks--TYPE--del\n";
+
+            chomp($res);
+            my ( $resTxt, $resJsonString ) = parseDetectResults($res);
+
+            # don't know why, but exit 1 from signal handler in shell script lands up as 0 here
+            $hookResult = 1 if (!$resTxt); 
+
+            $alarm->{End}->{State} = 'ready';
+            printDebug(
+              "hook end returned with text:$resTxt  json:$resJsonString exit:$hookResult",
+              1
+            );
+
+            #tbd  - was this a typo? Why ->{Cause}?
+            # kept it here for now
+            #$alarm->{Cause} = $resTxt . ' ' . $alarm->{Cause};
+            #$alarm->{End}->{Cause} = $resTxt;
+
+            #I think this is what we need
+
+            #$alarm->{End}->{Cause}         = $resTxt . ' ' . $alarm->{Cause};
+            $alarm->{End}->{Cause}         = $resTxt;
             $alarm->{End}->{DetectionJson} = decode_json($resJsonString);
 
-            print WRITER 'active_event_update--TYPE--'
-              . $mid
-              . '--SPLIT--'
-              . $eid
-              . '--SPLIT--' . 'Start'
-              . '--SPLIT--' . 'Cause'
-              . '--SPLIT--'
-              . $alarm->{End}->{Cause}
-              . '--JSON--'
-              . $resJsonString . "\n";
+            if ($event_end_hook_notify_userscript) {
+              my $user_cmd =
+                  $event_end_hook_notify_userscript . ' '
+                . $hookResult . ' '
+                . $eid . ' '
+                . $mid . ' ' . '"'
+                . $alarm->{MonitorName} . '" ' . '"'
+                . $resTxt . '" ' . '"'
+                . $resJsonString . '" ';
 
-            # This updates the ZM DB with the detected description
-            # we are writing resTxt not alarm cause which is only detection text
-            # when we write to DB, we will add the latest notes, which may have more zones
-            print WRITER 'event_description--TYPE--'
-              . $mid
-              . '--SPLIT--'
-              . $eid
-              . '--SPLIT--'
-              . $resTxt . "\n";
+              if ($hook_pass_image_path) {
+                my $event = new ZoneMinder::Event($eid);
+                $user_cmd = $user_cmd . ' "' . $event->Path() . '"';
+                printDebug(
+                  'Adding event path:'
+                    . $event->Path()
+                    . ' to $user_cmd for image location',
+                  2
+                );
 
-            $hookString = $resTxt;
+              }
 
-          } # end hook description
+              if ( $user_cmd =~ /^(.*)$/ ) {
+                $user_cmd = $1;
+              }
+              printDebug( "invoking user end notification script $user_cmd", 1 );
+              my $user_res = `$user_cmd`;
+            }    # user notify script
 
-        }
-        else {
-          # treat it as a success if no hook to be used
-          printInfo(
-            'end hooks/use hooks not being used, going to directly send out a notification if checks pass'
-          );
-          $hookResult = 0;
-        }
+            if ($use_hook_description && 
+                ($hookResult == 0) && (index($resTxt,'detected:') != -1)) {
+              printDebug ("Event end: overwriting notes with $resTxt",1);
+              $alarm->{End}->{Cause} =
+                $resTxt . ' ' . $alarm->{End}->{Cause};
+              $alarm->{End}->{DetectionJson} = decode_json($resJsonString);
 
-        $alarm->{End}->{State} = 'ready';
+              print WRITER 'active_event_update--TYPE--'
+                . $mid
+                . '--SPLIT--'
+                . $eid
+                . '--SPLIT--' . 'Start'
+                . '--SPLIT--' . 'Cause'
+                . '--SPLIT--'
+                . $alarm->{End}->{Cause}
+                . '--JSON--'
+                . $resJsonString . "\n";
 
-      }    # hook end script
+              # This updates the ZM DB with the detected description
+              # we are writing resTxt not alarm cause which is only detection text
+              # when we write to DB, we will add the latest notes, which may have more zones
+              print WRITER 'event_description--TYPE--'
+                . $mid
+                . '--SPLIT--'
+                . $eid
+                . '--SPLIT--'
+                . $resTxt . "\n";
 
-      # end of State == pending
+              $hookString = $resTxt;
+
+            } # end hook description
+
+          }
+          else {
+            # treat it as a success if no hook to be used
+            printInfo(
+              'end hooks/use hooks not being used, going to directly send out a notification if checks pass'
+            );
+            $hookResult = 0;
+          }
+
+          $alarm->{End}->{State} = 'ready';
+
+        }    # hook end script
+
+        # end of State == pending
+      }
     }
     elsif ( $alarm->{End}->{State} eq 'ready' ) {
 
       my ( $rulesAllowed, $rulesObject ) = isAllowedInRules($alarm);
 
- # note that this end_notify_if_start is default yes, even if you comment it out
- # so if you disable all hooks params, you won't get end notifs
+      # note that this end_notify_if_start is default yes, even if you comment it out
+      # so if you disable all hooks params, you won't get end notifs
       if ( $event_end_notify_if_start_success && $startHookResult != 0 ) {
         printInfo(
           'Not sending event end alarm, as we did not send a start alarm for this, or start hook processing failed'
