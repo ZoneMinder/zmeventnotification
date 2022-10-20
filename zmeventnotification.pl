@@ -3685,6 +3685,16 @@ sub processNewAlarmsInFork {
     # ---------- Event End processing ----------------------------------#
     elsif ( $alarm->{End}->{State} eq 'pending' ) {
 
+      # is this monitor blocked from hooks in config?
+      if ( $hook_skip_monitors{$mid} ) {
+        printInfo("$mid is in hook skip list, not using hooks");
+        $alarm->{End}->{State} = 'ready';
+
+        # lets treat this like a hook success so it
+        # gets sent out
+        $hookResult = 0;
+      }
+      else {
       # this means we need to invoke a hook
       if ( $alarm->{Start}->{State} ne 'done' ) {
         printDebug(
@@ -3833,6 +3843,7 @@ sub processNewAlarmsInFork {
         $alarm->{End}->{State} = 'ready';
       }    # hook end script
       # end of State == pending
+      }
     }
     elsif ( $alarm->{End}->{State} eq 'ready' ) {
 
