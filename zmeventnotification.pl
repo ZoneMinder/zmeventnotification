@@ -2867,7 +2867,7 @@ sub initFCMTokens {
     push @active_connections,
       {
       type         => FCM,
-      id           => gettimeofday(),
+      id           => int scalar gettimeofday(),
       token        => $token,
       state        => INVALID_CONNECTION,
       time         => time(),
