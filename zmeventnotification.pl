@@ -2488,23 +2488,13 @@ sub processIncomingMessage {
             $stored_last_sent = $_->{last_sent};
             #print ("REMOVE saved:". Dumper($stored_invocations));
           } else {
-            printDebug(
-              'JOB: token matched, updating entry in active connections', 2);
-            $_->{invocations} = $stored_invocations if (defined($stored_invocations));
-            $_->{last_sent} = $stored_last_sent if (defined($stored_last_sent));
-
-            #print ("REMOVE applied:". Dumper($_->{invocations}));
-
+            printDebug('JOB: token matched, updating entry in active connections', 2);
+            $_->{invocations} = $stored_invocations if defined($stored_invocations);
+            $_->{last_sent} = $stored_last_sent if defined($stored_last_sent);
             $_->{type}     = FCM;
             $_->{platform} = $data->{platform};
-            if ( isValidMonIntList( $data->{monlist} )) {
-              $_->{monlist} = $data->{monlist};
-            }
-
-            if ( isValidMonIntList( $data->{intlist} )) {
-              $_->{intlist} = $data->{intlist};
-            }
-
+            $_->{monlist} = $data->{monlist} if isValidMonIntList($data->{monlist});
+            $_->{intlist} = $data->{intlist} if isValidMonIntList($data->{intlist});
             $_->{pushstate} = $data->{state};
             printDebug(
               'JOB: Storing token ...'
@@ -2990,7 +2980,9 @@ sub getInterval {
   if ( $ints{$mid} ) {
     return $ints[$mid];
   }
-  printError("interval not found for mid $mid");
+  my ( $caller, undef, $line ) = caller;
+  printDebug("interval not found for mid $mid, intlist was $intlist from $caller:$line");
+  return undef;
 }
 
 sub isValidMonIntList {
@@ -3388,10 +3380,8 @@ sub shouldSendEventToConn {
 
   if ( isInList( $monlist, $alarm->{MonitorId} ) ) {
     my $mint = getInterval( $intlist, $monlist, $alarm->{MonitorId} );
-    my $elapsed;
-    my $t = time();
     if ( $last_sent->{ $alarm->{MonitorId} } ) {
-      $elapsed = time() - $last_sent->{ $alarm->{MonitorId} };
+      my $elapsed = time() - $last_sent->{ $alarm->{MonitorId} };
       if ( $elapsed >= $mint ) {
         printDebug(
           'Monitor '
@@ -3410,26 +3400,14 @@ sub shouldSendEventToConn {
         $retVal = 0;
       }
     } else {
-
       # This means we have no record of sending any event to this monitor
       #$last_sent->{$_->{MonitorId}} = time();
-      printDebug(
-        'Monitor '
-          . $alarm->{MonitorId}
-          . ' event: last time not found, so should send',
-        1
-      );
+      printDebug('Monitor '.$alarm->{MonitorId}.' event: last time not found, so should send', 1);
       $retVal = 1;
     }
-  }
-  else    # monitorId not in list
-  {
-    printDebug(
-      'should NOT send alarm as Monitor '
-        . $alarm->{MonitorId}
-        . ' is excluded',
-      1
-    );
+  } else {
+    # monitorId not in list
+    printDebug('should NOT send alarm as Monitor '.$alarm->{MonitorId}.' is excluded', 1);
     $retVal = 0;
   }
 
