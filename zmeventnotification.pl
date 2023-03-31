@@ -480,19 +480,20 @@ sub config_get_val {
   my $val = $config->val( $sect, $parm );
 
   my $final_val = defined($val) ? $val : $def;
+  if ($final_val) {
+    my $first_char = substr( $final_val, 0, 1 );
 
-  my $fc = substr( $final_val, 0, 1 );
+    #printInfo ("Parsing $final_val with X${fc}X");
+    if ($first_char eq '!') {
+      my $token = substr($final_val, 1);
+      printDebug('Got secret token !' . $token, 2);
+      Fatal('No secret file found') if !$secrets;
+      my $secret_val = $secrets->val('secrets', $token);
+      Fatal('Token:'.$token.' not found in secret file') if !$secret_val;
 
-  #printInfo ("Parsing $final_val with X${fc}X");
-  if ($fc eq '!') {
-    my $token = substr($final_val, 1);
-    printDebug('Got secret token !' . $token, 2);
-    Fatal('No secret file found') if !$secrets;
-    my $secret_val = $secrets->val('secrets', $token);
-    Fatal('Token:'.$token.' not found in secret file') if !$secret_val;
-
-    #printInfo ('replacing with:'.$secret_val);
-    $final_val = $secret_val;
+      #printInfo ('replacing with:'.$secret_val);
+      $final_val = $secret_val;
+    }
   }
 
   #printInfo("ESCONTROL_INTERFACE checking override for $parm");
@@ -504,6 +505,8 @@ sub config_get_val {
     );
     $final_val = $escontrol_interface_settings{$parm};
   }
+
+  return $final_val if !defined($final_val);
 
   # compatibility hack, lets use yes/no in config to maintain
   # parity with hook config
