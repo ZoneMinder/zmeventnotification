@@ -118,7 +118,7 @@ Next up install WebSockets
 
     sudo apt install libyaml-perl
     sudo apt install make
-    sudo apt install libnet-protocol-websocket-perl
+    sudo apt install libprotocol-websocket-perl
     sudo perl -MCPAN -e "install Net::WebSocket::Server"
 
 Then, you need JSON.pm installed. It's there on some systems and not on
