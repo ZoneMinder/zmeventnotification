@@ -77,7 +77,7 @@ whilst inside the shell, ``install Module::Name``)
 -  ``Net::WebSocket::Server``
 -  ``Config::IniFiles`` (you may already have this installed)
 -  ``Crypt::Eksblowfish::Bcrypt`` (if you have updated to ZM 1.34, you will already have this)
-- ``Time::Piece`` for parsing ES rules
+-  ``Time::Piece`` for parsing ES rules
 
 Installing these dependencies is as simple as:
 
@@ -116,8 +116,9 @@ Next up install WebSockets
 
 ::
 
-    sudo apt-get install libyaml-perl
-    sudo apt-get install make
+    sudo apt install libyaml-perl
+    sudo apt install make
+    sudo apt install libnet-protocol-websocket-perl
     sudo perl -MCPAN -e "install Net::WebSocket::Server"
 
 Then, you need JSON.pm installed. It's there on some systems and not on
