@@ -60,7 +60,7 @@ def remote_detect(stream=None, options=None, api=None, args=None):
                 data = json.load(json_file)
                 json_file.close()
             except Exception as e: 
-                g.logger.Error ('Error loading login.json: {}'.format(e))
+                g.logger.Error('Error loading login.json: {}'.format(e))
                 os.remove(data_file)
                 access_token = None
             else:
@@ -108,11 +108,11 @@ def remote_detect(stream=None, options=None, api=None, args=None):
     params = {'delete': True, 'response_format': 'zm_detect'}
 
     if args.get('file'):
-        g.logger.Debug (2, "Reading image from {}".format(args.get('file')))
+        g.logger.Debug(2, "Reading image from {}".format(args.get('file')))
         image = cv2.imread(args.get('file'))
         if g.config['resize'] and g.config['resize'] != 'no':
             neww = min(int(g.config['resize']),image.shape[1])
-            g.logger.Debug (2,'Resizing --file image to {}'.format(neww))
+            g.logger.Debug(2,'Resizing --file image to {}'.format(neww))
             img_new = imutils.resize(image,width=neww)
             image = img_new
             cmdline_image = image
@@ -157,7 +157,7 @@ def remote_detect(stream=None, options=None, api=None, args=None):
                         )
         r.raise_for_status()
     except Exception as e:
-        g.logger.Error ('Error during remote post: {}'.format(str(e)))
+        g.logger.Error('Error during remote post: {}'.format(str(e)))
         g.logger.Debug(2,traceback.format_exc())
         raise
 
@@ -175,20 +175,20 @@ def remote_detect(stream=None, options=None, api=None, args=None):
         try:
             response = api._make_request(url=url,  type='get')
             img = np.asarray(bytearray(response.content), dtype='uint8')
-            img = cv2.imdecode (img, cv2.IMREAD_COLOR)
+            img = cv2.imdecode(img, cv2.IMREAD_COLOR)
            
             #newh =matched_data['image_dimensions']['resized'][0]
             if matched_data['image_dimensions'] and matched_data['image_dimensions']['resized']:
                 neww =min(matched_data['image_dimensions']['resized'][1], img.shape[1])
                 oldh, oldw = img.shape[:2]
                 if oldw != neww:
-                    g.logger.Debug (2, 'Resizing source image from width={} to width={} in zm_detect as that is the size mlapi used'.format(oldw, neww))
+                    g.logger.Debug(2, 'Resizing source image from width={} to width={} in zm_detect as that is the size mlapi used'.format(oldw, neww))
                     img = imutils.resize(img,width=neww)
                 else:
-                    g.logger.Debug (2, 'No need to resize as image widths are same from mlapi and zm_detect: {}'.format(neww))
+                    g.logger.Debug(2, 'No need to resize as image widths are same from mlapi and zm_detect: {}'.format(neww))
             matched_data['image'] = img
         except Exception as e:
-            g.logger.Error ('Error during image grab: {}'.format(str(e)))
+            g.logger.Error('Error during image grab: {}'.format(str(e)))
             g.logger.Debug(2,traceback.format_exc())
     return data['matched_data'], data['all_matches']
 
@@ -248,11 +248,11 @@ def main_handler():
         exit(0)
 
     if not args.get('config'):
-        print ('--config required')
+        print('--config required')
         exit(1)
 
     if not args.get('file')and not args.get('eventid'):
-        print ('--eventid required')
+        print('--eventid required')
         exit(1)
 
     utils.get_pyzm_config(args)
@@ -279,7 +279,7 @@ def main_handler():
     try:
         import cv2
     except ImportError as e:
-        g.logger.Fatal ('{}: You might not have installed OpenCV as per install instructions. Remember, it is NOT automatically installed'.format(e))
+        g.logger.Fatal('{}: You might not have installed OpenCV as per install instructions. Remember, it is NOT automatically installed'.format(e))
 
     g.logger.Info('---------| app:{}, pyzm:{}, ES:{} , OpenCV:{}|------------'.format(__app_version__,pyzm_version, es_version, cv2.__version__))
    
@@ -289,7 +289,7 @@ def main_handler():
     try:
         import zmes_hook_helpers.image_manip as img
     except Exception as e:
-        g.logger.Error ('{}'.format(e))
+        g.logger.Error('{}'.format(e))
         exit(1)
     g.polygons = []
 
@@ -402,11 +402,11 @@ def main_handler():
             diff_time = (datetime.datetime.now() - start)
             g.logger.Debug(1,'Total remote detection detection took: {}'.format(diff_time))
         except Exception as e:
-            g.logger.Error ("Error with remote mlapi:{}".format(e))
+            g.logger.Error("Error with remote mlapi:{}".format(e))
             g.logger.Debug(2,traceback.format_exc())
 
             if g.config['ml_fallback_local'] == 'yes':
-                g.logger.Debug (1, "Falling back to local detection")
+                g.logger.Debug(1, "Falling back to local detection")
                 stream_options['api'] = zmapi
                 from pyzm.ml.detect_sequence import DetectSequence
                 m = DetectSequence(options=ml_options, global_config=g.config)
@@ -457,7 +457,7 @@ def main_handler():
         prefix = '[a] '
     else:
         prefix = '[x] '
-        #g.logger.Debug (1,'CONFIDENCE ARRAY:{}'.format(conf))
+        #g.logger.Debug(1,'CONFIDENCE ARRAY:{}'.format(conf))
 
     for idx, l in enumerate(matched_data['labels']):
         if l not in seen:
@@ -492,7 +492,7 @@ def main_handler():
                     cv2.rectangle(debug_image, (_b[0], _b[1]), (_b[2], _b[3]),
                         (0,0,255), 1)
                 filename_debug = g.config['image_path']+'/'+os.path.basename(append_suffix(stream, '-{}-debug'.format(matched_data['frame_id'])))
-                g.logger.Debug (1,'Writing bound boxes to debug image: {}'.format(filename_debug))
+                g.logger.Debug(1,'Writing bound boxes to debug image: {}'.format(filename_debug))
                 cv2.imwrite(filename_debug,debug_image)
 
             if g.config['write_image_to_zm'] == 'yes' and args.get('eventpath'):
@@ -513,7 +513,7 @@ def main_handler():
             try:
                 ev = zmapi._make_request(url=url,  type='get')
             except Exception as e:
-                g.logger.Error ('Error during event notes retrieval: {}'.format(str(e)))
+                g.logger.Error('Error during event notes retrieval: {}'.format(str(e)))
                 g.logger.Debug(2,traceback.format_exc())
                 exit(0) # Let's continue with zmdetect
 
@@ -527,7 +527,7 @@ def main_handler():
                 except IndexError:
                     old_m = ''
                 new_notes = pred + 'Motion:'+ old_m
-                g.logger.Debug (1,'Replacing old note:{} with new note:{}'.format(old_notes, new_notes))
+                g.logger.Debug(1,'Replacing old note:{} with new note:{}'.format(old_notes, new_notes))
                 
 
             payload = {}
@@ -535,12 +535,12 @@ def main_handler():
             try:
                 ev = zmapi._make_request(url=url, payload=payload, type='put')
             except Exception as e:
-                g.logger.Error ('Error during notes update: {}'.format(str(e)))
+                g.logger.Error('Error during notes update: {}'.format(str(e)))
                 g.logger.Debug(2,traceback.format_exc())
 
         if g.config['create_animation'] == 'yes':
             if not args.get('eventid'):
-                g.logger.Error ('Cannot create animation as you did not pass an event ID')
+                g.logger.Error('Cannot create animation as you did not pass an event ID')
             else:
                 g.logger.Debug(1,'animation: Creating burst...')
                 try:
@@ -554,12 +554,12 @@ def main_handler():
 if __name__ == '__main__':
     try:
         main_handler()
-        g.logger.Debug (1, "Closing logs")
+        g.logger.Debug(1, "Closing logs")
         g.logger.close()
     except Exception as e:
         if g.logger:
             g.logger.Fatal('Unrecoverable error:{} Traceback:{}'.format(e,traceback.format_exc()))
-            g.logger.Debug (1, "Closing logs")
+            g.logger.Debug(1, "Closing logs")
             g.logger.close()
         else:
             print('Unrecoverable error:{} Traceback:{}'.format(e,traceback.format_exc())) 
