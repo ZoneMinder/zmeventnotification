@@ -210,6 +210,10 @@ install_es() {
 
 # install proc for ML hooks
 install_hook() {
+
+    echo "Installing python3-opencv..."
+    ${PY_SUDO} ${INSTALLER} install python3-opencv
+
     echo '*** Installing Hooks ***'
     mkdir -p "${TARGET_DATA}/bin" 2>/dev/null
     rm -fr  "${TARGET_DATA}/bin/*" 2>/dev/null
@@ -398,8 +402,12 @@ install_hook() {
  
 
     ZM_DETECT_VERSION=`./hook/zm_detect.py --bareversion`
-    echo "__version__ = \"${ZM_DETECT_VERSION}\"" > hook/zmes_hook_helpers/__init__.py
-    echo "VERSION=__version__" >> hook/zmes_hook_helpers/__init__.py
+    if ["$ZM_DETECT_VERSION" == ""]; then
+      echo "Failed to detect hooks version."
+    else
+      echo "__version__ = \"${ZM_DETECT_VERSION}\"" > hook/zmes_hook_helpers/__init__.py
+      echo "VERSION=__version__" >> hook/zmes_hook_helpers/__init__.py
+    fi
 
     ${PY_SUDO} ${PIP} -v install hook/ && print_opencv_message || print_error "python hooks setup failed"
 
