@@ -1502,6 +1502,7 @@ sub loadMonitors {
   my $res = $sth->execute( $Config{ZM_SERVER_ID} ? $Config{ZM_SERVER_ID} : () )
     or Fatal("Can't execute: " . $sth->errstr());
   while ( my $monitor = $sth->fetchrow_hashref() ) {
+    next if $monitor->{Deleted};
     if ( $skip_monitors{ $monitor->{Id} } ) {
       printDebug("$$monitor{Id} is in skip list, not going to process", 1);
       next;
