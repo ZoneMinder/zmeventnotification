@@ -211,6 +211,8 @@ install_es() {
 # install proc for ML hooks
 install_hook() {
 
+    echo "Installing pip..."
+    ${PY_SUDO} ${INSTALLER} install pip
     echo "Installing python3-opencv..."
     ${PY_SUDO} ${INSTALLER} install python3-opencv
 
