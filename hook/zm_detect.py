@@ -138,7 +138,7 @@ def remote_detect(stream=None, options=None, api=None, args=None):
     }
     mid = args.get('monitorid')
     reason = args.get('reason')
-    g.logger.Debug(2,'Invoking mlapi with url:{} and json: mid={} reason={} stream={}, stream_options={} ml_overrides={} headers={} params={} '.format(object_url,mid, reason, stream, options, ml_overrides, auth_header, params))
+    g.logger.Debug(2, 'Invoking mlapi with url:{} and json: mid={} reason={} stream={}, stream_options={} ml_overrides={} headers={} params={} '.format(object_url,mid, reason, stream, options, ml_overrides, auth_header, params))
     
     start = datetime.datetime.now()
     try:
@@ -158,11 +158,11 @@ def remote_detect(stream=None, options=None, api=None, args=None):
         r.raise_for_status()
     except Exception as e:
         g.logger.Error('Error during remote post: {}'.format(str(e)))
-        g.logger.Debug(2,traceback.format_exc())
+        g.logger.Debug(2, traceback.format_exc())
         raise
 
     diff_time = (datetime.datetime.now() - start)
-    g.logger.Debug(1,'remote detection inferencing took: {}'.format(diff_time))
+    g.logger.Debug(1, 'remote detection inferencing took: {}'.format(diff_time))
     data = r.json()
     #print(r)
     matched_data = data['matched_data']
@@ -274,7 +274,6 @@ def main_handler():
         es_version=subprocess.check_output(['/usr/bin/zmeventnotification.pl', '--version']).decode('ascii')
     except:
         pass
-
 
     try:
         import cv2
