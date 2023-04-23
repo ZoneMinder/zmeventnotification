@@ -404,7 +404,7 @@ install_hook() {
  
 
     ZM_DETECT_VERSION=`./hook/zm_detect.py --bareversion`
-    if ["$ZM_DETECT_VERSION" == ""]; then
+    if [ "$ZM_DETECT_VERSION" == "" ]; then
       echo "Failed to detect hooks version."
     else
       echo "__version__ = \"${ZM_DETECT_VERSION}\"" > hook/zmes_hook_helpers/__init__.py
