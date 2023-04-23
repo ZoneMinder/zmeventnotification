@@ -193,8 +193,8 @@ verify_config() {
 install_es() {
     echo '*** Installing ES Dependencies ***'
     if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "debian" ]]; then
-      echo "$INSTALLER install libcrypt-mysql-perl libcrypt-eksblowfish-perl libmodule-build-perl libyaml-perl libjson-per liblwp-protocol-https-perl libgeos-devl"
-      $INSTALLER install libcrypt-mysql-perl libcrypt-eksblowfish-perl libmodule-build-perl libyaml-perl
+      echo "$INSTALLER install libconfig-inifiles-perl libcrypt-mysql-perl libcrypt-eksblowfish-perl libmodule-build-perl libyaml-perl libjson-per liblwp-protocol-https-perl libgeos-devl"
+      $INSTALLER install libconfig-inifiles-perl libcrypt-mysql-perl libcrypt-eksblowfish-perl libmodule-build-perl libyaml-perl
       echo "$INSTALLER install libnet-websocket-server-perl"
       $INSTALLER install libnet-websocket-server-perl
     else
