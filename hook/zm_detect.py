@@ -495,7 +495,7 @@ def main_handler():
                 cv2.imwrite(filename_debug,debug_image)
 
             if g.config['write_image_to_zm'] == 'yes' and args.get('eventpath'):
-                g.logger.Debug(1,'Writing detected image to {}/objdetect.jpg'.format(
+                g.logger.Debug(1, 'Writing detected image to {}/objdetect.jpg'.format(
                     args.get('eventpath')))
                 cv2.imwrite(args.get('eventpath') + '/objdetect.jpg', debug_image)
                 jf = args.get('eventpath')+ '/objects.json'
