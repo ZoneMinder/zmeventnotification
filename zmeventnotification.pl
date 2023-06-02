@@ -1493,6 +1493,9 @@ sub loadMonitors {
   my $sql = 'SELECT * FROM `Monitors` WHERE';
   if (version->parse(ZM_VERSION) >= version->parse('1.37.13')) {
     $sql .= ' Capturing != \'None\'';
+    if (version->parse(ZM_VERSION) >= version->parse('1.37.39')) {
+      $sql .= ' Deleted != 1';
+    }
   } else {
     $sql .= ' find_in_set( `Function`, \'Modect,Mocord,Nodect\' )'
   }
