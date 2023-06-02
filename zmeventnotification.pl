@@ -1494,12 +1494,12 @@ sub loadMonitors {
   if (version->parse(ZM_VERSION) >= version->parse('1.37.13')) {
     $sql .= ' Capturing != \'None\'';
     if (version->parse(ZM_VERSION) >= version->parse('1.37.39')) {
-      $sql .= ' Deleted != 1';
+      $sql .= ' AND Deleted != 1';
     }
   } else {
     $sql .= ' find_in_set( `Function`, \'Modect,Mocord,Nodect\' )'
   }
-  $sql .= ( $Config{ZM_SERVER_ID} ? 'AND `ServerId`=?' : '' );
+  $sql .= ( $Config{ZM_SERVER_ID} ? ' AND `ServerId`=?' : '' );
   my $sth = $dbh->prepare_cached($sql)
     or Fatal("Can't prepare '$sql': " . $dbh->errstr());
   my $res = $sth->execute( $Config{ZM_SERVER_ID} ? $Config{ZM_SERVER_ID} : () )
