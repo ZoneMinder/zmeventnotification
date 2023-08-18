@@ -138,7 +138,7 @@ Will install the ES and hooks, but no configs and will add the coral libraries.
 
 .. _opencv_install:
 
-**Note:**: If you plan on using object detection, starting v5.0.0 of the ES, the setup script no longer installs opencv for you. This is because you may want to install your own version with GPU accelaration or other options. There are two options to install OpenCV:
+**Note:**: If you plan on using object detection, starting v5.0.0 of the ES, the setup script no longer installs opencv for you. This is because you may want to install your own version with GPU acceleration or other options. There are two options to install OpenCV:
 
   - You install a pip package. Very easy, but you don't get GPU support
   - You compile from source. Takes longer, but you get all the right modules as well as GPU support. Instructions are simple, if you follow them well.
@@ -205,7 +205,7 @@ Note, if you installed ``face_recognition`` earlier without blas, do this:
 
 Option 2: Manual install
 ^^^^^^^^^^^^^^^^^^^^^^^^
-If automatic install fails for you, or you like to be in control, take a look at what ``install.sh`` does. I used to maintain explict instructions on manual install, but its painful to keep this section in sync with ``install.sh``
+If automatic install fails for you, or you like to be in control, take a look at what ``install.sh`` does. I used to maintain explicit instructions on manual install, but its painful to keep this section in sync with ``install.sh``
 
 
 Post install steps
@@ -371,7 +371,7 @@ it will likely break things, but please read the help and convert properly. ``us
 longer maintained.
 
 
-In the old way, the following 'global' variables (which could be overriden on a per monitor basis) defined how
+In the old way, the following 'global' variables (which could be overridden on a per monitor basis) defined how
 ML would work:
 
 - ``xxx_max_processes`` and ``xxx_max_lock_wait`` that defined semaphore locks for each model (to control parallel memory consumption)
@@ -461,16 +461,16 @@ At a high level, this is how it is structured (not all attributes have been desc
 
 **Explanation:**
 
-- The ``general`` section at the top level specify characterstics that apply to all elements inside 
+- The ``general`` section at the top level specify characteristics that apply to all elements inside 
   the structure. 
 
    - ``model_sequence`` dictates the detection types (comma separated). Example ``object,face,alpr`` will
      first run object detection, then face, then alpr
 
 - Now for each detection type in ``model_sequence``, you can specify the type of models you want to leading
-  along with other related paramters.
+  along with other related parameters.
 
-  **Note**: If you are using mlapi, there are certain parameters that get overriden by ``objectconfig.ini``
+  **Note**: If you are using mlapi, there are certain parameters that get overridden by ``objectconfig.ini``
   See :ref:`mlapi_overrides`
 
 Leveraging same_model_sequence_strategy and frame_strategy effectively

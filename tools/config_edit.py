@@ -64,7 +64,7 @@ ap.add_argument('--set',
                                 Set a number of key-value pairs.
                                 (do not put spaces before or after the = sign). 
                                 If a value contains spaces, you should define 
-                                it witin quotes. If you omit the SECTION:, all keys in all
+                                it within quotes. If you omit the SECTION:, all keys in all
                                 sections that match your key will be updated. 
                                 If you do specify a section, remember to add the : after it
                                 Finally, use the special keyword of 'comment_out' if you want 

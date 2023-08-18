@@ -484,7 +484,7 @@ config_vals = {
             'type': 'float'
         },
 
-        # OpenALPR command line specfic
+        # OpenALPR command line specific
 
          'openalpr_cmdline_binary':{
             'section': 'alpr',

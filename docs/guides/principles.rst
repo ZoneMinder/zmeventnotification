@@ -95,7 +95,7 @@ There is another file, ``/var/lib/zmeventnotification/push/tokens.txt`` that dic
 This file is actually created  when zmNinja sets up push notification. Here is how it works:
 
 * When zmNinja runs and you enable push notifications, it asks either Apple or Google for a unique token to receive notifications via their push servers. 
-* This token is then sent to the ES via websockets. The ES stores this token in the ``tokens.txt`` file and everytime it restarts, it reloads these tokens so it knows these clients expect notifications over FCM. **So if your zmNinja app cannot connect to the ES for the first time, the token will never be saved and the ES will never be able to send notifications to your zmNinja app**.
+* This token is then sent to the ES via websockets. The ES stores this token in the ``tokens.txt`` file and every time it restarts, it reloads these tokens so it knows these clients expect notifications over FCM. **So if your zmNinja app cannot connect to the ES for the first time, the token will never be saved and the ES will never be able to send notifications to your zmNinja app**.
 
 However, there are other things the ``tokens.txt`` file saves. Let's take a look:
 
@@ -127,7 +127,7 @@ Here is a typical tokens.txt entry: (This used to be a cryptic colon separated f
 
     It is important to note here that if zmNinja is not able to connect to the ES at least for the first time, you will never receive notifications. Check your ``tokens.txt`` file to make sure you have entries. If you don't that means zmNinja can't reach your ES.
 
-You will also note that ``tokens.txt`` does not contain any other entries besides android and iOS. zmNinja desktop does not feature here, for example. That is because ``tokens.txt`` only exists to store FCM registrations. zmNinja desktop only receives notifications when it is running and via websockets, so that connection is established when the desktop app runs. FCM tokens on the other hand need to be remembered, because zmNinja may not be running in your phone and the ES still nees to send out notifications to all tokens (devices) that might have previously registered.
+You will also note that ``tokens.txt`` does not contain any other entries besides android and iOS. zmNinja desktop does not feature here, for example. That is because ``tokens.txt`` only exists to store FCM registrations. zmNinja desktop only receives notifications when it is running and via websockets, so that connection is established when the desktop app runs. FCM tokens on the other hand need to be remembered, because zmNinja may not be running in your phone and the ES still needs to send out notifications to all tokens (devices) that might have previously registered.
 
 
 3.2.4: Wait, what on earth is a "Rules file"?
@@ -278,7 +278,7 @@ There is a dedicated document that describes how hooks work at :doc:`hooks`. Ref
 
 As described earlier, the entry point to all the machine learning goodness starts with ``/var/lib/zmeventnotitication/bin/zm_detect.py``. This file reads ``/etc/zm/objectconfig.ini`` and based on the many settings there goes about doing various forms of detection. There are some important things to remember:
 
-* When the hooks are invoked, ZM has *just started* recording the event. Which means there are only limited frames to analyze. Infact, at times, if you see the detection scripts are not able to download frames, then it is possible they haven't yet been written to disk by ZM. This is a good situation to use the ``wait`` attribute in ``objectconfig.ini`` and wait for a few seconds before it tries to get frames. 
+* When the hooks are invoked, ZM has *just started* recording the event. Which means there are only limited frames to analyze. In fact, at times, if you see the detection scripts are not able to download frames, then it is possible they haven't yet been written to disk by ZM. This is a good situation to use the ``wait`` attribute in ``objectconfig.ini`` and wait for a few seconds before it tries to get frames. 
 
 .. sidebar:: Gotcha
 

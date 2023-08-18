@@ -59,7 +59,7 @@ It looks like when ES invokes the hooks, it misses objects, but when I run it ma
 
 This is a very common situation and prior to ZM 1.34 there was also a bug. Here is what is likely happening:
 
-* If you have configured ``BESTMATCH`` then the hooks will search for both your "alarmed" frame and the "snapshot" frame for objects. If you have configured ``snapshot``, ``alarm`` or a specfic ``fid=xx`` only that frame will be searched
+* If you have configured ``BESTMATCH`` then the hooks will search for both your "alarmed" frame and the "snapshot" frame for objects. If you have configured ``snapshot``, ``alarm`` or a specific ``fid=xx`` only that frame will be searched
 
 * An 'alarm' frame is the first frame that caused the motion trigger
 * A 'snapshot' frame is the frame with the *highest* score in the event
@@ -75,7 +75,7 @@ However, when you run it manually later, your snapshot image has likely changed.
 How do I make sure this is what is happening?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 - Enable ``write_debug_image`` in ``objectconfig.ini``. This will create a debug image inside the event path where your event recording is. Take a look at the debug images it creates. Is it the same as the images you see at a later date? If not, you know this is exactly what is happening
-- When you run the detection script manually, see if its printing an ``[a]`` or an ``[s]`` before the detected text. The latter means ``snapshot`` and if that is so, the chances are very high this is exactly what the issue is. Incase it prints ``[a]`` it also means the same thing, but the occurrence of this is less than snapshot.
+- When you run the detection script manually, see if its printing an ``[a]`` or an ``[s]`` before the detected text. The latter means ``snapshot`` and if that is so, the chances are very high this is exactly what the issue is. In case it prints ``[a]`` it also means the same thing, but the occurrence of this is less than snapshot.
 
 How do I solve this issue?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -102,7 +102,7 @@ I'm having issues with accuracy of Face Recognition
 
 I am using a Coral TPU and while it works fine, at times it fails loading 
 --------------------------------------------------------------------------
-If you have configured the TPU properly, and on occassion you see an error like:
+If you have configured the TPU properly, and on occasion you see an error like:
 
 ::
 
@@ -112,7 +112,7 @@ then it is likely that you either need to replace your USB cable or need to rese
 USB device. In my case, after I set it up correctly, it would often show the error above 
 during runs. I realized that replacing the USB cable that Google provided solved it for 
 a majority of cases. See `this comment <https://github.com/tensorflow/tensorflow/issues/32743#issuecomment-766084239>`__
-for my experience on the cable. After buying the cable, I still saw it on occassion, but
+for my experience on the cable. After buying the cable, I still saw it on occasion, but
 not frequently at all. In those cases, resetting USB works fine and you don't have to reboot.
 See `this comment <https://github.com/tensorflow/tensorflow/issues/32743#issuecomment-808912638>`__.
 
@@ -128,7 +128,7 @@ Once setup, simply point your ``ml_gateway`` inside ``objectconfig.ini`` to the 
 The advantage of this is that you don't need to install any ML libraries within
 zoneminder if you are running mlapi on a different server. Further, mlapi loads the model
 only once so it is much faster. In older versions this was kludgy because you still
-had to install ML libraries locally in ZM, but no longer. Infact, I've completely 
+had to install ML libraries locally in ZM, but no longer. In fact, I've completely 
 switched to mlapi now for my own use. Note that when you use remote detection, you will
 still need opencv in the host machine (opencv is used for other functions)
 

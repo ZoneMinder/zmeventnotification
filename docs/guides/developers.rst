@@ -276,7 +276,7 @@ Get current control channel settings:
 
 
 
-Thes only show Client-->Server messages. Responses are not shown.
+These only show Client-->Server messages. Responses are not shown.
 
 Mute all notifications:
 
@@ -313,7 +313,7 @@ Reset/Clear all settings specified via this channel:
 
   {"event":"escontrol", "data":{"command":"reset"}}
 
-Change any abitrary config value inside ``zmeventnotification.ini``:
+Change any arbitrary config value inside ``zmeventnotification.ini``:
 
 ::
 

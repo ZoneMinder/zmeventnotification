@@ -140,7 +140,7 @@ def rescale_polygons(xfactor, yfactor):
     g.polygons = newps
 
 
-# converts a string of cordinates 'x1,y1 x2,y2 ...' to a tuple set. We use this
+# converts a string of coordinates 'x1,y1 x2,y2 ...' to a tuple set. We use this
 # to parse the polygon parameters in the ini file
 
 
@@ -468,7 +468,7 @@ def process_config(args, ctx):
                         continue
                     else:
                         if k in g.config_vals:
-                            # This means its a legit config key that needs to be overriden
+                            # This means its a legit config key that needs to be overridden
                             g.logger.Debug(3,
                                 '[{}] overrides key:{} with value:{}'.format(
                                     sec, k, v))
