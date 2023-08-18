@@ -9,7 +9,7 @@ There are two parts to the configuration of this system:
 
 The ES comes with a `sample ES config file <https://github.com/pliablepixels/zmeventnotification/blob/master/zmeventnotification.ini>`__ 
 which you should customize as fit. The sample config file is well annotated, so you really should read the comments to get an 
-erstanding of what each parameter does. Similary, the ES also comes with a `sample objdetect.ini file <https://github.com/pliablepixels/zmeventnotification/blob/master/hook/objectconfig.ini>`__ 
+erstanding of what each parameter does. Similarly, the ES also comes with a `sample objdetect.ini file <https://github.com/pliablepixels/zmeventnotification/blob/master/hook/objectconfig.ini>`__ 
 which you should read as well if you are using hooks. If you are using mlapi, read `its config <https://github.com/pliablepixels/mlapi/blob/master/mlapiconfig.ini>`__.
 
 Secret Tokens

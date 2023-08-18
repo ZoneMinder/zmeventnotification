@@ -301,7 +301,7 @@ connected for a long time and does not upgrade to websockets. This causes the li
 handle websockets to lock up. The original issue can be viewed `here <https://github.com/topaz/perl-Net-WebSocket-Server/issues/6>`__.
 
 If you want to disable censys, you can follow their instructions on their website to `opt-out <https://support.censys.io/hc/en-us/articles/360043177092-Opt-Out-of-Scanning>`__ 
-In Linux/ubuntu, I use ufw (make sure it is enabled) as a front-end to iptables and the following commmands do it:
+In Linux/ubuntu, I use ufw (make sure it is enabled) as a front-end to iptables and the following commands do it:
 
 ::
 
@@ -310,7 +310,7 @@ In Linux/ubuntu, I use ufw (make sure it is enabled) as a front-end to iptables 
    sudo ufw deny from 167.248.133.0/24 comment "Deny censys"
    sudo ufw deny from 192.35.168.0/23 comment "Deny censys"
 
-Note that atleast on Ubuntu, ufw keeps getting disabled when I reboot, even after I enable it via systemctl.
+Note that at least on Ubuntu, ufw keeps getting disabled when I reboot, even after I enable it via systemctl.
 To fix that I had to add ``After=netfilter-persistent.service`` inside the ``[Unit]`` block of ``/lib/systemd/system/ufw.service``
 
 I can't connect to the ES
@@ -494,9 +494,9 @@ Some possibilities:
   actually in the 99.9% lot and haven't checked properly.
 
 
-How do I reduce the time of delay from an alarm occuring in ZM to the notification being sent out?
+How do I reduce the time of delay from an alarm occurring in ZM to the notification being sent out?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- First, turn on debug logs. You'll know where the delays are occuring and then you can deep dive.
+- First, turn on debug logs. You'll know where the delays are occurring and then you can deep dive.
 - Read the priniciples document: :ref:`from-detection-to-notification`. Really, it will help you understand how this works 
 - There are some key areas you can optimize for:
 
@@ -528,7 +528,7 @@ Push notifications are delayed by several minutes when the phone turns off (Andr
 
 There seems to be multiple potential reasons:
 
-- Starting Android 6, a doze mode and battery optimization mode has been introduced which agressively tries to 
+- Starting Android 6, a doze mode and battery optimization mode has been introduced which aggressively tries to 
   put the phone into low power mode. This results in the apps disconnecting from FCM servers for around 10-15 mins
   at a stretch, which may explain why you get delayed notifications. To avoid this, remove zmNinja from any battery
   optimization and doze mode effects. There are instructions `here <https://documentation.onesignal.com/docs/notifications-show-successful-but-are-not-being-shown>`__
@@ -679,7 +679,7 @@ This shows my ES version is ``5.10`` and hooks version  is ``5.10.1``, which is 
 - Make sure you see ``DBG`` logs (Debug). If you only see ``INF`` logs, you haven't followed the instructions above to enable debug logs. Read :ref:`es-hooks-logging` again.
 - Don't just send me a slice of what you think is relevant. Please don't think you know what to send me. Let me decide that. From your side, send me the full logs. By full logs, I mean:
 
-  - If you think your detection is *not* working for an event, say eid=77985, send me *all* the ES logs starting from ``PARENT: New event 77985 reported for Monitor:<etc>`` to ``PARENT: Job: Deleting active_event eid:77985, mid:<etc>``. That is, everthing from start to end of that event. Also send me *all* the detection logs. Let's say the monitor in question was Monitor Id:2. Then the detection logs will be in ``/var/log/zm/zmesdetect_m2.log``. Send me *all* the logs from the start to the finish for that event.
+  - If you think your detection is *not* working for an event, say eid=77985, send me *all* the ES logs starting from ``PARENT: New event 77985 reported for Monitor:<etc>`` to ``PARENT: Job: Deleting active_event eid:77985, mid:<etc>``. That is, everything from start to end of that event. Also send me *all* the detection logs. Let's say the monitor in question was Monitor Id:2. Then the detection logs will be in ``/var/log/zm/zmesdetect_m2.log``. Send me *all* the logs from the start to the finish for that event.
 
   - If you have issues starting the ES, send me *all* logs starting from when the ES starts after you do a ``sudo zmdc.pl restart  zmeventnotification.pl``
 
