@@ -58,7 +58,7 @@ my $app_version = '6.1.28';
 
 # do this before any log init etc.
 my $first_arg = $ARGV[0];
-if ($first_arg eq '--version') {
+if (defined $first_arg && $first_arg eq '--version') {
   print ("$app_version\n");
   exit(0);
 }
@@ -995,7 +995,7 @@ sub printDebug {
   $level = $es_debug_level if not defined $level;
   my $now = strftime('%Y-%m-%d,%H:%M:%S', localtime);
   $str = $prefix . ' ' . $str;
-  if ($es_debug_level >= $level) {
+  if (defined $es_debug_level && $es_debug_level >= $level) {
     print('DBG-', $level, ':', $now, ' ', $str, "\n") if $console_logs;
     Debug($str);
   }
