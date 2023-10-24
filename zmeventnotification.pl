@@ -4076,6 +4076,7 @@ sub initSocketServer {
 
       foreach (@newEvents) {
         if (($parallel_hooks >= $max_parallel_hooks) && ($max_parallel_hooks != 0)) {
+          $dbh = zmDbConnect(1);
           printError("There are $parallel_hooks hooks running as of now. This exceeds your set limit of max_parallel_hooks=$max_parallel_hooks. Ignoring this event. Either increase your max_parallel_hooks value, or, adjust your ZM motion sensitivity ");
           return;
         }
