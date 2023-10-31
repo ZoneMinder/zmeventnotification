@@ -4054,19 +4054,10 @@ sub initSocketServer {
       printDebug("There are $child_forks active child forks & $parallel_hooks zm_detect processes running...", 2);
       my @newEvents = checkNewEvents();
 
-      #print Dumper(\@newEvents);
-
       printDebug('There are '.scalar @newEvents.' new Events to process', 2);
 
-      my $cpid;
-      my $numEvents = scalar @newEvents;
-      my $sigset;
-      my $blockset;
 
       if ($numEvents) {
-        #$sigset = POSIX::SigSet->new;
-        #$blockset = POSIX::SigSet->new(SIGCHLD);
-        #sigprocmask(SIG_BLOCK, $blockset, $sigset) or Fatal("Can't block SIGCHLD: $!");
         # Apparently the child closing the db connection can affect the parent.
         zmDbDisconnect();
       }
@@ -4075,21 +4066,16 @@ sub initSocketServer {
         if (($parallel_hooks >= $max_parallel_hooks) && ($max_parallel_hooks != 0)) {
           $dbh = zmDbConnect(1);
           printError("There are $parallel_hooks hooks running as of now. This exceeds your set limit of max_parallel_hooks=$max_parallel_hooks. Ignoring this event. Either increase your max_parallel_hooks value, or, adjust your ZM motion sensitivity ");
-          return;
+          last;
         }
+        my $cpid;
         $child_forks++;
         $total_forks++;
         if ($cpid = fork() ) {
-          # We will reconnect after for loop
           # Parent
-          #$dbh = zmDbConnect(1);
-          # This logReinit is required.  Not sure why.
-          #logReinit();
-
         } elsif (defined ($cpid)) {
           # Child
           # do this to get a proper return value
-          # $SIG{CHLD} = undef;
 
           local $SIG{'CHLD'} = 'DEFAULT';
           #$wss->shutdown();
@@ -4099,32 +4085,20 @@ sub initSocketServer {
           logInit();
           logSetSignal();
 
-          printDebug(
-            "Forked process:$$ to handle alarm eid:" . $_->{Alarm}->{EventId},
-            1 );
+          printDebug("Forked process:$$ to handle alarm eid:" . $_->{Alarm}->{EventId}, 1);
 
           # send it the list of current events to handle bcause checkNewEvents() will clean it
           processNewAlarmsInFork($_);
           printDebug("Ending process:$$ to handle alarms", 1);
           logTerm();
           zmDbDisconnect();
-
-          #$SIG{CHLD} = 'DEFAULT';
-          #$SIG{HUP} = 'DEFAULT';
-          #$SIG{INT} = 'DEFAULT';
-          #$SIG{TERM} = 'DEFAULT';
-          #$SIG{ABRT} = 'DEFAULT';
-
           exit 0;
         } else {
           Fatal("Can't fork: $!");
         }
       } # for loop
-      if ($numEvents) {
-        $dbh = zmDbConnect(1);
-        logReinit();
-        sigprocmask(SIG_SETMASK, $sigset) or Fatal("Can't restore SIGCHLD: $!");
-      }
+      $dbh = zmDbConnect(1);
+      logReinit();
 
       check_for_duplicate_token();
       printDebug( "---------->Tick END (active forks:$child_forks, total forks:$total_forks, active hooks: $parallel_hooks)<--------------", 2 );
