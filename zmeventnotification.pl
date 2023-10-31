@@ -1305,8 +1305,7 @@ sub checkNewEvents() {
     my $update_tokens = 0;
     my %tokens_data;
     if ($use_fcm) {
-      open(my $fh, '<', $token_file)
-      || Error('Cannot open to update token counts ' . $token_file);
+      open(my $fh, '<', $token_file) or Error('Cannot open to update token counts ' . $token_file);
       my $hr;
       my $data = do { local $/ = undef; <$fh> };
       close($fh);
@@ -1322,13 +1321,12 @@ sub checkNewEvents() {
     }
 
     # this means we have hit the reload monitor timeframe
-    my $len = scalar @active_connections;
-    printDebug( 'Total event client connections: ' . $len . "\n", 1 );
+    printDebug('Total event client connections: '.@active_connections."\n", 1);
     my $ndx = 1;
     foreach (@active_connections) {
       if ($update_tokens and ($_->{type} == FCM)) {
-        $tokens_data{tokens}->{$_->{token}}->{invocations}=
-        defined($_->{invocations})? $_->{invocations} : {count=>0, at=>(localtime)[4]};
+        $tokens_data{tokens}->{$_->{token}}->{invocations} =
+          defined($_->{invocations})? $_->{invocations} : {count=>0, at=>(localtime)[4]};
       }
 
       printDebug(
@@ -1467,7 +1465,7 @@ sub checkNewEvents() {
     } # end if ( $state == STATE_ALARM || $state == STATE_ALERT )
   } # end foreach monitor
 
-  printDebug( "checkEvents() new events found=$eventFound", 2 );
+  printDebug("checkEvents() new events found=$eventFound", 2);
   return @newEvents;
 }
 
@@ -3829,8 +3827,7 @@ sub processNewAlarmsInFork {
       }    # hook end script
       # end of State == pending
       }
-    }
-    elsif ( $alarm->{End}->{State} eq 'ready' ) {
+    } elsif ( $alarm->{End}->{State} eq 'ready' ) {
 
       my ( $rulesAllowed, $rulesObject ) = isAllowedInRules($alarm);
 
