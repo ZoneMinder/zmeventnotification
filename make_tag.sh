@@ -1,7 +1,7 @@
 #!/bin/bash
 if [ -z "$1" ]; then
     #echo "Getting version name from zm_detect.py"
-    DETECT_TAGVER=`python ./hook/zm_detect.py --bareversion`
+    DETECT_TAGVER=`python3 ./hook/zm_detect.py --bareversion`
     echo 'Getting version from zmeventnotification.pl'
     if [[ `cat ./zmeventnotification.pl` =~ my\ \$app_version\ =\ \'([0-9]*\.[0-9]*\.[0-9]*)\'\; ]];
     then
