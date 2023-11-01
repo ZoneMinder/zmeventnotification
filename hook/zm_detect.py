@@ -10,6 +10,13 @@ import sys
 import argparse
 import datetime
 import os
+import traceback
+
+# Modules that load cv2 will go later 
+# so we can log misses
+import pyzm.ZMLog as log 
+import zmes_hook_helpers.common_params as g
+from pyzm import __version__ as pyzm_version
 
 auth_header = None
 
@@ -230,6 +237,8 @@ def main_handler():
         print('--eventid required')
         exit(1)
 
+    import zmes_hook_helpers.utils as utils
+    import pyzm.helpers.utils as pyzmutils
     utils.get_pyzm_config(args)
 
     if args.get('debug'):
@@ -255,28 +264,19 @@ def main_handler():
     except ImportError as e:
         g.logger.Fatal('{}: You might not have installed OpenCV as per install instructions. Remember, it is NOT automatically installed'.format(e))
 
-    g.logger.Debug('---------| app:{}, pyzm:{}, ES:{} , OpenCV:{}|------------'.format(__app_version__,pyzm_version, es_version, cv2.__version__))
+    g.logger.Debug('---------| app:{}, pyzm:{}, ES:{} , OpenCV:{}|------------'.format(__app_version__, pyzm_version, es_version, cv2.__version__))
    
-import numpy as np
-import re
-import imutils
-import ssl
-import pickle
-import json
-import time
-import requests
-import subprocess
-import traceback
-import ast 
-# Modules that load cv2 will go later 
-# so we can log misses
-import pyzm.ZMLog as log 
-import zmes_hook_helpers.utils as utils
-import pyzm.helpers.utils as pyzmutils
-import zmes_hook_helpers.common_params as g
-from pyzm import __version__ as pyzm_version
+    import numpy as np
+    import re
+    import imutils
+    import ssl
+    import pickle
+    import json
+    import time
+    import requests
+    import subprocess
+    import ast 
 
-    
     # load modules that depend on cv2
     try:
         import zmes_hook_helpers.image_manip as img
