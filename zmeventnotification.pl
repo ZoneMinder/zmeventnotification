@@ -4056,11 +4056,8 @@ sub initSocketServer {
 
       printDebug('There are '.scalar @newEvents.' new Events to process', 2);
 
-
-      if ($numEvents) {
-        # Apparently the child closing the db connection can affect the parent.
-        zmDbDisconnect();
-      }
+      # The child closing the db connection can affect the parent.
+      zmDbDisconnect();
 
       foreach (@newEvents) {
         if (($parallel_hooks >= $max_parallel_hooks) && ($max_parallel_hooks != 0)) {
