@@ -214,7 +214,6 @@ def main_handler():
 
 
     ap.add_argument('-r', '--reason', help='reason for event (notes field in ZM)')
-    ap.add_argument('-t', '--tags', help='Insert event tags for detected objects')
 
     ap.add_argument('-n', '--notes', help='updates notes field in ZM with detections', action='store_true')
     ap.add_argument('-d', '--debug', help='enables debug on console', action='store_true')
@@ -530,35 +529,6 @@ def main_handler():
             except Exception as e:
                 g.logger.Error('Error during notes update: {}'.format(str(e)))
                 g.logger.Debug(2, traceback.format_exc())
-
-        if args.get('tags'):
-            url = '{}/events/{}.json'.format(g.config['api_portal'], args['eventid'])
-            try:
-                ev = zmapi._make_request(url=url,  type='get')
-            except Exception as e:
-                g.logger.Error('Error during event retrieval: {}'.format(str(e)))
-                g.logger.Debug(2, traceback.format_exc())
-                exit(0) # Let's continue with zmdetect
-            tags = ev.get('event',{}).get('Event',{}).get('Tag')
-
-            payload = {}
-            payload['Event[Tag]'] = tags;
-
-            for label in matched_data['labels']:
-                found = 0
-                for tag in tags:
-                    if tag.get('Name') == label:
-                        found = 1
-                        break
-                if !found:
-                    payload['Event[Tag]'].append({'Name': label});
-
-            if len(payload['Event[Tag]'] != len(tags):
-                try:
-                    ev = zmapi._make_request(url=url, payload=payload, type='put')
-                except Exception as e:
-                    g.logger.Error('Error during notes update: {}'.format(str(e)))
-                    g.logger.Debug(2, traceback.format_exc())
 
         if g.config['create_animation'] == 'yes':
             if not args.get('eventid'):
