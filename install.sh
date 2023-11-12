@@ -184,7 +184,7 @@ verify_config() {
 
     fi
     echo
-    if [[ ${INTERACTIVE} == 'no']]
+    if [[ ${INTERACTIVE} == 'no' ]]
     then
         echo "Non interactive mode, installer will answer yes to all questions."
         if [[ ${INSTALLER} == 'apt-get' ]]
