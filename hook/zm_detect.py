@@ -289,7 +289,6 @@ def main_handler():
     g.ctx = ssl.create_default_context()
     utils.process_config(args, g.ctx)
 
-
     # misc came later, so lets be safe
     if not os.path.exists(g.config['base_data_path'] + '/misc/'):
         try:
@@ -305,7 +304,6 @@ def main_handler():
         g.logger.Debug(1, 'Importing remote shim classes for Object/Face')
         from zmes_hook_helpers.apigw import ObjectRemote, FaceRemote, AlprRemote
     # now download image(s)
-
 
     start = datetime.datetime.now()
 
@@ -323,11 +321,10 @@ def main_handler():
     'disable_ssl_cert_check': False if g.config['allow_self_signed']=='no' else True
     }
 
-    g.logger.Debug(1, 'Connecting with ZM APIs')
     zmapi = zmapi.ZMApi(options=api_options)
     stream = args.get('eventid') or args.get('file')
     ml_options = {}
-    stream_options={}
+    stream_options = {}
     secrets = None 
     
     if g.config['ml_sequence'] and g.config['use_sequence'] == 'yes':
