@@ -184,6 +184,16 @@ verify_config() {
 
     fi
     echo
+    if [[ ${INTERACTIVE} == 'no' ]]
+    then
+        echo "Non interactive mode, installer will answer yes to all questions."
+        if [[ ${INSTALLER} == 'apt-get' ]]
+        then
+            INSTALLER="${INSTALLER} -yq"
+        else
+            INSTALLER="${INSTALLER} -y"
+        fi
+    fi
      [[ ${INTERACTIVE} == 'yes' ]] && read -p "If any of this looks wrong, please hit Ctrl+C and edit the variables in this script..."
 
 }

@@ -18,8 +18,8 @@ import traceback
 from configparser import ConfigParser
 import zmes_hook_helpers.common_params as g
 
-from future import standard_library
-standard_library.install_aliases()
+#from importlib import standard_library
+#standard_library.install_aliases()
 from urllib.error import HTTPError
 
 #resize polygons based on analysis scale
