@@ -1370,7 +1370,7 @@ sub checkNewEvents() {
 
         # First we need to close any other open events for this monitor
         foreach my $ev ( keys %{ $active_events{$mid} } ) {
-          next if $ev == 'last_event_processed';
+          next if $ev eq 'last_event_processed';
           if (!$active_events{$mid}->{$ev}->{End}) {
             Debug(2, 
               "Closing unclosed event:$ev of Monitor:$mid as we are in a new event",
