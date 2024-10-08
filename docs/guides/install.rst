@@ -23,7 +23,7 @@ If you are using docker images, the next section does not apply.
 Clone the repo
 ~~~~~~~~~~~~~~~~~
 
-I'd recommend users download the latest stable release. Starting version 4.5 I have started tagging releases that are rested. The master branch will always be 'cutting-edge'.
+I'd recommend users download the latest stable release. Starting version 4.5 I have started tagging releases that are rested. The master branch will always be 'cutting-edge'. NOTE: Pick the MASTER option, as the latest tag will not work out of the box.  There has been many untagged fixes.
 
 To clone the latest stable release:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
