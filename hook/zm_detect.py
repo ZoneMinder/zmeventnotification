@@ -29,6 +29,8 @@ def remote_detect(stream=None, options=None, api=None, args=None):
     import cv2
     import json
     import time
+    import numpy as np
+    import imutils
     
     bbox = []
     label = []
