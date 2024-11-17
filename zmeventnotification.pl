@@ -3685,8 +3685,7 @@ sub processNewAlarmsInFork {
       my $state   = zmGetMonitorState($monitor);
       my $shm_eid = zmGetLastEvent($monitor);
 
-      if ( ( $state == STATE_IDLE || $state == STATE_TAPE || $shm_eid != $eid )
-        && !$endProcessed ) {
+      if ( ( $state == STATE_IDLE || $state == STATE_TAPE || $shm_eid != $eid ) && !$endProcessed ) {
 
         # The alarm has ended
         Debug(2, "For $mid ($mname), SHM says: state=$state, eid=$shm_eid");
