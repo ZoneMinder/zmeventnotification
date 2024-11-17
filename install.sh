@@ -421,6 +421,8 @@ install_hook() {
       echo "VERSION=__version__" >> hook/zmes_hook_helpers/__init__.py
     fi
 
+    echo "Installing new version of hooks"
+    echo "${PY_SUDO} ${PIP} -v install hook/"
     ${PY_SUDO} ${PIP} -v install hook/ && print_opencv_message || print_error "python hooks setup failed"
 
     echo "Installing package deps..."
