@@ -205,8 +205,13 @@ install_es() {
     if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "debian" ]]; then
       echo "$INSTALLER install libconfig-inifiles-perl libcrypt-mysql-perl libcrypt-eksblowfish-perl libmodule-build-perl libyaml-perl libjson-per liblwp-protocol-https-perl libgeos-devl"
       $INSTALLER install libconfig-inifiles-perl libcrypt-mysql-perl libcrypt-eksblowfish-perl libmodule-build-perl libyaml-perl
-      echo "$INSTALLER install libnet-websocket-server-perl"
-      $INSTALLER install libnet-websocket-server-perl
+      HAVE_PACKAGE=`apt-cache madison libnet-websocket-server-perl`
+      if [[ "$HAVE_PACKAGE" == "" ]]; then
+        echo "You will have to install Net::WebSocket::Server using cpan."
+      else
+        echo "$INSTALLER install libnet-websocket-server-perl"
+        $INSTALLER install libnet-websocket-server-perl
+      fi
     else
       echo "Not ubuntu or debian"
     fi
