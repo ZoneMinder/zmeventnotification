@@ -22,6 +22,166 @@ auth_header = None
 
 __app_version__ = '6.1.29'
 
+def remote_detect(stream=None, options=None, api=None, args=None):
+    # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
+
+    import requests
+    import cv2
+    import json
+    import time
+    
+    bbox = []
+    label = []
+    conf = []
+    model = 'object'
+    files={}
+    api_url = g.config['ml_gateway']
+    g.logger.Debug(1, 'Detecting using remote API Gateway {}'.format(api_url))
+    login_url = api_url + '/login'
+    object_url = api_url + '/detect/object?type='+model
+    access_token = None
+    cmdline_image = None 
+    global auth_header
+
+    data_file = g.config['base_data_path'] + '/zm_login.json'
+    if os.path.exists(data_file):
+        g.logger.Debug(2, 'Found token file, checking if token has not expired')
+        with open(data_file) as json_file:
+            try:
+                data = json.load(json_file)
+                json_file.close()
+            except Exception as e: 
+                g.logger.Error('Error loading login.json: {}'.format(e))
+                os.remove(data_file)
+                access_token = None
+            else:
+                generated = data['time']
+                expires = data['expires']
+                access_token = data['token']
+                now = time.time()
+                # lets make sure there is at least 30 secs left
+                if int(now + 30 - generated) >= expires:
+                    g.logger.Debug(1, 'Found access token, but it has expired (or is about to expire)')
+                    access_token = None
+                else:
+                    g.logger.Debug(1, 'Access token is valid for {} more seconds'.format(int(now - generated)))
+                    # Get API access token
+    if not access_token:
+        g.logger.Debug(1, 'Invoking remote API login')
+        r = requests.post(url=login_url,
+                          data=json.dumps({
+                              'username': g.config['ml_user'],
+                              'password': g.config['ml_password'],
+                          }),
+                          headers={'content-type': 'application/json'})
+        data = r.json()
+        access_token = data.get('access_token')
+        if not access_token:
+            raise ValueError('Error getting remote API token {}'.format(data))
+            return
+        g.logger.Debug(2, 'Writing new token for future use')
+        with open(data_file, 'w') as json_file:
+            wdata = {
+                'token': access_token,
+                'expires': data.get('expires'),
+                'time': time.time()
+            }
+            json.dump(wdata, json_file)
+            json_file.close()
+
+    auth_header = {'Authorization': 'Bearer ' + access_token}
+    
+    params = {'delete': True, 'response_format': 'zm_detect'}
+
+    if args.get('file'):
+        g.logger.Debug(2, 'Reading image from {}'.format(args.get('file')))
+        image = cv2.imread(args.get('file'))
+        if g.config['resize'] and g.config['resize'] != 'no':
+            neww = min(int(g.config['resize']),image.shape[1])
+            g.logger.Debug(2 ,'Resizing --file image to {}'.format(neww))
+            img_new = imutils.resize(image,width=neww)
+            image = img_new
+            cmdline_image = image
+            ret, jpeg = cv2.imencode('.jpg', image)
+            files = {'file': ('image.jpg', jpeg.tobytes())}
+
+    else:
+        files = {}
+    
+    ml_overrides = {
+        'model_sequence':g.config['ml_sequence'].get('general',{}).get('model_sequence'),
+        'object': {
+            'pattern': g.config['ml_sequence'].get('object',{}).get('general',{}).get('pattern')
+        },
+         'face': {
+            'pattern': g.config['ml_sequence'].get('face',{}).get('general',{}).get('pattern')
+        },
+         'alpr': {
+            'pattern': g.config['ml_sequence'].get('alpr',{}).get('general',{}).get('pattern')
+        },
+    }
+    mid = args.get('monitorid')
+    reason = args.get('reason')
+    g.logger.Debug(2, 'Invoking mlapi with url:{} and json: mid={} reason={} stream={}, stream_options={} ml_overrides={} headers={} params={} '.format(object_url,mid, reason, stream, options, ml_overrides, auth_header, params))
+    
+    start = datetime.datetime.now()
+    try:
+        r = requests.post(url=object_url,
+                        headers=auth_header,
+                        params=params,
+                        files=files,
+                        json = {
+                            'version': __app_version__, 
+                            'mid': mid,
+                            'reason': reason,
+                            'stream': stream,
+                            'stream_options':options,
+                            'ml_overrides':ml_overrides
+                        }
+                        )
+        r.raise_for_status()
+    except Exception as e:
+        g.logger.Error('Error during remote post: {}'.format(str(e)))
+        g.logger.Debug(2, traceback.format_exc())
+        raise
+
+    diff_time = (datetime.datetime.now() - start)
+    g.logger.Debug(1, 'remote detection inferencing took: {}'.format(diff_time))
+    data = r.json()
+    #print(r)
+    matched_data = data['matched_data']
+    if args.get('file'):
+
+        matched_data['image'] = cmdline_image
+    if g.config['write_image_to_zm'] == 'yes'  and matched_data['frame_id']:
+        url = '{}/index.php?view=image&eid={}&fid={}'.format(g.config['portal'], stream,matched_data['frame_id'] )
+        g.logger.Debug(2, 'Grabbing image from {} as we need to write objdetect.jpg'.format(url))
+        try:
+            response = api._make_request(url=url,  type='get')
+            img = np.asarray(bytearray(response.content), dtype='uint8')
+            img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+           
+            #newh =matched_data['image_dimensions']['resized'][0]
+            if matched_data['image_dimensions'] and matched_data['image_dimensions']['resized']:
+                neww =min(matched_data['image_dimensions']['resized'][1], img.shape[1])
+                oldh, oldw = img.shape[:2]
+                if oldw != neww:
+                    g.logger.Debug(2, 'Resizing source image from width={} to width={} in zm_detect as that is the size mlapi used'.format(oldw, neww))
+                    img = imutils.resize(img,width=neww)
+                else:
+                    g.logger.Debug(2, 'No need to resize as image widths are same from mlapi and zm_detect: {}'.format(neww))
+            matched_data['image'] = img
+        except Exception as e:
+            g.logger.Error('Error during image grab: {}'.format(str(e)))
+            g.logger.Debug(2, traceback.format_exc())
+    return data['matched_data'], data['all_matches']
+
+
+def append_suffix(filename, token):
+    f, e = os.path.splitext(filename)
+    if not e:
+        e = '.jpg'
+    return f + token + e
 
 
 # main handler
@@ -395,163 +555,3 @@ if __name__ == '__main__':
         else:
             print('Unrecoverable error:{} Traceback:{}'.format(e,traceback.format_exc())) 
         exit(1)
-
-def remote_detect(stream=None, options=None, api=None, args=None):
-    # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
-
-    import requests
-    import json
-    import time
-    
-    bbox = []
-    label = []
-    conf = []
-    model = 'object'
-    files={}
-    api_url = g.config['ml_gateway']
-    g.logger.Debug(1, 'Detecting using remote API Gateway {}'.format(api_url))
-    login_url = api_url + '/login'
-    object_url = api_url + '/detect/object?type='+model
-    access_token = None
-    cmdline_image = None 
-    global auth_header
-
-    data_file = g.config['base_data_path'] + '/zm_login.json'
-    if os.path.exists(data_file):
-        g.logger.Debug(2, 'Found token file, checking if token has not expired')
-        with open(data_file) as json_file:
-            try:
-                data = json.load(json_file)
-                json_file.close()
-            except Exception as e: 
-                g.logger.Error('Error loading login.json: {}'.format(e))
-                os.remove(data_file)
-                access_token = None
-            else:
-                generated = data['time']
-                expires = data['expires']
-                access_token = data['token']
-                now = time.time()
-                # lets make sure there is at least 30 secs left
-                if int(now + 30 - generated) >= expires:
-                    g.logger.Debug(1, 'Found access token, but it has expired (or is about to expire)')
-                    access_token = None
-                else:
-                    g.logger.Debug(1, 'Access token is valid for {} more seconds'.format(int(now - generated)))
-                    # Get API access token
-    if not access_token:
-        g.logger.Debug(1, 'Invoking remote API login')
-        r = requests.post(url=login_url,
-                          data=json.dumps({
-                              'username': g.config['ml_user'],
-                              'password': g.config['ml_password'],
-                          }),
-                          headers={'content-type': 'application/json'})
-        data = r.json()
-        access_token = data.get('access_token')
-        if not access_token:
-            raise ValueError('Error getting remote API token {}'.format(data))
-            return
-        g.logger.Debug(2, 'Writing new token for future use')
-        with open(data_file, 'w') as json_file:
-            wdata = {
-                'token': access_token,
-                'expires': data.get('expires'),
-                'time': time.time()
-            }
-            json.dump(wdata, json_file)
-            json_file.close()
-
-    auth_header = {'Authorization': 'Bearer ' + access_token}
-    
-    params = {'delete': True, 'response_format': 'zm_detect'}
-
-    if args.get('file'):
-        g.logger.Debug(2, 'Reading image from {}'.format(args.get('file')))
-        image = cv2.imread(args.get('file'))
-        if g.config['resize'] and g.config['resize'] != 'no':
-            neww = min(int(g.config['resize']),image.shape[1])
-            g.logger.Debug(2 ,'Resizing --file image to {}'.format(neww))
-            img_new = imutils.resize(image,width=neww)
-            image = img_new
-            cmdline_image = image
-            ret, jpeg = cv2.imencode('.jpg', image)
-            files = {'file': ('image.jpg', jpeg.tobytes())}
-
-    else:
-        files = {}
-    
-    ml_overrides = {
-        'model_sequence':g.config['ml_sequence'].get('general',{}).get('model_sequence'),
-        'object': {
-            'pattern': g.config['ml_sequence'].get('object',{}).get('general',{}).get('pattern')
-        },
-         'face': {
-            'pattern': g.config['ml_sequence'].get('face',{}).get('general',{}).get('pattern')
-        },
-         'alpr': {
-            'pattern': g.config['ml_sequence'].get('alpr',{}).get('general',{}).get('pattern')
-        },
-    }
-    mid = args.get('monitorid')
-    reason = args.get('reason')
-    g.logger.Debug(2, 'Invoking mlapi with url:{} and json: mid={} reason={} stream={}, stream_options={} ml_overrides={} headers={} params={} '.format(object_url,mid, reason, stream, options, ml_overrides, auth_header, params))
-    
-    start = datetime.datetime.now()
-    try:
-        r = requests.post(url=object_url,
-                        headers=auth_header,
-                        params=params,
-                        files=files,
-                        json = {
-                            'version': __app_version__, 
-                            'mid': mid,
-                            'reason': reason,
-                            'stream': stream,
-                            'stream_options':options,
-                            'ml_overrides':ml_overrides
-                        }
-                        )
-        r.raise_for_status()
-    except Exception as e:
-        g.logger.Error('Error during remote post: {}'.format(str(e)))
-        g.logger.Debug(2, traceback.format_exc())
-        raise
-
-    diff_time = (datetime.datetime.now() - start)
-    g.logger.Debug(1, 'remote detection inferencing took: {}'.format(diff_time))
-    data = r.json()
-    #print(r)
-    matched_data = data['matched_data']
-    if args.get('file'):
-
-        matched_data['image'] = cmdline_image
-    if g.config['write_image_to_zm'] == 'yes'  and matched_data['frame_id']:
-        url = '{}/index.php?view=image&eid={}&fid={}'.format(g.config['portal'], stream,matched_data['frame_id'] )
-        g.logger.Debug(2, 'Grabbing image from {} as we need to write objdetect.jpg'.format(url))
-        try:
-            response = api._make_request(url=url,  type='get')
-            img = np.asarray(bytearray(response.content), dtype='uint8')
-            img = cv2.imdecode(img, cv2.IMREAD_COLOR)
-           
-            #newh =matched_data['image_dimensions']['resized'][0]
-            if matched_data['image_dimensions'] and matched_data['image_dimensions']['resized']:
-                neww =min(matched_data['image_dimensions']['resized'][1], img.shape[1])
-                oldh, oldw = img.shape[:2]
-                if oldw != neww:
-                    g.logger.Debug(2, 'Resizing source image from width={} to width={} in zm_detect as that is the size mlapi used'.format(oldw, neww))
-                    img = imutils.resize(img,width=neww)
-                else:
-                    g.logger.Debug(2, 'No need to resize as image widths are same from mlapi and zm_detect: {}'.format(neww))
-            matched_data['image'] = img
-        except Exception as e:
-            g.logger.Error('Error during image grab: {}'.format(str(e)))
-            g.logger.Debug(2, traceback.format_exc())
-    return data['matched_data'], data['all_matches']
-
-
-def append_suffix(filename, token):
-    f, e = os.path.splitext(filename)
-    if not e:
-        e = '.jpg'
-    return f + token + e
