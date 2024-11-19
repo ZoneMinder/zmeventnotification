@@ -25,6 +25,7 @@ __app_version__ = '6.1.29'
 def remote_detect(stream=None, options=None, api=None, args=None):
     # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
 
+    import numpy as np
     import requests
     import cv2
     import json
@@ -268,7 +269,6 @@ def main_handler():
 
     g.logger.Debug(1, '---------| app:{}, pyzm:{}, ES:{} , OpenCV:{}|------------'.format(__app_version__, pyzm_version, es_version, cv2.__version__))
    
-    import numpy as np
     import re
     import imutils
     import ssl
