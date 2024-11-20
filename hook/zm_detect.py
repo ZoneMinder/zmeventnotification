@@ -74,7 +74,8 @@ def remote_detect(stream=None, options=None, api=None, args=None):
                               'username': g.config['ml_user'],
                               'password': g.config['ml_password'],
                           }),
-                          headers={'content-type': 'application/json'})
+                          headers={'content-type': 'application/json'},
+                          timeout=5)
         data = r.json()
         access_token = data.get('access_token')
         if not access_token:
@@ -138,8 +139,8 @@ def remote_detect(stream=None, options=None, api=None, args=None):
                             'stream': stream,
                             'stream_options':options,
                             'ml_overrides':ml_overrides
-                        }
-                        )
+                        },
+                          timeout=5)
         r.raise_for_status()
     except Exception as e:
         g.logger.Error('Error during remote post: {}'.format(str(e)))
