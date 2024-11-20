@@ -37,6 +37,10 @@ def remote_detect(stream=None, options=None, api=None, args=None):
     model = 'object'
     files={}
     api_url = g.config['ml_gateway']
+    ml_timeout = g.config['ml_timeout']
+    if not timeout:
+        timeout = 5
+
     g.logger.Debug(1, 'Detecting using remote API Gateway {}'.format(api_url))
     login_url = api_url + '/login'
     object_url = api_url + '/detect/object?type='+model
@@ -75,7 +79,7 @@ def remote_detect(stream=None, options=None, api=None, args=None):
                               'password': g.config['ml_password'],
                           }),
                           headers={'content-type': 'application/json'},
-                          timeout=5)
+                          timeout = ml_timeout)
         data = r.json()
         access_token = data.get('access_token')
         if not access_token:
@@ -140,7 +144,7 @@ def remote_detect(stream=None, options=None, api=None, args=None):
                             'stream_options':options,
                             'ml_overrides':ml_overrides
                         },
-                          timeout=5)
+                          timeout = ml_timeout)
         r.raise_for_status()
     except Exception as e:
         g.logger.Error('Error during remote post: {}'.format(str(e)))
