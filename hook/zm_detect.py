@@ -37,9 +37,10 @@ def remote_detect(stream=None, options=None, api=None, args=None):
     model = 'object'
     files={}
     api_url = g.config['ml_gateway']
-    ml_timeout = g.config['ml_timeout']
-    if not timeout:
-        timeout = 5
+    if 'ml_timeout' in g.config:
+        ml_timeout = int(g.config['ml_timeout'])
+    else:
+        ml_timeout = 5
 
     g.logger.Debug(1, 'Detecting using remote API Gateway {}'.format(api_url))
     login_url = api_url + '/login'
