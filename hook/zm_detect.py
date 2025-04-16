@@ -25,6 +25,7 @@ __app_version__ = '6.1.29'
 def remote_detect(stream=None, options=None, api=None, args=None):
     # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
 
+    import numpy as np
     import requests
     import cv2
     import json
@@ -38,6 +39,11 @@ def remote_detect(stream=None, options=None, api=None, args=None):
     model = 'object'
     files={}
     api_url = g.config['ml_gateway']
+    if 'ml_timeout' in g.config:
+        ml_timeout = int(g.config['ml_timeout'])
+    else:
+        ml_timeout = 5
+
     g.logger.Debug(1, 'Detecting using remote API Gateway {}'.format(api_url))
     login_url = api_url + '/login'
     object_url = api_url + '/detect/object?type='+model
@@ -75,7 +81,8 @@ def remote_detect(stream=None, options=None, api=None, args=None):
                               'username': g.config['ml_user'],
                               'password': g.config['ml_password'],
                           }),
-                          headers={'content-type': 'application/json'})
+                          headers={'content-type': 'application/json'},
+                          timeout = ml_timeout)
         data = r.json()
         access_token = data.get('access_token')
         if not access_token:
@@ -139,8 +146,8 @@ def remote_detect(stream=None, options=None, api=None, args=None):
                             'stream': stream,
                             'stream_options':options,
                             'ml_overrides':ml_overrides
-                        }
-                        )
+                        },
+                          timeout = ml_timeout)
         r.raise_for_status()
     except Exception as e:
         g.logger.Error('Error during remote post: {}'.format(str(e)))
@@ -270,7 +277,6 @@ def main_handler():
 
     g.logger.Debug(1, '---------| app:{}, pyzm:{}, ES:{} , OpenCV:{}|------------'.format(__app_version__, pyzm_version, es_version, cv2.__version__))
    
-    import numpy as np
     import re
     import imutils
     import ssl

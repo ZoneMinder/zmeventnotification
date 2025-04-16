@@ -205,8 +205,13 @@ install_es() {
     if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "debian" ]]; then
       echo "$INSTALLER install libconfig-inifiles-perl libcrypt-mysql-perl libcrypt-eksblowfish-perl libmodule-build-perl libyaml-perl libjson-per liblwp-protocol-https-perl libgeos-devl"
       $INSTALLER install libconfig-inifiles-perl libcrypt-mysql-perl libcrypt-eksblowfish-perl libmodule-build-perl libyaml-perl
-      echo "$INSTALLER install libnet-websocket-server-perl"
-      $INSTALLER install libnet-websocket-server-perl
+      HAVE_PACKAGE=`apt-cache madison libnet-websocket-server-perl`
+      if [[ "$HAVE_PACKAGE" == "" ]]; then
+        echo "You will have to install Net::WebSocket::Server using cpan."
+      else
+        echo "$INSTALLER install libnet-websocket-server-perl"
+        $INSTALLER install libnet-websocket-server-perl
+      fi
     else
       echo "Not ubuntu or debian"
     fi
@@ -421,6 +426,8 @@ install_hook() {
       echo "VERSION=__version__" >> hook/zmes_hook_helpers/__init__.py
     fi
 
+    echo "Installing new version of hooks"
+    echo "${PY_SUDO} ${PIP} -v install hook/"
     ${PY_SUDO} ${PIP} -v install hook/ && print_opencv_message || print_error "python hooks setup failed"
 
     echo "Installing package deps..."
