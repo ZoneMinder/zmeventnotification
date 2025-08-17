@@ -11,6 +11,7 @@ import argparse
 import datetime
 import os
 import traceback
+import imutils
 
 # Modules that load cv2 will go later 
 # so we can log misses
@@ -276,7 +277,6 @@ def main_handler():
     g.logger.Debug(1, '---------| app:{}, pyzm:{}, ES:{} , OpenCV:{}|------------'.format(__app_version__, pyzm_version, es_version, cv2.__version__))
    
     import re
-    import imutils
     import ssl
     import pickle
     import json
