@@ -3680,7 +3680,10 @@ sub processNewAlarmsInFork {
 
     if ( !zmMemVerify($monitor) ) {
       Error("SHM failed for $$monitor{Id}, re-validating it");
-      loadMonitor($monitor);
+      if (!loadMonitor($monitor)) {
+        loadMonitors();
+      }
+
     } else {
       my $state   = zmGetMonitorState($monitor);
       my $shm_eid = zmGetLastEvent($monitor);
