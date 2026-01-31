@@ -10,34 +10,27 @@ import sys
 import argparse
 import datetime
 import os
-import numpy as np
-import re
-import imutils
-import ssl
-import pickle
-import json
-import time
-import requests
-import subprocess
 import traceback
-import ast 
+import imutils
+
 # Modules that load cv2 will go later 
 # so we can log misses
 import pyzm.ZMLog as log 
-import zmes_hook_helpers.utils as utils
-import pyzm.helpers.utils as pyzmutils
 import zmes_hook_helpers.common_params as g
 from pyzm import __version__ as pyzm_version
 
 auth_header = None
 
-__app_version__ = '6.1.28'
+__app_version__ = '6.1.29'
 
 def remote_detect(stream=None, options=None, api=None, args=None):
     # This uses mlapi (https://github.com/pliablepixels/mlapi) to run inferencing and converts format to what is required by the rest of the code.
 
+    import numpy as np
     import requests
     import cv2
+    import json
+    import time
     
     bbox = []
     label = []
@@ -45,7 +38,12 @@ def remote_detect(stream=None, options=None, api=None, args=None):
     model = 'object'
     files={}
     api_url = g.config['ml_gateway']
-    g.logger.Info('Detecting using remote API Gateway {}'.format(api_url))
+    if 'ml_timeout' in g.config:
+        ml_timeout = int(g.config['ml_timeout'])
+    else:
+        ml_timeout = 5
+
+    g.logger.Debug(1, 'Detecting using remote API Gateway {}'.format(api_url))
     login_url = api_url + '/login'
     object_url = api_url + '/detect/object?type='+model
     access_token = None
@@ -54,7 +52,7 @@ def remote_detect(stream=None, options=None, api=None, args=None):
 
     data_file = g.config['base_data_path'] + '/zm_login.json'
     if os.path.exists(data_file):
-        g.logger.Debug(2,'Found token file, checking if token has not expired')
+        g.logger.Debug(2, 'Found token file, checking if token has not expired')
         with open(data_file) as json_file:
             try:
                 data = json.load(json_file)
@@ -70,30 +68,26 @@ def remote_detect(stream=None, options=None, api=None, args=None):
                 now = time.time()
                 # lets make sure there is at least 30 secs left
                 if int(now + 30 - generated) >= expires:
-                    g.logger.Debug(
-                        1,'Found access token, but it has expired (or is about to expire)'
-                    )
+                    g.logger.Debug(1, 'Found access token, but it has expired (or is about to expire)')
                     access_token = None
                 else:
-                    g.logger.Debug(1,'Access token is valid for {} more seconds'.format(
-                        int(now - generated)))
+                    g.logger.Debug(1, 'Access token is valid for {} more seconds'.format(int(now - generated)))
                     # Get API access token
     if not access_token:
-        g.logger.Debug(1,'Invoking remote API login')
+        g.logger.Debug(1, 'Invoking remote API login')
         r = requests.post(url=login_url,
                           data=json.dumps({
                               'username': g.config['ml_user'],
                               'password': g.config['ml_password'],
-                             
-
                           }),
-                          headers={'content-type': 'application/json'})
+                          headers={'content-type': 'application/json'},
+                          timeout = ml_timeout)
         data = r.json()
         access_token = data.get('access_token')
         if not access_token:
             raise ValueError('Error getting remote API token {}'.format(data))
             return
-        g.logger.Debug(2,'Writing new token for future use')
+        g.logger.Debug(2, 'Writing new token for future use')
         with open(data_file, 'w') as json_file:
             wdata = {
                 'token': access_token,
@@ -108,11 +102,11 @@ def remote_detect(stream=None, options=None, api=None, args=None):
     params = {'delete': True, 'response_format': 'zm_detect'}
 
     if args.get('file'):
-        g.logger.Debug(2, "Reading image from {}".format(args.get('file')))
+        g.logger.Debug(2, 'Reading image from {}'.format(args.get('file')))
         image = cv2.imread(args.get('file'))
         if g.config['resize'] and g.config['resize'] != 'no':
             neww = min(int(g.config['resize']),image.shape[1])
-            g.logger.Debug(2,'Resizing --file image to {}'.format(neww))
+            g.logger.Debug(2 ,'Resizing --file image to {}'.format(neww))
             img_new = imutils.resize(image,width=neww)
             image = img_new
             cmdline_image = image
@@ -121,8 +115,6 @@ def remote_detect(stream=None, options=None, api=None, args=None):
 
     else:
         files = {}
-    #print (object_url)
-
     
     ml_overrides = {
         'model_sequence':g.config['ml_sequence'].get('general',{}).get('model_sequence'),
@@ -153,8 +145,8 @@ def remote_detect(stream=None, options=None, api=None, args=None):
                             'stream': stream,
                             'stream_options':options,
                             'ml_overrides':ml_overrides
-                        }
-                        )
+                        },
+                          timeout = ml_timeout)
         r.raise_for_status()
     except Exception as e:
         g.logger.Error('Error during remote post: {}'.format(str(e)))
@@ -171,7 +163,7 @@ def remote_detect(stream=None, options=None, api=None, args=None):
         matched_data['image'] = cmdline_image
     if g.config['write_image_to_zm'] == 'yes'  and matched_data['frame_id']:
         url = '{}/index.php?view=image&eid={}&fid={}'.format(g.config['portal'], stream,matched_data['frame_id'] )
-        g.logger.Debug(2,'Grabbing image from {} as we need to write objdetect.jpg'.format(url))
+        g.logger.Debug(2, 'Grabbing image from {} as we need to write objdetect.jpg'.format(url))
         try:
             response = api._make_request(url=url,  type='get')
             img = np.asarray(bytearray(response.content), dtype='uint8')
@@ -189,7 +181,7 @@ def remote_detect(stream=None, options=None, api=None, args=None):
             matched_data['image'] = img
         except Exception as e:
             g.logger.Error('Error during image grab: {}'.format(str(e)))
-            g.logger.Debug(2,traceback.format_exc())
+            g.logger.Debug(2, traceback.format_exc())
     return data['matched_data'], data['all_matches']
 
 
@@ -255,6 +247,8 @@ def main_handler():
         print('--eventid required')
         exit(1)
 
+    import zmes_hook_helpers.utils as utils
+    import pyzm.helpers.utils as pyzmutils
     utils.get_pyzm_config(args)
 
     if args.get('debug'):
@@ -280,10 +274,17 @@ def main_handler():
     except ImportError as e:
         g.logger.Fatal('{}: You might not have installed OpenCV as per install instructions. Remember, it is NOT automatically installed'.format(e))
 
-    g.logger.Info('---------| app:{}, pyzm:{}, ES:{} , OpenCV:{}|------------'.format(__app_version__,pyzm_version, es_version, cv2.__version__))
+    g.logger.Debug(1, '---------| app:{}, pyzm:{}, ES:{} , OpenCV:{}|------------'.format(__app_version__, pyzm_version, es_version, cv2.__version__))
    
+    import re
+    import ssl
+    import pickle
+    import json
+    import time
+    import requests
+    import subprocess
+    import ast 
 
-    
     # load modules that depend on cv2
     try:
         import zmes_hook_helpers.image_manip as img
@@ -296,7 +297,6 @@ def main_handler():
     g.ctx = ssl.create_default_context()
     utils.process_config(args, g.ctx)
 
-
     # misc came later, so lets be safe
     if not os.path.exists(g.config['base_data_path'] + '/misc/'):
         try:
@@ -305,14 +305,13 @@ def main_handler():
             pass  # if two detects run together with a race here
 
     if not g.config['ml_gateway']:
-        g.logger.Info('Importing local classes for Object/Face')
+        g.logger.Debug(1, 'Importing local classes for Object/Face')
         import pyzm.ml.object as object_detection
        
     else:
-        g.logger.Info('Importing remote shim classes for Object/Face')
+        g.logger.Debug(1, 'Importing remote shim classes for Object/Face')
         from zmes_hook_helpers.apigw import ObjectRemote, FaceRemote, AlprRemote
     # now download image(s)
-
 
     start = datetime.datetime.now()
 
@@ -330,31 +329,30 @@ def main_handler():
     'disable_ssl_cert_check': False if g.config['allow_self_signed']=='no' else True
     }
 
-    g.logger.Info('Connecting with ZM APIs')
     zmapi = zmapi.ZMApi(options=api_options)
     stream = args.get('eventid') or args.get('file')
     ml_options = {}
-    stream_options={}
+    stream_options = {}
     secrets = None 
     
     if g.config['ml_sequence'] and g.config['use_sequence'] == 'yes':
-        g.logger.Debug(2,'using ml_sequence')
+        g.logger.Debug(2, 'using ml_sequence')
         ml_options = g.config['ml_sequence']
         secrets = pyzmutils.read_config(g.config['secrets'])
         ml_options = pyzmutils.template_fill(input_str=ml_options, config=None, secrets=secrets._sections.get('secrets'))
         ml_options = ast.literal_eval(ml_options)
         g.config['ml_sequence'] = ml_options
     else:
-        g.logger.Debug(2,'mapping legacy ml data from config')
+        g.logger.Debug(2, 'mapping legacy ml data from config')
         ml_options = utils.convert_config_to_ml_sequence()
         g.config['ml_sequence'] = ml_options
 
     if g.config['stream_sequence'] and g.config['use_sequence'] == 'yes': # new sequence
-        g.logger.Debug(2,'using stream_sequence')
+        g.logger.Debug(2, 'using stream_sequence')
         stream_options = g.config['stream_sequence']
         stream_options = ast.literal_eval(stream_options)
     else: # legacy
-        g.logger.Debug(2,'mapping legacy stream data from config')
+        g.logger.Debug(2, 'mapping legacy stream data from config')
         if g.config['detection_mode'] == 'all':
             g.config['detection_mode'] = 'most_models'
         frame_set = g.config['frame_id']
@@ -399,10 +397,10 @@ def main_handler():
         try:
             matched_data,all_data = remote_detect(stream=stream, options=stream_options, api=zmapi, args=args)
             diff_time = (datetime.datetime.now() - start)
-            g.logger.Debug(1,'Total remote detection detection took: {}'.format(diff_time))
+            g.logger.Debug(1, 'Total remote detection detection took: {}'.format(diff_time))
         except Exception as e:
             g.logger.Error("Error with remote mlapi:{}".format(e))
-            g.logger.Debug(2,traceback.format_exc())
+            g.logger.Debug(2, traceback.format_exc())
 
             if g.config['ml_fallback_local'] == 'yes':
                 g.logger.Debug(1, "Falling back to local detection")
@@ -414,7 +412,7 @@ def main_handler():
 
     else:
         if not args['file'] and int(g.config['wait']) > 0:
-            g.logger.Info('Sleeping for {} seconds before inferencing'.format(
+            g.logger.Debug(1, 'Sleeping for {} seconds before inferencing'.format(
             g.config['wait']))
             time.sleep(g.config['wait'])
         from pyzm.ml.detect_sequence import DetectSequence
@@ -477,7 +475,7 @@ def main_handler():
         pred = prefix + 'detected:' + pred
         g.logger.Info('Prediction string:{}'.format(pred))
         jos = json.dumps(obj_json)
-        g.logger.Debug(1,'Prediction string JSON:{}'.format(jos))
+        g.logger.Debug(1, 'Prediction string JSON:{}'.format(jos))
         print(pred + '--SPLIT--' + jos)
 
         if (matched_data['image'] is not None) and (g.config['write_image_to_zm'] == 'yes' or g.config['write_debug_image'] == 'yes'):
@@ -491,7 +489,7 @@ def main_handler():
                     cv2.rectangle(debug_image, (_b[0], _b[1]), (_b[2], _b[3]),
                         (0,0,255), 1)
                 filename_debug = g.config['image_path']+'/'+os.path.basename(append_suffix(stream, '-{}-debug'.format(matched_data['frame_id'])))
-                g.logger.Debug(1,'Writing bound boxes to debug image: {}'.format(filename_debug))
+                g.logger.Debug(1, 'Writing bound boxes to debug image: {}'.format(filename_debug))
                 cv2.imwrite(filename_debug,debug_image)
 
             if g.config['write_image_to_zm'] == 'yes' and args.get('eventpath'):
@@ -499,7 +497,7 @@ def main_handler():
                     args.get('eventpath')))
                 cv2.imwrite(args.get('eventpath') + '/objdetect.jpg', debug_image)
                 jf = args.get('eventpath')+ '/objects.json'
-                g.logger.Debug(1,'Writing JSON output to {}'.format(jf))
+                g.logger.Debug(1, 'Writing JSON output to {}'.format(jf))
                 try:
                     with open(jf, 'w') as jo:
                         json.dump(obj_json, jo)
@@ -513,7 +511,7 @@ def main_handler():
                 ev = zmapi._make_request(url=url,  type='get')
             except Exception as e:
                 g.logger.Error('Error during event notes retrieval: {}'.format(str(e)))
-                g.logger.Debug(2,traceback.format_exc())
+                g.logger.Debug(2, traceback.format_exc())
                 exit(0) # Let's continue with zmdetect
 
             new_notes = pred
@@ -526,7 +524,7 @@ def main_handler():
                 except IndexError:
                     old_m = ''
                 new_notes = pred + 'Motion:'+ old_m
-                g.logger.Debug(1,'Replacing old note:{} with new note:{}'.format(old_notes, new_notes))
+                g.logger.Debug(1, 'Replacing old note:{} with new note:{}'.format(old_notes, new_notes))
                 
 
             payload = {}
@@ -535,13 +533,13 @@ def main_handler():
                 ev = zmapi._make_request(url=url, payload=payload, type='put')
             except Exception as e:
                 g.logger.Error('Error during notes update: {}'.format(str(e)))
-                g.logger.Debug(2,traceback.format_exc())
+                g.logger.Debug(2, traceback.format_exc())
 
         if g.config['create_animation'] == 'yes':
             if not args.get('eventid'):
                 g.logger.Error('Cannot create animation as you did not pass an event ID')
             else:
-                g.logger.Debug(1,'animation: Creating burst...')
+                g.logger.Debug(1, 'animation: Creating burst...')
                 try:
                     img.createAnimation(matched_data['frame_id'], args.get('eventid'), args.get('eventpath')+'/objdetect', g.config['animation_types'])
                 except Exception as e:
