@@ -1,0 +1,171 @@
+package ZmEventNotification::Rules;
+
+use strict;
+use warnings;
+use Exporter 'import';
+
+our @EXPORT_OK = qw(isAllowedInRules);
+our %EXPORT_TAGS = ( all => \@EXPORT_OK );
+
+use ZmEventNotification::Constants qw(:all);
+use ZmEventNotification::Config qw(:all);
+
+use Time::Piece;
+use Time::Seconds;
+
+sub isAllowedInRules {
+
+  my $RULE_MATCHED_RESULT     = 1;
+  my $RULE_NOT_MATCHED_RESULT = 0;
+  my $RULE_ERROR_RESULT       = 1;
+  my $MISSING_RULE_RESULT     = 1;
+
+  my $object_on_matched     = {};    # interesting things depending on action
+  my $object_on_not_matched = {};    # interesting things depending on action
+
+  if ( !$main::is_timepiece ) {
+    main::printError('rules: Not checking rules as Time::Piece is not installed');
+    return ( $RULE_ERROR_RESULT, {} );
+  }
+  my $alarm = shift;
+  my $id    = $alarm->{MonitorId};
+  my $name  = $alarm->{Name};
+  my $cause = $alarm->{Start}->{Cause};
+
+  if (index($cause, 'detected:') == -1) {
+    if (index($alarm->{End}->{Cause}, 'detected:') != -1) {
+      $cause = $alarm->{End}->{Cause};
+    } elsif (index($alarm->{Cause}, 'detected:') != -1)  {
+      $cause = $alarm->{Cause};
+    }
+  }
+
+  my $eid = $alarm->{EventId};
+  my $now = Time::Piece->new;
+
+  main::printDebug(
+    "rules: Checking rules for alarm caused by eid:$eid, monitor:$id, at: $now with cause:$cause",
+    2
+  );
+
+  if ( !exists( $es_rules{notifications}->{monitors} )
+    || !exists( $es_rules{notifications}->{monitors}->{$id} ) )
+  {
+    main::printDebug( "rules: No rules found for Monitor, allowing:$id", 1 );
+    return ( $MISSING_RULE_RESULT, {} );
+  }
+
+  my $entry_ref = $es_rules{notifications}->{monitors}->{$id}->{rules};
+  my $rulecnt = 0;
+  foreach my $rule_ref ( @{$entry_ref} ) {
+    $rulecnt++;
+    main::printDebug( "rules: (eid: $eid) -- Processing rule: $rulecnt --", 1 );
+
+    if ( $rule_ref->{action} eq 'mute' ) {
+      $RULE_MATCHED_RESULT     = 0;
+      $RULE_NOT_MATCHED_RESULT = 1;
+      $object_on_matched       = {};
+      $object_on_not_matched   = {};
+    } elsif ( $rule_ref->{action} eq 'critical_notify' ) {
+      $RULE_MATCHED_RESULT     = 1;
+      $RULE_NOT_MATCHED_RESULT = 1;
+      $object_on_matched       = { notification_type => 'critical' };
+      $object_on_not_matched   = {};
+    } else {
+      main::printError( "rules: unknown action:" . $rule_ref->{action} );
+      return ( $RULE_ERROR_RESULT, {} );
+    }
+
+    if ( !exists( $rule_ref->{parsed_from} ) ) {
+      my $from = $rule_ref->{from};
+      my $to   = $rule_ref->{to};
+      my $format =
+        exists( $rule_ref->{time_format} )
+        ? $rule_ref->{time_format}
+        : "%I:%M %p";
+      my $dow = $rule_ref->{daysofweek};
+
+      main::printDebug( "rules: parsing rule $from/$to using format:$format", 2 );
+      my $d_from = Time::Piece->strptime( $from, $format );
+      my $d_to   = Time::Piece->strptime( $to,   $format );
+      if ( $d_to < $d_from ) {
+        main::printDebug( "rules: to is less than from, so we are wrapping dates",
+          2 );
+        $d_from -= ONE_DAY;
+      }
+      main::printDebug( "rules: parsed time from: $d_from and to:$d_to", 2 );
+
+      $rule_ref->{parsed_from} = $d_from;
+      $rule_ref->{parsed_to}   = $d_to;
+    }
+
+    # Parsed entries exist use those
+    my $format =
+      exists( $rule_ref->{time_format} )
+      ? $rule_ref->{time_format}
+      : '%I:%M %p';
+    my $t = Time::Piece->new->strftime($format);
+    $t = Time::Piece->strptime( $t, $format );
+
+    main::printDebug(
+      "rules:(eid: $eid)  seeing if now:"
+        . $t
+        . " is between:"
+        . $rule_ref->{parsed_from} . " and "
+        . $rule_ref->{parsed_to},
+      2
+    );
+    if ( ($t < $rule_ref->{parsed_from}) || ($t > $rule_ref->{parsed_to}) ) {
+      main::printDebug("rules: Skipping this rule as times don't match..", 1);
+      next;
+    }
+
+    main::printDebug(
+      "rules:(eid: $eid)  seeing if now:"
+        . $now->wdayname
+        . " is part of:"
+        . $rule_ref->{daysofweek},
+      2
+    );
+    if ( exists($rule_ref->{daysofweek})
+      && ( index( $rule_ref->{daysofweek}, $now->wdayname ) == -1 ) )
+    {
+      main::printDebug(
+        "rules: (eid: $eid) Skipping this rule as:"
+          . $t->wdayname
+          . ' does not match '
+          . $rule_ref->{daysofweek},
+        1
+      );
+      next;
+    }
+    main::printDebug(
+      "rules:(eid: $eid)  seeing if cause_has: ->"
+        . $rule_ref->{cause_has}
+        . "<- is part of ->$cause<-",
+      2
+    );
+    if ( exists( $rule_ref->{cause_has} ) ) {
+      my $re = qr/$rule_ref->{cause_has}/i;
+      if ( lc($cause) !~ /$re/) {
+        main::printDebug(
+          "rules: (eid: $eid) Skipping this rule as "
+            . $rule_ref->{cause_has}
+            . " does not pattern match "
+            . $cause,
+          1
+        );
+        next;
+      }
+    }
+
+    # coming here means this rule was matched and all conditions met
+    main::printDebug("rules: (eid: $eid) " . $rule_ref->{action}.' rule matched', 1);
+    return ( $RULE_MATCHED_RESULT, $object_on_matched );
+  } #end foreach rule_ref
+
+  main::printDebug( "rules: (eid: $eid) No rules matched", 1 );
+  return ( $RULE_NOT_MATCHED_RESULT, $object_on_not_matched );
+}
+
+1;
