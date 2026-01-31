@@ -17,6 +17,7 @@
 
 PYTHON=${PYTHON:-python3}
 PIP=${PIP:-pip3}
+PIP_COMPAT=${PIP_COMPAT:---break-system-packages}
 INSTALLER=${INSTALLER:-$(which apt-get || which yum)}
 
 # Models to install
@@ -34,6 +35,9 @@ TARGET_CONFIG=${TARGET_CONFIG:-'/etc/zm'}
 TARGET_DATA=${TARGET_DATA:-'/var/lib/zmeventnotification'}
 TARGET_BIN_ES=${TARGET_BIN_ES:-'/usr/bin'}
 TARGET_BIN_HOOK=${TARGET_BIN_HOOK:-'/var/lib/zmeventnotification/bin'}
+TARGET_PERL_LIB=${TARGET_PERL_LIB:-'/usr/share/perl5'}
+
+INSTALL_OPENCV=${INSTALL_OPENCV:-no}
 
 WGET=${WGET:-$(which wget)}
 _WEB_OWNER_FROM_PS=$(ps xao user,group,comm | grep -E '(httpd|hiawatha|apache|apache2|nginx)' | grep -v whoami | grep -v root | head -n1 | awk '{print $1}')
@@ -163,6 +167,8 @@ verify_config() {
     echo "Install Hooks config: ${INSTALL_HOOK_CONFIG}"
     echo "Upgrade Hooks config (if applicable): ${HOOK_CONFIG_UPGRADE}"
     echo "Download and install models (if needed): ${DOWNLOAD_MODELS}"
+    echo "Install OpenCV: ${INSTALL_OPENCV}"
+    echo "Perl module install path: ${TARGET_PERL_LIB}"
     echo
 
     [[ ${INSTALL_ES} != 'no' ]] && echo "The Event Server will be installed to ${TARGET_BIN_ES}"
@@ -193,28 +199,55 @@ verify_config() {
 install_es() {
     echo '*** Installing ES Dependencies ***'
     if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "debian" ]]; then
-      echo "$INSTALLER install libconfig-inifiles-perl libcrypt-mysql-perl libcrypt-eksblowfish-perl libmodule-build-perl libyaml-perl libjson-per liblwp-protocol-https-perl libgeos-devl"
-      $INSTALLER install libconfig-inifiles-perl libcrypt-mysql-perl libcrypt-eksblowfish-perl libmodule-build-perl libyaml-perl
-      echo "$INSTALLER install libnet-websocket-server-perl"
-      $INSTALLER install libnet-websocket-server-perl
+      $INSTALLER install -y libconfig-inifiles-perl libcrypt-mysql-perl libcrypt-eksblowfish-perl \
+          libcrypt-openssl-rsa-perl libmodule-build-perl libyaml-perl libjson-perl \
+          liblwp-protocol-https-perl libio-socket-ssl-perl liburi-perl libdbi-perl
+      echo "Note: Net::WebSocket::Server is also required but not available via apt."
+      echo "Install it via CPAN if not already present: sudo cpanm Net::WebSocket::Server"
     else
-      echo "Not ubuntu or debian"
+      echo "Not ubuntu or debian - please install Perl dependencies manually"
     fi
 
     echo '*** Installing ES ***'
     mkdir -p "${TARGET_DATA}/push" 2>/dev/null
-    install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN_ES}" && 
+    install -m 755 -o "${WEB_OWNER}" -g "${WEB_GROUP}" zmeventnotification.pl "${TARGET_BIN_ES}" &&
             print_success "Completed, but you will still have to install ES dependencies as per https://zmeventnotification.readthedocs.io/en/latest/guides/install.html#install-dependencies"  || print_error "failed"
-    #echo "Done, but you will still have to manually install all ES dependencies as per https://github.com/pliablepixels/zmeventnotification#how-do-i-install-it"
+
+    echo '*** Installing Perl modules ***'
+    mkdir -p "${TARGET_PERL_LIB}/ZmEventNotification/"
+    for pm_file in ZmEventNotification/*.pm; do
+        install -m 644 "$pm_file" "${TARGET_PERL_LIB}/ZmEventNotification/" &&
+            echo "Installed $(basename $pm_file)" || print_error "Failed to install $(basename $pm_file)"
+    done
+
+    # No need to patch use lib - FindBin resolves the script's directory at runtime,
+    # and installed modules in ${TARGET_PERL_LIB} are already in @INC.
+}
+
+# Download model files if they don't already exist
+# Usage: download_if_needed <model_dir> <target1> <source1> [<target2> <source2> ...]
+download_if_needed() {
+    local model_dir="$1"; shift
+    mkdir -p "${TARGET_DATA}/models/${model_dir}"
+    while [ $# -ge 2 ]; do
+        local target="$1" source="$2"; shift 2
+        if [ ! -f "${TARGET_DATA}/models/${model_dir}/${target}" ]; then
+            ${WGET} "${source}" -O"${TARGET_DATA}/models/${model_dir}/${target}"
+        else
+            echo "${target} exists, no need to download"
+        fi
+    done
 }
 
 # install proc for ML hooks
 install_hook() {
 
-    echo "Installing pip..."
-    ${PY_SUDO} ${INSTALLER} install pip
-    echo "Installing python3-opencv..."
-    ${PY_SUDO} ${INSTALLER} install python3-opencv
+    if [ "${INSTALL_OPENCV}" == "yes" ]; then
+        echo "Installing python3-opencv..."
+        ${PY_SUDO} ${INSTALLER} install python3-opencv
+    else
+        echo "Skipping python3-opencv installation (INSTALL_OPENCV=${INSTALL_OPENCV})"
+    fi
 
     echo '*** Installing Hooks ***'
     mkdir -p "${TARGET_DATA}/bin" 2>/dev/null
@@ -240,137 +273,58 @@ install_hook() {
 
         if [ "${INSTALL_CORAL_EDGETPU}" == "yes" ]
         then
-            # Coral files
-            #echo
-            #echo "Installing pycoral libs, if needed..."
-            #${PY_SUDO} apt-get install libedgetpu1-std -qq
-            #${PY_SUDO} ${INSTALLER} install python3-pycoral -qq
-            
-
             echo 'Checking for Google Coral Edge TPU data files...'
-            targets=( 'coco_indexed.names' 'ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite' 'ssdlite_mobiledet_coco_qat_postprocess_edgetpu.tflite' 'ssd_mobilenet_v2_face_quant_postprocess_edgetpu.tflite')
-            sources=('https://dl.google.com/coral/canned_models/coco_labels.txt'
-                     'https://github.com/google-coral/edgetpu/raw/master/test_data/ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite'
-                     'https://github.com/google-coral/test_data/raw/master/ssdlite_mobiledet_coco_qat_postprocess_edgetpu.tflite'
-                     'https://github.com/google-coral/test_data/raw/master/ssd_mobilenet_v2_face_quant_postprocess_edgetpu.tflite'
-
-                    )
-
-            for ((i=0;i<${#targets[@]};++i))
-            do
-                if [ ! -f "${TARGET_DATA}/models/coral_edgetpu/${targets[i]}" ]
-                then
-                    ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/coral_edgetpu/${targets[i]}"
-                else
-                    echo "${targets[i]} exists, no need to download"
-
-                fi
-            done
+            download_if_needed coral_edgetpu \
+                'coco_indexed.names' 'https://dl.google.com/coral/canned_models/coco_labels.txt' \
+                'ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite' 'https://github.com/google-coral/edgetpu/raw/master/test_data/ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite' \
+                'ssdlite_mobiledet_coco_qat_postprocess_edgetpu.tflite' 'https://github.com/google-coral/test_data/raw/master/ssdlite_mobiledet_coco_qat_postprocess_edgetpu.tflite' \
+                'ssd_mobilenet_v2_face_quant_postprocess_edgetpu.tflite' 'https://github.com/google-coral/test_data/raw/master/ssd_mobilenet_v2_face_quant_postprocess_edgetpu.tflite'
         fi
 
         if [ "${INSTALL_YOLOV3}" == "yes" ]
         then
-        # If you don't already have data files, get them
-        # First YOLOV3
-        echo 'Checking for YoloV3 data files....'
-        targets=('yolov3.cfg' 'coco.names' 'yolov3.weights')
-        sources=('https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg'
-                'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
-                'https://pjreddie.com/media/files/yolov3.weights')
-
-        [ -f "${TARGET_DATA}/models/yolov3/yolov3_classes.txt" ] && rm "${TARGET_DATA}/models/yolov3/yolov3_classes.txt"
-        
-
-        for ((i=0;i<${#targets[@]};++i))
-        do
-            if [ ! -f "${TARGET_DATA}/models/yolov3/${targets[i]}" ]
-            then
-                ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/yolov3/${targets[i]}"
-            else
-                echo "${targets[i]} exists, no need to download"
-
-            fi
-        done
+            echo 'Checking for YoloV3 data files....'
+            [ -f "${TARGET_DATA}/models/yolov3/yolov3_classes.txt" ] && rm "${TARGET_DATA}/models/yolov3/yolov3_classes.txt"
+            download_if_needed yolov3 \
+                'yolov3.cfg' 'https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg' \
+                'coco.names' 'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names' \
+                'yolov3.weights' 'https://pjreddie.com/media/files/yolov3.weights'
         fi
 
         if [ "${INSTALL_TINYYOLOV3}" == "yes" ]
         then
-        # Next up, TinyYOLOV3
-
-        [ -d "${TARGET_DATA}/models/tinyyolo" ] && mv "${TARGET_DATA}/models/tinyyolo" "${TARGET_DATA}/models/tinyyolov3"
-        echo
-        echo 'Checking for TinyYOLOV3 data files...'
-        targets=('yolov3-tiny.cfg' 'coco.names' 'yolov3-tiny.weights')
-        sources=('https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg'
-                'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
-                'https://pjreddie.com/media/files/yolov3-tiny.weights')
-
-        [ -f "${TARGET_DATA}/models/tinyyolov3/yolov3-tiny.txt" ] && rm "${TARGET_DATA}/models/yolov3/yolov3-tiny.txt"
-
-        for ((i=0;i<${#targets[@]};++i))
-        do
-            if [ ! -f "${TARGET_DATA}/models/tinyyolov3/${targets[i]}" ]
-            then
-                ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/tinyyolov3/${targets[i]}"
-            else
-                echo "${targets[i]} exists, no need to download"
-
-            fi
-        done
+            [ -d "${TARGET_DATA}/models/tinyyolo" ] && mv "${TARGET_DATA}/models/tinyyolo" "${TARGET_DATA}/models/tinyyolov3"
+            echo 'Checking for TinyYOLOV3 data files...'
+            [ -f "${TARGET_DATA}/models/tinyyolov3/yolov3-tiny.txt" ] && rm "${TARGET_DATA}/models/yolov3/yolov3-tiny.txt"
+            download_if_needed tinyyolov3 \
+                'yolov3-tiny.cfg' 'https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg' \
+                'coco.names' 'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names' \
+                'yolov3-tiny.weights' 'https://pjreddie.com/media/files/yolov3-tiny.weights'
         fi
 
         if [ "${INSTALL_TINYYOLOV4}" == "yes" ]
         then
-            # Next up, TinyYOLOV4
-            echo
             echo 'Checking for TinyYOLOV4 data files...'
-            targets=('yolov4-tiny.cfg' 'coco.names' 'yolov4-tiny.weights')
-            sources=('https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4-tiny.cfg'
-                    'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
-                    'https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre/yolov4-tiny.weights')
-
-            for ((i=0;i<${#targets[@]};++i))
-            do
-                if [ ! -f "${TARGET_DATA}/models/tinyyolov4/${targets[i]}" ]
-                then
-                    ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/tinyyolov4/${targets[i]}"
-                else
-                    echo "${targets[i]} exists, no need to download"
-
-                fi
-            done
+            download_if_needed tinyyolov4 \
+                'yolov4-tiny.cfg' 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4-tiny.cfg' \
+                'coco.names' 'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names' \
+                'yolov4-tiny.weights' 'https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre/yolov4-tiny.weights'
         fi
 
         if [ "${INSTALL_YOLOV4}" == "yes" ]
         then
-
-            # Next up, YoloV4
             if [ -d "${TARGET_DATA}/models/cspn" ]
-            then 
+            then
                 echo "Removing old CSPN files, it is YoloV4 now"
                 rm -rf "${TARGET_DATA}/models/cspn" 2>/dev/null
             fi
 
-            
-            echo
             echo 'Checking for YOLOV4 data files...'
             print_warning 'Note, you need OpenCV 4.4+ for Yolov4 to work'
-            targets=('yolov4.cfg' 'coco.names' 'yolov4.weights')
-            sources=('https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4.cfg'
-                    'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names'
-                    'https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights'
-                    )
-
-            for ((i=0;i<${#targets[@]};++i))
-            do
-                if [ ! -f "${TARGET_DATA}/models/yolov4/${targets[i]}" ]
-                then
-                    ${WGET} "${sources[i]}"  -O"${TARGET_DATA}/models/yolov4/${targets[i]}"
-                else
-                    echo "${targets[i]} exists, no need to download"
-
-                fi
-            done
+            download_if_needed yolov4 \
+                'yolov4.cfg' 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4.cfg' \
+                'coco.names' 'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names' \
+                'yolov4.weights' 'https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights'
         fi
     else
         echo "Skipping model downloads"
@@ -399,8 +353,8 @@ install_hook() {
     
 
     echo "Removing old version of zmes_hook_helpers, if any"
-    ${PY_SUDO} ${PIP} uninstall -y zmes-hooks   >/dev/null 2>&1
-    ${PY_SUDO} ${PIP} uninstall -y zmes_hook_helpers   >/dev/null 2>&1
+    ${PY_SUDO} ${PIP} uninstall -y zmes-hooks ${PIP_COMPAT}   >/dev/null 2>&1
+    ${PY_SUDO} ${PIP} uninstall -y zmes_hook_helpers ${PIP_COMPAT}   >/dev/null 2>&1
  
 
     ZM_DETECT_VERSION=`./hook/zm_detect.py --bareversion`
@@ -411,7 +365,8 @@ install_hook() {
       echo "VERSION=__version__" >> hook/zmes_hook_helpers/__init__.py
     fi
 
-    ${PY_SUDO} ${PIP} -v install hook/ && print_opencv_message || print_error "python hooks setup failed"
+    echo "Running: ${PY_SUDO} ${PIP} -v install hook/ ${PIP_COMPAT}"
+    ${PY_SUDO} ${PIP} -v install hook/ ${PIP_COMPAT} && print_opencv_message || print_error "python hooks setup failed"
 
     echo "Installing package deps..."
     echo "Installing gifsicle, if needed..."
@@ -490,7 +445,7 @@ EOF
 display_help() {
     cat << EOF
     
-    sudo -H [VAR1=value|VAR2=value...] $0 [-h|--help] [--install-es|--no-install-es] [--install-hook|--no-install-hook] [--install-config|--no-install-config] [--hook-config-upgrade|--no-hook-config-upgrade] [--no-pysudo] [--no-download-models]
+    sudo -H [VAR1=value|VAR2=value...] $0 [-h|--help] [--install-es|--no-install-es] [--install-hook|--no-install-hook] [--install-config|--no-install-config] [--hook-config-upgrade|--no-hook-config-upgrade] [--no-pysudo] [--no-download-models] [--install-opencv|--no-install-opencv]
 
         When used without any parameters executes in interactive mode
 
@@ -512,6 +467,9 @@ display_help() {
 
         --no-download-models: If specified will not download any models.
         You may want to do this if using mlapi
+
+        --install-opencv: Install python3-opencv (default)
+        --no-install-opencv: Skip python3-opencv installation
 
         --hook-config-upgrade: Updates objectconfig.ini with any new/modified attributes 
         and creates a sample output file. You will need to manually merge/update/review your real config
@@ -535,6 +493,9 @@ display_help() {
         TARGET_DATA: Path to ES data dir (default: /var/lib/zmeventnotification)
         TARGET_BIN_ES: Path to ES binary (default:/usr/bin)
         TARGET_BIN_HOOK: Path to hook script files (default: /var/lib/zmeventnotification/bin)
+        TARGET_PERL_LIB: Path to install Perl modules (default: /usr/share/perl5)
+
+        INSTALL_OPENCV: Install python3-opencv (default: no)
 
         WEB_OWNER: Your webserver user (default: www-data)
         WEB_GROUP: Your webserver group (default: www-data)
@@ -609,6 +570,14 @@ check_args() {
             INSTALL_HOOK_CONFIG='no'
             shift
             ;;
+        --install-opencv)
+            INSTALL_OPENCV='yes'
+            shift
+            ;;
+        --no-install-opencv)
+            INSTALL_OPENCV='no'
+            shift
+            ;;
         *)  # unknown option
             shift 
             ;;
@@ -626,6 +595,46 @@ check_args() {
     [[ ${INSTALL_HOOK} == 'prompt' && ${INSTALL_HOOK_CONFIG} == 'yes' ]] && INSTALL_HOOK_CONFIG='prompt'
 }
 
+check_deps() {
+    local missing=0
+
+    if [[ ${INSTALL_ES} != 'no' ]]; then
+        if ! perl -MNet::WebSocket::Server -e1 2>/dev/null; then
+            print_error "Net::WebSocket::Server Perl module is not installed."
+            echo "       Install it with: sudo cpanm Net::WebSocket::Server"
+            missing=1
+        fi
+        if ! perl -MIO::Socket::SSL -e1 2>/dev/null; then
+            print_error "IO::Socket::SSL Perl module is not installed."
+            echo "       Install it with: sudo ${INSTALLER} install libio-socket-ssl-perl"
+            missing=1
+        fi
+        if ! perl -MURI::Escape -e1 2>/dev/null; then
+            print_error "URI::Escape Perl module is not installed."
+            echo "       Install it with: sudo ${INSTALLER} install liburi-perl"
+            missing=1
+        fi
+        if ! perl -MDBI -e1 2>/dev/null; then
+            print_error "DBI Perl module is not installed."
+            echo "       Install it with: sudo ${INSTALLER} install libdbi-perl"
+            missing=1
+        fi
+    fi
+
+    if [[ ${INSTALL_HOOK} != 'no' ]]; then
+        if ! command -v ${PIP} >/dev/null 2>&1; then
+            print_error "${PIP} is not installed."
+            echo "       Install it with: sudo ${INSTALLER} install python3-pip"
+            missing=1
+        fi
+    fi
+
+    if [[ ${missing} -eq 1 ]]; then
+        print_error "Please install missing dependencies and re-run."
+        exit 1
+    fi
+}
+
 ###################################################
 # script main
 ###################################################
@@ -634,6 +643,7 @@ check_args
 DISTRO=$(get_distro)
 check_root
 verify_config
+check_deps
 echo
 echo
 
