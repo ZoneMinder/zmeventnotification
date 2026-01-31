@@ -417,7 +417,7 @@ sub processNewAlarmsInFork {
       }
       $alarm->{Start}->{State} = 'done';
     }
-    elsif ( defined($alarm->{End}) && $alarm->{End}->{State} eq 'pending' ) {
+    elsif ( ($alarm->{End}->{State} // '') eq 'pending' ) {
       if ( { map { $_ => 1 } split(',', $hooks_config{hook_skip_monitors} // '') }->{$mid} ) {
         main::Info("$mid is in hook skip list, not using hooks");
         $alarm->{End}->{State} = 'ready';
@@ -541,7 +541,7 @@ sub processNewAlarmsInFork {
       }
       }
     }
-    elsif ( defined($alarm->{End}) && $alarm->{End}->{State} eq 'ready' ) {
+    elsif ( ($alarm->{End}->{State} // '') eq 'ready' ) {
 
       my ( $rulesAllowed, $rulesObject ) = isAllowedInRules($alarm);
 
@@ -621,7 +621,7 @@ sub processNewAlarmsInFork {
 
       $alarm->{End}->{State} = 'done';
     }
-    elsif ( defined($alarm->{End}) && $alarm->{End}->{State} eq 'done' ) {
+    elsif ( ($alarm->{End}->{State} // '') eq 'done' ) {
       $doneProcessing = 1;
     }
 
