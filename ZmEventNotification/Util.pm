@@ -1,0 +1,182 @@
+package ZmEventNotification::Util;
+
+use strict;
+use warnings;
+use Exporter 'import';
+use JSON;
+use URI::Escape qw(uri_escape);
+
+use ZmEventNotification::Constants qw(:all);
+use ZmEventNotification::Config qw(:all);
+
+our @EXPORT_OK = qw(
+  trim rsplit uniq getInterval isValidMonIntList isInList
+  getConnFields getObjectForConn getConnectionIdentity parseDetectResults
+  buildPictureUrl stripFrameMatchType
+);
+
+our %EXPORT_TAGS = ( all => \@EXPORT_OK );
+
+sub trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
+
+sub rsplit {
+  my $pattern = shift(@_);    # Precompiled regex pattern (i.e. qr/pattern/)
+  my $expr    = shift(@_);    # String to split
+  my $limit   = shift(@_);    # Number of chunks to split into
+  map { scalar reverse($_) }
+    reverse split( /$pattern/, scalar reverse($expr), $limit );
+}
+
+sub uniq {
+  my %seen;
+  my @array = reverse @_;    # we want the latest
+  my @farray = ();
+  foreach (@array) {
+    next if ( $_ =~ /^\s*$/ );
+    my ( $token, $monlist, $intlist, $platform, $pushstate ) =
+      rsplit( qr/:/, $_, 5 );    #split (":",$_);
+    next if $token eq '';
+    if ( ( $pushstate ne 'enabled' ) && ( $pushstate ne 'disabled' ) ) {
+      main::printDebug(
+        "huh? uniq read $token,$monlist,$intlist,$platform, $pushstate => forcing state to enabled",
+        2
+      );
+      $pushstate = 'enabled';
+    }
+
+    if ( !$seen{$token}++ ) {
+      push @farray, join(':',$token,$monlist,$intlist,$platform,$pushstate);
+    }
+  }
+  return @farray;
+}
+
+sub getInterval {
+  my $intlist = shift;
+  my $monlist = shift;
+  my $mid     = shift;
+
+  my @ints = split(',', $intlist);
+  my %ints = map { $_ => shift @ints } split(',', $monlist);
+  if ( $ints{$mid} ) {
+    return $ints{$mid};
+  }
+  my ( $caller, undef, $line ) = caller;
+  main::printDebug("interval not found for mid $mid, intlist was $intlist from $caller:$line");
+  return undef;
+}
+
+sub isValidMonIntList {
+  my $m = shift;
+  return defined($m) && ($m ne '-1') && ($m ne '');
+}
+
+sub isInList {
+  my $monlist = shift;
+  my $mid     = shift;
+  return 1 if ( !defined($monlist) || !$monlist || $monlist eq '-1' || $monlist eq '' );
+
+  my %mids = map { $_ => !undef } split(',', $monlist);
+  return exists $mids{$mid};
+}
+
+sub getObjectForConn {
+  my $conn = shift;
+  my $matched;
+
+  foreach (@main::active_connections) {
+    if ( exists $_->{conn} && $_->{conn} == $conn ) {
+      $matched = $_;
+      last;
+    }
+  }
+  return $matched;
+}
+
+sub getConnFields {
+  my $conn    = shift;
+  my $object = getObjectForConn($conn);
+  if ($object) {
+    my $matched = $object->{extra_fields};
+    $matched = ' [' . $matched . '] ' if $matched;
+    return $matched;
+  }
+  return '';
+}
+
+sub getConnectionIdentity {
+  my $obj = shift;
+
+  my $identity = '';
+
+  if ( $obj->{type} == FCM ) {
+    if ( exists $obj->{conn} && $obj->{state} != INVALID_CONNECTION ) {
+      $identity = $obj->{conn}->ip() . ':' . $obj->{conn}->port() . ', ';
+    }
+    $identity = $identity.'token ending in:...'.substr($obj->{token}, -10);
+  } elsif ( $obj->{type} == WEB ) {
+    if ( exists $obj->{conn} ) {
+      $identity = $obj->{conn}->ip() . ':' . $obj->{conn}->port();
+    } else {
+      $identity = '(unknown state?)';
+    }
+  } elsif ( $obj->{type} == MQTT ) {
+    $identity = 'MQTT ' . $mqtt_config{server};
+  } else {
+    $identity = 'unknown type(!)';
+  }
+
+  return $identity;
+}
+
+sub stripFrameMatchType {
+  my $cause = shift;
+  $cause = substr($cause, 4) if (!$hooks_config{keep_frame_match_type} && $cause =~ /^\[.\]/);
+  return $cause;
+}
+
+sub buildPictureUrl {
+  my ($eid, $cause, $resCode, $label) = @_;
+  $label //= '';
+
+  my $pic = $notify_config{picture_url} =~ s/EVENTID/$eid/gr;
+
+  if ($resCode == 1) {
+    main::printDebug(
+      "$label: called when hook failed, not using objdetect in url", 2);
+    $pic = $pic =~ s/objdetect(_...)?/snapshot/gr;
+  }
+
+  if (!$hooks_config{event_start_hook} || !$hooks_config{enabled}) {
+    main::printDebug(
+      "$label: no start hook or hooks disabled, not using objdetect in url", 2);
+    $pic = $pic =~ s/objdetect(_...)/snapshot/gr;
+  }
+
+  $pic .= '&username=' . $notify_config{picture_portal_username} if $notify_config{picture_portal_username};
+  $pic .= '&password=' . uri_escape($notify_config{picture_portal_password}) if $notify_config{picture_portal_password};
+
+  my $match_type = substr($cause, 0, 3);
+  if ($match_type eq '[a]') {
+    $pic = $pic =~ s/BESTMATCH/alarm/gr;
+    my $dpic = $pic;
+    $dpic =~ s/pass(word)?=(.*?)($|&)/pass$1=xxx$3/g;
+    main::printDebug("$label: Alarm frame matched, picture url: $dpic", 2);
+  } elsif ($match_type eq '[s]') {
+    $pic = $pic =~ s/BESTMATCH/snapshot/gr;
+    main::printDebug("$label: Snapshot frame matched, picture url: $pic", 2);
+  }
+
+  return $pic;
+}
+
+sub parseDetectResults {
+  my $results = shift;
+  my ($txt, $jsonstring) = $results ? split('--SPLIT--', $results) : ('','[]');
+  $txt = '' if !$txt;
+  $jsonstring = '[]' if !$jsonstring;
+  main::printDebug("parse of hook:$txt and $jsonstring from $results", 2);
+  return ($txt, $jsonstring);
+}
+
+1;
