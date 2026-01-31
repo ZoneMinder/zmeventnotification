@@ -45,13 +45,10 @@ sub sendOverWebSocket {
       events => [$alarm]
     }
   );
-  main::printDebug(
-    'Child: posting job to send out message to id:'
+  main::Debug(2, 'Child: posting job to send out message to id:'
       . $ac->{id} . '->'
       . $ac->{conn}->ip() . ':'
-      . $ac->{conn}->port(),
-    2
-  );
+      . $ac->{conn}->port());
   print main::WRITER 'message--TYPE--' . $ac->{id} . '--SPLIT--' . $json . "\n";
 }
 
@@ -65,14 +62,14 @@ sub sendEvent {
   my $name = $alarm->{Name};
 
   if ( ( !$notify_config{send_event_end_notification} ) && ( $event_type eq 'event_end' ) ) {
-    main::printInfo(
+    main::Info(
       'Not sending event end notification as send_event_end_notification is no'
     );
     return;
   }
 
   if ( ( !$notify_config{send_event_start_notification} ) && ( $event_type eq 'event_start' ) ) {
-    main::printInfo(
+    main::Info(
       'Not sending event start notification as send_event_start_notification is no'
     );
     return;
@@ -100,10 +97,10 @@ sub sendEvent {
       || !$hook
       || !$hooks_config{enabled} )
     {
-      main::printInfo("Sending $event_type notification over FCM");
+      main::Info("Sending $event_type notification over FCM");
       sendOverFCM( $alarm, $ac, $event_type, $resCode );
     } else {
-      main::printInfo(
+      main::Info(
         "Not sending over FCM as notify filters are on_success:$hooks_config{event_start_notify_on_hook_success} and on_fail:$hooks_config{event_end_notify_on_hook_fail}"
       );
     }
@@ -116,12 +113,12 @@ sub sendEvent {
       || !$hook
       || !$hooks_config{enabled} )
     {
-      main::printInfo( "Sending $event_type notification for EID:"
+      main::Info( "Sending $event_type notification for EID:"
           . $alarm->{EventId}
           . 'over web' );
       sendOverWebSocket( $alarm, $ac, $event_type, $resCode );
     } else {
-      main::printInfo(
+      main::Info(
         "Not sending over Web as notify filters are on_success:$hooks_config{event_start_notify_on_hook_success} and on_fail:$hooks_config{event_start_notify_on_hook_fail}"
       );
     }
@@ -131,12 +128,12 @@ sub sendEvent {
       || !$hook
       || !$hooks_config{enabled} )
     {
-      main::printInfo( "Sending $event_type notification for EID:"
+      main::Info( "Sending $event_type notification for EID:"
           . $alarm->{EventId}
           . ' over MQTT' );
       sendOverMQTTBroker( $alarm, $ac, $event_type, $resCode );
     } else {
-      main::printInfo(
+      main::Info(
         "Not sending over MQTT as notify filters are on_success:$hooks_config{event_start_notify_on_hook_success} and on_fail:$hooks_config{event_start_notify_on_hook_fail}"
       );
     }
@@ -149,7 +146,7 @@ sub sendEvent {
     . '--SPLIT--'
     . $t . "\n";
 
-  main::printDebug( 'child finished writing to parent', 2 );
+  main::Debug(2, 'child finished writing to parent');
 }
 
 sub isAllowedChannel {
@@ -157,7 +154,7 @@ sub isAllowedChannel {
   my $channel    = shift;
   my $rescode    = shift;
 
-  main::printDebug( "isAllowedChannel: got type:$event_type resCode:$rescode", 2 );
+  main::Debug(2, "isAllowedChannel: got type:$event_type resCode:$rescode");
 
   my $key;
   if ( $event_type eq 'event_start' ) {
@@ -165,7 +162,7 @@ sub isAllowedChannel {
   } elsif ( $event_type eq 'event_end' ) {
     $key = $rescode == 0 ? 'event_end_notify_on_hook_success' : 'event_end_notify_on_hook_fail';
   } else {
-    main::printError("Invalid event_type:$event_type sent to isAllowedChannel()");
+    main::Error("Invalid event_type:$event_type sent to isAllowedChannel()");
     return 0;
   }
 
@@ -186,53 +183,41 @@ sub shouldSendEventToConn {
     my $id   = $alarm->{MonitorId};
     my $name = $alarm->{Name};
     if ( getNotificationStatusEsControl($id) == ESCONTROL_FORCE_NOTIFY ) {
-      main::printDebug(
-        "ESCONTROL: Notifications are force enabled for Monitor:$name($id), returning true",
-        1
-      );
+      main::Debug(1, "ESCONTROL: Notifications are force enabled for Monitor:$name($id), returning true");
       return 1;
     }
 
     if ( getNotificationStatusEsControl($id) == ESCONTROL_FORCE_MUTE ) {
-      main::printDebug(
-        "ESCONTROL: Notifications are muted for Monitor:$name($id), not sending",
-        1
-      );
+      main::Debug(1, "ESCONTROL: Notifications are muted for Monitor:$name($id), not sending");
       return 0;
     }
   }
 
   my $id     = getConnectionIdentity($ac);
   my $connId = $ac->{id};
-  main::printDebug('Checking alarm conditions for '.$id, 1);
+  main::Debug(1, 'Checking alarm conditions for '.$id);
 
   if ( isInList( $monlist, $alarm->{MonitorId} ) ) {
     my $mint = getInterval( $intlist, $monlist, $alarm->{MonitorId} );
     if ( $last_sent->{ $alarm->{MonitorId} } ) {
       my $elapsed = time() - $last_sent->{ $alarm->{MonitorId} };
       if ( $elapsed >= $mint ) {
-        main::printDebug(
-          'Monitor '
+        main::Debug(1, 'Monitor '
             . $alarm->{MonitorId}
-            . " event: should send out as  $elapsed is >= interval of $mint",
-          1
-        );
+            . " event: should send out as  $elapsed is >= interval of $mint");
         $retVal = 1;
       } else {
-        main::printDebug(
-          'Monitor '
+        main::Debug(1, 'Monitor '
             . $alarm->{MonitorId}
-            . " event: should NOT send this out as $elapsed is less than interval of $mint",
-          1
-        );
+            . " event: should NOT send this out as $elapsed is less than interval of $mint");
         $retVal = 0;
       }
     } else {
-      main::printDebug('Monitor '.$alarm->{MonitorId}.' event: last time not found, so should send', 1);
+      main::Debug(1, 'Monitor '.$alarm->{MonitorId}.' event: last time not found, so should send');
       $retVal = 1;
     }
   } else {
-    main::printDebug('should NOT send alarm as Monitor '.$alarm->{MonitorId}.' is excluded', 1);
+    main::Debug(1, 'should NOT send alarm as Monitor '.$alarm->{MonitorId}.' is excluded');
     $retVal = 0;
   }
 
@@ -254,21 +239,19 @@ sub processNewAlarmsInFork {
 
   my $endProcessed = 0;
 
-  $main::prefix = "|----> FORK:$mname ($mid), eid:$eid";
-
   my $start_time = time();
 
   while (!$doneProcessing and !$main::es_terminate) {
 
     my $now = time();
     if ( $now - $start_time > 3600 ) {
-      main::printInfo('Thread alive for an hour, bailing...');
+      main::Info('Thread alive for an hour, bailing...');
       $doneProcessing = 1;
     }
 
     if ( $alarm->{Start}->{State} eq 'pending' ) {
       if ( { map { $_ => 1 } split(',', $hooks_config{hook_skip_monitors} // '') }->{$mid} ) {
-        main::printInfo("$mid is in hook skip list, not using hooks");
+        main::Info("$mid is in hook skip list, not using hooks");
         $alarm->{Start}->{State} = 'ready';
         $hookResult = 0;
       } else {
@@ -283,14 +266,11 @@ sub processNewAlarmsInFork {
           if ($hooks_config{hook_pass_image_path}) {
             my $event = new ZoneMinder::Event($eid);
             $cmd = $cmd . ' "' . $event->Path() . '"';
-            main::printDebug(
-              'Adding event path:'
+            main::Debug(2, 'Adding event path:'
                 . $event->Path()
-                . ' to hook for image storage',
-              2
-            );
+                . ' to hook for image storage');
           }
-          main::printDebug( 'Invoking hook on event start:' . $cmd, 1 );
+          main::Debug(1, 'Invoking hook on event start:' . $cmd);
 
           if ( $cmd =~ /^(.*)$/ ) {
             $cmd = $1;
@@ -306,10 +286,7 @@ sub processNewAlarmsInFork {
           $hookResult = 1 if !$resTxt;
           $startHookResult = $hookResult;
 
-          main::printDebug(
-            "hook start returned with text:$resTxt json:$resJsonString exit:$hookResult",
-            1
-          );
+          main::Debug(1, "hook start returned with text:$resTxt json:$resJsonString exit:$hookResult");
 
           if ($hooks_config{event_start_hook_notify_userscript}) {
             my $user_cmd =
@@ -324,18 +301,15 @@ sub processNewAlarmsInFork {
             if ($hooks_config{hook_pass_image_path}) {
               my $event = new ZoneMinder::Event($eid);
               $user_cmd = $user_cmd . ' "' . $event->Path() . '"';
-              main::printDebug(
-                'Adding event path:'
+              main::Debug(1, 'Adding event path:'
                   . $event->Path()
-                  . ' to $user_cmd for image location',
-                1
-              );
+                  . ' to $user_cmd for image location');
             }
 
             if ( $user_cmd =~ /^(.*)$/ ) {
               $user_cmd = $1;
             }
-            main::printDebug("invoking user start notification script $user_cmd", 1);
+            main::Debug(1, "invoking user start notification script $user_cmd");
             my $user_res = `$user_cmd`;
           } # user notify script
 
@@ -364,7 +338,7 @@ sub processNewAlarmsInFork {
             $hookString = $resTxt;
           }
         } else {
-          main::printInfo(
+          main::Info(
             'use hooks/start hook not being used, going to directly send out a notification if checks pass'
           );
           $hookResult = 0;
@@ -376,8 +350,7 @@ sub processNewAlarmsInFork {
 
       my ( $rulesAllowed, $rulesObject ) = isAllowedInRules($alarm);
       if ( !$rulesAllowed ) {
-        main::printDebug(
-          'rules: Not processing start notifications as rules checks failed');
+        main::Debug(1, 'rules: Not processing start notifications as rules checks failed');
       } else {
         my $cause          = $alarm->{Start}->{Cause};
         my $detectJson     = $alarm->{Start}->{DetectionJson} || [];
@@ -395,7 +368,7 @@ sub processNewAlarmsInFork {
             || !$hooks_config{event_start_hook}
             || !$hooks_config{enabled} )
           {
-            main::printInfo('Sending push over API as it is allowed for event_start');
+            main::Info('Sending push over API as it is allowed for event_start');
 
             my $api_cmd =
               $push_config{script} . ' '
@@ -408,39 +381,35 @@ sub processNewAlarmsInFork {
             if ($hooks_config{hook_pass_image_path}) {
               my $event = new ZoneMinder::Event($eid);
               $api_cmd = $api_cmd . ' "' . $event->Path() . '"';
-              main::printDebug(
-                'Adding event path:'
+              main::Debug(2, 'Adding event path:'
                   . $event->Path()
-                  . ' to api_cmd for image location',
-                2
-              );
+                  . ' to api_cmd for image location');
             }
 
-            main::printInfo("Executing API script command for event_start $api_cmd");
+            main::Info("Executing API script command for event_start $api_cmd");
             if ( $api_cmd =~ /^(.*)$/ ) {
               $api_cmd = $1;
             }
             my $api_res = `$api_cmd`;
-            main::printInfo("Returned from $api_cmd");
+            main::Info("Returned from $api_cmd");
             chomp($api_res);
             my $api_retcode = $? >> 8;
-            main::printDebug( "API push script returned : $api_retcode", 1 );
+            main::Debug(1, "API push script returned : $api_retcode");
           } else {
-            main::printInfo(
+            main::Info(
               'Not sending push over API as it is not allowed for event_start');
           }
         }
-        main::printDebug( 'Matching alarm to connection rules...', 1 );
+        main::Debug(1, 'Matching alarm to connection rules...');
         my ($serv) = @_;
         my %fcm_token_duplicates = ();
         foreach (@main::active_connections) {
           if ($_->{token} && $fcm_token_duplicates{$_->{token}}) {
-            main::printDebug ('...'.substr($_->{token},-10).' occurs mutiples times. NOT USUAL, ignoring',1);
+            main::Debug(1, '...'.substr($_->{token},-10).' occurs mutiples times. NOT USUAL, ignoring');
             next;
           }
           if ( shouldSendEventToConn( $temp_alarm_obj, $_ ) ) {
-            main::printDebug(
-              'token is unique, shouldSendEventToConn returned true, so calling sendEvent', 1 );
+            main::Debug(1, 'token is unique, shouldSendEventToConn returned true, so calling sendEvent');
             sendEvent( $temp_alarm_obj, $_, 'event_start', $hookResult );
             $fcm_token_duplicates{$_->{token}}++ if $_->{token};
           }
@@ -450,31 +419,25 @@ sub processNewAlarmsInFork {
     }
     elsif ( $alarm->{End}->{State} eq 'pending' ) {
       if ( { map { $_ => 1 } split(',', $hooks_config{hook_skip_monitors} // '') }->{$mid} ) {
-        main::printInfo("$mid is in hook skip list, not using hooks");
+        main::Info("$mid is in hook skip list, not using hooks");
         $alarm->{End}->{State} = 'ready';
         $hookResult = 0;
       }
       else {
       if ( $alarm->{Start}->{State} ne 'done' ) {
-        main::printDebug(
-          'Not yet sending out end notification as start hook/notify is not done',
-          2
-        );
+        main::Debug(2, 'Not yet sending out end notification as start hook/notify is not done');
 
       } else {
         my $notes = getNotesFromEventDB($eid);
         if ($hookString) {
           if ( index( $notes, 'detected:' ) == -1 ) {
-            main::printDebug(
-              "ZM overwrote detection DB, current notes: [$notes], adding detection notes back into DB [$hookString]",
-              1
-            );
+            main::Debug(1, "ZM overwrote detection DB, current notes: [$notes], adding detection notes back into DB [$hookString]");
 
             # This will be prefixed, so no need to add old notes back
             updateEventinZmDB( $eid, $hookString );
             $notes = $hookString . " " . $notes;
           } else {
-            main::printDebug( "DB Event notes contain detection text, all good", 2 );
+            main::Debug(2, "DB Event notes contain detection text, all good");
           }
         }
 
@@ -490,14 +453,11 @@ sub processNewAlarmsInFork {
           if ($hooks_config{hook_pass_image_path}) {
             my $event = new ZoneMinder::Event($eid);
             $cmd = $cmd . ' "' . $event->Path() . '"';
-            main::printDebug(
-              'Adding event path:'
+            main::Debug(2, 'Adding event path:'
                 . $event->Path()
-                . ' to hook for image storage',
-              2
-            );
+                . ' to hook for image storage');
           }
-          main::printDebug( 'Invoking hook on event end:' . $cmd, 1 );
+          main::Debug(1, 'Invoking hook on event end:' . $cmd);
           if ( $cmd =~ /^(.*)$/ ) {
             $cmd = $1;
           }
@@ -513,10 +473,7 @@ sub processNewAlarmsInFork {
           $hookResult = 1 if (!$resTxt);
 
           $alarm->{End}->{State} = 'ready';
-          main::printDebug(
-            "hook end returned with text:$resTxt  json:$resJsonString exit:$hookResult",
-            1
-          );
+          main::Debug(1, "hook end returned with text:$resTxt  json:$resJsonString exit:$hookResult");
 
           $alarm->{End}->{Cause}         = $resTxt;
           $alarm->{End}->{DetectionJson} = decode_json($resJsonString);
@@ -534,25 +491,22 @@ sub processNewAlarmsInFork {
             if ($hooks_config{hook_pass_image_path}) {
               my $event = new ZoneMinder::Event($eid);
               $user_cmd = $user_cmd . ' "' . $event->Path() . '"';
-              main::printDebug(
-                'Adding event path:'
+              main::Debug(2, 'Adding event path:'
                   . $event->Path()
-                  . ' to $user_cmd for image location',
-                2
-              );
+                  . ' to $user_cmd for image location');
 
             }
 
             if ( $user_cmd =~ /^(.*)$/ ) {
               $user_cmd = $1;
             }
-            main::printDebug( "invoking user end notification script $user_cmd", 1 );
+            main::Debug(1, "invoking user end notification script $user_cmd");
             my $user_res = `$user_cmd`;
           } # user notify script
 
           if ($hooks_config{use_hook_description} &&
               ($hookResult == 0) && (index($resTxt,'detected:') != -1)) {
-            main::printDebug ("Event end: overwriting notes with $resTxt",1);
+            main::Debug(1, "Event end: overwriting notes with $resTxt");
             $alarm->{End}->{Cause} = $resTxt . ' ' . $alarm->{End}->{Cause};
             $alarm->{End}->{DetectionJson} = decode_json($resJsonString);
 
@@ -577,7 +531,7 @@ sub processNewAlarmsInFork {
             $hookString = $resTxt;
           }
         } else {
-          main::printInfo(
+          main::Info(
             'end hooks/use hooks not being used, going to directly send out a notification if checks pass'
           );
           $hookResult = 0;
@@ -592,13 +546,11 @@ sub processNewAlarmsInFork {
       my ( $rulesAllowed, $rulesObject ) = isAllowedInRules($alarm);
 
       if ( $hooks_config{event_end_notify_if_start_success} && ($startHookResult != 0) ) {
-        main::printInfo(
+        main::Info(
           'Not sending event end alarm, as we did not send a start alarm for this, or start hook processing failed'
         );
       } elsif ( !$rulesAllowed ) {
-        main::printDebug(
-          'rules: Not processing end notifications as rules checks failed for start notification'
-        );
+        main::Debug(1, 'rules: Not processing end notifications as rules checks failed for start notification');
       } else {
         my $cause          = $alarm->{End}->{Cause};
         my $detectJson     = $alarm->{End}->{DetectionJson} || [];
@@ -617,8 +569,7 @@ sub processNewAlarmsInFork {
               || !$hooks_config{event_end_hook}
               || !$hooks_config{enabled} )
             {
-              main::printDebug(
-                'Sending push over API as it is allowed for event_end', 1 );
+              main::Debug(1, 'Sending push over API as it is allowed for event_end');
 
               my $api_cmd =
                   $push_config{script} . ' '
@@ -631,51 +582,39 @@ sub processNewAlarmsInFork {
               if ($hooks_config{hook_pass_image_path}) {
                 my $event = new ZoneMinder::Event($eid);
                 $api_cmd = $api_cmd . ' "' . $event->Path() . '"';
-                main::printDebug(
-                  'Adding event path:'
+                main::Debug(2, 'Adding event path:'
                     . $event->Path()
-                    . ' to api_cmd for image location',
-                  2
-                );
+                    . ' to api_cmd for image location');
               }
-              main::printInfo("Executing API script command for event_end $api_cmd");
+              main::Info("Executing API script command for event_end $api_cmd");
 
               if ( $api_cmd =~ /^(.*)$/ ) {
                 $api_cmd = $1;
               }
               my $res = `$api_cmd`;
-              main::printDebug( "returned from api cmd for event_end", 2 );
+              main::Debug(2, "returned from api cmd for event_end");
               chomp($res);
               my $retcode = $? >> 8;
-              main::printDebug("API push script returned (event_end) : $retcode", 1);
+              main::Debug(1, "API push script returned (event_end) : $retcode");
             } else {
-              main::printDebug(
-                'Not sending push over API as it is not allowed for event_start',
-                1
-              );
+              main::Debug(1, 'Not sending push over API as it is not allowed for event_start');
             }
           } else {
-            main::printDebug(
-              'Not sending event_end push over API as send_event_end_notification is no',
-              1
-            );
+            main::Debug(1, 'Not sending event_end push over API as send_event_end_notification is no');
           }
         }
 
-        main::printDebug( 'Matching alarm to connection rules...', 1 );
+        main::Debug(1, 'Matching alarm to connection rules...');
 
         my ($serv) = @_;
         foreach (@main::active_connections) {
           if ( isInList( $_->{monlist}, $temp_alarm_obj->{MonitorId} ) ) {
             sendEvent( $temp_alarm_obj, $_, 'event_end', $hookResult );
           } else {
-            main::printDebug(
-              'Skipping FCM notification as Monitor:'
+            main::Debug(1, 'Skipping FCM notification as Monitor:'
                 . $temp_alarm_obj->{Name} . '('
                 . $temp_alarm_obj->{MonitorId}
-                . ') is excluded from zmNinja monitor list',
-              1
-            );
+                . ') is excluded from zmNinja monitor list');
           }
         }
       }
@@ -687,16 +626,18 @@ sub processNewAlarmsInFork {
     }
 
     if ( !main::zmMemVerify($monitor) ) {
-      main::printError('SHM failed, re-validating it');
-      main::loadMonitor($monitor);
+      main::Error('SHM failed, re-validating it');
+      if (!main::loadMonitor($monitor)) {
+        main::loadMonitors();
+      }
     } else {
       my $state   = main::zmGetMonitorState($monitor);
       my $shm_eid = main::zmGetLastEvent($monitor);
 
       if ( ( $state == main::STATE_IDLE() || $state == main::STATE_TAPE() || $shm_eid != $eid )
         && !$endProcessed ) {
-        main::printDebug("For $mid ($mname), SHM says: state=$state, eid=$shm_eid", 2);
-        main::printInfo("Event $eid for Monitor $mid has finished");
+        main::Debug(2, "For $mid ($mname), SHM says: state=$state, eid=$shm_eid");
+        main::Info("Event $eid for Monitor $mid has finished");
         $endProcessed = 1;
 
         $alarm->{End} = {
@@ -705,19 +646,16 @@ sub processNewAlarmsInFork {
           Cause => getNotesFromEventDB($eid)
         };
 
-        main::printDebug(
-          'Event end object is: state=>'
+        main::Debug(2, 'Event end object is: state=>'
             . $alarm->{End}->{State}
             . ' with cause=>'
-            . $alarm->{End}->{Cause},
-          2
-        );
+            . $alarm->{End}->{Cause});
       }
     }
     sleep(2);
   } # end while loop
 
-  main::printDebug( 'exiting', 1 );
+  main::Debug(1, 'exiting');
   print main::WRITER 'active_event_delete--TYPE--' . $mid . '--SPLIT--' . $eid . "\n";
   close(main::WRITER);
 }
