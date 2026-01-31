@@ -37,10 +37,7 @@ sub uniq {
       rsplit( qr/:/, $_, 5 );    #split (":",$_);
     next if $token eq '';
     if ( ( $pushstate ne 'enabled' ) && ( $pushstate ne 'disabled' ) ) {
-      main::printDebug(
-        "huh? uniq read $token,$monlist,$intlist,$platform, $pushstate => forcing state to enabled",
-        2
-      );
+      main::Debug(2, "huh? uniq read $token,$monlist,$intlist,$platform, $pushstate => forcing state to enabled");
       $pushstate = 'enabled';
     }
 
@@ -62,7 +59,7 @@ sub getInterval {
     return $ints{$mid};
   }
   my ( $caller, undef, $line ) = caller;
-  main::printDebug("interval not found for mid $mid, intlist was $intlist from $caller:$line");
+  main::Debug(1, "interval not found for mid $mid, intlist was $intlist from $caller:$line");
   return undef;
 }
 
@@ -142,14 +139,12 @@ sub buildPictureUrl {
   my $pic = $notify_config{picture_url} =~ s/EVENTID/$eid/gr;
 
   if ($resCode == 1) {
-    main::printDebug(
-      "$label: called when hook failed, not using objdetect in url", 2);
+    main::Debug(2, "$label: called when hook failed, not using objdetect in url");
     $pic = $pic =~ s/objdetect(_...)?/snapshot/gr;
   }
 
   if (!$hooks_config{event_start_hook} || !$hooks_config{enabled}) {
-    main::printDebug(
-      "$label: no start hook or hooks disabled, not using objdetect in url", 2);
+    main::Debug(2, "$label: no start hook or hooks disabled, not using objdetect in url");
     $pic = $pic =~ s/objdetect(_...)/snapshot/gr;
   }
 
@@ -161,10 +156,10 @@ sub buildPictureUrl {
     $pic = $pic =~ s/BESTMATCH/alarm/gr;
     my $dpic = $pic;
     $dpic =~ s/pass(word)?=(.*?)($|&)/pass$1=xxx$3/g;
-    main::printDebug("$label: Alarm frame matched, picture url: $dpic", 2);
+    main::Debug(2, "$label: Alarm frame matched, picture url: $dpic");
   } elsif ($match_type eq '[s]') {
     $pic = $pic =~ s/BESTMATCH/snapshot/gr;
-    main::printDebug("$label: Snapshot frame matched, picture url: $pic", 2);
+    main::Debug(2, "$label: Snapshot frame matched, picture url: $pic");
   }
 
   return $pic;
@@ -175,7 +170,7 @@ sub parseDetectResults {
   my ($txt, $jsonstring) = $results ? split('--SPLIT--', $results) : ('','[]');
   $txt = '' if !$txt;
   $jsonstring = '[]' if !$jsonstring;
-  main::printDebug("parse of hook:$txt and $jsonstring from $results", 2);
+  main::Debug(2, "parse of hook:$txt and $jsonstring from $results");
   return ($txt, $jsonstring);
 }
 

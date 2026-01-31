@@ -25,10 +25,10 @@ sub _check_monthly_limit {
     my $month = $obj->{invocations}->{at};
     if ($curmonth != $month) {
       $obj->{invocations}->{count} = 0;
-      main::printDebug('Resetting counters for token...' . substr($obj->{token}, -10) . ' as month changed', 1);
+      main::Debug(1, 'Resetting counters for token...' . substr($obj->{token}, -10) . ' as month changed');
     }
     if ($obj->{invocations}->{count} > DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN) {
-      main::printError('Exceeded message count of ' .
+      main::Error('Exceeded message count of ' .
         DEFAULT_MAX_FCM_PER_MONTH_PER_TOKEN . ' for this month, for token...' .
         substr($obj->{token}, -10) . ', not sending FCM');
       return 1;
@@ -50,7 +50,7 @@ sub _base64url_encode {
 
 sub deleteFCMToken {
   my $dtoken = shift;
-  main::printDebug( 'DeleteToken called with ...' . substr( $dtoken, -10 ), 2 );
+  main::Debug(2, 'DeleteToken called with ...' . substr( $dtoken, -10 ));
   return if !-f $fcm_config{token_file};
   open( my $fh, '<', $fcm_config{token_file} ) or main::Fatal("Error opening $fcm_config{token_file}: $!");
   my %tokens_data;
@@ -60,14 +60,14 @@ sub deleteFCMToken {
   eval { $hr = decode_json($data); };
 
   if ($@) {
-    main::printError("Could not delete token from file: $!");
+    main::Error("Could not delete token from file: $!");
     return;
   } else {
     %tokens_data = %$hr;
     delete $tokens_data{tokens}->{$dtoken}
       if exists( $tokens_data{tokens}->{$dtoken} );
     open( my $fh, '>', $fcm_config{token_file} )
-      or main::printError("Error writing tokens file: $!");
+      or main::Error("Error writing tokens file: $!");
     my $json = encode_json( \%tokens_data );
     print $fh $json;
     close($fh);
@@ -87,13 +87,13 @@ sub get_google_access_token {
   }
 
   if ( !main::try_use('Crypt::OpenSSL::RSA') ) {
-    main::printError("Crypt::OpenSSL::RSA is required for Service Account Auth");
+    main::Error("Crypt::OpenSSL::RSA is required for Service Account Auth");
     return undef;
   }
 
   local $/;
   open( my $fh, '<', $key_file ) or do {
-    main::printError("Could not open service account file $key_file: $!");
+    main::Error("Could not open service account file $key_file: $!");
     return undef;
   };
   my $json_text = <$fh>;
@@ -143,7 +143,7 @@ sub get_google_access_token {
     $fcm_config{cached_access_token_expiry} = time() + $token_data->{expires_in} - 60;
     return $fcm_config{cached_access_token};
   } else {
-    main::printError("Failed to get access token: " . $res->status_line . " " . $res->decoded_content);
+    main::Error("Failed to get access token: " . $res->status_line . " " . $res->decoded_content);
     return undef;
   }
 }
@@ -165,11 +165,11 @@ sub sendOverFCMV1 {
   my $uri;
 
   if ($fcm_config{service_account_file}) {
-      main::printDebug("fcmv1: Using direct FCM with service account file: $fcm_config{service_account_file}", 2);
+      main::Debug(2, "fcmv1: Using direct FCM with service account file: $fcm_config{service_account_file}");
 
       my $access_token = get_google_access_token($fcm_config{service_account_file});
       if (!$access_token) {
-          main::printError("fcmv1: Failed to get access token from service account file. Push notification aborted.");
+          main::Error("fcmv1: Failed to get access token from service account file. Push notification aborted.");
           return;
       }
 
@@ -178,7 +178,7 @@ sub sendOverFCMV1 {
       local $/;
       my $fh;
       if (!open( $fh, '<', $fcm_config{service_account_file} )) {
-          main::printError("fcmv1: Cannot open service account file $fcm_config{service_account_file}: $!. Push notification aborted.");
+          main::Error("fcmv1: Cannot open service account file $fcm_config{service_account_file}: $!. Push notification aborted.");
           return;
       }
       my $json_text = <$fh>;
@@ -187,18 +187,18 @@ sub sendOverFCMV1 {
       my $data = decode_json($json_text);
       my $project_id = $data->{project_id};
       if (!$project_id) {
-          main::printError("fcmv1: No project_id found in service account file. Push notification aborted.");
+          main::Error("fcmv1: No project_id found in service account file. Push notification aborted.");
           return;
       }
 
       $uri = "https://fcm.googleapis.com/v1/projects/$project_id/messages:send";
-      main::printDebug("fcmv1: Using direct FCM URL: $uri", 2);
+      main::Debug(2, "fcmv1: Using direct FCM URL: $uri");
 
   } else {
-      main::printDebug("fcmv1: Using shared proxy mode (zmNinja)", 2);
+      main::Debug(2, "fcmv1: Using shared proxy mode (zmNinja)");
       $key = $fcm_config{v1_key};
       $uri = $fcm_config{v1_url};
-      main::printDebug("fcmv1: Using proxy URL: $uri", 2);
+      main::Debug(2, "fcmv1: Using proxy URL: $uri");
   }
 
   my $mid   = $alarm->{MonitorId};
@@ -227,7 +227,7 @@ sub sendOverFCMV1 {
   my $message_v2;
 
   if ($fcm_config{service_account_file}) {
-      main::printDebug("fcmv1: Building Google FCM v1 API format", 2);
+      main::Debug(2, "fcmv1: Building Google FCM v1 API format");
 
       $message_v2 = {
         message => {
@@ -259,10 +259,10 @@ sub sendOverFCMV1 {
         $message_v2->{message}->{android}->{ttl} = $fcm_config{android_ttl} . 's' if defined($fcm_config{android_ttl});
         $message_v2->{message}->{android}->{notification}->{tag} = 'zmninjapush' if $fcm_config{replace_push_messages};
         if (defined ($obj->{appversion}) && ($obj->{appversion} ne 'unknown')) {
-          main::printDebug('fcmv1: setting android channel to zmninja', 2);
+          main::Debug(2, 'fcmv1: setting android channel to zmninja');
           $message_v2->{message}->{android}->{notification}->{channel_id} = 'zmninja';
         } else {
-          main::printDebug('fcmv1: legacy android client, NOT setting channel', 2);
+          main::Debug(2, 'fcmv1: legacy android client, NOT setting channel');
         }
       } elsif ($obj->{platform} eq 'ios') {
         $message_v2->{message}->{apns} = {
@@ -284,11 +284,11 @@ sub sendOverFCMV1 {
         };
         $message_v2->{message}->{apns}->{headers}->{'apns-collapse-id'} = 'zmninjapush' if $fcm_config{replace_push_messages};
       } else {
-        main::printDebug('fcmv1: Unknown platform '.$obj->{platform}, 2);
+        main::Debug(2, 'fcmv1: Unknown platform '.$obj->{platform});
       }
 
   } else {
-      main::printDebug("fcmv1: Building proxy format", 2);
+      main::Debug(2, "fcmv1: Building proxy format");
 
       $message_v2 = {
         token => $obj->{token},
@@ -312,10 +312,10 @@ sub sendOverFCMV1 {
         $message_v2->{android}->{ttl} = $fcm_config{android_ttl} if defined($fcm_config{android_ttl});
         $message_v2->{android}->{tag} = 'zmninjapush' if $fcm_config{replace_push_messages};
         if (defined ($obj->{appversion}) && ($obj->{appversion} ne 'unknown')) {
-          main::printDebug('setting channel to zmninja', 2);
+          main::Debug(2, 'setting channel to zmninja');
           $message_v2->{android}->{channel} = 'zmninja';
         } else {
-          main::printDebug('legacy client, NOT setting channel to zmninja', 2);
+          main::Debug(2, 'legacy client, NOT setting channel to zmninja');
         }
       } elsif ($obj->{platform} eq 'ios') {
         $message_v2->{ios} = {
@@ -327,12 +327,12 @@ sub sendOverFCMV1 {
         };
         $message_v2->{ios}->{headers}->{'apns-collapse-id'} = 'zmninjapush' if ($fcm_config{replace_push_messages});
       } else {
-        main::printDebug('Unknown platform '.$obj->{platform}, 2);
+        main::Debug(2, 'Unknown platform '.$obj->{platform});
       }
 
       if ($fcm_config{log_raw_message}) {
         $message_v2->{log_raw_message} = 'yes';
-        main::printDebug("The server cloud function at $uri will log your full message. Please ONLY USE THIS FOR DEBUGGING with me author and turn off later", 2);
+        main::Debug(2, "The server cloud function at $uri will log your full message. Please ONLY USE THIS FOR DEBUGGING with me author and turn off later");
       }
 
       if ( $notify_config{picture_url} && $notify_config{include_picture} ) {
@@ -343,11 +343,8 @@ sub sendOverFCMV1 {
   my $djson = $json;
   $djson =~ s/pass(word)?=(.*?)($|&|})/pass$1=xxx$3/g;
 
-  main::printDebug(
-    "fcmv1: Final JSON using FCMV1 being sent is: $djson to token: ..."
-      . substr( $obj->{token}, -6 ),
-    2
-  );
+  main::Debug(2, "fcmv1: Final JSON using FCMV1 being sent is: $djson to token: ..."
+      . substr( $obj->{token}, -6 ));
   my $req = HTTP::Request->new('POST', $uri);
   $req->header(
     'Content-Type'  => 'application/json',
@@ -360,13 +357,12 @@ sub sendOverFCMV1 {
 
   if ( $res->is_success ) {
     $main::pcnt++;
-    main::printDebug(
-      'fcmv1: FCM push message returned a 200 with body ' . $res->decoded_content, 1 );
+    main::Debug(1, 'fcmv1: FCM push message returned a 200 with body ' . $res->decoded_content);
   } else {
-    main::printDebug('fcmv1: FCM push message error '.$res->decoded_content,1);
+    main::Debug(1, 'fcmv1: FCM push message error '.$res->decoded_content);
     if ( (index( $res->decoded_content, 'not a valid FCM' ) != -1) ||
           (index( $res->decoded_content, 'entity was not found') != -1)) {
-      main::printDebug('fcmv1: Removing this token as FCM doesn\'t recognize it', 1);
+      main::Debug(1, 'fcmv1: Removing this token as FCM doesn\'t recognize it');
       deleteFCMToken($obj->{token});
     }
   }
@@ -385,7 +381,7 @@ sub sendOverFCMV1 {
 }
 
 sub sendOverFCMLegacy {
-  main::printDebug("Using Legacy");
+  main::Debug(1, "Using Legacy");
   use constant NINJA_API_KEY =>
     'AAAApYcZ0mA:APA91bG71SfBuYIaWHJorjmBQB3cAN7OMT7bAxKuV3ByJ4JiIGumG6cQw0Bo6_fHGaWoo4Bl-SlCdxbivTv5Z-2XPf0m86wsebNIG15pyUHojzmRvJKySNwfAHs7sprTGsA_SIR_H43h';
 
@@ -468,11 +464,11 @@ sub sendOverFCMLegacy {
   };
 
   if (defined($obj->{appversion}) && ($obj->{appversion} ne 'unknown')) {
-    main::printDebug('setting channel to zmninja', 2);
+    main::Debug(2, 'setting channel to zmninja');
     $android_message->{notification}->{android_channel_id} = 'zmninja';
     $android_message->{data}->{channel} = 'zmninja';
   } else {
-    main::printDebug('legacy client, NOT setting channel to zmninja', 2);
+    main::Debug(2, 'legacy client, NOT setting channel to zmninja');
   }
   if ($notify_config{picture_url} && $notify_config{include_picture}) {
     $ios_message->{mutable_content} = \1;
@@ -494,11 +490,8 @@ sub sendOverFCMLegacy {
   my $djson = $json;
   $djson =~ s/pass(word)?=(.*?)($|&)/pass$1=xxx$3/g;
 
-  main::printDebug(
-    "legacy: Final JSON being sent is: $djson to token: ..."
-      . substr( $obj->{token}, -6 ),
-    2
-  );
+  main::Debug(2, "legacy: Final JSON being sent is: $djson to token: ..."
+      . substr( $obj->{token}, -6 ));
   my $uri = 'https://fcm.googleapis.com/fcm/send';
   my $req = HTTP::Request->new('POST', $uri);
   $req->header(
@@ -512,7 +505,7 @@ sub sendOverFCMLegacy {
   if ($res->is_success) {
     $main::pcnt++;
     my $msg = $res->decoded_content;
-    main::printDebug('FCM push message returned a 200 with body '.$res->content, 1);
+    main::Debug(1, 'FCM push message returned a 200 with body '.$res->content);
     my $json_string;
     eval { $json_string = decode_json($msg); };
     if ($@) {
@@ -526,12 +519,12 @@ sub sendOverFCMLegacy {
       if ( $reason eq 'NotRegistered'
         || $reason eq 'InvalidRegistration' )
       {
-        main::printDebug('Removing this token as FCM doesn\'t recognize it', 1);
+        main::Debug(1, 'Removing this token as FCM doesn\'t recognize it');
         deleteFCMToken($obj->{token});
       }
     } # end if failure
   } else {
-    main::printError('FCM push message Error:' . $res->status_line);
+    main::Error('FCM push message Error:' . $res->status_line);
   }
 
   if ($obj->{state} == VALID_CONNECTION && exists $obj->{conn}) {
@@ -577,10 +570,10 @@ sub migrateTokens {
 }
 
 sub initFCMTokens {
-  main::printDebug('Initializing FCM tokens...', 1);
+  main::Debug(1, 'Initializing FCM tokens...');
   if (!-f $fcm_config{token_file}) {
     open(my $foh, '>', $fcm_config{token_file}) or main::Fatal("Error opening $fcm_config{token_file}: $!");
-    main::printDebug('Creating ' . $fcm_config{token_file}, 1);
+    main::Debug(1, 'Creating ' . $fcm_config{token_file});
     print $foh '{"tokens":{}}';
     close($foh);
   }
@@ -592,7 +585,7 @@ sub initFCMTokens {
   close ($fh);
   eval { $hr = decode_json($data); };
   if ($@) {
-    main::printInfo('tokens is not JSON, migrating format...');
+    main::Info('tokens is not JSON, migrating format...');
     migrateTokens();
     open(my $fh, '<', $fcm_config{token_file}) or main::Fatal("Error opening $fcm_config{token_file}: $!");
     my $data = do { local $/ = undef; <$fh> };
@@ -652,22 +645,16 @@ sub saveFCMTokens {
   $invocations = {count=>0, at=>(localtime)[4]} if !defined($invocations);
 
   if ($stoken eq '') {
-    main::printDebug('Not saving, no token. Desktop?', 2);
+    main::Debug(2, 'Not saving, no token. Desktop?');
     return;
   }
 
   if ($spushstate eq '') {
     $spushstate = 'enabled';
-    main::printDebug(
-      'Overriding token state, setting to enabled as I got a null with a valid token',
-      1
-    );
+    main::Debug(1, 'Overriding token state, setting to enabled as I got a null with a valid token');
   }
 
-  main::printDebug(
-    "SaveTokens called with:monlist=$smonlist, intlist=$sintlist, platform=$splatform, push=$spushstate",
-    2
-  );
+  main::Debug(2, "SaveTokens called with:monlist=$smonlist, intlist=$sintlist, platform=$splatform, push=$spushstate");
 
   open(my $fh, '<', $fcm_config{token_file}) || main::Fatal('Cannot open for read '.$fcm_config{token_file});
   my $data = do { local $/ = undef; <$fh> };
@@ -676,7 +663,7 @@ sub saveFCMTokens {
   my $tokens_data;
   eval { $tokens_data = decode_json($data); };
   if ($@) {
-    main::printError("Could not parse token file: $!");
+    main::Error("Could not parse token file: $!");
     return;
   }
   $$tokens_data{tokens}->{$stoken}->{monlist} = $smonlist if $smonlist ne '-1';
@@ -687,7 +674,7 @@ sub saveFCMTokens {
   $$tokens_data{tokens}->{$stoken}->{appversion} = $appversion;
 
   open($fh, '>', $fcm_config{token_file})
-    or main::printError("Error writing tokens file $fcm_config{token_file}: $!");
+    or main::Error("Error writing tokens file $fcm_config{token_file}: $!");
   print $fh encode_json($tokens_data);
   close($fh);
   return ( $smonlist, $sintlist );

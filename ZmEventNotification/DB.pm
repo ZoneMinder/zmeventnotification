@@ -14,8 +14,7 @@ sub getAllMonitorIds {
 sub updateEventinZmDB {
   my ( $eid, $notes ) = @_;
   $notes = $notes . ' ';
-  main::printDebug( 'updating Notes clause for Event:' . $eid . ' with:' . $notes,
-    1 );
+  main::Debug(1, 'updating Notes clause for Event:' . $eid . ' with:' . $notes);
   my $sql = 'UPDATE Events SET Notes=CONCAT(?,Notes) WHERE Id=?';
   my $sth = $main::dbh->prepare_cached($sql)
     or main::Fatal( "UpdateEventInZmDB: Can't prepare '$sql': " . $main::dbh->errstr() );

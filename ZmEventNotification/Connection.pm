@@ -16,7 +16,7 @@ sub check_for_duplicate_token {
     $token_duplicates{$_->{token}}++ if $_->{token};
   }
   foreach (keys %token_duplicates) {
-    main::printDebug('...'.substr($_,-10).' occurs: '.$token_duplicates{$_}.' times', 2) if $token_duplicates{$_} > 1;
+    main::Debug(2, '...'.substr($_,-10).' occurs: '.$token_duplicates{$_}.' times') if $token_duplicates{$_} > 1;
   }
 }
 
@@ -28,7 +28,7 @@ sub checkConnection {
       if ( $curtime - $_->{time} > $auth_config{timeout} ) {
         if ( exists $_->{conn} ) {
           my $conn = $_->{conn};
-          main::printError( 'Rejecting '
+          main::Error( 'Rejecting '
               . $conn->ip()
               . getConnFields($conn)
               . ' - authentication timeout' );
@@ -72,10 +72,7 @@ sub checkConnection {
       ($_->{state} == VALID_CONNECTION) and defined($_->{category}) and ($_->{category} eq 'escontrol')
     } @main::active_connections;
 
-  main::printDebug(
-    'After tick: TOTAL: '. @main::active_connections." ,  ES_CONTROL: $escontrol_conn, FCM+WEB: $fcm_conn, FCM: $fcm_no_conn, WEB: $web_conn, MQTT:$mqtt_conn, invalid WEB: $web_no_conn, PENDING: $pend_conn",
-    2
-  );
+  main::Debug(2, 'After tick: TOTAL: '. @main::active_connections." ,  ES_CONTROL: $escontrol_conn, FCM+WEB: $fcm_conn, FCM: $fcm_no_conn, WEB: $web_conn, MQTT:$mqtt_conn, invalid WEB: $web_no_conn, PENDING: $pend_conn");
 } # end sub checkConnection
 
 sub loadPredefinedConnections {

@@ -32,7 +32,7 @@ sub sendOverMQTTBroker {
     }
   );
 
-  main::printDebug('requesting MQTT Publishing Job for EID:' . $alarm->{EventId}, 2);
+  main::Debug(2, 'requesting MQTT Publishing Job for EID:' . $alarm->{EventId});
   my $topic = join( '/', $mqtt_config{topic}, $alarm->{MonitorId} );
 
   print main::WRITER 'mqtt_publish--TYPE--'
@@ -48,38 +48,35 @@ sub initMQTT {
 
   if ( defined $mqtt_config{username} && defined $mqtt_config{password} ) {
     if ( defined $mqtt_config{tls_ca} ) {
-      main::printInfo('Initializing MQTT with auth over TLS connection...');
+      main::Info('Initializing MQTT with auth over TLS connection...');
       my $sockopts = { SSL_ca_file => $mqtt_config{tls_ca} };
       if ( defined $mqtt_config{tls_cert} && defined $mqtt_config{tls_key} ) {
         $sockopts->{SSL_cert_file} = $mqtt_config{tls_cert};
         $sockopts->{SSL_key_file}  = $mqtt_config{tls_key};
       } else {
-        main::printDebug(
-          'MQTT over TLS will be one way TLS as tls_cert and tls_key are not provided.',
-          1
-        );
+        main::Debug(1, 'MQTT over TLS will be one way TLS as tls_cert and tls_key are not provided.');
       }
       if ( defined $mqtt_config{tls_insecure} && ($mqtt_config{tls_insecure} eq 1)) {
         $sockopts->{SSL_verify_mode} = IO::Socket::SSL::SSL_VERIFY_NONE();
       }
       $mqtt_connection = Net::MQTT::Simple::SSL->new($mqtt_config{server}, $sockopts);
     } else {
-      main::printInfo('Initializing MQTT with auth connection...');
+      main::Info('Initializing MQTT with auth connection...');
       $mqtt_connection = Net::MQTT::Simple->new($mqtt_config{server});
     }
     if ($mqtt_connection) {
       $ENV{MQTT_SIMPLE_ALLOW_INSECURE_LOGIN} = 'true';
       $mqtt_connection->login( $mqtt_config{username}, $mqtt_config{password} );
-      main::printDebug( 'Intialized MQTT with auth', 1 );
+      main::Debug(1, 'Intialized MQTT with auth');
     } else {
-      main::printError('Failed to Intialized MQTT with auth');
+      main::Error('Failed to Intialized MQTT with auth');
     }
   } else {
-    main::printInfo('Initializing MQTT without auth connection...');
+    main::Info('Initializing MQTT without auth connection...');
     if ($mqtt_connection = Net::MQTT::Simple->new($mqtt_config{server})) {
-      main::printDebug('Intialized MQTT without auth', 1);
+      main::Debug(1, 'Intialized MQTT without auth');
     } else {
-      main::printError('Failed to Intialized MQTT without auth');
+      main::Error('Failed to Intialized MQTT without auth');
     }
   }
 

@@ -65,7 +65,7 @@ sub config_get_val {
     my $first_char = substr( $final_val, 0, 1 );
     if ($first_char eq '!') {
       my $token = substr($final_val, 1);
-      main::printDebug('Got secret token !' . $token, 2);
+      main::Debug(2, 'Got secret token !' . $token);
       main::Fatal('No secret file found') if !$secrets;
       my $secret_val = $secrets->val('secrets', $token);
       main::Fatal('Token:'.$token.' not found in secret file') if !$secret_val;
@@ -74,11 +74,8 @@ sub config_get_val {
   }
 
   if ( exists $escontrol_interface_settings{$parm} ) {
-    main::printDebug(
-      "ESCONTROL_INTERFACE overrides key: $parm with "
-        . $escontrol_interface_settings{$parm},
-      2
-    );
+    main::Debug(2, "ESCONTROL_INTERFACE overrides key: $parm with "
+        . $escontrol_interface_settings{$parm});
     $final_val = $escontrol_interface_settings{$parm};
   }
 
@@ -92,7 +89,7 @@ sub config_get_val {
   foreach my $token (@matches) {
     my $tval = $cfg->val( 'general', $token );
     $tval = $cfg->val( $sect, $token ) if !$tval;
-    main::printDebug("config string substitution: {{$token}} is '$tval'", 2);
+    main::Debug(2, "config string substitution: {{$token}} is '$tval'");
     $final_val =~ s/\{\{$token\}\}/$tval/g;
   }
 
@@ -108,9 +105,9 @@ sub loadEsConfigSettings {
   $server_config{restart_interval} = config_get_val($cfg, 'general', 'restart_interval',
     DEFAULT_RESTART_INTERVAL);
   if ( !$server_config{restart_interval} ) {
-    main::printDebug('ES will not be restarted as interval is specified as 0', 1);
+    main::Debug(1, 'ES will not be restarted as interval is specified as 0');
   } else {
-    main::printDebug("ES will be restarted at $server_config{restart_interval} seconds", 1);
+    main::Debug(1, "ES will be restarted at $server_config{restart_interval} seconds");
   }
   $server_config{skip_monitors} = config_get_val($cfg, 'general', 'skip_monitors');
   $server_config{base_data_path} = config_get_val($cfg, 'general', 'base_data_path',
@@ -123,14 +120,14 @@ sub loadEsConfigSettings {
     DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL);
   $server_config{es_rules_file} = config_get_val($cfg, 'customize', 'es_rules');
   if ($server_config{es_rules_file}) {
-    main::printDebug("rules: Loading es rules json: $server_config{es_rules_file}", 2);
+    main::Debug(2, "rules: Loading es rules json: $server_config{es_rules_file}");
     if (open(my $fh, '<', $server_config{es_rules_file})) {
       my $data = do { local $/ = undef; <$fh> };
       eval { my $hr = decode_json($data); %es_rules = %$hr; };
-      if ($@) { main::printError("rules: Failed decoding es rules: $@"); }
+      if ($@) { main::Error("rules: Failed decoding es rules: $@"); }
       close($fh);
     } else {
-      main::printError("rules: Could not open $server_config{es_rules_file}: $!");
+      main::Error("rules: Could not open $server_config{es_rules_file}: $!");
     }
   }
 
@@ -248,26 +245,24 @@ sub loadEsConfigSettings {
 
 sub saveEsControlSettings {
   return if !$escontrol_config{enabled};
-  main::printDebug(
-    "ESCONTROL_INTERFACE: Saving admin interfaces to $escontrol_config{file}", 2);
+  main::Debug(2, "ESCONTROL_INTERFACE: Saving admin interfaces to $escontrol_config{file}");
   store(\%escontrol_interface_settings, $escontrol_config{file})
     or main::Fatal("Error writing to $escontrol_config{file}: $!");
 }
 
 sub loadEsControlSettings {
   if (!$escontrol_config{enabled}) {
-    main::printDebug('ESCONTROL_INTERFACE is disabled. Not loading control data', 1);
+    main::Debug(1, 'ESCONTROL_INTERFACE is disabled. Not loading control data');
     return;
   }
-  main::printDebug(
-    "ESCONTROL_INTERFACE: Loading persistent admin interface settings from $escontrol_config{file}", 2);
+  main::Debug(2, "ESCONTROL_INTERFACE: Loading persistent admin interface settings from $escontrol_config{file}");
   if (!-f $escontrol_config{file}) {
-    main::printDebug('ESCONTROL_INTERFACE: file does not exist, creating...', 2);
+    main::Debug(2, 'ESCONTROL_INTERFACE: file does not exist, creating...');
     saveEsControlSettings();
   } else {
     %escontrol_interface_settings = %{ retrieve($escontrol_config{file}) };
     my $json = encode_json(\%escontrol_interface_settings);
-    main::printDebug("ESCONTROL_INTERFACE: Loaded parameters: $json", 2);
+    main::Debug(2, "ESCONTROL_INTERFACE: Loaded parameters: $json");
   }
 }
 

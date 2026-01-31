@@ -24,7 +24,7 @@ sub isAllowedInRules {
   my $object_on_not_matched = {};    # interesting things depending on action
 
   if ( !$main::is_timepiece ) {
-    main::printError('rules: Not checking rules as Time::Piece is not installed');
+    main::Error('rules: Not checking rules as Time::Piece is not installed');
     return ( $RULE_ERROR_RESULT, {} );
   }
   my $alarm = shift;
@@ -43,15 +43,12 @@ sub isAllowedInRules {
   my $eid = $alarm->{EventId};
   my $now = Time::Piece->new;
 
-  main::printDebug(
-    "rules: Checking rules for alarm caused by eid:$eid, monitor:$id, at: $now with cause:$cause",
-    2
-  );
+  main::Debug(2, "rules: Checking rules for alarm caused by eid:$eid, monitor:$id, at: $now with cause:$cause");
 
   if ( !exists( $es_rules{notifications}->{monitors} )
     || !exists( $es_rules{notifications}->{monitors}->{$id} ) )
   {
-    main::printDebug( "rules: No rules found for Monitor, allowing:$id", 1 );
+    main::Debug(1, "rules: No rules found for Monitor, allowing:$id");
     return ( $MISSING_RULE_RESULT, {} );
   }
 
@@ -59,7 +56,7 @@ sub isAllowedInRules {
   my $rulecnt = 0;
   foreach my $rule_ref ( @{$entry_ref} ) {
     $rulecnt++;
-    main::printDebug( "rules: (eid: $eid) -- Processing rule: $rulecnt --", 1 );
+    main::Debug(1, "rules: (eid: $eid) -- Processing rule: $rulecnt --");
 
     if ( $rule_ref->{action} eq 'mute' ) {
       $RULE_MATCHED_RESULT     = 0;
@@ -72,7 +69,7 @@ sub isAllowedInRules {
       $object_on_matched       = { notification_type => 'critical' };
       $object_on_not_matched   = {};
     } else {
-      main::printError( "rules: unknown action:" . $rule_ref->{action} );
+      main::Error( "rules: unknown action:" . $rule_ref->{action} );
       return ( $RULE_ERROR_RESULT, {} );
     }
 
@@ -85,15 +82,14 @@ sub isAllowedInRules {
         : "%I:%M %p";
       my $dow = $rule_ref->{daysofweek};
 
-      main::printDebug( "rules: parsing rule $from/$to using format:$format", 2 );
+      main::Debug(2, "rules: parsing rule $from/$to using format:$format");
       my $d_from = Time::Piece->strptime( $from, $format );
       my $d_to   = Time::Piece->strptime( $to,   $format );
       if ( $d_to < $d_from ) {
-        main::printDebug( "rules: to is less than from, so we are wrapping dates",
-          2 );
+        main::Debug(2, "rules: to is less than from, so we are wrapping dates");
         $d_from -= ONE_DAY;
       }
-      main::printDebug( "rules: parsed time from: $d_from and to:$d_to", 2 );
+      main::Debug(2, "rules: parsed time from: $d_from and to:$d_to");
 
       $rule_ref->{parsed_from} = $d_from;
       $rule_ref->{parsed_to}   = $d_to;
@@ -107,64 +103,49 @@ sub isAllowedInRules {
     my $t = Time::Piece->new->strftime($format);
     $t = Time::Piece->strptime( $t, $format );
 
-    main::printDebug(
-      "rules:(eid: $eid)  seeing if now:"
+    main::Debug(2, "rules:(eid: $eid)  seeing if now:"
         . $t
         . " is between:"
         . $rule_ref->{parsed_from} . " and "
-        . $rule_ref->{parsed_to},
-      2
-    );
+        . $rule_ref->{parsed_to});
     if ( ($t < $rule_ref->{parsed_from}) || ($t > $rule_ref->{parsed_to}) ) {
-      main::printDebug("rules: Skipping this rule as times don't match..", 1);
+      main::Debug(1, "rules: Skipping this rule as times don't match..");
       next;
     }
 
-    main::printDebug(
-      "rules:(eid: $eid)  seeing if now:"
+    main::Debug(2, "rules:(eid: $eid)  seeing if now:"
         . $now->wdayname
         . " is part of:"
-        . $rule_ref->{daysofweek},
-      2
-    );
+        . $rule_ref->{daysofweek});
     if ( exists($rule_ref->{daysofweek})
       && ( index( $rule_ref->{daysofweek}, $now->wdayname ) == -1 ) )
     {
-      main::printDebug(
-        "rules: (eid: $eid) Skipping this rule as:"
+      main::Debug(1, "rules: (eid: $eid) Skipping this rule as:"
           . $t->wdayname
           . ' does not match '
-          . $rule_ref->{daysofweek},
-        1
-      );
+          . $rule_ref->{daysofweek});
       next;
     }
-    main::printDebug(
-      "rules:(eid: $eid)  seeing if cause_has: ->"
+    main::Debug(2, "rules:(eid: $eid)  seeing if cause_has: ->"
         . $rule_ref->{cause_has}
-        . "<- is part of ->$cause<-",
-      2
-    );
+        . "<- is part of ->$cause<-");
     if ( exists( $rule_ref->{cause_has} ) ) {
       my $re = qr/$rule_ref->{cause_has}/i;
       if ( lc($cause) !~ /$re/) {
-        main::printDebug(
-          "rules: (eid: $eid) Skipping this rule as "
+        main::Debug(1, "rules: (eid: $eid) Skipping this rule as "
             . $rule_ref->{cause_has}
             . " does not pattern match "
-            . $cause,
-          1
-        );
+            . $cause);
         next;
       }
     }
 
     # coming here means this rule was matched and all conditions met
-    main::printDebug("rules: (eid: $eid) " . $rule_ref->{action}.' rule matched', 1);
+    main::Debug(1, "rules: (eid: $eid) " . $rule_ref->{action}.' rule matched');
     return ( $RULE_MATCHED_RESULT, $object_on_matched );
   } #end foreach rule_ref
 
-  main::printDebug( "rules: (eid: $eid) No rules matched", 1 );
+  main::Debug(1, "rules: (eid: $eid) No rules matched");
   return ( $RULE_NOT_MATCHED_RESULT, $object_on_not_matched );
 }
 
