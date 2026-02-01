@@ -11,4 +11,9 @@
   * `chore:` maintenance, config, tooling
   * `test:` adding or updating tests
   * Scope is optional: `feat(install):`, `refactor(config):`, etc.
+* If you are fixing bugs or creating new features, the process MUST be:
+    - Create a GH issue (label it)
+    - If developing a feature, create a branch
+    - Commit changes referring the issue
+    - Wait for the user to confirm before you close the issue
 
