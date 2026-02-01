@@ -528,7 +528,7 @@ sub checkNewEvents() {
             . $monitor->{Name} . ') '
             . $alarm_cause
             . '[last processed eid:'
-            . $active_events{$mid}->{last_event_processed}
+            . ($active_events{$mid}->{last_event_processed} // '')
             . ']' );
 
         push @newEvents,
