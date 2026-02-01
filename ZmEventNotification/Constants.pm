@@ -87,6 +87,7 @@ use constant {
   DEFAULT_FCM_V1_KEY => 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJnZW5lcmF0b3IiOiJwbGlhYmxlIHBpeGVscyIsImlhdCI6MTcyNzQ0OTI1MCwiY2xpZW50Ijoiem1uaW5qYSJ9.2to4a_X0EQ8MtXyNzVCHfftn6zDn6QpwlSjVYicUq8I',
   DEFAULT_FCM_V1_URL => 'https://us-central1-zoneminder-ninja.cloudfunctions.net/send_push',
   DEFAULT_MAX_PARALLEL_HOOKS => 0,
+  DEFAULT_HOOK_TAG_DETECTED_OBJECTS => 'no',
 };
 
 # Auto-export all symbols -- this is a constants-only module,

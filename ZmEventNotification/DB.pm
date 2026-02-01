@@ -3,9 +3,15 @@ package ZmEventNotification::DB;
 use strict;
 use warnings;
 use Exporter 'import';
+use version;
+use POSIX qw(strftime);
+use ZoneMinder;
 
-our @EXPORT_OK = qw(getAllMonitorIds updateEventinZmDB getNotesFromEventDB);
+our @EXPORT_OK = qw(getAllMonitorIds updateEventinZmDB getNotesFromEventDB getZmUserId tagEventObjects);
 our %EXPORT_TAGS = ( all => \@EXPORT_OK );
+
+our $cached_zm_user_id;
+my $version_warning_logged = 0;
 
 sub getAllMonitorIds {
   return map { $_->{Id} } values(%main::monitors);
@@ -34,6 +40,74 @@ sub getNotesFromEventDB {
   $sth->finish();
 
   return $notes->{Notes};
+}
+
+sub getZmUserId {
+  return $cached_zm_user_id if defined $cached_zm_user_id;
+
+  my $secrets = $ZmEventNotification::Config::secrets;
+  if (!$secrets) {
+    main::Debug(1, 'tagEventObjects: No secrets file available, using uid=0');
+    $cached_zm_user_id = 0;
+    return 0;
+  }
+
+  my $username = $secrets->val('secrets', 'ZM_USER');
+  if (!$username) {
+    main::Debug(1, 'tagEventObjects: ZM_USER not found in secrets, using uid=0');
+    $cached_zm_user_id = 0;
+    return 0;
+  }
+
+  # ZoneMinder's User.pm declares package ZoneMinder::Frame but uses table 'Users'
+  require ZoneMinder::Frame;
+  my $user = ZoneMinder::Frame->find_one(Username => $username);
+  if ($user) {
+    $cached_zm_user_id = $user->{Id};
+    main::Debug(1, "tagEventObjects: Resolved ZM_USER '$username' to uid=$cached_zm_user_id");
+  } else {
+    main::Debug(1, "tagEventObjects: Could not find ZM user '$username', using uid=0");
+    $cached_zm_user_id = 0;
+  }
+
+  return $cached_zm_user_id;
+}
+
+sub tagEventObjects {
+  my ($eid, $labels) = @_;
+
+  if (version->parse(ZM_VERSION) < version->parse('1.37.44')) {
+    if (!$version_warning_logged) {
+      main::Warning('tagEventObjects: ZM version ' . ZM_VERSION . ' < 1.37.44, tagging not supported');
+      $version_warning_logged = 1;
+    }
+    return;
+  }
+
+  require ZoneMinder::Tag;
+  require ZoneMinder::Event_Tag;
+
+  my $uid = getZmUserId();
+  my $now = strftime('%Y-%m-%d %H:%M:%S', localtime());
+
+  my %seen;
+  for my $label (@$labels) {
+    next if $seen{$label}++;
+
+    my $tag = ZoneMinder::Tag->find_one(Name => $label);
+    if ($tag) {
+      main::Debug(2, "tagEventObjects: Tag '$label' exists (id=$tag->{Id}), updating LastAssignedDate");
+      $tag->save({LastAssignedDate => $now});
+    } else {
+      main::Debug(2, "tagEventObjects: Creating new tag '$label'");
+      $tag = new ZoneMinder::Tag();
+      $tag->save({Name => $label, CreatedBy => $uid, LastAssignedDate => $now});
+    }
+
+    main::Debug(2, "tagEventObjects: Linking tag '$label' (id=$tag->{Id}) to event $eid");
+    my $et = new ZoneMinder::Event_Tag();
+    $et->save({TagId => $tag->{Id}, EventId => $eid, AssignedBy => $uid});
+  }
 }
 
 1;

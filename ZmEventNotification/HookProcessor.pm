@@ -11,7 +11,7 @@ use ZmEventNotification::Util qw(getConnectionIdentity isInList getInterval pars
 use ZmEventNotification::FCM qw(sendOverFCM);
 use ZmEventNotification::MQTT qw(sendOverMQTTBroker);
 use ZmEventNotification::Rules qw(isAllowedInRules);
-use ZmEventNotification::DB qw(updateEventinZmDB getNotesFromEventDB);
+use ZmEventNotification::DB qw(updateEventinZmDB getNotesFromEventDB tagEventObjects);
 use ZmEventNotification::WebSocketHandler qw(getNotificationStatusEsControl);
 
 our @EXPORT_OK = qw(
@@ -337,6 +337,18 @@ sub processNewAlarmsInFork {
 
             $hookString = $resTxt;
           }
+
+          if ($hooks_config{tag_detected_objects} && $hookResult == 0 && $resJsonString) {
+            eval {
+              my $det = decode_json($resJsonString);
+              my @labels;
+              for my $item (@$det) {
+                push @labels, $item->{label} if $item->{label};
+              }
+              tagEventObjects($eid, \@labels) if @labels;
+            };
+            main::Error("tagEventObjects (event_start): $@") if $@;
+          }
         } else {
           main::Info(
             'use hooks/start hook not being used, going to directly send out a notification if checks pass'
@@ -529,6 +541,18 @@ sub processNewAlarmsInFork {
               . $resTxt . "\n";
 
             $hookString = $resTxt;
+          }
+
+          if ($hooks_config{tag_detected_objects} && $hookResult == 0 && $resJsonString) {
+            eval {
+              my $det = decode_json($resJsonString);
+              my @labels;
+              for my $item (@$det) {
+                push @labels, $item->{label} if $item->{label};
+              }
+              tagEventObjects($eid, \@labels) if @labels;
+            };
+            main::Error("tagEventObjects (event_end): $@") if $@;
           }
         } else {
           main::Info(

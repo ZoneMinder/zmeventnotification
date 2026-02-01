@@ -241,6 +241,8 @@ sub loadEsConfigSettings {
     DEFAULT_HOOK_KEEP_FRAME_MATCH_TYPE);
   $hooks_config{hook_skip_monitors} = config_get_val($cfg, 'hook', 'hook_skip_monitors');
   $hooks_config{hook_pass_image_path} = config_get_val($cfg, 'hook', 'hook_pass_image_path');
+  $hooks_config{tag_detected_objects} = config_get_val($cfg, 'hook', 'tag_detected_objects',
+    DEFAULT_HOOK_TAG_DETECTED_OBJECTS);
 }
 
 sub saveEsControlSettings {
@@ -362,6 +364,7 @@ Notify End only if Start success...... ${\(_yes_or_no($hooks_config{event_end_no
 Use Hook Description.................. ${\(_yes_or_no($hooks_config{use_hook_description}))}
 Keep frame match type................. ${\(_yes_or_no($hooks_config{keep_frame_match_type}))}
 Store Frame in ZM..................... ${\(_yes_or_no($hooks_config{hook_pass_image_path}))}
+Tag detected objects in ZM............ ${\(_yes_or_no($hooks_config{tag_detected_objects}))}
 
 Picture URL .......................... ${\(_value_or_undef($notify_config{picture_url}))}
 Include picture....................... ${\(_yes_or_no($notify_config{include_picture}))}
