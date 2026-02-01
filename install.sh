@@ -29,6 +29,7 @@ INSTALL_TINYYOLOV3=${INSTALL_TINYYOLOV3:-yes}
 INSTALL_YOLOV4=${INSTALL_YOLOV4:-yes}
 INSTALL_TINYYOLOV4=${INSTALL_TINYYOLOV4:-yes}
 INSTALL_CORAL_EDGETPU=${INSTALL_CORAL_EDGETPU:-no}
+INSTALL_ULTRALYTICS=${INSTALL_ULTRALYTICS:-no}
 
 
 TARGET_CONFIG=${TARGET_CONFIG:-'/etc/zm'}
@@ -187,6 +188,7 @@ verify_config() {
         echo "Yolo V4 (INSTALL_YOLOV4): ${INSTALL_YOLOV4}"
         echo "Tiny Yolo V4 (INSTALL_TINYYOLOV4)": ${INSTALL_TINYYOLOV4}
         echo "Google Coral Edge TPU (INSTALL_CORAL_EDGETPU)": ${INSTALL_CORAL_EDGETPU}
+        echo "Ultralytics YOLOv8/v11 (INSTALL_ULTRALYTICS)": ${INSTALL_ULTRALYTICS}
 
     fi
     echo
@@ -265,6 +267,7 @@ install_hook() {
     mkdir -p "${TARGET_DATA}/models/tinyyolov4" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/yolov4" 2>/dev/null
     mkdir -p "${TARGET_DATA}/models/coral_edgetpu" 2>/dev/null
+    mkdir -p "${TARGET_DATA}/models/ultralytics" 2>/dev/null
     mkdir -p "${TARGET_DATA}/misc" 2>/dev/null
     echo "everything that does not fit anywhere else :-)" > "${TARGET_DATA}/misc/README.txt" 2>/dev/null
     
@@ -325,6 +328,40 @@ install_hook() {
                 'yolov4.cfg' 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4.cfg' \
                 'coco.names' 'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names' \
                 'yolov4.weights' 'https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights'
+        fi
+
+        if [ "${INSTALL_ULTRALYTICS}" == "yes" ]
+        then
+            echo 'Checking for Ultralytics dependencies...'
+
+            # Check/install torch
+            if ! ${PYTHON} -c "import torch" 2>/dev/null; then
+                echo 'torch not found, installing...'
+                if command -v nvidia-smi >/dev/null 2>&1; then
+                    echo 'CUDA detected via nvidia-smi, installing GPU version of PyTorch...'
+                    ${PY_SUDO} ${PIP} install torch torchvision --index-url https://download.pytorch.org/whl/cu124 ${PIP_COMPAT}
+                else
+                    echo 'No CUDA detected, installing CPU-only PyTorch...'
+                    ${PY_SUDO} ${PIP} install torch torchvision ${PIP_COMPAT}
+                fi
+            else
+                echo 'torch already installed'
+            fi
+
+            # Check/install ultralytics
+            if ! ${PYTHON} -c "import ultralytics" 2>/dev/null; then
+                echo 'ultralytics not found, installing...'
+                ${PY_SUDO} ${PIP} install ultralytics ${PIP_COMPAT}
+            else
+                echo 'ultralytics already installed'
+            fi
+
+            echo 'Checking for Ultralytics model files...'
+            download_if_needed ultralytics \
+                'yolov8n.pt' 'https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8n.pt' \
+                'yolov8s.pt' 'https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8s.pt' \
+                'yolo11n.pt' 'https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.pt' \
+                'yolo11s.pt' 'https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11s.pt'
         fi
     else
         echo "Skipping model downloads"
@@ -488,6 +525,7 @@ display_help() {
         INSTALL_YOLOV4: Download and install yolov4 model (default:yes)
         INSTALL_TINY_YOLOV4: Download and install tiny yolov4 model (default:yes)
         INSTALL_CORAL_EDGETPU: Download and install coral models (default:no)
+        INSTALL_ULTRALYTICS: Download and install Ultralytics YOLOv8/v11 models (default:no)
 
         TARGET_CONFIG: Path to ES config dir (default: /etc/zm)
         TARGET_DATA: Path to ES data dir (default: /var/lib/zmeventnotification)
