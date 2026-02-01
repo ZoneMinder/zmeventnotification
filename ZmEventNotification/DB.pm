@@ -59,9 +59,8 @@ sub getZmUserId {
     return 0;
   }
 
-  # ZoneMinder's User.pm declares package ZoneMinder::Frame but uses table 'Users'
-  require ZoneMinder::Frame;
-  my $user = ZoneMinder::Frame->find_one(Username => $username);
+  require ZoneMinder::User;
+  my $user = ZoneMinder::User->find_one(Username => $username);
   if ($user) {
     $cached_zm_user_id = $user->{Id};
     main::Debug(1, "tagEventObjects: Resolved ZM_USER '$username' to uid=$cached_zm_user_id");
@@ -101,11 +100,13 @@ sub tagEventObjects {
     } else {
       main::Debug(2, "tagEventObjects: Creating new tag '$label'");
       $tag = new ZoneMinder::Tag();
-      $tag->save({Name => $label, CreatedBy => $uid, LastAssignedDate => $now});
+      $tag->save({Name => $label, CreateDate => $now, CreatedBy => $uid, LastAssignedDate => $now});
     }
 
     main::Debug(2, "tagEventObjects: Linking tag '$label' (id=$tag->{Id}) to event $eid");
-    my $et = new ZoneMinder::Event_Tag();
+    # Event_Tag uses @identified_by (composite key), not $primary_key,
+    # so we bless directly instead of calling new() which requires $primary_key.
+    my $et = bless {}, 'ZoneMinder::Event_Tag';
     $et->save({TagId => $tag->{Id}, EventId => $eid, AssignedBy => $uid});
   }
 }
