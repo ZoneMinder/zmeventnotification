@@ -332,30 +332,26 @@ install_hook() {
 
         if [ "${INSTALL_ULTRALYTICS}" == "yes" ]
         then
-            # Check if ultralytics and torch are already present
-            local _ul_torch_present=yes
-            ${PYTHON} -c "import torch" 2>/dev/null || _ul_torch_present=no
-            ${PYTHON} -c "import ultralytics" 2>/dev/null || _ul_torch_present=no
+            local _ul_skip_install=no
 
-            if [ "${_ul_torch_present}" == "no" ]; then
-                echo
-                print_warning "Ultralytics and/or PyTorch need to be installed."
-                echo "         NOTE: Automated installation of PyTorch/Ultralytics can be"
-                echo "         unreliable, especially with source-built OpenCV or custom"
-                echo "         CUDA setups. If this fails, please install manually following:"
-                echo "           PyTorch:      https://pytorch.org/get-started/locally/"
-                echo "           Ultralytics:  https://docs.ultralytics.com/quickstart/"
-                echo
-                if [[ ${INTERACTIVE} == 'yes' ]]; then
-                    if ! confirm 'Attempt automatic install of PyTorch/Ultralytics?' 'y/N'; then
-                        echo 'Skipping Ultralytics install. Please install manually.'
-                        echo 'Model files will still be downloaded below.'
-                        _ul_torch_present=skip
-                    fi
+            echo
+            print_warning "Ultralytics/PyTorch installation can be unreliable,"
+            echo "         especially with source-built OpenCV or custom CUDA setups."
+            echo "         If this install fails, please install manually following:"
+            echo "           PyTorch:      https://pytorch.org/get-started/locally/"
+            echo "           Ultralytics:  https://docs.ultralytics.com/quickstart/"
+            echo "         IMPORTANT: Use 'pip install --no-deps ultralytics' to avoid"
+            echo "         overwriting your source-built OpenCV or existing numpy."
+            echo
+
+            if [[ ${INTERACTIVE} == 'yes' ]]; then
+                if ! confirm 'Install Ultralytics and its dependencies?' 'y/N'; then
+                    echo 'Skipping Ultralytics package install. Model files will still be downloaded.'
+                    _ul_skip_install=yes
                 fi
             fi
 
-            if [ "${_ul_torch_present}" != "skip" ]; then
+            if [ "${_ul_skip_install}" == "no" ]; then
                 # Check/install torch (--no-deps to avoid overwriting numpy/opencv)
                 if ! ${PYTHON} -c "import torch" 2>/dev/null; then
                     echo 'torch not found, installing...'
