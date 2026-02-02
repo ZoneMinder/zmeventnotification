@@ -29,6 +29,7 @@ INSTALL_TINYYOLOV3=${INSTALL_TINYYOLOV3:-yes}
 INSTALL_YOLOV4=${INSTALL_YOLOV4:-yes}
 INSTALL_TINYYOLOV4=${INSTALL_TINYYOLOV4:-yes}
 INSTALL_CORAL_EDGETPU=${INSTALL_CORAL_EDGETPU:-no}
+INSTALL_YOLOV11=${INSTALL_YOLOV11:-yes}
 
 
 TARGET_CONFIG=${TARGET_CONFIG:-'/etc/zm'}
@@ -187,6 +188,7 @@ verify_config() {
         echo "Yolo V4 (INSTALL_YOLOV4): ${INSTALL_YOLOV4}"
         echo "Tiny Yolo V4 (INSTALL_TINYYOLOV4)": ${INSTALL_TINYYOLOV4}
         echo "Google Coral Edge TPU (INSTALL_CORAL_EDGETPU)": ${INSTALL_CORAL_EDGETPU}
+        echo "ONNX YOLOv11 (INSTALL_YOLOV11)": ${INSTALL_YOLOV11}
 
     fi
     echo
@@ -328,10 +330,14 @@ install_hook() {
                 'yolov4.weights' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/yolov4/yolov4.weights'
         fi
 
-        echo 'Checking for ONNX YOLOv11 model files...'
-        download_if_needed ultralytics \
-            'yolo11n.onnx' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/ultralytics/yolo11n.onnx' \
-            'yolo11s.onnx' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/ultralytics/yolo11s.onnx'
+        if [ "${INSTALL_YOLOV11}" == "yes" ]
+        then
+            echo 'Checking for ONNX YOLOv11 model files...'
+            print_warning 'Note, you need OpenCV 4.10+ for ONNX YOLOv11 to work'
+            download_if_needed ultralytics \
+                'yolo11n.onnx' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/ultralytics/yolo11n.onnx' \
+                'yolo11s.onnx' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/ultralytics/yolo11s.onnx'
+        fi
     else
         echo "Skipping model downloads"
     fi
@@ -494,6 +500,7 @@ display_help() {
         INSTALL_YOLOV4: Download and install yolov4 model (default:yes)
         INSTALL_TINY_YOLOV4: Download and install tiny yolov4 model (default:yes)
         INSTALL_CORAL_EDGETPU: Download and install coral models (default:no)
+        INSTALL_YOLOV11: Download and install ONNX YOLOv11 models (default:yes). Needs OpenCV 4.10+
 
         TARGET_CONFIG: Path to ES config dir (default: /etc/zm)
         TARGET_DATA: Path to ES data dir (default: /var/lib/zmeventnotification)
