@@ -263,9 +263,18 @@ def main_handler():
         log.init(name='zmesdetect',override=g.config['pyzm_overrides'])
     g.logger = log
     
+    import re
+    import ssl
+    import pickle
+    import json
+    import time
+    import requests
+    import subprocess
+    import ast
+
     es_version='(?)'
     try:
-        es_version=subprocess.check_output(['/usr/bin/zmeventnotification.pl', '--version']).decode('ascii')
+        es_version=subprocess.check_output(['/usr/bin/zmeventnotification.pl', '--version']).decode('ascii').strip()
     except:
         pass
 
@@ -275,15 +284,6 @@ def main_handler():
         g.logger.Fatal('{}: You might not have installed OpenCV as per install instructions. Remember, it is NOT automatically installed'.format(e))
 
     g.logger.Debug(1, '---------| app:{}, pyzm:{}, ES:{} , OpenCV:{}|------------'.format(__app_version__, pyzm_version, es_version, cv2.__version__))
-   
-    import re
-    import ssl
-    import pickle
-    import json
-    import time
-    import requests
-    import subprocess
-    import ast 
 
     # load modules that depend on cv2
     try:
