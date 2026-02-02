@@ -332,28 +332,71 @@ install_hook() {
 
         if [ "${INSTALL_ULTRALYTICS}" == "yes" ]
         then
-            echo 'Checking for Ultralytics dependencies...'
+            # Check if ultralytics and torch are already present
+            local _ul_torch_present=yes
+            ${PYTHON} -c "import torch" 2>/dev/null || _ul_torch_present=no
+            ${PYTHON} -c "import ultralytics" 2>/dev/null || _ul_torch_present=no
 
-            # Check/install torch
-            if ! ${PYTHON} -c "import torch" 2>/dev/null; then
-                echo 'torch not found, installing...'
-                if command -v nvidia-smi >/dev/null 2>&1; then
-                    echo 'CUDA detected via nvidia-smi, installing GPU version of PyTorch...'
-                    ${PY_SUDO} ${PIP} install torch torchvision --index-url https://download.pytorch.org/whl/cu124 ${PIP_COMPAT}
-                else
-                    echo 'No CUDA detected, installing CPU-only PyTorch...'
-                    ${PY_SUDO} ${PIP} install torch torchvision ${PIP_COMPAT}
+            if [ "${_ul_torch_present}" == "no" ]; then
+                echo
+                print_warning "Ultralytics and/or PyTorch need to be installed."
+                echo "         NOTE: Automated installation of PyTorch/Ultralytics can be"
+                echo "         unreliable, especially with source-built OpenCV or custom"
+                echo "         CUDA setups. If this fails, please install manually following:"
+                echo "           PyTorch:      https://pytorch.org/get-started/locally/"
+                echo "           Ultralytics:  https://docs.ultralytics.com/quickstart/"
+                echo
+                if [[ ${INTERACTIVE} == 'yes' ]]; then
+                    if ! confirm 'Attempt automatic install of PyTorch/Ultralytics?' 'y/N'; then
+                        echo 'Skipping Ultralytics install. Please install manually.'
+                        echo 'Model files will still be downloaded below.'
+                        _ul_torch_present=skip
+                    fi
                 fi
-            else
-                echo 'torch already installed'
             fi
 
-            # Check/install ultralytics
-            if ! ${PYTHON} -c "import ultralytics" 2>/dev/null; then
-                echo 'ultralytics not found, installing...'
-                ${PY_SUDO} ${PIP} install ultralytics ${PIP_COMPAT}
-            else
-                echo 'ultralytics already installed'
+            if [ "${_ul_torch_present}" != "skip" ]; then
+                # Check/install torch (--no-deps to avoid overwriting numpy/opencv)
+                if ! ${PYTHON} -c "import torch" 2>/dev/null; then
+                    echo 'torch not found, installing...'
+                    if command -v nvidia-smi >/dev/null 2>&1; then
+                        echo 'CUDA detected via nvidia-smi, installing GPU version of PyTorch...'
+                        ${PY_SUDO} ${PIP} install --no-deps torch torchvision --index-url https://download.pytorch.org/whl/cu124 ${PIP_COMPAT}
+                        # Install torch deps that aren't already present
+                        ${PY_SUDO} ${PIP} install filelock typing-extensions sympy networkx jinja2 fsspec ${PIP_COMPAT}
+                    else
+                        echo 'No CUDA detected, installing CPU-only PyTorch...'
+                        ${PY_SUDO} ${PIP} install --no-deps torch torchvision ${PIP_COMPAT}
+                        ${PY_SUDO} ${PIP} install filelock typing-extensions sympy networkx jinja2 fsspec ${PIP_COMPAT}
+                    fi
+                else
+                    echo 'torch already installed'
+                fi
+
+                # Install ultralytics deps that aren't already provided by
+                # the source-built OpenCV or separately installed PyTorch.
+                # We use --no-deps for ultralytics itself to prevent pip from
+                # pulling in opencv-python or numpy wheels that would overwrite
+                # a source-built OpenCV or existing numpy.
+                echo 'Installing ultralytics dependencies (preserving existing opencv/numpy)...'
+                ${PY_SUDO} ${PIP} install matplotlib pillow psutil pyyaml requests scipy ultralytics-thop ${PIP_COMPAT}
+
+                if ! ${PYTHON} -c "import ultralytics" 2>/dev/null; then
+                    echo 'ultralytics not found, installing (--no-deps)...'
+                    ${PY_SUDO} ${PIP} install --no-deps ultralytics ${PIP_COMPAT}
+                else
+                    echo 'ultralytics already installed'
+                fi
+
+                # Verify installation
+                if ! ${PYTHON} -c "import ultralytics" 2>/dev/null; then
+                    print_error "Ultralytics installation failed."
+                    echo "         Please install manually following:"
+                    echo "           PyTorch:      https://pytorch.org/get-started/locally/"
+                    echo "           Ultralytics:  https://docs.ultralytics.com/quickstart/"
+                    echo "         IMPORTANT: Use 'pip install --no-deps ultralytics' to avoid"
+                    echo "         overwriting your source-built OpenCV or existing numpy."
+                fi
             fi
 
             echo 'Checking for Ultralytics model files...'
