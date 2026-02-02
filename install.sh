@@ -29,7 +29,6 @@ INSTALL_TINYYOLOV3=${INSTALL_TINYYOLOV3:-yes}
 INSTALL_YOLOV4=${INSTALL_YOLOV4:-yes}
 INSTALL_TINYYOLOV4=${INSTALL_TINYYOLOV4:-yes}
 INSTALL_CORAL_EDGETPU=${INSTALL_CORAL_EDGETPU:-no}
-INSTALL_ULTRALYTICS=${INSTALL_ULTRALYTICS:-no}
 
 
 TARGET_CONFIG=${TARGET_CONFIG:-'/etc/zm'}
@@ -188,7 +187,6 @@ verify_config() {
         echo "Yolo V4 (INSTALL_YOLOV4): ${INSTALL_YOLOV4}"
         echo "Tiny Yolo V4 (INSTALL_TINYYOLOV4)": ${INSTALL_TINYYOLOV4}
         echo "Google Coral Edge TPU (INSTALL_CORAL_EDGETPU)": ${INSTALL_CORAL_EDGETPU}
-        echo "Ultralytics YOLOv8/v11 (INSTALL_ULTRALYTICS)": ${INSTALL_ULTRALYTICS}
 
     fi
     echo
@@ -289,9 +287,9 @@ install_hook() {
             echo 'Checking for YoloV3 data files....'
             [ -f "${TARGET_DATA}/models/yolov3/yolov3_classes.txt" ] && rm "${TARGET_DATA}/models/yolov3/yolov3_classes.txt"
             download_if_needed yolov3 \
-                'yolov3.cfg' 'https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg' \
-                'coco.names' 'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names' \
-                'yolov3.weights' 'https://pjreddie.com/media/files/yolov3.weights'
+                'yolov3.cfg' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/yolov3/yolov3.cfg' \
+                'coco.names' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/yolov3/coco.names' \
+                'yolov3.weights' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/yolov3/yolov3.weights'
         fi
 
         if [ "${INSTALL_TINYYOLOV3}" == "yes" ]
@@ -300,18 +298,18 @@ install_hook() {
             echo 'Checking for TinyYOLOV3 data files...'
             [ -f "${TARGET_DATA}/models/tinyyolov3/yolov3-tiny.txt" ] && rm "${TARGET_DATA}/models/yolov3/yolov3-tiny.txt"
             download_if_needed tinyyolov3 \
-                'yolov3-tiny.cfg' 'https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg' \
-                'coco.names' 'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names' \
-                'yolov3-tiny.weights' 'https://pjreddie.com/media/files/yolov3-tiny.weights'
+                'yolov3-tiny.cfg' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/tinyyolov3/yolov3-tiny.cfg' \
+                'coco.names' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/tinyyolov3/coco.names' \
+                'yolov3-tiny.weights' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/tinyyolov3/yolov3-tiny.weights'
         fi
 
         if [ "${INSTALL_TINYYOLOV4}" == "yes" ]
         then
             echo 'Checking for TinyYOLOV4 data files...'
             download_if_needed tinyyolov4 \
-                'yolov4-tiny.cfg' 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4-tiny.cfg' \
-                'coco.names' 'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names' \
-                'yolov4-tiny.weights' 'https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre/yolov4-tiny.weights'
+                'yolov4-tiny.cfg' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/tinyyolov4/yolov4-tiny.cfg' \
+                'coco.names' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/tinyyolov4/coco.names' \
+                'yolov4-tiny.weights' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/tinyyolov4/yolov4-tiny.weights'
         fi
 
         if [ "${INSTALL_YOLOV4}" == "yes" ]
@@ -325,83 +323,15 @@ install_hook() {
             echo 'Checking for YOLOV4 data files...'
             print_warning 'Note, you need OpenCV 4.4+ for Yolov4 to work'
             download_if_needed yolov4 \
-                'yolov4.cfg' 'https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4.cfg' \
-                'coco.names' 'https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names' \
-                'yolov4.weights' 'https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights'
+                'yolov4.cfg' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/yolov4/yolov4.cfg' \
+                'coco.names' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/yolov4/coco.names' \
+                'yolov4.weights' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/yolov4/yolov4.weights'
         fi
 
-        if [ "${INSTALL_ULTRALYTICS}" == "yes" ]
-        then
-            local _ul_skip_install=no
-
-            echo
-            print_warning "Ultralytics/PyTorch installation can be unreliable,"
-            echo "         especially with source-built OpenCV or custom CUDA setups."
-            echo "         If this install fails, please install manually following:"
-            echo "           PyTorch:      https://pytorch.org/get-started/locally/"
-            echo "           Ultralytics:  https://docs.ultralytics.com/quickstart/"
-            echo "         IMPORTANT: Use 'pip install --no-deps ultralytics' to avoid"
-            echo "         overwriting your source-built OpenCV or existing numpy."
-            echo
-
-            if [[ ${INTERACTIVE} == 'yes' ]]; then
-                if ! confirm 'Install Ultralytics and its dependencies?' 'y/N'; then
-                    echo 'Skipping Ultralytics package install. Model files will still be downloaded.'
-                    _ul_skip_install=yes
-                fi
-            fi
-
-            if [ "${_ul_skip_install}" == "no" ]; then
-                # Check/install torch (--no-deps to avoid overwriting numpy/opencv)
-                if ! ${PYTHON} -c "import torch" 2>/dev/null; then
-                    echo 'torch not found, installing...'
-                    if command -v nvidia-smi >/dev/null 2>&1; then
-                        echo 'CUDA detected via nvidia-smi, installing GPU version of PyTorch...'
-                        ${PY_SUDO} ${PIP} install --no-deps torch torchvision --index-url https://download.pytorch.org/whl/cu124 ${PIP_COMPAT}
-                        # Install torch deps that aren't already present
-                        ${PY_SUDO} ${PIP} install filelock typing-extensions sympy networkx jinja2 fsspec ${PIP_COMPAT}
-                    else
-                        echo 'No CUDA detected, installing CPU-only PyTorch...'
-                        ${PY_SUDO} ${PIP} install --no-deps torch torchvision ${PIP_COMPAT}
-                        ${PY_SUDO} ${PIP} install filelock typing-extensions sympy networkx jinja2 fsspec ${PIP_COMPAT}
-                    fi
-                else
-                    echo 'torch already installed'
-                fi
-
-                # Install ultralytics deps that aren't already provided by
-                # the source-built OpenCV or separately installed PyTorch.
-                # We use --no-deps for ultralytics itself to prevent pip from
-                # pulling in opencv-python or numpy wheels that would overwrite
-                # a source-built OpenCV or existing numpy.
-                echo 'Installing ultralytics dependencies (preserving existing opencv/numpy)...'
-                ${PY_SUDO} ${PIP} install matplotlib pillow psutil pyyaml requests scipy ultralytics-thop ${PIP_COMPAT}
-
-                if ! ${PYTHON} -c "import ultralytics" 2>/dev/null; then
-                    echo 'ultralytics not found, installing (--no-deps)...'
-                    ${PY_SUDO} ${PIP} install --no-deps ultralytics ${PIP_COMPAT}
-                else
-                    echo 'ultralytics already installed'
-                fi
-
-                # Verify installation
-                if ! ${PYTHON} -c "import ultralytics" 2>/dev/null; then
-                    print_error "Ultralytics installation failed."
-                    echo "         Please install manually following:"
-                    echo "           PyTorch:      https://pytorch.org/get-started/locally/"
-                    echo "           Ultralytics:  https://docs.ultralytics.com/quickstart/"
-                    echo "         IMPORTANT: Use 'pip install --no-deps ultralytics' to avoid"
-                    echo "         overwriting your source-built OpenCV or existing numpy."
-                fi
-            fi
-
-            echo 'Checking for Ultralytics model files...'
-            download_if_needed ultralytics \
-                'yolov8n.pt' 'https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8n.pt' \
-                'yolov8s.pt' 'https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8s.pt' \
-                'yolo11n.pt' 'https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.pt' \
-                'yolo11s.pt' 'https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11s.pt'
-        fi
+        echo 'Checking for ONNX YOLOv11 model files...'
+        download_if_needed ultralytics \
+            'yolo11n.onnx' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/ultralytics/yolo11n.onnx' \
+            'yolo11s.onnx' 'https://github.com/pliablepixels/zmes_ai_assets/raw/master/models/ultralytics/yolo11s.onnx'
     else
         echo "Skipping model downloads"
     fi
@@ -564,7 +494,6 @@ display_help() {
         INSTALL_YOLOV4: Download and install yolov4 model (default:yes)
         INSTALL_TINY_YOLOV4: Download and install tiny yolov4 model (default:yes)
         INSTALL_CORAL_EDGETPU: Download and install coral models (default:no)
-        INSTALL_ULTRALYTICS: Download and install Ultralytics YOLOv8/v11 models (default:no)
 
         TARGET_CONFIG: Path to ES config dir (default: /etc/zm)
         TARGET_DATA: Path to ES data dir (default: /var/lib/zmeventnotification)
