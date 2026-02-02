@@ -16,7 +16,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument('-c',
                     '--config',
-                    default='/etc/zm/objectconfig.ini',
+                    default='/etc/zm/objectconfig.yml',
                     help='config file with path')
 
     ap.add_argument('-s',

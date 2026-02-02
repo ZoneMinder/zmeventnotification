@@ -24,7 +24,7 @@ cleanup() {
 
 
 # change this to the path of the object detection config"
-CONFIG_FILE="/etc/zm/objectconfig.ini"
+CONFIG_FILE="/etc/zm/objectconfig.yml"
 EVENT_PATH="$5"
 REASON="$4"
 

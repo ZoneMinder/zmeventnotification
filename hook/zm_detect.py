@@ -335,37 +335,26 @@ def main_handler():
     stream_options = {}
     secrets = None 
     
-    if g.config['ml_sequence'] and g.config['use_sequence'] == 'yes':
-        g.logger.Debug(2, 'using ml_sequence')
-        ml_options = g.config['ml_sequence']
-        secrets = pyzmutils.read_config(g.config['secrets'])
-        ml_options = pyzmutils.template_fill(input_str=ml_options, config=None, secrets=secrets._sections.get('secrets'))
-        ml_options = ast.literal_eval(ml_options)
-        g.config['ml_sequence'] = ml_options
-    else:
-        g.logger.Debug(2, 'mapping legacy ml data from config')
-        ml_options = utils.convert_config_to_ml_sequence()
-        g.config['ml_sequence'] = ml_options
+    if not g.config['ml_sequence']:
+        g.logger.Error('ml_sequence not found in config. Cannot proceed.')
+        exit(1)
 
-    if g.config['stream_sequence'] and g.config['use_sequence'] == 'yes': # new sequence
-        g.logger.Debug(2, 'using stream_sequence')
-        stream_options = g.config['stream_sequence']
+    g.logger.Debug(2, 'using ml_sequence')
+    ml_options = g.config['ml_sequence']
+    # ml_sequence is already a dict from YAML, but we still need secret substitution
+    secrets = pyzmutils.read_config(g.config['secrets'])
+    ml_options = pyzmutils.template_fill(input_str=str(ml_options), config=None, secrets=secrets._sections.get('secrets'))
+    ml_options = ast.literal_eval(ml_options)
+    g.config['ml_sequence'] = ml_options
+
+    if not g.config['stream_sequence']:
+        g.logger.Error('stream_sequence not found in config. Cannot proceed.')
+        exit(1)
+
+    g.logger.Debug(2, 'using stream_sequence')
+    stream_options = g.config['stream_sequence']
+    if isinstance(stream_options, str):
         stream_options = ast.literal_eval(stream_options)
-    else: # legacy
-        g.logger.Debug(2, 'mapping legacy stream data from config')
-        if g.config['detection_mode'] == 'all':
-            g.config['detection_mode'] = 'most_models'
-        frame_set = g.config['frame_id']
-        if g.config['frame_id'] == 'bestmatch':
-            if g.config['bestmatch_order'] == 's,a':
-                frame_set = 'snapshot,alarm'
-            else:
-                frame_set = 'alarm,snapshot'
-        stream_options['resize'] =int(g.config['resize']) if g.config['resize'] != 'no' else None
-
-        stream_options['strategy'] = g.config['detection_mode'] 
-        stream_options['frame_set'] = frame_set       
-        stream_options['disable_ssl_cert_check'] =  False if g.config['allow_self_signed']=='no' else True
 
 
     # These are stream options that need to be set outside of supplied configs         

@@ -408,7 +408,13 @@ install_es_config() {
 # move Hook config files
 install_hook_config() {
     echo 'Replacing Hook config file'
-    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.ini "${TARGET_CONFIG}" &&
+    # Auto-migrate from INI to YAML if needed
+    if [ -f "${TARGET_CONFIG}/objectconfig.ini" ] && [ ! -f "${TARGET_CONFIG}/objectconfig.yml" ]; then
+        echo "Found existing objectconfig.ini but no objectconfig.yml - running migration..."
+        ${PYTHON} tools/config_migrate_yaml.py -c "${TARGET_CONFIG}/objectconfig.ini" -o "${TARGET_CONFIG}/objectconfig.yml" &&
+            print_success "migration complete" || print_warning "migration failed, installing default YAML config"
+    fi
+    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.yml "${TARGET_CONFIG}" &&
         print_success "config copied" || print_error "could not copy config"
     echo "====> Remember to fill in the right values in the config files, or your system won't work! <============="
     echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN_HOOK}/zm_event_start.sh! <========"
@@ -483,9 +489,9 @@ display_help() {
         --install-opencv: Install python3-opencv (default)
         --no-install-opencv: Skip python3-opencv installation
 
-        --hook-config-upgrade: Updates objectconfig.ini with any new/modified attributes 
-        and creates a sample output file. You will need to manually merge/update/review your real config
-        --no-hook-config-upgrade: skips aboe process
+        --hook-config-upgrade: Upgrades legacy objectconfig.ini and migrates to objectconfig.yml
+        You will need to manually review the migrated config
+        --no-hook-config-upgrade: skips above process
 
         In addition to the above, you can also override all variables used for your own needs 
         Overridable variables are: 
@@ -722,12 +728,22 @@ then
 EOF
 fi
 
-if [ "${HOOK_CONFIG_UPGRADE}" == "yes" ] 
+if [ "${HOOK_CONFIG_UPGRADE}" == "yes" ]
 then
     echo
-    echo "Creating a migrated objectconfig if required"
-    ./tools/config_upgrade.py -c "${TARGET_CONFIG}/objectconfig.ini" 
-else 
+    # If old INI exists, run legacy upgrade first, then migrate to YAML
+    if [ -f "${TARGET_CONFIG}/objectconfig.ini" ]; then
+        echo "Running legacy config upgrade on objectconfig.ini..."
+        ./tools/config_upgrade.py -c "${TARGET_CONFIG}/objectconfig.ini"
+        if [ ! -f "${TARGET_CONFIG}/objectconfig.yml" ]; then
+            echo "Migrating objectconfig.ini to objectconfig.yml..."
+            ${PYTHON} tools/config_migrate_yaml.py -c "${TARGET_CONFIG}/objectconfig.ini" -o "${TARGET_CONFIG}/objectconfig.yml" &&
+                print_success "YAML migration complete" || print_warning "YAML migration failed"
+        fi
+    else
+        echo "No legacy objectconfig.ini found, skipping upgrade"
+    fi
+else
     echo "Skipping hook config upgrade process"
 fi
 

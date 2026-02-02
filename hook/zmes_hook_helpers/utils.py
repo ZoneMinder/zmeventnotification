@@ -15,116 +15,14 @@ import ast
 import urllib.parse
 import traceback
 
+import yaml
 from configparser import ConfigParser
 import zmes_hook_helpers.common_params as g
 
-#from importlib import standard_library
-#standard_library.install_aliases()
 from urllib.error import HTTPError
 
 #resize polygons based on analysis scale
 
-
-
-
-def convert_config_to_ml_sequence():
-    ml_options={}
-    for ds in g.config['detection_sequence']:
-        if ds == 'object':
-        
-            ml_options['object'] = {
-                'general':{
-                    'pattern': g.config['object_detection_pattern'],
-                    'disable_locks': g.config['disable_locks'],
-                    'same_model_sequence_strategy': 'first' # 'first' 'most', 'most_unique'
-
-                },
-                'sequence': [{
-                    'tpu_max_processes': g.config['tpu_max_processes'],
-                    'tpu_max_lock_wait': g.config['tpu_max_lock_wait'],
-                    'gpu_max_processes': g.config['gpu_max_processes'],
-                    'gpu_max_lock_wait': g.config['gpu_max_lock_wait'],
-                    'cpu_max_processes': g.config['cpu_max_processes'],
-                    'cpu_max_lock_wait': g.config['cpu_max_lock_wait'],
-                    'max_detection_size': g.config['max_detection_size'],
-                    'object_config':g.config['object_config'],
-                    'object_weights':g.config['object_weights'],
-                    'object_labels': g.config['object_labels'],
-                    'object_min_confidence': g.config['object_min_confidence'],
-                    'object_framework':g.config['object_framework'],
-                    'object_processor': g.config['object_processor'],
-                }]
-            }
-        elif ds == 'face':
-            ml_options['face'] = {
-                'general':{
-                    'pattern': g.config['face_detection_pattern'],
-                    'same_model_sequence_strategy': 'first',
-                #    'pre_existing_labels':['person'],
-                },
-                'sequence': [{
-                    'tpu_max_processes': g.config['tpu_max_processes'],
-                    'tpu_max_lock_wait': g.config['tpu_max_lock_wait'],
-                    'gpu_max_processes': g.config['gpu_max_processes'],
-                    'gpu_max_lock_wait': g.config['gpu_max_lock_wait'],
-                    'cpu_max_processes': g.config['cpu_max_processes'],
-                    'cpu_max_lock_wait': g.config['cpu_max_lock_wait'],
-                    'face_detection_framework': g.config['face_detection_framework'],
-                    'face_recognition_framework': g.config['face_recognition_framework'],
-                    'face_processor': g.config['face_processor'],
-                    'known_images_path': g.config['known_images_path'],
-                    'face_model': g.config['face_model'],
-                    'face_train_model':g.config['face_train_model'],
-                    'unknown_images_path': g.config['unknown_images_path'],
-                    'unknown_face_name': g.config['unknown_face_name'],
-                    'save_unknown_faces': g.config['save_unknown_faces'],
-                    'save_unknown_faces_leeway_pixels': g.config['save_unknown_faces_leeway_pixels'],
-                    'face_recog_dist_threshold': g.config['face_recog_dist_threshold'],
-                    'face_num_jitters': g.config['face_num_jitters'],
-                    'face_upsample_times':g.config['face_upsample_times']
-                }]
-
-            }
-        elif ds == 'alpr':
-            ml_options['alpr'] = {
-                'general':{
-                    'pattern': g.config['alpr_detection_pattern'],
-                    'same_model_sequence_strategy': 'first',
-                #    'pre_existing_labels':['person'],
-                },
-                'sequence': [{
-                    'tpu_max_processes': g.config['tpu_max_processes'],
-                    'tpu_max_lock_wait': g.config['tpu_max_lock_wait'],
-                    'gpu_max_processes': g.config['gpu_max_processes'],
-                    'gpu_max_lock_wait': g.config['gpu_max_lock_wait'],
-                    'cpu_max_processes': g.config['cpu_max_processes'],
-                    'cpu_max_lock_wait': g.config['cpu_max_lock_wait'],
-                    'alpr_service': g.config['alpr_service'],
-                    'alpr_url': g.config['alpr_url'],
-                    'alpr_key': g.config['alpr_key'],
-                    'alpr_api_type': g.config['alpr_api_type'],
-                    'platerec_stats': g.config['platerec_stats'],
-                    'platerec_regions': g.config['platerec_regions'],
-                    'platerec_min_dscore': g.config['platerec_min_dscore'],
-                    'platerec_min_score': g.config['platerec_min_score'],
-                    'openalpr_recognize_vehicle': g.config['openalpr_recognize_vehicle'],
-                    'openalpr_country': g.config['openalpr_country'],
-                    'openalpr_state': g.config['openalpr_state'],
-                    'openalpr_min_confidence': g.config['openalpr_min_confidence'],
-                    'openalpr_cmdline_binary': g.config['openalpr_cmdline_binary'],
-                    'openalpr_cmdline_params': g.config['openalpr_cmdline_params'],
-                    'openalpr_cmdline_min_confidence': g.config['openalpr_cmdline_min_confidence'],
-                }]
-
-            }
-    ml_options['general'] =   {
-            'model_sequence': ','.join(str(e) for e in g.config['detection_sequence'])
-            #'model_sequence': 'object,face',        
-    }
-    if g.config['detection_mode'] == 'all':
-        g.logger.Debug(2, 'Changing detection_mode from all to most_models to adapt to new features')
-        g.config['detection_mode'] = 'most_models'
-    return ml_options
 
 def rescale_polygons(xfactor, yfactor):
     newps = []
@@ -141,7 +39,7 @@ def rescale_polygons(xfactor, yfactor):
 
 
 # converts a string of coordinates 'x1,y1 x2,y2 ...' to a tuple set. We use this
-# to parse the polygon parameters in the ini file
+# to parse the polygon parameters in the config file
 
 
 def str2tuple(str):
@@ -208,14 +106,7 @@ def import_zm_zones(mid, reason):
     c = input_file.read()
     j = json.loads(c)
 
-    # Now lets look at reason to see if we need to
-    # honor ZM motion zones
-
-    #reason_zones = [x.strip() for x in rz.split(',')]
-    #g.logger.Debug(1,'Found motion zones provided in alarm cause: {}'.format(reason_zones))
-
     for item in j['zones']:
-        #print ('********* ITEM TYPE {}'.format(item['Zone']['Type']))
         if item['Zone']['Type'] == 'Inactive':
             g.logger.Debug(2, 'Skipping {} as it is inactive'.format(item['Zone']['Name']))
             continue
@@ -336,175 +227,175 @@ def download_files(args):
 
 def get_pyzm_config(args):
     g.config['pyzm_overrides'] = {}
-    config_file = ConfigParser(interpolation=None, inline_comment_prefixes='#')
-    config_file.read(args.get('config'))
-    if config_file.has_option('general', 'pyzm_overrides'):
-        pyzm_overrides = config_file.get('general', 'pyzm_overrides')
-        g.config['pyzm_overrides'] =  ast.literal_eval(pyzm_overrides) if pyzm_overrides else {}
+    with open(args.get('config')) as f:
+        yml = yaml.safe_load(f)
+    if yml and 'general' in yml:
+        pyzm_overrides = yml['general'].get('pyzm_overrides')
+        if pyzm_overrides and isinstance(pyzm_overrides, dict):
+            g.config['pyzm_overrides'] = pyzm_overrides
+        elif pyzm_overrides and isinstance(pyzm_overrides, str):
+            g.config['pyzm_overrides'] = ast.literal_eval(pyzm_overrides) if pyzm_overrides else {}
 
 
 def process_config(args, ctx):
-    # parse config file into a dictionary with defaults
+    # parse YAML config file into a dictionary with defaults
 
-    #g.config = {}
     has_secrets = False
     secrets_file = None
 
     def _correct_type(val, t):
+        if val is None:
+            return None
         if t == 'int':
             return int(val)
-        elif t == 'eval' or t == 'dict':
+        elif t == 'eval':
+            if isinstance(val, (dict, list, tuple)):
+                return val
             return ast.literal_eval(val) if val else None
+        elif t == 'dict':
+            if isinstance(val, dict):
+                return val
+            if isinstance(val, str):
+                return ast.literal_eval(val) if val else None
+            return val
         elif t == 'str_split':
+            if isinstance(val, list):
+                return val
             return str_split(val) if val else None
         elif t == 'string':
-            return val
+            return str(val) if val is not None else val
         elif t == 'float':
             return float(val)
         else:
             g.logger.Error(
-                'Unknown conversion type {} for config key:{}'.format(
-                    e['type'], e['key']))
+                'Unknown conversion type {} for config key'.format(t))
             return val
 
-    def _set_config_val(k, v):
-        # internal function to parse all keys
-        if config_file.has_section(v['section']):
-            val = config_file[v['section']].get(k, v.get('default'))
+    def _resolve_secret(val):
+        """If val starts with '!', replace with secret token value."""
+        if not isinstance(val, str) or not val or val[0] != '!':
+            return val
+        g.logger.Debug(2, 'Secret token found in config: {}'.format(val))
+        if not has_secrets:
+            raise ValueError('Secret token found, but no secret file specified')
+        if secrets_file.has_option('secrets', val[1:]):
+            return secrets_file.get('secrets', val[1:])
         else:
-            val = v.get('default')
-            g.logger.Debug(1,
-                'Section [{}] missing in config file, using key:{} default: {}'
-                .format(v['section'], k, val))
+            raise ValueError('secret token {} not found in secrets file'.format(val))
 
-        if val and val[0] == '!':  # its a secret token, so replace
-            g.logger.Debug(2,'Secret token found in config: {}'.format(val))
-            if not has_secrets:
-                raise ValueError(
-                    'Secret token found, but no secret file specified')
-            if secrets_file.has_option('secrets', val[1:]):
-                vn = secrets_file.get('secrets', val[1:])
-            #g.logger.Debug (1,'Replacing {} with {}'.format(val,vn))
-                val = vn
-            else:
-                raise ValueError(
-                    'secret token {} not found in secrets file {}'.format(
-                        val, secrets_filename))
-
-        g.config[k] = _correct_type(val, v['type'])
-        if k.find('password') == -1:
-            dval = g.config[k]
-        else:
-            dval = '***********'
-        #g.logger.Debug (1,'Config: setting {} to {}'.format(k,dval))
-
-    # main
     try:
-        config_file = ConfigParser(interpolation=None, inline_comment_prefixes='#')
         g.logger.Info('Reading config from: {}'.format(args.get('config')))
-        config_file.read(args.get('config'))
+        with open(args.get('config')) as f:
+            yml = yaml.safe_load(f)
 
-        if config_file.has_option('general', 'secrets'):
-            secrets_filename = config_file.get('general', 'secrets')
+        if not yml:
+            raise ValueError('Config file is empty or invalid YAML')
+
+        # Handle secrets file (still INI format)
+        secrets_filename = None
+        if yml.get('general', {}).get('secrets'):
+            secrets_filename = yml['general']['secrets']
             g.logger.Info('Reading secrets from: {}'.format(secrets_filename))
             has_secrets = True
             g.config['secrets'] = secrets_filename
             secrets_file = ConfigParser(interpolation=None, inline_comment_prefixes='#')
-            try:
-                with open(secrets_filename) as f:
-                    secrets_file.read_file(f)
-            except:
-                raise
+            with open(secrets_filename) as f:
+                secrets_file.read_file(f)
         else:
-            g.logger.Debug(1,'No secrets file configured')
-        # now read config values
+            g.logger.Debug(1, 'No secrets file configured')
 
-        # first, fill in config with default values
-        for k,v in g.config_vals.items():
+        # First, fill in config with default values from config_vals
+        for k, v in g.config_vals.items():
             val = v.get('default', None)
             g.config[k] = _correct_type(val, v['type'])
-        # now iterate the file
-        for sec in config_file.sections():
-            if sec.startswith('monitor-'):
-                #g.logger.Debug(2, 'Skipping {} for now'.format(sec))
-                continue
-            if sec == 'secrets':
-                continue
-            for (k, v) in config_file.items(sec):
-                if g.config_vals.get(k):
-                    _set_config_val(k,g.config_vals[k] )
-                else:
-                    #g.logger.Debug(2, 'storing unknown attribute {}={}'.format(k,v))
-                    g.config[k] = v 
-                    #_set_config_val(k,{'section': sec, 'default': None, 'type': 'string'} )
 
+        # Flatten YAML sections into g.config
+        flat_sections = ['general', 'animation', 'remote', 'object', 'face', 'alpr']
+        for section in flat_sections:
+            if section not in yml:
+                continue
+            for k, v in yml[section].items():
+                # Resolve secret tokens for string values
+                v = _resolve_secret(v)
+                if k in g.config_vals:
+                    g.config[k] = _correct_type(v, g.config_vals[k]['type'])
+                else:
+                    g.config[k] = v
+
+        # Handle [ml] section
+        if 'ml' in yml:
+            ml_section = yml['ml']
+            for k, v in ml_section.items():
+                if k in ('ml_sequence', 'stream_sequence'):
+                    # These are native dicts from YAML - store directly
+                    g.config[k] = v
+                else:
+                    v = _resolve_secret(v)
+                    if k in g.config_vals:
+                        g.config[k] = _correct_type(v, g.config_vals[k]['type'])
+                    else:
+                        g.config[k] = v
+
+        # SSL settings
         if g.config['allow_self_signed'] == 'yes':
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
-            g.logger.Debug(1,'allowing self-signed certs to work...')
+            g.logger.Debug(1, 'allowing self-signed certs to work...')
         else:
-            g.logger.Debug(1,'strict SSL cert checking is on...')           
-
+            g.logger.Debug(1, 'strict SSL cert checking is on...')
 
         g.polygons = []
-        poly_patterns = []
 
-
-        # Check if we have a custom overrides for this monitor
-        g.logger.Debug(2,'Now checking for monitor overrides')
+        # Check if we have custom overrides for this monitor
+        g.logger.Debug(2, 'Now checking for monitor overrides')
         if 'monitorid' in args and args.get('monitorid'):
-            sec = 'monitor-{}'.format(args.get('monitorid'))
-            if sec in config_file:
-                # we have a specific section for this monitor
-                for item in config_file[sec].items():
-                    k = item[0]
-                    v = item[1]
-                    #g.config[k] = v
+            mid = args.get('monitorid')
+            monitors = yml.get('monitors', {})
 
-                    if k.endswith('_zone_detection_pattern'):
-                        zone_name = k.split('_zone_detection_pattern')[0]
-                        g.logger.Debug(2, 'found zone specific pattern:{} storing'.format(zone_name))
-                        poly_patterns.append({'name': zone_name, 'pattern':v})
-                        continue
-                    else:
-                        if k in g.config_vals:
-                            # This means its a legit config key that needs to be overridden
-                            g.logger.Debug(3,
-                                '[{}] overrides key:{} with value:{}'.format(
-                                    sec, k, v))
-                            g.config[k] = _correct_type(v,
-                                                        g.config_vals[k]['type'])
+            # Try both int and string keys
+            monitor_cfg = monitors.get(int(mid)) if mid.isdigit() else None
+            if monitor_cfg is None:
+                monitor_cfg = monitors.get(mid)
+            if monitor_cfg is None:
+                monitor_cfg = monitors.get(str(mid))
+
+            if monitor_cfg:
+                # Process zone definitions
+                zones = monitor_cfg.get('zones', {})
+                for zone_name, zone_data in zones.items():
+                    coords_str = zone_data.get('coords', '')
+                    if coords_str:
+                        if g.config['only_triggered_zm_zones'] != 'yes':
+                            p = str2tuple(coords_str)
+                            pattern = zone_data.get('detection_pattern', None)
+                            g.polygons.append({
+                                'name': zone_name,
+                                'value': p,
+                                'pattern': pattern
+                            })
+                            g.logger.Debug(2, 'adding polygon: {} [{}] pattern={}'.format(
+                                zone_name, coords_str, pattern))
                         else:
-                            if k.startswith(('object_','face_', 'alpr_')):
-                                g.logger.Debug(2,'assuming {} is an ML sequence, adding to config'.format(k))
-                            else:
-                                # This means its a polygon for the monitor or an unknown str
-                                try:
-                                    p = str2tuple(v) # if not poly, exception will be thrown
-                                    if not g.config['only_triggered_zm_zones'] == 'yes':
-                                        g.polygons.append({'name': k, 'value': p,'pattern': None})
-                                        g.logger.Debug(2,'adding polygon: {} [{}]'.format(k, v ))
-                                    else:
-                                        g.logger.Debug (2,'ignoring polygon: {} as only_triggered_zm_zones is true'.format(k))
-                                except Exception as e:
-                                    g.logger.Debug(2,'{} is not a polygon, adding it as unknown string key'.format(k))
-                                    g.config[k]=v
-                            
-            # now import zones if needed
-            # this should be done irrespective of a monitor section
+                            g.logger.Debug(2, 'ignoring polygon: {} as only_triggered_zm_zones is true'.format(zone_name))
+
+                # Apply config overrides from monitor section
+                for k, v in monitor_cfg.items():
+                    if k in ('zones',):
+                        continue
+                    v = _resolve_secret(v)
+                    if k in g.config_vals:
+                        g.logger.Debug(3, '[monitor-{}] overrides key:{} with value:{}'.format(mid, k, v))
+                        g.config[k] = _correct_type(v, g.config_vals[k]['type'])
+                    elif k in ('ml_sequence', 'stream_sequence'):
+                        g.config[k] = v
+                    else:
+                        g.config[k] = v
+
+            # Import ZM zones if needed
             if g.config['only_triggered_zm_zones'] == 'yes':
                 g.config['import_zm_zones'] = 'yes'
             if g.config['import_zm_zones'] == 'yes':
                 import_zm_zones(args.get('monitorid'), args.get('reason'))
-            
-            # finally, iterate polygons and put in detection patterns
-            for poly in g.polygons:
-                for poly_pat in poly_patterns:
-                    if poly['name'] == poly_pat['name']:
-                        poly['pattern'] = poly_pat['pattern']
-                        g.logger.Debug(2, 'replacing match pattern for polygon:{} with: {}'.format( poly['name'],poly_pat['pattern'] ))
-
-
         else:
             g.logger.Info(
                 'Ignoring monitor specific settings, as you did not provide a monitor id'
@@ -516,30 +407,60 @@ def process_config(args, ctx):
         exit(0)
 
     # Now lets make sure we take care of parameter substitutions {{}}
-
-
-    g.logger.Debug (3,'Finally, doing parameter substitution')
+    g.logger.Debug(3, 'Finally, doing parameter substitution')
     p = r'{{(\w+?)}}'
-    for gk, gv in g.config.items():
-        #input ('Continue')
-        gv = '{}'.format(gv)
-        #if not isinstance(gv, str):
-        #    continue
+
+    def _substitute_str(s):
+        """Repeatedly substitute {{key}} in a string until no more replacements."""
         while True:
-            matches = re.findall(p,gv)
+            matches = re.findall(p, s)
             replaced = False
             for match_key in matches:
-                if match_key in g.config:
+                if match_key in g.config and not isinstance(g.config[match_key], (dict, list)):
                     replaced = True
-                    new_val = g.config[gk].replace('{{' + match_key + '}}',str(g.config[match_key]))
-                    #print ('replacing {} with {}'.format(g.config[gk], new_val))
-                    g.config[gk] = new_val
-                    gv = new_val
+                    s = s.replace('{{' + match_key + '}}', str(g.config[match_key]))
                 else:
-                    g.logger.Debug(3, 'substitution key: {} not found'.format(match_key))
+                    g.logger.Debug(3, 'substitution key: {} not found or is a complex type'.format(match_key))
             if not replaced:
                 break
+        return s
 
+    def _coerce_numeric(val):
+        """Convert a string to int or float if it looks like a number."""
+        if not isinstance(val, str):
+            return val
+        try:
+            return int(val)
+        except ValueError:
+            pass
+        try:
+            return float(val)
+        except ValueError:
+            pass
+        return val
+
+    def _substitute_deep(obj):
+        """Recursively substitute {{key}} in nested dicts/lists,
+        then coerce pure numeric strings back to numbers."""
+        if isinstance(obj, str):
+            result = _substitute_str(obj)
+            return _coerce_numeric(result)
+        elif isinstance(obj, dict):
+            return {k: _substitute_deep(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [_substitute_deep(item) for item in obj]
+        return obj
+
+    # First pass: substitute flat string config values
+    for gk, gv in g.config.items():
+        if not isinstance(gv, str):
+            continue
+        g.config[gk] = _substitute_str(gv)
+
+    # Second pass: deep-substitute nested structures (ml_sequence, stream_sequence)
+    for gk in ('ml_sequence', 'stream_sequence'):
+        if gk in g.config and isinstance(g.config[gk], dict):
+            g.config[gk] = _substitute_deep(g.config[gk])
 
     # Now munge config if testing args provide
     if args.get('file'):
@@ -547,10 +468,7 @@ def process_config(args, ctx):
         g.config['write_image_to_zm'] = 'no'
         g.polygons = []
 
-
-    if  args.get('output_path'):
-        g.logger.Debug (1,'Output path modified to {}'.format(args.get('output_path')))
+    if args.get('output_path'):
+        g.logger.Debug(1, 'Output path modified to {}'.format(args.get('output_path')))
         g.config['image_path'] = args.get('output_path')
         g.config['write_debug_image'] = 'yes'
-
-  

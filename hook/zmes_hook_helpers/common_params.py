@@ -61,7 +61,7 @@ config_vals = {
         },
         'pyzm_overrides': {
             'section': 'general',
-            'default': "{}",
+            'default': {},
             'type': 'dict',
 
         },
@@ -163,16 +163,6 @@ config_vals = {
             'default': 'yes',
             'type': 'string'
         },
-        'detection_sequence':{
-            'section': 'general',
-            'default': 'object',
-            'type': 'str_split'
-        },
-        'detection_mode': {
-            'section':'general',
-            'default':'all',
-            'type':'string'
-        },
         'import_zm_zones':{
             'section': 'general',
             'default': 'no',
@@ -258,20 +248,15 @@ config_vals = {
             'default': 'no',
             'type': 'string'
         },
-        'use_sequence': {
-            'section': 'ml',
-            'default': 'yes',
-            'type': 'string'
-        },
         'ml_sequence': {
             'section': 'ml',
             'default': None,
-            'type': 'string'
+            'type': 'dict'
         },
         'stream_sequence': {
             'section': 'ml',
             'default': None,
-            'type': 'string'
+            'type': 'dict'
         },
      
      
