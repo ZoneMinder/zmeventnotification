@@ -16,7 +16,6 @@ import urllib.parse
 import traceback
 
 import yaml
-from configparser import ConfigParser
 import zmes_hook_helpers.common_params as g
 
 from urllib.error import HTTPError
@@ -178,8 +177,9 @@ def process_config(args, ctx):
         g.logger.Debug(2, 'Secret token found in config: {}'.format(val))
         if not has_secrets:
             raise ValueError('Secret token found, but no secret file specified')
-        if secrets_file.has_option('secrets', val[1:]):
-            return secrets_file.get('secrets', val[1:])
+        token = val[1:]
+        if token in secrets_file.get('secrets', {}):
+            return secrets_file['secrets'][token]
         else:
             raise ValueError('secret token {} not found in secrets file'.format(val))
 
@@ -191,16 +191,17 @@ def process_config(args, ctx):
         if not yml:
             raise ValueError('Config file is empty or invalid YAML')
 
-        # Handle secrets file (still INI format)
+        # Handle secrets file (YAML format)
         secrets_filename = None
         if yml.get('general', {}).get('secrets'):
             secrets_filename = yml['general']['secrets']
             g.logger.Info('Reading secrets from: {}'.format(secrets_filename))
             has_secrets = True
             g.config['secrets'] = secrets_filename
-            secrets_file = ConfigParser(interpolation=None, inline_comment_prefixes='#')
             with open(secrets_filename) as f:
-                secrets_file.read_file(f)
+                secrets_file = yaml.safe_load(f)
+            if not secrets_file:
+                raise ValueError('Secrets file is empty or invalid YAML')
         else:
             g.logger.Debug(1, 'No secrets file configured')
 

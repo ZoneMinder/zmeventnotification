@@ -1,0 +1,34 @@
+# ES notification rules
+#
+# Define per-monitor rules to mute or escalate notifications
+# based on time of day, day of week, and detection cause.
+#
+# Set the path in zmeventnotification.yml:
+#   customize:
+#     es_rules: /etc/zm/es_rules.yml
+
+notifications:
+  monitors:
+    999:
+      rules:
+        - comment: "Be careful with dates, no leading spaces, etc"
+          time_format: "%I:%M %p"
+          from: "9:30 pm"
+          to: "1 am"
+          cause_has: person
+          daysofweek: "Mon,Tue,Wed"
+          action: mute
+
+        - time_format: "%I:%M %p"
+          from: "3 am"
+          to: "6 am"
+          action: mute
+          comment: "the pattern below is a negative match"
+          cause_has: "^(?!.*(plant|cat|dog)).*$"
+
+    998:
+      rules:
+        - time_format: "%I:%M %p"
+          from: "5 pm"
+          to: "7 am"
+          action: mute

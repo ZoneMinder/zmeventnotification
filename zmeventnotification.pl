@@ -149,7 +149,7 @@ if (version->parse($Net::WebSocket::Server::VERSION) < version->parse('0.004000'
 
 if ( !try_use('IO::Socket::SSL') )  { Fatal('IO::Socket::SSL missing'); }
 if ( !try_use('IO::Handle') )       { Fatal('IO::Handle'); }
-if ( !try_use('Config::IniFiles') ) { Fatal('Config::Inifiles missing'); }
+if ( !try_use('YAML::XS') )         { Fatal('YAML::XS missing (install libyaml-libyaml-perl)'); }
 if ( !try_use('Getopt::Long') )     { Fatal('Getopt::Long missing'); }
 if ( !try_use('File::Basename') )   { Fatal('File::Basename missing'); }
 if ( !try_use('File::Spec') )       { Fatal('File::Spec missing'); }
@@ -169,7 +169,7 @@ Usage: zmeventnotification.pl [OPTION]...
 
   --help                              Print this page.
   --version                           Print version.
-  --config=FILE                       Read options from configuration file (default: /etc/zm/zmeventnotification.ini).
+  --config=FILE                       Read options from configuration file (default: /etc/zm/zmeventnotification.yml).
                                       Any CLI options used below will override config settings.
 
   --check-config                      Print configuration and exit.
@@ -204,14 +204,12 @@ my $config;
 
 if ($config_file_present) {
   Info("using config file: $config_file");
-  $config = Config::IniFiles->new( -file => $config_file );
-
-  unless ($config) {
-    Fatal( "Encountered errors while reading $config_file:\n"
-        . join( "\n", @Config::IniFiles::errors ) );
+  eval { $config = YAML::XS::LoadFile($config_file); };
+  if ($@ || !$config) {
+    Fatal("Encountered errors while reading $config_file:\n$@");
   }
 } else {
-  $config = Config::IniFiles->new;
+  $config = {};
   Info('No config file found, using inbuilt defaults');
 }
 
@@ -220,10 +218,9 @@ $config_obj = $config;  # Store in Config.pm for use by module functions
 $secrets_filename = config_get_val( $config, 'general', 'secrets' );
 if ($secrets_filename) {
   Info("using secrets file: $secrets_filename");
-  $secrets = Config::IniFiles->new( -file => $secrets_filename );
-  unless ($secrets) {
-    Fatal(join("\n", "Encountered errors while reading $secrets_filename:",
-        @Config::IniFiles::errors));
+  eval { $secrets = YAML::XS::LoadFile($secrets_filename); };
+  if ($@ || !$secrets) {
+    Fatal("Encountered errors while reading $secrets_filename:\n$@");
   }
 }
 
@@ -282,7 +279,7 @@ if ($fcm_config{enabled}) {
   } else {
     Info('Push enabled via FCM');
     Debug(2, "fcmv1: --> FCM V1 APIs: $fcm_config{use_v1}");
-    Debug(1, "fcmv1:--> Your FCM messages will be LOGGED at pliablepixel's server because your fcm_log_raw_message in zmeventnotification.ini is yes. Please turn it off, if you don't want it to!") if $fcm_config{log_raw_message};
+    Debug(1, "fcmv1:--> Your FCM messages will be LOGGED at pliablepixel's server because your fcm_log_raw_message in zmeventnotification.yml is yes. Please turn it off, if you don't want it to!") if $fcm_config{log_raw_message};
   }
 } else {
   Info('FCM disabled.');

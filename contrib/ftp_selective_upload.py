@@ -74,14 +74,12 @@ def get_image(path, cause):
         return path+'/snapshot.jpg'
 
 # Simple function to read variables from secret file
-def read_secrets(config='/etc/zm/secrets.ini'):
-    from configparser import ConfigParser
-    secrets_object = ConfigParser(interpolation=None,inline_comment_prefixes='#')
-    secrets_object.optionxform=str
+def read_secrets(config='/etc/zm/secrets.yml'):
+    import yaml
     zmlog.Debug(1,'eid:{} Reading secrets from {}'.format(eid,config))
     with open(config) as f:
-        secrets_object.read_file(f)
-    return secrets_object._sections['secrets']
+        data = yaml.safe_load(f)
+    return data.get('secrets', {})
 
 # -------- MAIN ---------------
 zmlog.init(name='ftp_selective_upload')

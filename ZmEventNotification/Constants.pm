@@ -34,7 +34,7 @@ use constant {
 
 # App defaults
 use constant {
-  DEFAULT_CONFIG_FILE        => '/etc/zm/zmeventnotification.ini',
+  DEFAULT_CONFIG_FILE        => '/etc/zm/zmeventnotification.yml',
   DEFAULT_PORT               => 9000,
   DEFAULT_ADDRESS            => '[::]',
   DEFAULT_AUTH_ENABLE        => 'yes',

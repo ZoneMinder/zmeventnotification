@@ -6,7 +6,7 @@
 #        export ZM_FAKE_LABELS="person,cat,shovel"
 #      Or edit the DEFAULT below.
 #
-#   2. Edit zmeventnotification.ini:
+#   2. Edit zmeventnotification.yml:
 #        event_start_hook = '/var/lib/zmeventnotification/bin/zm_detect_fake.sh'
 #        use_hook_description = yes
 #        tag_detected_objects = yes

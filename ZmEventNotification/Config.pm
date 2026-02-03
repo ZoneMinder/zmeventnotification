@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Storable qw(store retrieve);
 use JSON;
+use YAML::XS;
 use File::Spec;
 use Exporter 'import';
 use ZmEventNotification::Constants qw(:all);
@@ -58,16 +59,16 @@ our %es_rules;
 
 sub config_get_val {
   my ( $cfg, $sect, $parm, $def ) = @_;
-  my $val = $cfg->val( $sect, $parm );
+  my $val = defined($cfg->{$sect}) ? $cfg->{$sect}{$parm} : undef;
 
-  my $final_val = defined($val) ? $val : $def;
+  my $final_val = defined($val) ? "$val" : $def;
   if ($final_val) {
     my $first_char = substr( $final_val, 0, 1 );
     if ($first_char eq '!') {
       my $token = substr($final_val, 1);
       main::Debug(2, 'Got secret token !' . $token);
       main::Fatal('No secret file found') if !$secrets;
-      my $secret_val = $secrets->val('secrets', $token);
+      my $secret_val = $secrets->{secrets}{$token};
       main::Fatal('Token:'.$token.' not found in secret file') if !$secret_val;
       $final_val = $secret_val;
     }
@@ -84,12 +85,15 @@ sub config_get_val {
   if    ( lc($final_val) eq 'yes' ) { $final_val = 1; }
   elsif ( lc($final_val) eq 'no' )  { $final_val = 0; }
 
-  # {{template}} substitution
-  my @matches = ( $final_val =~ /\{\{(.*?)\}\}/g );
+  # ${template} substitution (and legacy {{template}} support)
+  my @matches = ( $final_val =~ /\$\{(.*?)\}/g );
+  push @matches, ( $final_val =~ /\{\{(.*?)\}\}/g );
   foreach my $token (@matches) {
-    my $tval = $cfg->val( 'general', $token );
-    $tval = $cfg->val( $sect, $token ) if !$tval;
-    main::Debug(2, "config string substitution: {{$token}} is '$tval'");
+    my $tval = defined($cfg->{general}) ? $cfg->{general}{$token} : undef;
+    $tval = $cfg->{$sect}{$token} if !$tval && defined($cfg->{$sect});
+    next if !defined($tval);
+    main::Debug(2, "config string substitution: \${$token} is '$tval'");
+    $final_val =~ s/\$\{$token\}/$tval/g;
     $final_val =~ s/\{\{$token\}\}/$tval/g;
   }
 
@@ -120,15 +124,9 @@ sub loadEsConfigSettings {
     DEFAULT_CUSTOMIZE_MONITOR_RELOAD_INTERVAL);
   $server_config{es_rules_file} = config_get_val($cfg, 'customize', 'es_rules');
   if ($server_config{es_rules_file}) {
-    main::Debug(2, "rules: Loading es rules json: $server_config{es_rules_file}");
-    if (open(my $fh, '<', $server_config{es_rules_file})) {
-      my $data = do { local $/ = undef; <$fh> };
-      eval { my $hr = decode_json($data); %es_rules = %$hr; };
-      if ($@) { main::Error("rules: Failed decoding es rules: $@"); }
-      close($fh);
-    } else {
-      main::Error("rules: Could not open $server_config{es_rules_file}: $!");
-    }
+    main::Debug(2, "rules: Loading es rules: $server_config{es_rules_file}");
+    eval { my $hr = YAML::XS::LoadFile($server_config{es_rules_file}); %es_rules = %$hr; };
+    if ($@) { main::Error("rules: Failed loading es rules: $@"); }
   }
 
   # --- auth_config ---
@@ -345,7 +343,7 @@ Tag alarm event id ................... ${\(_yes_or_no($notify_config{tag_alarm_e
 Use custom notification sound ........ ${\(_yes_or_no($notify_config{use_custom_notification_sound}))}
 Send event start notification......... ${\(_yes_or_no($notify_config{send_event_start_notification}))}
 Send event end notification........... ${\(_yes_or_no($notify_config{send_event_end_notification}))}
-Monitor rules JSON file............... ${\(_value_or_undef($server_config{es_rules_file}))}
+Monitor rules file.................... ${\(_value_or_undef($server_config{es_rules_file}))}
 
 Use Hooks............................. ${\(_yes_or_no($hooks_config{enabled}))}
 Max Parallel Hooks.................... ${\(_value_or_undef($hooks_config{max_parallel_hooks}))}

@@ -29,7 +29,7 @@ general:
     log_level_debug: 5
 
   # Secrets file for credential tokens (!TOKEN_NAME syntax)
-  secrets: /etc/zm/secrets.ini
+  secrets: /etc/zm/secrets.yml
 
   # ZoneMinder connectivity
   portal: "!ZM_PORTAL"

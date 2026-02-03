@@ -201,7 +201,7 @@ verify_config() {
 install_es() {
     echo '*** Installing ES Dependencies ***'
     if [[ "$DISTRO" == "ubuntu" || "$DISTRO" == "debian" ]]; then
-      $INSTALLER install -y libconfig-inifiles-perl libcrypt-mysql-perl libcrypt-eksblowfish-perl \
+      $INSTALLER install -y libyaml-libyaml-perl libcrypt-mysql-perl libcrypt-eksblowfish-perl \
           libcrypt-openssl-rsa-perl libmodule-build-perl libyaml-perl libjson-perl \
           liblwp-protocol-https-perl libio-socket-ssl-perl liburi-perl libdbi-perl
       echo "Note: Net::WebSocket::Server is also required but not available via apt."
@@ -392,16 +392,75 @@ install_hook() {
 
 # move ES config files
 install_es_config() {
-    echo 'Replacing ES config & rules file'
-    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 zmeventnotification.ini "${TARGET_CONFIG}" && 
-        print_success "config copied" || print_error "could not copy config"
-    if [ ! -f "${TARGET_CONFIG}/secrets.ini" ]; then
-     install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 secrets.ini "${TARGET_CONFIG}" && 
-        print_success "secrets copied" || print_error "could not copy secrets"
+    # Auto-migrate from INI to YAML if needed
+    if [ -f "${TARGET_CONFIG}/zmeventnotification.ini" ] && [ ! -f "${TARGET_CONFIG}/zmeventnotification.yml" ]; then
+        echo "Found existing zmeventnotification.ini but no zmeventnotification.yml - running migration..."
+        if ${PYTHON} tools/es_config_migrate_yaml.py -c "${TARGET_CONFIG}/zmeventnotification.ini" -o "${TARGET_CONFIG}/zmeventnotification.yml"; then
+            print_success "ES config migration complete"
+            mv "${TARGET_CONFIG}/zmeventnotification.ini" "${TARGET_CONFIG}/zmeventnotification.ini.migrated"
+            print_important "Renamed old zmeventnotification.ini to zmeventnotification.ini.migrated"
+        else
+            print_warning "ES config migration failed"
+        fi
     fi
-    echo 'Replacing ES rules file'
-    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}"  -m 644 es_rules.json "${TARGET_CONFIG}" && 
-        print_success "rules copied" || print_error "could not copy rules"
+    if [ -f "${TARGET_CONFIG}/secrets.ini" ] && [ ! -f "${TARGET_CONFIG}/secrets.yml" ]; then
+        echo "Found existing secrets.ini but no secrets.yml - running migration..."
+        if ${PYTHON} tools/es_config_migrate_yaml.py --secrets -c "${TARGET_CONFIG}/secrets.ini" -o "${TARGET_CONFIG}/secrets.yml"; then
+            print_success "secrets migration complete"
+            mv "${TARGET_CONFIG}/secrets.ini" "${TARGET_CONFIG}/secrets.ini.migrated"
+            print_important "Renamed old secrets.ini to secrets.ini.migrated"
+        else
+            print_warning "secrets migration failed"
+        fi
+    fi
+
+    if [ ! -f "${TARGET_CONFIG}/zmeventnotification.yml" ]; then
+        echo 'No existing ES config found, installing example as active config'
+        install -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 zmeventnotification.example.yml "${TARGET_CONFIG}/zmeventnotification.yml" &&
+            print_success "config copied" || print_error "could not copy config"
+    else
+        echo "Upgrading existing ES config with any new keys..."
+        ${PYTHON} tools/config_upgrade_yaml.py -c "${TARGET_CONFIG}/zmeventnotification.yml" -e zmeventnotification.example.yml &&
+            print_success "ES config upgraded" || print_warning "ES config upgrade failed"
+    fi
+    if [ ! -f "${TARGET_CONFIG}/secrets.yml" ]; then
+        echo 'No existing secrets found, installing example as active config'
+        install -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 secrets.example.yml "${TARGET_CONFIG}/secrets.yml" &&
+            print_success "secrets copied" || print_error "could not copy secrets"
+    else
+        echo "Upgrading existing secrets with any new keys..."
+        ${PYTHON} tools/config_upgrade_yaml.py -c "${TARGET_CONFIG}/secrets.yml" -e secrets.example.yml &&
+            print_success "secrets upgraded" || print_warning "secrets upgrade failed"
+    fi
+
+    # Migrate es_rules.json to YAML if needed
+    if [ -f "${TARGET_CONFIG}/es_rules.json" ] && [ ! -f "${TARGET_CONFIG}/es_rules.yml" ]; then
+        echo "Found existing es_rules.json but no es_rules.yml - converting..."
+        if ${PYTHON} -c "
+import json, yaml, sys
+with open('${TARGET_CONFIG}/es_rules.json') as f:
+    data = json.load(f)
+with open('${TARGET_CONFIG}/es_rules.yml', 'w') as f:
+    f.write('# Migrated from es_rules.json\n')
+    yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+"; then
+            print_success "es_rules migration complete"
+            mv "${TARGET_CONFIG}/es_rules.json" "${TARGET_CONFIG}/es_rules.json.migrated"
+            print_important "Renamed old es_rules.json to es_rules.json.migrated"
+        else
+            print_warning "es_rules migration failed"
+        fi
+    fi
+
+    if [ ! -f "${TARGET_CONFIG}/es_rules.yml" ]; then
+        echo 'No existing rules file found, installing example'
+        install -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 es_rules.example.yml "${TARGET_CONFIG}/es_rules.yml" &&
+            print_success "rules copied" || print_error "could not copy rules"
+    else
+        echo "Upgrading existing rules with any new keys..."
+        ${PYTHON} tools/config_upgrade_yaml.py -c "${TARGET_CONFIG}/es_rules.yml" -e es_rules.example.yml &&
+            print_success "rules upgraded" || print_warning "rules upgrade failed"
+    fi
 
 
     echo "====> Remember to fill in the right values in the config files, or your system won't work! <============="
@@ -410,15 +469,27 @@ install_es_config() {
 
 # move Hook config files
 install_hook_config() {
-    echo 'Replacing Hook config file'
     # Auto-migrate from INI to YAML if needed
     if [ -f "${TARGET_CONFIG}/objectconfig.ini" ] && [ ! -f "${TARGET_CONFIG}/objectconfig.yml" ]; then
         echo "Found existing objectconfig.ini but no objectconfig.yml - running migration..."
-        ${PYTHON} tools/config_migrate_yaml.py -c "${TARGET_CONFIG}/objectconfig.ini" -o "${TARGET_CONFIG}/objectconfig.yml" &&
-            print_success "migration complete" || print_warning "migration failed, installing default YAML config"
+        if ${PYTHON} tools/config_migrate_yaml.py -c "${TARGET_CONFIG}/objectconfig.ini" -o "${TARGET_CONFIG}/objectconfig.yml"; then
+            print_success "migration complete"
+            mv "${TARGET_CONFIG}/objectconfig.ini" "${TARGET_CONFIG}/objectconfig.ini.migrated"
+            print_important "Renamed old objectconfig.ini to objectconfig.ini.migrated"
+        else
+            print_warning "migration failed"
+        fi
     fi
-    install ${MAKE_CONFIG_BACKUP} -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.yml "${TARGET_CONFIG}" &&
-        print_success "config copied" || print_error "could not copy config"
+
+    if [ ! -f "${TARGET_CONFIG}/objectconfig.yml" ]; then
+        echo 'No existing hook config found, installing example as active config'
+        install -o "${WEB_OWNER}" -g "${WEB_GROUP}" -m 644 hook/objectconfig.yml "${TARGET_CONFIG}" &&
+            print_success "config copied" || print_error "could not copy config"
+    else
+        echo "Upgrading existing hook config with any new keys..."
+        ${PYTHON} tools/config_upgrade_yaml.py -c "${TARGET_CONFIG}/objectconfig.yml" -e hook/objectconfig.yml &&
+            print_success "hook config upgraded" || print_warning "hook config upgrade failed"
+    fi
     echo "====> Remember to fill in the right values in the config files, or your system won't work! <============="
     echo "====> If you changed $TARGET_CONFIG remember to fix  ${TARGET_BIN_HOOK}/zm_event_start.sh! <========"
     echo
@@ -734,17 +805,18 @@ fi
 if [ "${HOOK_CONFIG_UPGRADE}" == "yes" ]
 then
     echo
-    # If old INI exists, run legacy upgrade first, then migrate to YAML
-    if [ -f "${TARGET_CONFIG}/objectconfig.ini" ]; then
-        echo "Running legacy config upgrade on objectconfig.ini..."
-        ./tools/config_upgrade.py -c "${TARGET_CONFIG}/objectconfig.ini"
-        if [ ! -f "${TARGET_CONFIG}/objectconfig.yml" ]; then
-            echo "Migrating objectconfig.ini to objectconfig.yml..."
-            ${PYTHON} tools/config_migrate_yaml.py -c "${TARGET_CONFIG}/objectconfig.ini" -o "${TARGET_CONFIG}/objectconfig.yml" &&
-                print_success "YAML migration complete" || print_warning "YAML migration failed"
+    # If old INI exists, migrate to YAML
+    if [ -f "${TARGET_CONFIG}/objectconfig.ini" ] && [ ! -f "${TARGET_CONFIG}/objectconfig.yml" ]; then
+        echo "Migrating objectconfig.ini to objectconfig.yml..."
+        if ${PYTHON} tools/config_migrate_yaml.py -c "${TARGET_CONFIG}/objectconfig.ini" -o "${TARGET_CONFIG}/objectconfig.yml"; then
+            print_success "YAML migration complete"
+            mv "${TARGET_CONFIG}/objectconfig.ini" "${TARGET_CONFIG}/objectconfig.ini.migrated"
+            print_important "Renamed old objectconfig.ini to objectconfig.ini.migrated"
+        else
+            print_warning "YAML migration failed"
         fi
     else
-        echo "No legacy objectconfig.ini found, skipping upgrade"
+        echo "No legacy objectconfig.ini found (or objectconfig.yml already exists), skipping upgrade"
     fi
 else
     echo "Skipping hook config upgrade process"
