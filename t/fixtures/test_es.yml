@@ -1,0 +1,58 @@
+general:
+  secrets: WILL_BE_OVERRIDDEN
+  base_data_path: /var/lib/zmeventnotification
+  restart_interval: 0
+  use_escontrol_interface: "no"
+
+network:
+  port: 9000
+  address: "[::]"
+
+auth:
+  enable: "yes"
+  timeout: 20
+
+fcm:
+  enable: "yes"
+  use_fcmv1: "yes"
+  token_file: "${base_data_path}/push/tokens.txt"
+  date_format: "%I:%M %p, %d-%b"
+
+mqtt:
+  enable: "no"
+  server: "127.0.0.1"
+  topic: zoneminder
+  username: "!MQTT_USERNAME"
+  password: "!MQTT_PASSWORD"
+
+ssl:
+  enable: "yes"
+  cert: "!ES_CERT_FILE"
+  key: "!ES_KEY_FILE"
+
+customize:
+  console_logs: "no"
+  es_debug_level: 4
+  event_check_interval: 5
+  monitor_reload_interval: 300
+  read_alarm_cause: "yes"
+  tag_alarm_event_id: "yes"
+  use_custom_notification_sound: "no"
+  include_picture: "yes"
+  send_event_start_notification: "yes"
+  send_event_end_notification: "yes"
+  picture_url: "!ZMES_PICTURE_URL"
+  picture_portal_username: "!ZM_USER"
+  picture_portal_password: "!ZM_PASSWORD"
+  use_hooks: "yes"
+
+hook:
+  event_start_hook: "/usr/bin/zm_detect.py --config /etc/zm/objectconfig.yml"
+  event_start_notify_on_hook_success: all
+  event_start_notify_on_hook_fail: none
+  event_end_notify_on_hook_success: "fcm,web"
+  event_end_notify_on_hook_fail: none
+  event_end_notify_if_start_success: "yes"
+  use_hook_description: "yes"
+  keep_frame_match_type: "yes"
+  max_parallel_hooks: 0

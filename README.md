@@ -24,6 +24,38 @@ Documentation
 I don't maintain docker images, so please don't ask me any questions about docker environments. There are others who maintain docker images. 
 Please see [this link](https://zmeventnotification.readthedocs.io/en/latest/guides/install.html#rd-party-dockers)
 
+Getting Started (Development)
+-----------------------------
+
+```bash
+# Clone and enter the repo
+git clone https://github.com/pliablepixels/zmeventnotification.git
+cd zmeventnotification
+
+# Run the Perl test suite (no ZoneMinder installation needed)
+prove -I t/lib -I . -r t/
+
+# Run the Python test suite
+pip install pytest pyyaml
+cd hook && python3 -m pytest tests/ -v && cd ..
+
+# Run both suites in one shot
+prove -I t/lib -I . -r t/ && (cd hook && python3 -m pytest tests/ -v)
+```
+
+### Test Dependencies
+
+- **Perl**: `Test::More`, `YAML::XS`, `JSON`, `Time::Piece` (typically included with Perl)
+- **Python**: `pytest`, `pyyaml`
+
+### Running the Event Server
+
+```bash
+sudo -u www-data ./zmeventnotification.pl --config /etc/zm/zmeventnotification.yml
+```
+
+Refer to the full [installation guide](https://zmeventnotification.readthedocs.io/en/latest/guides/install.html) for production setup.
+
 Requirements
 -------------
 - Python 3.6 or above

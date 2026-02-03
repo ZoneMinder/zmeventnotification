@@ -1,0 +1,28 @@
+notifications:
+  monitors:
+    1:
+      rules:
+        - time_format: "%H:%M"
+          from: "00:00"
+          to: "23:59"
+          daysofweek: "Mon,Tue,Wed,Thu,Fri,Sat,Sun"
+          cause_has: person
+          action: mute
+
+    2:
+      rules:
+        - time_format: "%H:%M"
+          from: "00:00"
+          to: "23:59"
+          daysofweek: "Mon,Tue,Wed,Thu,Fri,Sat,Sun"
+          cause_has: "person|car"
+          action: critical_notify
+
+    3:
+      rules:
+        - time_format: "%H:%M"
+          from: "00:00"
+          to: "23:59"
+          daysofweek: "NONE_MATCH"
+          cause_has: person
+          action: mute
