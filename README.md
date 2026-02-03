@@ -27,28 +27,59 @@ Please see [this link](https://zmeventnotification.readthedocs.io/en/latest/guid
 Getting Started (Development)
 -----------------------------
 
+Both this repo and the [updated pyzm](https://github.com/pliablepixels/pyzm) library are needed. `pyzm` provides the ZoneMinder Python API, ML detection pipeline, and helper utilities that the hooks depend on.
+
+### 1. Clone both repos
+
 ```bash
-# Clone and enter the repo
 git clone https://github.com/pliablepixels/zmeventnotification.git
+git clone https://github.com/pliablepixels/pyzm.git
+```
+
+### 2. Install pyzm
+
+```bash
+# do this from the directory you cloned pyzm into, don't change into pyzm/
+sudo -H pip install pyzm/ --break-system-packages
+```
+
+### 3. Install the Event Server and hook helpers
+
+```bash
+cd zmeventnotification
+sudo -H ./install.sh
+cd ..
+```
+
+The installer handles Perl dependencies, hook helper setup, config file placement, and model downloads.
+
+Testing (Development)
+----------------------
+### 1. Run the test suites
+
+Tests do **not** require a running ZoneMinder installation.
+
+```bash
 cd zmeventnotification
 
-# Run the Perl test suite (no ZoneMinder installation needed)
+# Perl tests
 prove -I t/lib -I . -r t/
 
-# Run the Python test suite
+# Python tests
 pip install pytest pyyaml
 cd hook && python3 -m pytest tests/ -v && cd ..
 
-# Run both suites in one shot
+# Both in one shot
 prove -I t/lib -I . -r t/ && (cd hook && python3 -m pytest tests/ -v)
 ```
 
-### Test Dependencies
+### 2. Test Dependencies
 
 - **Perl**: `Test::More`, `YAML::XS`, `JSON`, `Time::Piece` (typically included with Perl)
 - **Python**: `pytest`, `pyyaml`
 
-### Running the Event Server
+Running the Event Server
+------------------------
 
 ```bash
 sudo -u www-data ./zmeventnotification.pl --config /etc/zm/zmeventnotification.yml
