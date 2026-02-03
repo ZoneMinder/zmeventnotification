@@ -39,12 +39,12 @@ I am trying to use YoloV4 and I see errors in OpenCV
   
 Necessary Reading - Sample Config Files
 ----------------------------------------
-The sample configuration files, `zmeventnotification.ini <https://github.com/pliablepixels/zmeventnotification/blob/master/zmeventnotification.ini>`__ and `objectconfig.ini <https://github.com/pliablepixels/zmeventnotification/blob/master/hook/objectconfig.ini>`__  come with extensive commentary about each attribute and what they do. Please go through them to get a better understanding. Note that most of the configuration attributes in `zmeventnotification.ini` are not related to machine learning, except for the `[hook]` section.
+The sample configuration files, `zmeventnotification.example.yml <https://github.com/pliablepixels/zmeventnotification/blob/master/zmeventnotification.example.yml>`__ and `objectconfig.yml <https://github.com/pliablepixels/zmeventnotification/blob/master/hook/objectconfig.yml>`__ come with extensive commentary about each attribute and what they do. Please go through them to get a better understanding. Note that most of the configuration attributes in ``zmeventnotification.yml`` are not related to machine learning, except for the ``hook`` section.
 
 How do the hooks actually invoke object detection?
 -----------------------------------------------------
 
-* When the Event Notification Server detects an event, it invokes the script specified in ``event_start_hook``  in your ``zmeventnotification.ini``. This is typically ``/var/lib/zmeventnotification/bin/zm_event_start.sh``
+* When the Event Notification Server detects an event, it invokes the script specified in ``event_start_hook`` in your ``zmeventnotification.yml``. This is typically ``/var/lib/zmeventnotification/bin/zm_event_start.sh``
 
 * ``zm_event_start.sh`` in turn invokes ``zm_detect.py`` that does the actual machine learning. Upon exit, it either returns a ``1`` that means object found, or a ``0`` which means nothing found. Based on how you have configured your settings, this information is then stored in ZM and/or pushed to your mobile device as a notification.
 
@@ -74,14 +74,14 @@ However, when you run it manually later, your snapshot image has likely changed.
 
 How do I make sure this is what is happening?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Enable ``write_debug_image`` in ``objectconfig.ini``. This will create a debug image inside the event path where your event recording is. Take a look at the debug images it creates. Is it the same as the images you see at a later date? If not, you know this is exactly what is happening
+- Enable ``write_debug_image`` in ``objectconfig.yml``. This will create a debug image inside the event path where your event recording is. Take a look at the debug images it creates. Is it the same as the images you see at a later date? If not, you know this is exactly what is happening
 - When you run the detection script manually, see if its printing an ``[a]`` or an ``[s]`` before the detected text. The latter means ``snapshot`` and if that is so, the chances are very high this is exactly what the issue is. In case it prints ``[a]`` it also means the same thing, but the occurrence of this is less than snapshot.
 
 How do I solve this issue?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 - If you are running ZM 1.32 or below, upgrade to 1.34 (1.33 master as of Oct 2019). This *should* fix the issue of delayed alarm frame writes
 - If you are running ZM 1.32 or below, turning off JPEG store will help. When JPEG store is enabled, snapshots are written later. This bug was fixed in 1.34 (see `this issue <https://github.com/ZoneMinder/zoneminder/issues/2745>`__).
-- Add a ``wait: 5`` to that monitor in ``objectconfig.ini`` (again, please read the ini file to understand). This delays hook execution by 5 seconds. The hope here is that the time specified is sufficient for the alarmed frame and the right snapshot to be written to disk
+- Add a ``wait: 5`` to that monitor in ``objectconfig.yml`` (again, please read the ini file to understand). This delays hook execution by 5 seconds. The hope here is that the time specified is sufficient for the alarmed frame and the right snapshot to be written to disk
 - Fix your zone triggers. This is really the right way. If you use object detection, re-look at how your zone triggers to be able to capture the object of interest as soon as possible. If you do that, chances are high that by the time the script runs, the image containing the object will be written to disk. 
 
 
@@ -95,7 +95,7 @@ I'm having issues with accuracy of Face Recognition
    -  If it says "no faces found" that means your alarmed image doesn't
       have a face that is recognizable
    -  Read comments about ``num_jitters``, ``model``, ``upsample_times``
-      in ``objectconfig.ini``
+      in ``objectconfig.yml``
 
 -  Experiment. Read the `accuracy wiki <https://github.com/ageitgey/face_recognition/wiki/Face-Recognition-Accuracy-Problems>`__ link.
 
@@ -122,7 +122,7 @@ Local vs. Remote server for Machine Learning
 ---------------------------------------------
 As of version 5.0.0, you can now configure an API gateway for remote 
 machine learning by installing `my mlapi server <https://github.com/pliablepixels/mlapi>`__ on a remote server. 
-Once setup, simply point your ``ml_gateway`` inside ``objectconfig.ini`` to the IP/port of your gateway and make sure 
+Once setup, simply point your ``ml_gateway`` inside ``objectconfig.yml`` to the IP/port of your gateway and make sure 
 ``ml_user`` and ``ml_password`` are the user/password you set up on the API gateway. That's all.
 
 The advantage of this is that you don't need to install any ML libraries within

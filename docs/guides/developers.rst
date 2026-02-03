@@ -242,7 +242,7 @@ Note that any changes you make are persistently stored in  the file specified in
 
 escontrol authentication
 '''''''''''''''''''''''''
-Just like normal messages, you need to authenticate yourself. The password is specified by what you choose in ``escontrol_interface_password`` attribute inside ``zmeventnotification.ini``.
+Just like normal messages, you need to authenticate yourself. The password is specified by what you choose in ``escontrol_interface_password`` attribute inside ``zmeventnotification.yml``.
 
 To authenticate:
 **Client-->Server:**
@@ -313,13 +313,13 @@ Reset/Clear all settings specified via this channel:
 
   {"event":"escontrol", "data":{"command":"reset"}}
 
-Change any arbitrary config value inside ``zmeventnotification.ini``:
+Change any arbitrary config value inside ``zmeventnotification.yml``:
 
 ::
 
   {"event":"escontrol", "data":{"command":"edit", "key":"use_hooks", "val":"no"}}
 
-In the above example, we have disabled hooks dynamically (``use_hooks`` is the attribute inside ``zmeventnotification.ini`` that controls if hooks will be used)
+In the above example, we have disabled hooks dynamically (``use_hooks`` is the attribute inside ``zmeventnotification.yml`` that controls if hooks will be used)
 
 Testing from command line
 ^^^^^^^^^^^^^^^^^^^^^^^^^

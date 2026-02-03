@@ -117,16 +117,24 @@ code crashes when you run the ES in daemon mode (may work fine in manual mode). 
 
 .._install-specific-models:
 
-Starting version 5.13.3, you can *optionally* choose to only install specific models by passing them as variables to the install script. The variables are labelled as ``INSTALL_<model>`` with possible values of ``yes`` (default) or ``no``. ``<model>`` is the specific model.
+You can *optionally* choose to only install specific models by passing them as variables to the install script. The variables are labelled as ``INSTALL_<model>`` with possible values of ``yes`` or ``no``. ``<model>`` is the specific model.
+
+Current model flags and their defaults:
+
+- ``INSTALL_YOLOV3``: ``no``
+- ``INSTALL_TINYYOLOV3``: ``no``
+- ``INSTALL_YOLOV4``: ``yes``
+- ``INSTALL_TINYYOLOV4``: ``yes``
+- ``INSTALL_CORAL_EDGETPU``: ``no``
+- ``INSTALL_YOLOV26``: ``yes`` (requires OpenCV 4.10+)
 
 So for example:
 
 ::
 
-  sudo INSTALL_YOLOV3=no INSTALL_YOLOV4=yes ./install.sh
+  sudo INSTALL_YOLOV4=no INSTALL_YOLOV26=yes ./install.sh
 
-Will only install the ``YOLOv4 (full)`` model but will skip the ``YOLOV3`` 
-model.
+Will install the ``YOLOv26 ONNX`` models but will skip ``YOLOv4``.
 
 Another example:
 
@@ -135,6 +143,12 @@ Another example:
    sudo -H INSTALL_CORAL_EDGETPU=yes ./install.sh --install-es --no-install-config --install-hook
 
 Will install the ES and hooks, but no configs and will add the coral libraries.
+
+.. note::
+
+   The default object detection model is now **YOLOv26 ONNX** (via OpenCV DNN). This requires
+   OpenCV 4.10 or above. Direct Ultralytics/PyTorch support has been removed in favor of ONNX
+   inference through OpenCV's DNN module.
 
 .. _opencv_install:
 
@@ -211,8 +225,8 @@ If automatic install fails for you, or you like to be in control, take a look at
 Post install steps
 ~~~~~~~~~~~~~~~~~~
 
--  Make sure you edit your installed ``objectconfig.ini`` to the right
-   settings. You MUST change the ``[general]`` section for your own
+-  Make sure you edit your installed ``objectconfig.yml`` to the right
+   settings. You MUST change the ``general`` section for your own
    portal.
 -  Make sure the ``CONFIG_FILE`` variable in ``zm_event_start.sh`` is
    correct
@@ -228,7 +242,7 @@ Test operation
 Replace with your own ``eid`` (Example 123456). This will be an event id for an event that you want to test. Typically,
 open up the ZM console, look for an event you want to run analysis on and select the ID of the event. That is the ``eid``.
 The ``mid`` is the monitor ID for the event. This is optional. If you specify it, any monitor specific settings (such as 
-zones, hook customizations, etc. in ``objectconfig/mlapiconfig.ini`` will be used).
+zones, hook customizations, etc. in ``objectconfig.yml``/``mlapiconfig.ini`` will be used).
 
 The above command will  try and run detection.
 
@@ -251,21 +265,19 @@ See :ref:`this FAQ entry <local_remote_ml>`.
 Which models should I use?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+- **YOLOv26 ONNX (Recommended)**: The default and recommended model. Uses ONNX format via OpenCV's DNN
+  module. Requires OpenCV 4.10+. Multiple sizes are available (``yolo26n``, ``yolo26s``, ``yolo26m``,
+  ``yolo26l``, ``yolo26x``) — smaller models are faster, larger models are more accurate.
+  The ``n`` (nano) variant is enabled by default and provides a good balance.
 
-- Starting 5.16, Google Coral Edge TPU is supported. See install instructions above.
+- **YOLOv4**: Still supported via Darknet weights. Requires OpenCV 4.4+.
 
--  Starting 5.15.6, you have the option of using YoloV3 or YoloV4. V3 is the original one
-   while V4 is an optimized version by Alexey. See `here <https://github.com/AlexeyAB/darknet>`__.
-   V4 is faster, and is supposed to be more accurate but YMMV. Note that you need a version GREATER than 4.3
-   of OpenCV to use YoloV4
+- **Google Coral Edge TPU**: Supported for both object detection and face detection. See install instructions above.
 
-- If you are constrained in memory, use tinyyolo
+- **YOLOv3 / Tiny YOLOv3 / Tiny YOLOv4**: Still available but no longer installed by default.
+  Set the appropriate ``INSTALL_*`` flag to ``yes`` during install if you need them.
 
-- Each model can further be customized for accuracy vs speed by modifying parameters in
-  their respective ``.cfg`` files. Start `here <https://github.com/AlexeyAB/darknet#pre-trained-models>`__ and then
-  browse the `issues list <https://github.com/AlexeyAB/darknet/issues>`__.
-  
-- For face recognition, use ``face_model=cnn`` for more accuracy and ``face_model=hog`` for better speed
+- For face recognition, use ``face_model: cnn`` for more accuracy and ``face_model: hog`` for better speed
 
 
 .. _detection_sequence:
@@ -273,204 +285,109 @@ Which models should I use?
 Understanding detection configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Starting v6.1.0, you can chain arbitrary detection types (object, face, alpr)
-and multiple models within them. In older versions, you were only allowed one model type 
-per detection type. Obviously, this has required structural changes to ``objectconfig.ini`` 
+You can chain arbitrary detection types (object, face, alpr) and multiple models within
+each type. The detection pipeline is configured through two key structures in ``objectconfig.yml``:
 
-This section will describe the key constructs around two important structures:
-
-- ml_sequence (specifies sequence of ML detection steps)
-- stream_sequence (specifies frame detection preferences)
-
-
-6.1.0+ vs previous versions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-When you update to 6.1.0, you may be confused with objectconfig.
-Specifically, which attributes should you use and which ones are ignored?
-It's pretty simple, actually.
+- ``ml_sequence`` — specifies the sequence of ML detection steps
+- ``stream_sequence`` — specifies frame selection and retry preferences
 
 .. note::
 
-   use_sequence=no is no longer supported. Please make sure it is set to yes, and follow instructions 
-   on how to set up ml_sequence and stream_sequence correctly 
+   All configuration is now in YAML format in ``objectconfig.yml``. The old ``{{variable}}``
+   template substitution syntax is **no longer supported**. All values must be specified directly
+   in the YAML file. The ``use_sequence`` flag no longer exists — the sequence structures are
+   always used.
 
+   The only substitution supported is ``${base_data_path}`` which is replaced with the value from
+   ``general.base_data_path``.
 
-- When ``use_sequence`` is set to ``yes`` (default is yes), ``ml_options`` and ``stream_sequence``
-  structures override anything in the ``[object]``, ``[face]`` and ``[alpr]`` sections 
-  Specifically, the following values are ignored in objectconfig.ini in favor of values inside the sequence structure:
-   
-   - frame_id, resize, delete_after_analyze, the full [object], [alpr], [face] sections 
-   - any overrides related to object/face/alpr inside the [monitor] sections 
-   - However, that being said, if you take a look at ``objectconfig.ini``, the sample file
-     implements parameter substitution inside the structures, effectively importing the values right back in.
-     Just know that what you specify in these sequence structures overrides the above attributes. 
-     If you want to reuse them, you need to put them in as parameter substitutions like the same ini file has done 
-   - If you are using the new ``use_sequence=yes`` please don't use old keywords as variables. They will likely fail.
-     
-   Example, this will **NOT WORK**:
-
-      ::
-
-         use_sequence=yes
-
-         [monitor-3]
-         detect_sequence='object,face,alpr'
-
-         [monitor-4]
-         detect_sequence='object'
-
-         [ml]
-         ml_sequence= {
-            <...>
-            general: {
-               'model_sequence': '{{detection_sequence}}'
-            },
-            <...>
-
-         }
-
-   What you need to do is use a different variable name (as ``detect_sequence`` is a reserved keyword which is used if ``use_sequence=no``)
-      
-   But this **WILL WORK**:
-
-      ::
-
-         use_sequence=yes
-
-         [monitor-3]
-         my_sequence=object,face,alpr
-
-         [monitor-4]
-         my_sequence=object
-
-         [ml]
-         ml_sequence= {
-            <...>
-            general: {
-               'model_sequence': '{{my_sequence}}'
-            },
-            <...>
-
-         }
-
-- When ``use_sequence`` is set to ``no``, zm_detect internally maps your old parameters 
-  to the new structures 
-
-Internally, both options are mapped to ``ml_sequence``, but the difference is in the parameters that are processed.
-Specifically, before ES 6.1.0 came out, we had specific objectconfig fields that were used for various ML parameters
-that were processed. These were primarily single, well known variable names because we only had one model type running 
-per type of detection. 
-
-More details: What happens when you go with use_sequence=no?
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-
-**NOTE**: Please use ``use_sequence=yes``. In the past, I've allowed a mode where legacy settings were converted
-to ``stream_sequence`` auto-magically when I changed formats. This caused a lot of issues and was a 
-nightmare to maintain. So please migrate to the proper format. If you've been using ``use_sequence=no``
-it will likely break things, but please read the help and convert properly. ``use_sequence=no`` is no 
-longer maintained.
-
-
-In the old way, the following 'global' variables (which could be overridden on a per monitor basis) defined how
-ML would work:
-
-- ``xxx_max_processes`` and ``xxx_max_lock_wait`` that defined semaphore locks for each model (to control parallel memory consumption)
-- All the ``object_xxx`` variables that define the model file, name file, and a host of other parameters that are specific to object detection 
-- All the ``face_xxx`` variables, ``known_images_path``, `unknown_images_path``, ``save_unknown_*`` attributes that define the model file, name file, and a host of other parameters that are specific to face detection 
-- All the ``alpr_xxx`` variables that define the model file, name file, and a host of other parameters that are specific to alpr detection 
-
-When you make ``use_sequence=no`` in your config, I have a function called ``convert_config_to_ml_sequence()`` (see `here <https://github.com/pliablepixels/zmeventnotification/blob/v6.1.6/hook/zmes_hook_helpers/utils.py#L30>`__)
-that basically picks up those variable, maps it to an ``ml_sequence`` structure with exactly one model per sequence (like it was before).
-It picks up the sequence of models from ``detection_sequence`` which was the old way.
-
-Further, in this mode, a ``sream_sequence`` structure is internally created that picks up values from the old
-attributes, ``detection_mode``, ``frame_id``, ``bestmatch_order``, ``resize``
-
-Therefore, the concept here was, if you choose not to use the new detection sequence, you _should_ be able to continue using your old
-variables and the code will internally map.
-
-More details: What happens when you go with use_sequence=yes?
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-
-When you go with ``yes``, ``zm_detect.py`` does NOT try to map any of the old variables. Instead, it directly
-loads whatever is defined inside ``ml_sequence`` and ``stream_sequence``. However, you will notice that the default
-``ml_sequence`` and ``stream_sequence`` are pre-filled with template variables. 
-
-For example:
+Per-monitor overrides
+^^^^^^^^^^^^^^^^^^^^^^
+If you want to change ``ml_sequence`` or ``stream_sequence`` on a per monitor basis, you can do so
+under the ``monitors`` section. You can override the entire structure or just parts of it:
 
 ::
 
-   ml_sequence= {
-	   <snip>
-		'object': {
-			'general':{
-				'pattern':'{{object_detection_pattern}}',
-				'same_model_sequence_strategy': 'first' # also 'most', 'most_unique's
-			},
-			'sequence': [{
-				#First run on TPU with higher confidence
-				'object_weights':'{{tpu_object_weights}}',
-				'object_labels': '{{tpu_object_labels}}',
-				'object_min_confidence': {{tpu_min_confidence}},
-            <snip>
-				
-			},
-			{
-				# YoloV4 on GPU if TPU fails (because sequence strategy is 'first')
-				'object_config':'{{yolo4_object_config}}',
-				'object_weights':'{{yolo4_object_weights}}',
-				'object_labels': '{{yolo4_object_labels}}',
+   monitors:
+     3:
+       ml_sequence:
+         general:
+           model_sequence: "object,face"
+         object:
+           general:
+             pattern: "(person|car)"
+     7:
+       ml_sequence:
+         general:
+           model_sequence: "object,alpr"
 
-
-Note the variables inside ``{{}}``. They will be replaced when the structure is formed. And you'll note some are old 
-style variables (example ``object_detection_pattern``) along with may new ones. So here is the thing:
-You can use any variable names you want in the new style. Obviously, we can't use ``object_weights`` as the only variable 
-if we plan to chain different models. They'll have different values. 
-
-So remember, the config presented here is a **SAMPLE**. You are **expected to change them**.
-
-So in the new way, if you want to change ``ml_sequence`` or ``stream_sequence`` on a per monitor basis, you have 2 choices:
-- Put variables inside the main ``*_sequence`` options and simply redefine those variables on a per monitor basis
-- Or, redo the entire structure on a per monitor basis. I like Option 1. 
 
 
 Understanding ml_sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-The ``ml_sequence`` structure lies in the ``[ml]`` section of ``objectconfig.ini`` (or ``mlapiconfig.ini`` if using mlapi).
-At a high level, this is how it is structured (not all attributes have been described):
+The ``ml_sequence`` structure lies in the ``ml`` section of ``objectconfig.yml``.
+At a high level, this is how it is structured:
 
 ::
 
-   ml_sequence = {
-      'general': {
-         'model_sequence':'<comma separated detection_type>'
-      },
-      '<detection_type>': {
-         'general': {
-            'pattern': '<pattern>',
-            'same_model_sequence_strategy':'<strategy>'
-         },
-         'sequence:[{
-            <series of configurations>
-         },
-         {
-            <series of configurations>
-         }]
-      }
-   }
+   ml:
+     ml_sequence:
+       general:
+         model_sequence: "<comma separated detection types>"
+       <detection_type>:
+         general:
+           pattern: "<pattern>"
+           same_model_sequence_strategy: "<strategy>"
+         sequence:
+           - name: "Model name"
+             enabled: "yes"
+             # ... model-specific parameters ...
+           - name: "Another model"
+             enabled: "yes"
+             # ... model-specific parameters ...
+
+Here is a concrete example from the default ``objectconfig.yml``:
+
+::
+
+   ml:
+     ml_sequence:
+       general:
+         model_sequence: "object,face,alpr"
+       object:
+         general:
+           pattern: "(person|car|motorbike|bus|truck|boat)"
+           same_model_sequence_strategy: first
+         sequence:
+           - name: YOLOv26n ONNX GPU/CPU
+             enabled: "yes"
+             object_weights: "${base_data_path}/models/ultralytics/yolo26n.onnx"
+             object_min_confidence: 0.3
+             object_framework: opencv
+             object_processor: gpu
+       face:
+         general:
+           pattern: ".*"
+           same_model_sequence_strategy: union
+         sequence:
+           - name: DLIB face recognition
+             enabled: "yes"
+             face_detection_framework: dlib
+             known_images_path: "${base_data_path}/known_faces"
+             face_model: cnn
 
 **Explanation:**
 
-- The ``general`` section at the top level specify characteristics that apply to all elements inside 
-  the structure. 
+- The ``general`` section at the top level specifies characteristics that apply to all elements inside
+  the structure.
 
    - ``model_sequence`` dictates the detection types (comma separated). Example ``object,face,alpr`` will
      first run object detection, then face, then alpr
 
-- Now for each detection type in ``model_sequence``, you can specify the type of models you want to leading
-  along with other related parameters.
+- For each detection type in ``model_sequence``, you specify model configurations in the ``sequence`` list.
+  Each entry in the sequence is a model configuration with a ``name`` and ``enabled`` flag.
 
-  **Note**: If you are using mlapi, there are certain parameters that get overridden by ``objectconfig.ini``
+  **Note**: If you are using mlapi, there are certain parameters that get overridden by ``objectconfig.yml``
   See :ref:`mlapi_overrides`
 
 Leveraging same_model_sequence_strategy and frame_strategy effectively
@@ -505,20 +422,19 @@ that describes all options. The ``options`` parameter is what you are looking fo
 
 Understanding stream_sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The ``stream_sequence`` structure lies in the ``[ml]`` section of ``objectconfig.ini``.
-At a high level, this is how it is structured (not all attributes have been described):
+The ``stream_sequence`` structure lies in the ``ml`` section of ``objectconfig.yml``.
+At a high level, this is how it is structured:
 
 ::
 
-   stream_sequence = {
-        'frame_set': '<series of frame ids>',
-        'frame_strategy': 'most_models',
-        'contig_frames_before_error': 5,
-        'max_attempts': 3,
-        'sleep_between_attempts': 4,
-		  'resize':800
-
-    }
+   ml:
+     stream_sequence:
+       frame_set: "snapshot,alarm"
+       frame_strategy: most_models
+       contig_frames_before_error: 5
+       max_attempts: 3
+       sleep_between_attempts: 4
+       resize: 800
 
 **Explanation:**
 
@@ -561,20 +477,14 @@ Like this:
 Exceptions when using mlapi
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 If you are using the remote mlapi server, then most of these settings migrate to ``mlapiconfig.ini``
-Specifically, when ``zm_detect.py`` sees ``ml_gateway`` in its ``[remote]`` section, it passes on 
-the detection work to mlapi. 
+Specifically, when ``zm_detect.py`` sees ``ml_gateway`` in its ``remote`` section, it passes on
+the detection work to mlapi.
 
-**NOTE**: Please use ``use_sequence=yes``. In the past, I've allowed a mode where legacy settings were converted
-to ``stream_sequence`` auto-magically when I changed formats. This caused a lot of issues and was a 
-nightmare to maintain. So please migrate to the proper format. If you've been using ``use_sequence=no``
-it will likely break things, but please read the help and convert properly. ``use_sequence=no`` is no 
-longer maintained.
+Here are a list of parameters that still need to be in ``objectconfig.yml`` when using mlapi.
+(A simple rule to remember is zm_detect.py uses ``objectconfig.yml`` while mlapi uses ``mlapiconfig.ini``)
 
-Here are a list of parameters that still need to be in ``objectconfig.ini`` when using mlapi.
-(A simple rule to remember is zm_detect.py uses ``objectconfig.ini`` while mlapi uses ``mlapiconfig.ini``)
-
-- ``ml_gateway`` (obviously, as the *ES* calls *zm_detect*, and zm_detect calls mlapi if this parameter is present in *objectconfig.ini*)
-- ``ml_fallback_local`` (if *mlapi* fails, or is not running, *zm_detect* will switch to local inferencing, so this needs to be in *objectconfig.ini*)
+- ``ml_gateway`` (obviously, as the *ES* calls *zm_detect*, and zm_detect calls mlapi if this parameter is present in *objectconfig.yml*)
+- ``ml_fallback_local`` (if *mlapi* fails, or is not running, *zm_detect* will switch to local inferencing, so this needs to be in *objectconfig.yml*)
 - ``show_percent`` (*zm_detect* is the one that actually creates the text you see in your object detection (*detected:[s] person:90%*))
 - ``write_image_to_zm`` (zm_detect is the one that actually puts *objdetect.jpg* in the ZM events folder - *mlapi* can't because it can be remote)
 - ``write_debug_image`` (*zm_detect* is the one that creates a debug image to inspect)
@@ -584,7 +494,7 @@ Here are a list of parameters that still need to be in ``objectconfig.ini`` when
 - ``animation_types`` (same as above)
 - ``show_models`` (if you want to show model names along with text)
 
-These need to be present in both mlapiconfig.ini and objectconfig.ini
+These need to be present in both mlapiconfig.ini and objectconfig.yml
 
 - ``secrets``
 - ``base_data_path``
@@ -594,12 +504,12 @@ These need to be present in both mlapiconfig.ini and objectconfig.ini
 - ``password``
 
 
-So when using mlapi, migrate configurations that you typically specify in ``objectconfig.ini`` to ``mlapiconfig.ini``. This includes:
+So when using mlapi, migrate configurations that you typically specify in ``objectconfig.yml`` to ``mlapiconfig.ini``. This includes:
 
 - Monitor specific sections 
 - ml_sequence and stream_sequence 
 - In general, if you see detection with mlapi missing something that worked when using 
-  objectconfig.ini, make sure you have not missed anything specific in mlapiconfig.ini 
+  objectconfig.yml, make sure you have not missed anything specific in mlapiconfig.ini 
   with respect to related parameters 
 
 Also note that if you are using ml_fallback, repeat the settings in both configs.
@@ -608,36 +518,47 @@ Here is a part of my config, for example:
 
 ::
 
-   import_zm_zones=yes
-   ## Monitor specific settings
-   [monitor-3]
-   # doorbell
-   model_sequence=object,face
-   object_detection_pattern=(person|monitor_doorbell)
-   valid_face_area=184,235 1475,307 1523,1940 146,1940
+   general:
+     import_zm_zones: "yes"
 
-   [monitor-7]
-   # Driveway
-   model_sequence=object,alpr
-   object_detection_pattern=(person|car|motorbike|bus|truck|boat)
-
-   [monitor-2]
-   # Front lawn 
-   model_sequence=object
-   object_detection_pattern=(person)
-
-   [monitor-4]
-   #deck
-   object_detection_pattern=(person|monitor_deck)
-   stream_sequence = {
-         'frame_strategy': 'most_models',
-         'frame_set': 'alarm',
-         'contig_frames_before_error': 5,
-         'max_attempts': 3,
-         'sleep_between_attempts': 4,
-         'resize':800
-
-      }
+   monitors:
+     3:
+       # doorbell
+       ml_sequence:
+         general:
+           model_sequence: "object,face"
+         object:
+           general:
+             pattern: "(person|monitor_doorbell)"
+     7:
+       # Driveway
+       ml_sequence:
+         general:
+           model_sequence: "object,alpr"
+         object:
+           general:
+             pattern: "(person|car|motorbike|bus|truck|boat)"
+     2:
+       # Front lawn
+       ml_sequence:
+         general:
+           model_sequence: "object"
+         object:
+           general:
+             pattern: "(person)"
+     4:
+       # deck
+       ml_sequence:
+         object:
+           general:
+             pattern: "(person|monitor_deck)"
+       stream_sequence:
+         frame_strategy: most_models
+         frame_set: "alarm"
+         contig_frames_before_error: 5
+         max_attempts: 3
+         sleep_between_attempts: 4
+         resize: 800
 
 About specific detection types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -663,7 +584,7 @@ When it comes to faces, there are two aspects (that many often confuse):
 Face Detection 
 '''''''''''''''
 If you only want "face detection", you can use either dlib/face_recognition or Google's TPU. Both are supported.
-Take a look at ``objectconfig.ini`` for how to set them up.
+Take a look at ``objectconfig.yml`` for how to set them up.
 
 Face Detection + Face Recognition
 '''''''''''''''''''''''''''''''''''
@@ -687,7 +608,7 @@ dependencies that takes time (including dlib) and not everyone wants it.
 Using the right face recognition modes
 '''''''''''''''''''''''''''''''''''''''
 
-- Face recognition uses dlib. Note that in ``objectconfig.ini`` you have two options of face detection/recognition. Dlib has two modes of operation (controlled by ``face_model``). Face recognition works in two steps:
+- Face recognition uses dlib. Note that in ``objectconfig.yml`` you have two options of face detection/recognition. Dlib has two modes of operation (controlled by ``face_model``). Face recognition works in two steps:
   - A: Detect a face
   - B: Recognize a face
 
@@ -764,7 +685,7 @@ Troubleshooting
    is not able to download the image to check. This may be because your
    ZM version is old or other errors. Some common issues:
 
-   -  Make sure your ``objectconfig.ini`` section for ``[general]`` are
+   -  Make sure your ``objectconfig.yml`` ``general`` section settings are
       correct (portal, user,admin)
    -  For object detection to work, the hooks expect to download images
       of events using
@@ -823,7 +744,7 @@ Let's assume the above is what I want to debug, so then I run zm_detect manually
 
 ::
 
-   sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect.py --config /etc/zm/objectconfig.ini --debug --eventid 182253  --monitorid 6 --eventpath=/tmp
+   sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect.py --config /etc/zm/objectconfig.yml --debug --eventid 182253 --monitorid 6 --eventpath=/tmp
 
 
 Note that instead of ``/var/cache/zoneminder/events/6/2021-01-06/182253`` as the event path, I just use ``/tmp`` as it is easier for me. Feel free to use the actual
@@ -887,7 +808,7 @@ You can manually invoke the detection module to check if it works ok:
 
 .. code:: bash
 
-    sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect.py --config /etc/zm/objectconfig.ini  --eventid <eid> --monitorid <mid> --debug
+    sudo -u www-data /var/lib/zmeventnotification/bin/zm_detect.py --config /etc/zm/objectconfig.yml --eventid <eid> --monitorid <mid> --debug
 
 The ``--monitorid <mid>`` is optional and is the monitor ID. If you do
 specify it, it will pick up the right mask to apply (if it is in your
@@ -906,8 +827,8 @@ config)
 **STEP 2: run zmeventnotification in MANUAL mode** 
 
 - ``sudo zmdc.pl stop zmeventnotification.pl`` 
-- change console_logs to yes in ``zmeventnotification.ini``
--  ``sudo -u www-data ./zmeventnotification.pl  --config ./zmeventnotification.ini``
+- change console_logs to yes in ``zmeventnotification.yml``
+-  ``sudo -u www-data ./zmeventnotification.pl  --config ./zmeventnotification.yml``
 -  Force an alarm, look at logs
 
 **STEP 3: integrate with the actual daemon** 

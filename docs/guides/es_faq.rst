@@ -52,7 +52,7 @@ be configured to broadcast on a topic called
 ``/zoneminder/<monitor-id>`` which can then be consumed by Home
 Assistant or Node-Red.
 
-To enable this, set ``enable = 1`` under the ``[mqtt]`` section and
+To enable this, set ``enable: "yes"`` under the ``mqtt`` section and
 specify the ``server`` to broadcast to.
 
 You will also need to install the following module for this work
@@ -85,10 +85,10 @@ While I don't recommend either, several users seem to be interested in
 the following
 
 -  To run the eventserver on Websockets and not Secure Websockets, use
-   ``enable = 0`` in the ``[ssl]`` section of the configuration file.
+   ``enable: "no"`` in the ``ssl`` section of the configuration file.
 -  To disable ZM Auth checking (be careful, anyone can get all your data
    INCLUDING passwords for ZoneMinder monitors if you open it up to the
-   Internet) use ``enable = 0`` in the ``[auth]`` section of the
+   Internet) use ``enable: "no"`` in the ``auth`` section of the
    configuration file.
 
 
@@ -117,7 +117,7 @@ STEP 2: stop the current ES
 STEP 3: Make a backup of your config files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Before you execute the next step you may want to create a backup of your existing ``zmeventnotification.ini`` and ``objectconfig.ini`` config files. The script will prompt you to overwrite. If you say 'Y' then your old configs will be overwritten. Note that old configs are backed up using suffixes like ``~1``, ``~2`` etc. but it is always good to backup on your own.
+Before you execute the next step you may want to create a backup of your existing ``zmeventnotification.yml``, ``objectconfig.yml``, and ``secrets.yml`` config files. The install script will attempt to upgrade existing configs by merging new keys, and old configs are backed up with numbered suffixes, but it is always good to make your own backup first.
 
 
 STEP 4: Execute the install script
@@ -140,7 +140,7 @@ Note that you can also automate updates like so:
 
   sudo -H ./install.sh --install-hook --install-es --no-install-config --no-interactive
 
-The above will install/update the hooks, install/update the ES server but will not overwrite your existing config files. **NOTE** that newer versions of the ES/detection scripts may introduce new parameters in ``zmeventnotification.ini`` and ``objectconfig.ini``. You may need to paste them in manually, so always read :doc:`breaking`
+The above will install/update the hooks, install/update the ES server but will not overwrite your existing config files. **NOTE** that ``install.sh`` now includes an automatic config upgrade step that merges new keys from the example configs into your existing YAML configs. However, you should always read :doc:`breaking` to check for structural changes
 
 STEP 5: Start the new updated server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -161,10 +161,10 @@ Starting v1.0, `@synthead <https://github.com/synthead>`__ reworked the
 configuration (brilliantly) as follows:
 
 -  If you just run ``zmeventnotification.pl`` it will try and load
-   ``/etc/zm/zmeventnotification.ini``. If it doesn't find it, it will
+   ``/etc/zm/zmeventnotification.yml``. If it doesn't find it, it will
    use internal defaults
 -  If you want to override this with another configuration file, use
-   ``zmeventnotification.pl --config /path/to/your/config/filename.ini``.
+   ``zmeventnotification.pl --config /path/to/your/config/filename.yml``.
 -  Its always a good idea to validate you config settings. For example:
 
 ::
@@ -172,9 +172,9 @@ configuration (brilliantly) as follows:
   sudo /usr/bin/zmeventnotification.pl --check-config
 
     
-  Configuration (read /etc/zm/zmeventnotification.ini):
+  Configuration (read /etc/zm/zmeventnotification.yml):
 
-  Secrets file.......................... /etc/zm/secrets.ini
+  Secrets file.......................... /etc/zm/secrets.yml
   Restart interval (secs)............... 172800
 
   Port ................................. 9000
@@ -318,7 +318,7 @@ I can't connect to the ES
 There could be multiple reasons:
 
 - If you are connecting from WAN make sure you have set up port forwarding as needed
-- Try changing the ``address`` attribute in ``[network]`` section of ``zmeventnotification.ini``.
+- Try changing the ``address`` attribute in ``network`` section of ``zmeventnotification.yml``.
   If you don't have your IP specified, it will use ``[::]``. Try ``0.0.0.0`` instead.
 
 I just added a new monitor and the ES is not sending notifications for it
@@ -334,7 +334,7 @@ There could be multiple issues:
 - Let's start with the most obvious one. The ES and ZM need to be running on the same server
 - Alarms are only triggered on Mocord, Modect and Nocord monitors 
 - If you changed monitor modes or added new monitors after the ES started running, restart the ES so it loads the latest information
-- The ES polls ZM every 5 seconds for new alarms (the duration is controlled by ``event_check_interval`` in ``zmeventnotification.ini``). This means that if your alarm is very brief, that is, it starts and ends before the ES polls for new events then it will be missed. Note that the ES will catch alarms both in ``ALARM`` and ``ALERT`` state. ``ALARM`` is when ZM is actually detecting motion in the event. ``ALERT`` is when ZM stops detecting motion but is still waiting around till it writes all your ``post event frames`` that you have configured on your ZM Monitor buffer settings. So here is an example: Let's say I have a "Garage" monitor that I've configured a post event buffer of 100 (frames) and I've set my camera FPS to 10. That means it will take ZM 10 seconds to close an event after my alarm occurs (it will be in ``ALERT`` stage all that time). In this case, no matter show short my actual alarm, the ES will always catch it.
+- The ES polls ZM every 5 seconds for new alarms (the duration is controlled by ``event_check_interval`` in ``zmeventnotification.yml``). This means that if your alarm is very brief, that is, it starts and ends before the ES polls for new events then it will be missed. Note that the ES will catch alarms both in ``ALARM`` and ``ALERT`` state. ``ALARM`` is when ZM is actually detecting motion in the event. ``ALERT`` is when ZM stops detecting motion but is still waiting around till it writes all your ``post event frames`` that you have configured on your ZM Monitor buffer settings. So here is an example: Let's say I have a "Garage" monitor that I've configured a post event buffer of 100 (frames) and I've set my camera FPS to 10. That means it will take ZM 10 seconds to close an event after my alarm occurs (it will be in ``ALERT`` stage all that time). In this case, no matter show short my actual alarm, the ES will always catch it.
 
 LetsEncrypt certificates cannot be found when running as a web user
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -358,7 +358,7 @@ the following conditions must be met:
 - You can't use self signed certs 
 - The IP/hostname needs to be accessible by zmNinja on the mobile device you are receiving pushes on
 - You need ZM 1.32.3 or above
-- A good way to isolate if its a URL problem or something else is replace the ``picture_url`` in ``/etc/zm/secrets.ini`` 
+- A good way to isolate if its a URL problem or something else is replace the ``picture_url`` in ``/etc/zm/secrets.yml`` 
   with a knows HTTPS url like `this <https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/A_small_bird.jpg/800px-A_small_bird.jpg>`__
   Note that when you use a test image, comment out ``picture_portal_username`` and
   ``picture_portal_password`` so they are not auto appended. Remember to restart the ES.
@@ -382,7 +382,7 @@ Secure mode just doesn't work (WSS) - WS works
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Try to put in your event server IP in the ``address`` token in
-``[network]`` section of ``zmeventnotification.ini``
+``network`` section of ``zmeventnotification.yml``
 
 I'm not receiving push notifications in zmNinja
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -394,8 +394,8 @@ the output:
 1. Stop the event server. ``sudo zmdc.pl stop zmeventnotification.pl``
 2. Do a ``ps -aef | grep zmevent`` and make sure no stale processes are
    running
-3. Edit your ``/etc/zm/zmeventnotification.ini`` and make sure
-   ``console_logs = yes`` to get console debug logs
+3. Edit your ``/etc/zm/zmeventnotification.yml`` and make sure
+   ``console_logs: "yes"`` to get console debug logs
 4. Run the server manually by doing
    ``sudo -u www-data /usr/bin/zmeventnotification.pl --debug`` (replace with
    ``www-data`` with ``apache`` depending on your OS)
@@ -453,7 +453,7 @@ credentials (and in that case, you'll see an error message)
 10. Some other notes:
 
 -  If you are not using machine learning hooks, make sure you comment
-   out the ``hook_script`` line in ``[hook]``. If you have not setup
+   out the ``hook_script`` line in ``hook``. If you have not setup
    the scripts correctly, if will fail and not send a push.
 
 -  If you don't see an entry in ``tokens.txt`` (typically in
@@ -501,7 +501,7 @@ How do I reduce the time of delay from an alarm occurring in ZM to the notificat
 - There are some key areas you can optimize for:
 
    - The ES _polls_ ZoneMinder mapped memory for events. By default it is 5 seconds. To change it, 
-     change ``event_check_interval`` in ``zm_eventnotification.ini`` 
+     change ``event_check_interval`` in ``zmeventnotification.yml`` 
 
    - One an alarm is detected, depending on whether you configured hooks or not, it will invoke 
      object detection. Based on your server/desktop configuration, this can take just a few milliseconds 
@@ -509,7 +509,7 @@ How do I reduce the time of delay from an alarm occurring in ZM to the notificat
      as it preloads models into memory only once. Loading a model can take a few seconds, while detection, if you are on 
      a GPU or TPU takes milliseconds. If you don't use hooks, turn it off in config.
 
-   - Again, if you are using hooks, there is a ``wait`` attribute in ``objectconfig.ini`` that waits for 
+   - Again, if you are using hooks, there is a ``wait`` attribute in ``objectconfig.yml`` that waits for 
      a few seconds before downloading the image from ZM. This was done because sometimes the ES may be asking 
      to download an image that ZM hasn't written to disk yet (remember, ES is triggered when an alarm starts).
      This is really no longer needed, if you are using it. Starting ES 6.1.0, you can instead just use the 
@@ -540,7 +540,7 @@ There seems to be multiple potential reasons:
 
 - Finally, experiment with setting ``fcm_android_ttl`` to ``0`` along with ``fcm_android_priority`` to ``high`` 
 
-- If nothing else works, set `use_fcmv1` to `no` in `zmeventnotification.ini` to go back to legacy 
+- If nothing else works, set `use_fcmv1` to `no` in `zmeventnotification.yml` to go back to legacy 
   protocol 
 
 - Finally, it is entirely possible there is some magic-foo of combination of attributes in FCMv1 which
@@ -581,7 +581,7 @@ you can start it from command line again.
 Running hooks manually detects the objects I want but fails to detect via ES (daemon mode)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There may be multiple reasons, but a common one is of timing. When the ES invokes the hook, it is invoked almost immediately upon event detection. In some cases, ZoneMinder still has not had time to create an alarmed frame, or the right snapshot frame. So what happens is that when the ES invokes the hook, it runs detection on a different image from the one you run later when invoked manually. Try adding a ``wait = 5`` to ``objectconfig.ini`` to that monitor section and see if it helps
+There may be multiple reasons, but a common one is of timing. When the ES invokes the hook, it is invoked almost immediately upon event detection. In some cases, ZoneMinder still has not had time to create an alarmed frame, or the right snapshot frame. So what happens is that when the ES invokes the hook, it runs detection on a different image from the one you run later when invoked manually. Try adding a ``wait = 5`` to ``objectconfig.yml`` to that monitor section and see if it helps
 
 
 Great Krypton! I just upgraded ZoneMinder and I'm not getting push anymore!
@@ -595,7 +595,7 @@ How do I disable secure (WSS) mode?
 
 As it turns out many folks run ZM inside the LAN only and don't want to
 deal with certificates. Fair enough. For that situation, edit
-zmeventnotification.pl and use ``enable = 0`` in the ``[ssl]`` section
+zmeventnotification.pl and use ``enable: "no"`` in the ``ssl`` section
 of the configuration file. **Remember to ensure that your EventServer
 URL in zmNinja does NOT use wss too - change it to ws**. Also remember to
 restart the ES after this change.
@@ -755,7 +755,7 @@ token?**
 **Why WSS and not WS?**
 
 Not secure. Easy to snoop. Updated: As of 0.6, I've also added a non
-secure version - use ``enable = 0`` in the ``[ssl]`` section of the
+secure version - use ``enable: "no"`` in the ``ssl`` section of the
 configuration file. As it turns out many folks don't expose ZM to the
 WAN and for that, I guess WS instead of WSS is ok.
 

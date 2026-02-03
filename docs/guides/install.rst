@@ -47,14 +47,15 @@ To clone master:
   git pull
 
 
-Configure the ini files
+Configure the config files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
--  Edit ``zmeventnotification.ini`` to your liking. More details about
-   various parts of the configuration are explained later in this readme
+-  Edit ``zmeventnotification.yml`` to your liking. More details about
+   various parts of the configuration are explained later in this readme.
+   All config files now use YAML format.
 -  If you are behind a firewall, make sure you enable port ``9000``,
    TCP, bi-directional (unless you changed the port in the code)
--  If you are _not_ using machine learning hooks, make sure you comment out the
-   ``hook_script`` attribute in the ``[hook]`` section of the ini file or 
+-  If you are _not_ using machine learning hooks, make sure ``use_hooks``
+   is set to ``"no"`` in the ``customize`` section of the config file or
    you will see errors and you will not receive push
 -  We now need to install a bunch of dependencies (as described below)
 
@@ -75,18 +76,24 @@ whilst inside the shell, ``install Module::Name``)
 
 -  ``Crypt::MySQL`` (if you have updated to ZM 1.34, this is no longer needed)
 -  ``Net::WebSocket::Server``
--  ``Config::IniFiles`` (you may already have this installed)
+-  ``YAML::XS`` (via ``libyaml-libyaml-perl`` on Debian/Ubuntu)
 -  ``Crypt::Eksblowfish::Bcrypt`` (if you have updated to ZM 1.34, you will already have this)
 -  ``Time::Piece`` for parsing ES rules
 
-Installing these dependencies is as simple as:
+On Debian/Ubuntu, the ``install.sh`` script will attempt to install most of these automatically.
+You can also install them manually:
 
 ::
 
-    sudo perl -MCPAN -e "install Crypt::MySQL"
-    sudo perl -MCPAN -e "install Config::IniFiles"
-    sudo perl -MCPAN -e "install Crypt::Eksblowfish::Bcrypt"
-   
+    sudo apt-get install libyaml-libyaml-perl libcrypt-mysql-perl libcrypt-eksblowfish-perl \
+        libcrypt-openssl-rsa-perl libmodule-build-perl libyaml-perl libjson-perl \
+        liblwp-protocol-https-perl libio-socket-ssl-perl liburi-perl libdbi-perl
+
+.. note::
+
+    ``Config::IniFiles`` is **no longer needed**. The ES now uses YAML configuration files
+    parsed by ``YAML::XS``.
+
 If after installing them you still see errors about these libraries
 missing, please launch a CPAN shell - see General Note above.
 
@@ -96,27 +103,17 @@ aaronl)
 ::
 
     sudo apt-get install libcrypt-mysql-perl
-    
+
 If you face issues installing Crypt::Eksblowfish::Bcrypt, this this instead:
 
 ::
 
     sudo apt-get install libcrypt-eksblowfish-perl
 
-
-If there are issues installing Config::IniFiles and the errors are
-related to Module::Build missing, use following command to get this
-module in debian based systems and install Config::IniFiles again.
-
-::
-
-    sudo apt-get install libmodule-build-perl
-
 Next up install WebSockets
 
 ::
 
-    sudo apt install libyaml-perl
     sudo apt install make
     sudo apt install libprotocol-websocket-perl
     sudo perl -MCPAN -e "install Net::WebSocket::Server"
@@ -134,7 +131,7 @@ Get HTTPS library for LWP:
 
     sudo apt-get install liblwp-protocol-https-perl
 
-    or 
+    or
 
     perl -MCPAN -e "install LWP::Protocol::https"
 
@@ -151,17 +148,12 @@ If you are setting up MQTT:
  - If your ``MQTT:Simple`` library was installed a while ago, you may need to update it. A new ``login`` method was added
    to that library on Dec 2018 which is required (`ref <https://github.com/Juerd/Net-MQTT-Simple/blob/cf01b43c27893a07185d4b58ff87db183d08b0e9/Changes#L21>`__)
 
-Note that starting 1.0, we also use ``File::Spec``, ``Getopt::Long`` and
-``Config::IniFiles`` as additional libraries. My ubuntu installation
-seemed to include all of this by default (even though
-``Config::IniFiles`` is not part of base perl).
-
 If you get errors about missing libraries, you'll need to install the
 missing ones like so:
 
 ::
 
-    perl -MCPAN -e "install XXXX" # where XXX is Config::IniFiles, for example
+    perl -MCPAN -e "install XXXX" # where XXX is Net::WebSocket::Server, for example
 
 If you are also planning on using the machine learning hooks, you will need to make sure you have Python3 and pip3 installed and working properly. Refer to your OS package documentation on how to get Python3 and pip3. 
 
@@ -196,9 +188,9 @@ to point to your SSL certs/keys:
 
 ::
 
-    [ssl]
-    cert = /etc/zm/apache2/ssl/zoneminder.crt
-    key = /etc/zm/apache2/ssl/zoneminder.key
+    ssl:
+      cert: /etc/zm/apache2/ssl/zoneminder.crt
+      key: /etc/zm/apache2/ssl/zoneminder.key
 
 IOS Users
 ^^^^^^^^^
@@ -229,15 +221,33 @@ in ``install.sh`` before executing it.
 Update the configuration files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When you install the ES, it comes with default configuration files. They key files
-are:
+When you install the ES, it comes with default configuration files. The key files
+are (all in YAML format):
 
-- ``/etc/zm/zmeventnotification.ini`` - various parameters that control the ES
-- ``/etc/zm/objectconfig.ini`` - various parameters that control the machine learning hooks
-- ``/etc/zm/secrets.ini`` - a common key/value mapping file where you store your personal configurations
+- ``/etc/zm/zmeventnotification.yml`` - various parameters that control the ES
+- ``/etc/zm/objectconfig.yml`` - various parameters that control the machine learning hooks
+- ``/etc/zm/secrets.yml`` - a common key/value mapping file where you store your personal configurations
+- ``/etc/zm/es_rules.yml`` - notification rules (muting, time-based controls)
 
-You **always** have to modify ``/etc/zm/secrets.ini`` to your server settings. Please review
-the keys and update them with your settings. At the least, you will need to modify:
+.. note::
+
+    If you are upgrading from a previous version that used INI/JSON files, ``install.sh`` will
+    automatically migrate them to YAML. See :doc:`breaking` for details.
+
+You **always** have to modify ``/etc/zm/secrets.yml`` to your server settings. Please review
+the keys and update them with your settings. The file looks like this:
+
+::
+
+    secrets:
+      ZM_USER: your_username
+      ZM_PASSWORD: your_password
+      ZM_PORTAL: "https://your-server/zm"
+      ZM_API_PORTAL: "https://your-server/zm/api"
+      ES_CERT_FILE: /path/to/cert.pem
+      ES_KEY_FILE: /path/to/key.pem
+
+At the least, you will need to modify:
 
 - ``ZM_USER`` - the username used to log into your ZM web console
 - ``ZM_PASSWORD`` - the password for your ZM web console
@@ -253,7 +263,7 @@ Optional but Recommended: Making sure everything is running (in manual mode)
 -  Start the event server manually first using
    ``sudo -u www-data /usr/bin/zmeventnotification.pl --debug``
    (Note that if you omit ``--config`` it will look for
-   ``/etc/zm/zmeventnotification.ini`` and if that doesn't exist, it
+   ``/etc/zm/zmeventnotification.yml`` and if that doesn't exist, it
    will use default values) and make sure you check syslogs to ensure
    its loaded up and all dependencies are found. If you see errors, fix
    them. Then exit and follow the steps below to start it along with
