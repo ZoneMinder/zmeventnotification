@@ -1,4 +1,3 @@
-from configparser import ConfigParser
 import zmes_hook_helpers.common_params as g
 from shapely.geometry import Polygon
 import cv2

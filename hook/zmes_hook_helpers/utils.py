@@ -12,6 +12,7 @@ import json
 import time
 import re
 import ast
+import os
 import urllib.parse
 import traceback
 
@@ -195,6 +196,8 @@ def process_config(args, ctx):
         secrets_filename = None
         if yml.get('general', {}).get('secrets'):
             secrets_filename = yml['general']['secrets']
+            if not os.path.isfile(secrets_filename):
+                raise FileNotFoundError('Secrets file not found: {}'.format(secrets_filename))
             g.logger.Info('Reading secrets from: {}'.format(secrets_filename))
             has_secrets = True
             g.config['secrets'] = secrets_filename
