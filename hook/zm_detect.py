@@ -104,8 +104,9 @@ def remote_detect(stream=None, options=None, api=None, args=None):
     if args.get('file'):
         g.logger.Debug(2, 'Reading image from {}'.format(args.get('file')))
         image = cv2.imread(args.get('file'))
-        if g.config['resize'] and g.config['resize'] != 'no':
-            neww = min(int(g.config['resize']),image.shape[1])
+        stream_resize = g.config.get('stream_sequence', {}).get('resize')
+        if stream_resize and str(stream_resize) != 'no':
+            neww = min(int(stream_resize), image.shape[1])
             g.logger.Debug(2 ,'Resizing --file image to {}'.format(neww))
             img_new = imutils.resize(image,width=neww)
             image = img_new

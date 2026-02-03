@@ -125,106 +125,6 @@ def import_zm_zones(mid, reason):
 
 
 
-# downloaded ZM image files for future analysis
-# NOT USED?
-def download_files(args):
-    if int(g.config['wait']) > 0:
-        g.logger.Info('Sleeping for {} seconds before downloading'.format(
-            g.config['wait']))
-        time.sleep(g.config['wait'])
-
-
-    if g.config['portal'].lower().startswith('https://'):
-        main_handler = urllib.request.HTTPSHandler(context=g.ctx)
-    else:
-        main_handler = urllib.request.HTTPHandler()
-
-    if g.config['basic_user']:
-        g.logger.Debug(2,'Basic auth config found, associating handlers')
-        password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
-        top_level_url = g.config['portal']
-        password_mgr.add_password(None, top_level_url, g.config['basic_user'],
-                                  g.config['basic_password'])
-        handler = urllib.request.HTTPBasicAuthHandler(password_mgr)
-        opener = urllib.request.build_opener(handler, main_handler)
-
-    else:
-        opener = urllib.request.build_opener(main_handler)
-
-    if g.config['frame_id'] == 'bestmatch':
-        # download both alarm and snapshot
-        filename1 = g.config['image_path'] + '/' + args.get(
-            'eventid') + '-alarm.jpg'
-        filename1_bbox = g.config['image_path'] + '/' + args.get(
-            'eventid') + '-alarm-bbox.jpg'
-        filename2 = g.config['image_path'] + '/' + args.get(
-            'eventid') + '-snapshot.jpg'
-        filename2_bbox = g.config['image_path'] + '/' + args.get(
-            'eventid') + '-snapshot-bbox.jpg'
-
-        url = g.config['portal'] + '/index.php?view=image&eid=' + args.get(
-            'eventid')+ '&fid=alarm'
-        durl = g.config['portal'] + '/index.php?view=image&eid=' + args.get(
-            'eventid') + '&fid=alarm'
-        if g.config['user']:
-            url = url + '&username=' + g.config[
-                'user'] + '&password=' + urllib.parse.quote(
-                    g.config['password'], safe='')
-            durl = durl + '&username=' + g.config['user'] + '&password=*****'
-
-        g.logger.Debug(1,'Trying to download {}'.format(durl))
-        try:
-            input_file = opener.open(url)
-        except HTTPError as e:
-            g.logger.Error(e)
-            raise
-        with open(filename1, 'wb') as output_file:
-            output_file.write(input_file.read())
-            output_file.close()
-
-        url = g.config['portal'] + '/index.php?view=image&eid=' + args.get(
-            'eventid') + '&fid=snapshot'
-        durl = g.config['portal'] + '/index.php?view=image&eid=' + args.get(
-            'eventid') + '&fid=snapshot'
-        if g.config['user']:
-            url = url + '&username=' + g.config[
-                'user'] + '&password=' + urllib.parse.quote(
-                    g.config['password'], safe='')
-            durl = durl + '&username=' + g.config['user'] + '&password=*****'
-        g.logger.Debug(1,'Trying to download {}'.format(durl))
-        try:
-            input_file = opener.open(url)
-        except HTTPError as e:
-            g.logger.Error(e)
-            raise
-        with open(filename2, 'wb') as output_file:
-            output_file.write(input_file.read())
-            output_file.close()
-
-    else:
-        # only download one
-        filename1 = g.config['image_path'] + '/' + args.get('eventid') + '.jpg'
-        filename1_bbox = g.config['image_path'] + '/' + args.get(
-            'eventid') + '-bbox.jpg'
-        filename2 = None
-        filename2_bbox = None
-
-        url = g.config['portal'] + '/index.php?view=image&eid=' + args.get(
-            'eventid') + '&fid=' + g.config['frame_id']
-        durl = g.config['portal'] + '/index.php?view=image&eid=' + args.get(
-            'eventid') + '&fid=' + g.config['frame_id']
-        if g.config['user']:
-            url = url + '&username=' + g.config[
-                'user'] + '&password=' + urllib.parse.quote(
-                    g.config['password'], safe='')
-            durl = durl + '&username=' + g.config['user'] + '&password=*****'
-        g.logger.Debug(1,'Trying to download {}'.format(durl))
-        input_file = opener.open(url)
-        with open(filename1, 'wb') as output_file:
-            output_file.write(input_file.read())
-            output_file.close()
-    return filename1, filename2, filename1_bbox, filename2_bbox
-
 def get_pyzm_config(args):
     g.config['pyzm_overrides'] = {}
     with open(args.get('config')) as f:
@@ -310,7 +210,7 @@ def process_config(args, ctx):
             g.config[k] = _correct_type(val, v['type'])
 
         # Flatten YAML sections into g.config
-        flat_sections = ['general', 'animation', 'remote', 'object', 'face', 'alpr']
+        flat_sections = ['general', 'animation', 'remote']
         for section in flat_sections:
             if section not in yml:
                 continue
@@ -406,61 +306,35 @@ def process_config(args, ctx):
         g.logger.Fatal('error: Traceback:{}'.format(traceback.format_exc()))
         exit(0)
 
-    # Now lets make sure we take care of parameter substitutions {{}}
-    g.logger.Debug(3, 'Finally, doing parameter substitution')
-    p = r'{{(\w+?)}}'
+    # Path substitution: replace ${base_data_path} (and legacy {{base_data_path}})
+    # in all string values throughout the config, including nested ml_sequence.
+    g.logger.Debug(3, 'Doing path substitution for base_data_path')
+    base_data_path = str(g.config.get('base_data_path', '/var/lib/zmeventnotification'))
 
-    def _substitute_str(s):
-        """Repeatedly substitute {{key}} in a string until no more replacements."""
-        while True:
-            matches = re.findall(p, s)
-            replaced = False
-            for match_key in matches:
-                if match_key in g.config and not isinstance(g.config[match_key], (dict, list)):
-                    replaced = True
-                    s = s.replace('{{' + match_key + '}}', str(g.config[match_key]))
-                else:
-                    g.logger.Debug(3, 'substitution key: {} not found or is a complex type'.format(match_key))
-            if not replaced:
-                break
-        return s
-
-    def _coerce_numeric(val):
-        """Convert a string to int or float if it looks like a number."""
-        if not isinstance(val, str):
-            return val
-        try:
-            return int(val)
-        except ValueError:
-            pass
-        try:
-            return float(val)
-        except ValueError:
-            pass
-        return val
-
-    def _substitute_deep(obj):
-        """Recursively substitute {{key}} in nested dicts/lists,
-        then coerce pure numeric strings back to numbers."""
+    def _substitute_paths(obj):
+        """Recursively replace ${base_data_path} and {{key}} in strings."""
         if isinstance(obj, str):
-            result = _substitute_str(obj)
-            return _coerce_numeric(result)
+            obj = obj.replace('${base_data_path}', base_data_path)
+            # Legacy {{key}} support for backward compatibility
+            for match_key in re.findall(r'{{(\w+?)}}', obj):
+                if match_key in g.config and not isinstance(g.config[match_key], (dict, list)):
+                    obj = obj.replace('{{' + match_key + '}}', str(g.config[match_key]))
+            return obj
         elif isinstance(obj, dict):
-            return {k: _substitute_deep(v) for k, v in obj.items()}
+            return {k: _substitute_paths(v) for k, v in obj.items()}
         elif isinstance(obj, list):
-            return [_substitute_deep(item) for item in obj]
+            return [_substitute_paths(item) for item in obj]
         return obj
 
-    # First pass: substitute flat string config values
+    # Substitute flat string config values
     for gk, gv in g.config.items():
-        if not isinstance(gv, str):
-            continue
-        g.config[gk] = _substitute_str(gv)
+        if isinstance(gv, str):
+            g.config[gk] = _substitute_paths(gv)
 
-    # Second pass: deep-substitute nested structures (ml_sequence, stream_sequence)
+    # Substitute nested structures (ml_sequence, stream_sequence)
     for gk in ('ml_sequence', 'stream_sequence'):
         if gk in g.config and isinstance(g.config[gk], dict):
-            g.config[gk] = _substitute_deep(g.config[gk])
+            g.config[gk] = _substitute_paths(g.config[gk])
 
     # Now munge config if testing args provide
     if args.get('file'):
