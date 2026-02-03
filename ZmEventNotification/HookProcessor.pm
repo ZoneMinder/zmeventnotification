@@ -526,7 +526,7 @@ sub processNewAlarmsInFork {
               . $mid
               . '--SPLIT--'
               . $eid
-              . '--SPLIT--' . 'Start'
+              . '--SPLIT--' . 'End'
               . '--SPLIT--' . 'Cause'
               . '--SPLIT--'
               . $alarm->{End}->{Cause}

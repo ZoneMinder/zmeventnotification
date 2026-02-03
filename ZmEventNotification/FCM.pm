@@ -356,7 +356,6 @@ sub sendOverFCMV1 {
   my $res = $lwp->request($req);
 
   if ( $res->is_success ) {
-    $main::pcnt++;
     main::Debug(1, 'fcmv1: FCM push message returned a 200 with body ' . $res->decoded_content);
   } else {
     main::Debug(1, 'fcmv1: FCM push message error '.$res->decoded_content);
@@ -503,7 +502,6 @@ sub sendOverFCMLegacy {
   my $res = $lwp->request($req);
 
   if ($res->is_success) {
-    $main::pcnt++;
     my $msg = $res->decoded_content;
     main::Debug(1, 'FCM push message returned a 200 with body '.$res->content);
     my $json_string;

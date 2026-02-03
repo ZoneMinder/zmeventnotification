@@ -108,8 +108,6 @@ my $check_config;
 
 my $mqtt_last_tick_time = time();
 
-our $pcnt = 0;
-
 our %fcm_tokens_map;
 
 our %monitors            = ();
@@ -123,10 +121,6 @@ our $wss;
 my $zmdc_active = 0;
 
 our $is_timepiece = 1;
-
-my $dummyEventTest = 0;
-my $dummyEventInterval     = 20;
-my $dummyEventTimeLastSent = time();
 
 our $dbh = zmDbConnect(1);
 logInit();
@@ -466,7 +460,7 @@ sub checkNewEvents() {
       ]
     );
 
-    next if !$current_event;    # will it ever happen? ICON: Sure if it has never recorded an event
+    next if !$current_event;    # skip monitors that have never recorded an event
 
     my $alarm_cause = zmMemRead($monitor, 'shared_data:alarm_cause')
       if ($notify_config{read_alarm_cause});
@@ -588,7 +582,6 @@ sub loadMonitors {
       $monitor->{LastEvent}       = zmGetLastEvent($monitor);
       $monitors{ $monitor->{Id} } = $monitor;
     }
-    $monitors{ $monitor->{Id} } = $monitor;
     Debug(1, 'Loading ' . $monitor->{Name});
   } # end while fetchrow
 

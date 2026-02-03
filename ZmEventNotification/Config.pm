@@ -54,7 +54,7 @@ our %escontrol_config = ();
 # Runtime state
 our %escontrol_interface_settings = ( notifications => {} );
 
-# Rules (loaded from JSON)
+# Rules (loaded from YAML)
 our %es_rules;
 
 sub config_get_val {
@@ -85,16 +85,14 @@ sub config_get_val {
   if    ( lc($final_val) eq 'yes' ) { $final_val = 1; }
   elsif ( lc($final_val) eq 'no' )  { $final_val = 0; }
 
-  # ${template} substitution (and legacy {{template}} support)
+  # ${template} substitution
   my @matches = ( $final_val =~ /\$\{(.*?)\}/g );
-  push @matches, ( $final_val =~ /\{\{(.*?)\}\}/g );
   foreach my $token (@matches) {
     my $tval = defined($cfg->{general}) ? $cfg->{general}{$token} : undef;
     $tval = $cfg->{$sect}{$token} if !$tval && defined($cfg->{$sect});
     next if !defined($tval);
     main::Debug(2, "config string substitution: \${$token} is '$tval'");
     $final_val =~ s/\$\{$token\}/$tval/g;
-    $final_val =~ s/\{\{$token\}\}/$tval/g;
   }
 
   $final_val =~ s/^\s+|\s+$//g;   # trim

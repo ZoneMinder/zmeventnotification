@@ -316,13 +316,9 @@ def process_config(args, ctx):
     base_data_path = str(g.config.get('base_data_path', '/var/lib/zmeventnotification'))
 
     def _substitute_paths(obj):
-        """Recursively replace ${base_data_path} and {{key}} in strings."""
+        """Recursively replace ${base_data_path} in strings."""
         if isinstance(obj, str):
             obj = obj.replace('${base_data_path}', base_data_path)
-            # Legacy {{key}} support for backward compatibility
-            for match_key in re.findall(r'{{(\w+?)}}', obj):
-                if match_key in g.config and not isinstance(g.config[match_key], (dict, list)):
-                    obj = obj.replace('{{' + match_key + '}}', str(g.config[match_key]))
             return obj
         elif isinstance(obj, dict):
             return {k: _substitute_paths(v) for k, v in obj.items()}
