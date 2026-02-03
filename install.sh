@@ -24,8 +24,8 @@ INSTALLER=${INSTALLER:-$(which apt-get || which yum)}
 # If you do not want them, pass them as variables to install.sh
 # example: sudo INSTALL_YOLO4=no ./install.sh
 
-INSTALL_YOLOV3=${INSTALL_YOLOV3:-yes}
-INSTALL_TINYYOLOV3=${INSTALL_TINYYOLOV3:-yes}
+INSTALL_YOLOV3=${INSTALL_YOLOV3:-no}
+INSTALL_TINYYOLOV3=${INSTALL_TINYYOLOV3:-no}
 INSTALL_YOLOV4=${INSTALL_YOLOV4:-yes}
 INSTALL_TINYYOLOV4=${INSTALL_TINYYOLOV4:-yes}
 INSTALL_CORAL_EDGETPU=${INSTALL_CORAL_EDGETPU:-no}
@@ -575,8 +575,8 @@ display_help() {
         WGET: path to wget (default `which wget`)
 
         INSTALLER: Your OS equivalent of apt-get or yum (default: apt-get or yum)
-        INSTALL_YOLOV3: Download and install yolov3 model (default:yes)
-        INSTALL_TINYYOLOV3: Download and install tiny yolov3 model (default:yes)
+        INSTALL_YOLOV3: Download and install yolov3 model (default:no)
+        INSTALL_TINYYOLOV3: Download and install tiny yolov3 model (default:no)
         INSTALL_YOLOV4: Download and install yolov4 model (default:yes)
         INSTALL_TINY_YOLOV4: Download and install tiny yolov4 model (default:yes)
         INSTALL_CORAL_EDGETPU: Download and install coral models (default:no)

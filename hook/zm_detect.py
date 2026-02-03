@@ -343,8 +343,8 @@ def main_handler():
     g.logger.Debug(2, 'using ml_sequence')
     ml_options = g.config['ml_sequence']
     # ml_sequence is already a dict from YAML, but we still need secret substitution
-    secrets = pyzmutils.read_config(g.config['secrets'])
-    ml_options = pyzmutils.template_fill(input_str=str(ml_options), config=None, secrets=secrets._sections.get('secrets'))
+    secrets_conf = pyzmutils.read_config(g.config['secrets'])
+    ml_options = pyzmutils.template_fill(input_str=str(ml_options), config=None, secrets=secrets_conf.get('secrets', {}))
     ml_options = ast.literal_eval(ml_options)
     g.config['ml_sequence'] = ml_options
 
