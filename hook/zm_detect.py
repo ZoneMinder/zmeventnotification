@@ -435,42 +435,12 @@ def main_handler():
         'image_dimensions': matched_data['image_dimensions']
     }
 
-    # 'confidences': ["{:.2f}%".format(item * 100) for item in matched_data['confidences']],
-    
-    detections = []
-    seen = {}
-    pred=''
-    prefix = ''
-
-    if matched_data['frame_id'] == 'snapshot':
-        prefix = '[s] '
-    elif matched_data['frame_id'] == 'alarm':
-        prefix = '[a] '
-    else:
-        prefix = '[x] '
-        #g.logger.Debug(1,'CONFIDENCE ARRAY:{}'.format(conf))
-
-    for idx, l in enumerate(matched_data['labels']):
-        if l not in seen:
-            label_txt = ''
-            if g.config.get('show_percent') == 'no':
-                label_txt =  l + ','
-            else:
-                label_txt =  l + ':{:.0%}'.format(matched_data['confidences'][idx]) + ' '
-            if g.config.get('show_models')=='yes':
-                model_txt ='({}) '.format(matched_data['model_names'][idx])
-            else:
-                model_txt =''
-            pred = pred + model_txt + label_txt
-            seen[l] = 1
-
-    if pred != '':
-        pred = pred.rstrip(',')
-        pred = prefix + 'detected:' + pred
+    output = utils.format_detection_output(matched_data, g.config)
+    if output:
+        pred, jos = output.split('--SPLIT--', 1)
         g.logger.Info('Prediction string:{}'.format(pred))
-        jos = json.dumps(obj_json)
         g.logger.Debug(1, 'Prediction string JSON:{}'.format(jos))
-        print(pred + '--SPLIT--' + jos)
+        print(output)
 
         if (matched_data['image'] is not None) and (g.config['write_image_to_zm'] == 'yes' or g.config['write_debug_image'] == 'yes'):
             debug_image = pyzmutils.draw_bbox(image=matched_data['image'],boxes=matched_data['boxes'], 

@@ -45,6 +45,79 @@ use warnings;
     sub import { 1 }
 }
 
+# ---- ZoneMinder::Tag ----
+{
+    package ZoneMinder::Tag;
+    $INC{'ZoneMinder/Tag.pm'} = __FILE__;
+    my @_spy_find_one;
+    my @_spy_save;
+    my $_next_find_one;
+    sub _reset_spy   { @_spy_find_one = (); @_spy_save = (); $_next_find_one = undef; }
+    sub _spy_find_one_calls { @_spy_find_one }
+    sub _spy_save_calls     { @_spy_save }
+    sub _set_next_find_one  { $_next_find_one = $_[1] }
+    sub find_one {
+        shift;   # class
+        push @_spy_find_one, [@_];
+        return $_next_find_one;
+    }
+    sub new {
+        my $class = shift;
+        return bless { Id => int(rand(9999)) + 1 }, $class;
+    }
+    sub save {
+        my ($self, $data) = @_;
+        push @_spy_save, { self => $self, data => $data };
+        @{$self}{keys %$data} = values %$data if $data;
+    }
+    sub import { 1 }
+}
+
+# ---- ZoneMinder::Event_Tag ----
+{
+    package ZoneMinder::Event_Tag;
+    $INC{'ZoneMinder/Event_Tag.pm'} = __FILE__;
+    my @_spy_save;
+    sub _reset_spy   { @_spy_save = (); }
+    sub _spy_save_calls { @_spy_save }
+    sub save {
+        my ($self, $data) = @_;
+        push @_spy_save, { self => $self, data => $data };
+        @{$self}{keys %$data} = values %$data if $data;
+    }
+    sub import { 1 }
+}
+
+# ---- ZoneMinder::User ----
+{
+    package ZoneMinder::User;
+    $INC{'ZoneMinder/User.pm'} = __FILE__;
+    my $_next_find_one;
+    sub _set_next_find_one { $_next_find_one = $_[1] }
+    sub _reset             { $_next_find_one = undef }
+    sub find_one {
+        shift;   # class
+        return $_next_find_one;
+    }
+    sub import { 1 }
+}
+
+# ---- ZM_VERSION in ZoneMinder package ----
+# DB.pm does `use ZoneMinder` and then calls ZM_VERSION as a bareword.
+# We define it as a regular sub (no prototype) so Perl won't inline it,
+# allowing tests to override $ZoneMinder::_zm_version with `local`.
+{
+    package ZoneMinder;
+    our $_zm_version = '1.38.0';
+    sub ZM_VERSION { $_zm_version }  ## no prototype -> not inlined
+    no warnings 'redefine';
+    sub import {
+        my $caller = caller;
+        no strict 'refs';
+        *{"${caller}::ZM_VERSION"} = \&ZM_VERSION;
+    }
+}
+
 # ---- main:: logging stubs ----
 package main;
 our $is_timepiece = 1;   # Rules.pm checks this
@@ -53,12 +126,16 @@ our %monitors = ();
 our $es_terminate = 0;
 our $config_file;
 our $config_file_present;
+our %ssl_push_opts = ();
+our $notId = 0;
+our %fcm_tokens_map = ();
 
 sub Debug   { }
 sub Info    { }
 sub Warning { }
 sub Error   { }
 sub Fatal   { die "FATAL: $_[1]\n" if @_ > 1; die "FATAL\n" }
+sub try_use { 0 }
 
 # SHM stubs used by HookProcessor
 sub zmMemVerify       { 1 }

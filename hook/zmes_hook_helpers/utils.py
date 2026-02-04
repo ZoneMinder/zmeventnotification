@@ -21,6 +21,58 @@ import zmes_hook_helpers.common_params as g
 
 from urllib.error import HTTPError
 
+
+def format_detection_output(matched_data, config=None):
+    """Format detection results into PREFIX detected:labels--SPLIT--JSON.
+
+    Returns: formatted string, or "" if no detections.
+    """
+    if config is None:
+        config = getattr(g, 'config', {})
+
+    obj_json = {
+        'labels': matched_data['labels'],
+        'boxes': matched_data['boxes'],
+        'frame_id': matched_data['frame_id'],
+        'confidences': matched_data['confidences'],
+        'image_dimensions': matched_data['image_dimensions']
+    }
+
+    detections = []
+    seen = {}
+    pred = ''
+    prefix = ''
+
+    if matched_data['frame_id'] == 'snapshot':
+        prefix = '[s] '
+    elif matched_data['frame_id'] == 'alarm':
+        prefix = '[a] '
+    else:
+        prefix = '[x] '
+
+    for idx, l in enumerate(matched_data['labels']):
+        if l not in seen:
+            label_txt = ''
+            if config.get('show_percent') == 'no':
+                label_txt = l + ','
+            else:
+                label_txt = l + ':{:.0%}'.format(matched_data['confidences'][idx]) + ' '
+            if config.get('show_models') == 'yes':
+                model_txt = '({}) '.format(matched_data['model_names'][idx])
+            else:
+                model_txt = ''
+            pred = pred + model_txt + label_txt
+            seen[l] = 1
+
+    if pred != '':
+        pred = pred.rstrip(',')
+        pred = prefix + 'detected:' + pred
+        jos = json.dumps(obj_json)
+        return pred + '--SPLIT--' + jos
+
+    return ''
+
+
 #resize polygons based on analysis scale
 
 
