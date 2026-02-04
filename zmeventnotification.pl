@@ -46,10 +46,27 @@ use IO::Select;
 use MIME::Base64;
 use FindBin;
 # Untaint the script directory for use lib (safe: derived from $0)
+our $app_version;
 BEGIN {
   my ($safe_dir) = $FindBin::RealBin =~ /^(.+)$/;
   require lib;
   lib->import($safe_dir);
+
+  # Read version from the VERSION file at repo root
+  my $version_file = "$FindBin::RealBin/VERSION";
+  open(my $vfh, '<', $version_file) or die "Cannot open $version_file: $!\n";
+  my $raw_version = <$vfh>;
+  close $vfh;
+  chomp $raw_version;
+  ($raw_version) = $raw_version =~ /^([\d.]+)$/
+      or die "Invalid version in $version_file\n";
+  $app_version = $raw_version;
+
+  # Handle --version before loading heavy dependencies
+  if (defined $ARGV[0] && $ARGV[0] eq '--version') {
+    print("$app_version\n");
+    exit(0);
+  }
 }
 use ZmEventNotification::Constants qw(:all);
 use ZmEventNotification::Config qw(:all);
@@ -74,15 +91,6 @@ $ENV{PATH} = '/bin:/usr/bin';
 $ENV{SHELL} = '/bin/sh' if exists $ENV{SHELL};
 delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
 
-####################################
-our $app_version = '7.0.0';
-####################################
-
-my $first_arg = $ARGV[0];
-if (defined $first_arg && $first_arg eq '--version') {
-  print ("$app_version\n");
-  exit(0);
-}
 
 if ( !try_use('JSON') ) {
   if ( !try_use('JSON::XS') ) {
@@ -211,6 +219,10 @@ $config_obj = $config;  # Store in Config.pm for use by module functions
 
 $secrets_filename = config_get_val( $config, 'general', 'secrets' );
 if ($secrets_filename) {
+  Fatal("secrets file configured as $secrets_filename but does not exist")
+    if ! -e $secrets_filename;
+  Fatal("secrets file $secrets_filename is not readable")
+    if ! -r $secrets_filename;
   Info("using secrets file: $secrets_filename");
   eval { $secrets = YAML::XS::LoadFile($secrets_filename); };
   if ($@ || !$secrets) {

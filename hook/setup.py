@@ -1,9 +1,6 @@
 #!/usr/bin/python3
 
-import io
 import os
-import re
-import codecs
 
 from setuptools import setup
 
@@ -27,26 +24,14 @@ with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 
-def read(*parts):
-    here = os.path.abspath(os.path.dirname(__file__))
-    print ('VERBOSE: Reading {}'.format(os.path.join(here, *parts)))
-    with codecs.open(os.path.join(here, *parts), 'r') as fp:
-        return fp.read()
-
-
-def find_version(*file_paths):
-    version_file = read(*file_paths)
-    print ('VERBOSE: version_file is {}'.format(version_file))
-    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
-                              version_file, re.M)
-   
-    if version_match:
-        return version_match.group(1)
-    raise RuntimeError("Unable to find version string.")
+def read_version():
+    version_file = os.path.join(here, '..', 'VERSION')
+    with open(version_file) as f:
+        return f.read().strip()
 
 
 setup(name=NAME,
-      version=find_version('zmes_hook_helpers', '__init__.py'),
+      version=read_version(),
       description=DESCRIPTION,
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
