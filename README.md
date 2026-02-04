@@ -1,7 +1,8 @@
 
 Note
 -----
-This is a newer version of ES (7.x) that I'm redoing for zmNg support and better features. 
+This is a newer version of ES (7.x) that I'm redoing for zmNg support and better features.
+Read about what is [different](CHANGES.md). 
 
 What
 ----
@@ -13,6 +14,8 @@ As of today, it supports:
 
 Getting Started (Development)
 -----------------------------
+
+ES 7.0 is in development stage at the moment, expect breakages. You may also need to manually fix some configurations after installations. The `install.sh` script attempts to migrate automatically but you should check. Given it is in development stage, it is not yet merged into mainstream ZM repos. If you find issues, please post them to this repo, and NOT ZM repos.
 
 Both this repo and the [updated pyzm](https://github.com/pliablepixels/pyzm) library are needed. `pyzm` provides the ZoneMinder Python API, ML detection pipeline, and helper utilities that the hooks depend on.
 
