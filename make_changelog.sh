@@ -1,14 +1,11 @@
 #!/bin/bash
 if [ -z "$1" ]; then
-    #echo "Getting version name from zm_detect.py"
-    echo 'Getting version from zmeventnotification.pl'
-    if [[ `cat ./zmeventnotification.pl` =~ my\ \$app_version\ =\ \'([0-9]*\.[0-9]*\.[0-9]*)\'\; ]];
-    then
-	    TAGVER=${BASH_REMATCH[1]}
-    else
-	    echo "Bad version parsing"
-	    exit
+    echo 'Getting version from VERSION file'
+    if [ ! -f ./VERSION ]; then
+	    echo "VERSION file not found"
+	    exit 1
     fi
+    TAGVER=$(cat ./VERSION | tr -d '[:space:]')
 else
 	TAGVER=$1
 fi
