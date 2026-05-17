@@ -1,7 +1,7 @@
 
 Note
 -----
-The master branch is always cutting edge. If you are packaging the ES into your own system/image it is recommended you use the [latest stable release](https://github.com/pliablepixels/zmeventnotification/releases/latest). See [this note](https://zmeventnotification.readthedocs.io/en/latest/guides/install.html#installation-of-the-event-server-es).
+This is the legacy version of zmES. It is recommended that you migrate to [zmesNg](https://github.com/pliablepixels/zmeventnotificationNg)/[documentation](https://zmeventnotificationng.readthedocs.io/en/latest/) (that will automatically upgrade pyzm to the newer version).
 
 
 What
