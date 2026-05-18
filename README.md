@@ -1,7 +1,7 @@
 
 Note
 -----
-This is the legacy version of zmES. It is recommended that you migrate to [zmesNg](https://github.com/pliablepixels/zmeventnotificationNg)/[documentation](https://zmeventnotificationng.readthedocs.io/en/latest/) (that will automatically upgrade pyzm to the newer version).
+This is the legacy version of zmES. It is recommended that you migrate to [zmesNg](https://github.com/pliablepixels/zmeventnotificationNg)/ [documentation](https://zmeventnotificationng.readthedocs.io/en/latest/) (that will automatically upgrade pyzm to the newer version).
 
 
 What
